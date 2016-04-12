@@ -56,7 +56,8 @@ mixed model with beta response [(Stan)](https://github.com/mclark--/Miscellaneou
 [EM probabilistic pca](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20algorithm%20for%20ppca.R),
 [EM state space model](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20for%20state%20space%20unobserved%20components.R)
 
-### Curvy: 
+### Curvy
+
 #### Gaussian processses
 
 [Gaussian Process noisy](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/gp%20Examples/gaussianprocessNoisy.R),

@@ -23,15 +23,15 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 [Last Statements of the Texas Executed](http://micl.shinyapps.io/texEx/texEx.Rmd)     A demonstration of both text analysis and literate programming/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
 
-[Bayesian Basics](docs/IntroBayes.pdf)     This serves as a conceptual introduction to Bayesian modeling with examples using R, Stan, and to a lesser extent, BUGS and JAGS.
+[Bayesian Basics](../docs/IntroBayes.pdf)     This serves as a conceptual introduction to Bayesian modeling with examples using R, Stan, and to a lesser extent, BUGS and JAGS.
 
-[Generalized Additive Models](docs/GAMS.pdf)     An introduction to generalized additive models with an emphasis on generalization from familiar linear models and using the mgcv package in R.
+[Generalized Additive Models](../docs/GAMS.pdf)     An introduction to generalized additive models with an emphasis on generalization from familiar linear models and using the mgcv package in R.
 
-[Introduction to Machine Learning](docs/mlcrash.pdf)     A gentle introduction to machine learning concepts with some application in R.
+[Introduction to Machine Learning](../docs/mlcrash.pdf)     A gentle introduction to machine learning concepts with some application in R.
 
-[Comparing Measures of Dependency](docs/CorrelationComparison.pdf)     A summary of relatively recent articles that look at various measures of dependency Pearson's r, Spearman's rho, and Hoeffding's D, and newer ones such as Distance Correlation and Maximal Information Coefficient.
+[Comparing Measures of Dependency](../docs/CorrelationComparison.pdf)     A summary of relatively recent articles that look at various measures of dependency Pearson's r, Spearman's rho, and Hoeffding's D, and newer ones such as Distance Correlation and Maximal Information Coefficient.
 
-[R for Social Science](docs/RSocialScience.pdf)   This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).
+[R for Social Science](../docs/RSocialScience.pdf)   This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).
 
 
 
@@ -41,4 +41,4 @@ As of Spring 2016. Primary researcher in parenthesis.
  
 Introduction to R     An attempt to orient newcomers to programming in R and make sure they understand what they are getting into. The focus is on getting started quickly with basic operations and knowing how to get help to become self-sufficient as easily as possible. While this assumes no programming background in particular, I will possibly be adding a course for an intro to R that assumes programming experience. Older pdf link.
 
-[Literate Statistical Programming](docs/RDA_intro.pdf)     A presentation on literate programming and reproducible research. Introduces key concepts with demonstration via Rstudio using markdown, LaTeX, R etc.
+[Literate Statistical Programming](../docs/RDA_intro.pdf)     A presentation on literate programming and reproducible research. Introduces key concepts with demonstration via Rstudio using markdown, LaTeX, R etc.
