@@ -4,7 +4,7 @@ title: Code
 subtitle:
 ---
 
-I'll try to organize my github files here.
+I try to organize my github files here.  The vast majority of these code snippets are conceptual demonstrations of more complicated models. Still in progress of migration.
 
 ## Model Fitting
 
@@ -57,13 +57,15 @@ mixed model with beta response [(Stan)](https://github.com/mclark--/Miscellaneou
 [EM state space model](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20for%20state%20space%20unobserved%20components.R)
 
 ### Curvy: 
-- Gaussian processses
+#### Gaussian processses
+
 [Gaussian Process noisy](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/gp%20Examples/gaussianprocessNoisy.R),
 [Gaussian Process noise-free](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/gp%20Examples/gaussianprocessNoiseFree.R), 
 [reproducing kernel hilbert space regression](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/RKHSReg/RKHSReg.md)
 [gaussian process](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting//gp%20Examples/gaussianProcessStan.Rmd), ...
 
-- Additive models
+#### Additive models
+
 [cubic spline](https://github.com/mclark--/Miscellaneous-R-Code/blob/master/ModelFitting/cubicsplines.R), 
 
 ## Workshops
