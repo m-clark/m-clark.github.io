@@ -5,7 +5,6 @@ title: Resources
 
 This will be a list especially geared toward something I can point clients/researchers to
 
-<div style:'font-size=8'>
 
 # Learning Commonly Used Statistical Programs
 
@@ -63,4 +62,4 @@ For SPSS users that use the Processing macro, [all of processing models and then
 
 Revelle's site for [psychometrics](http://www.personality-project.org/r/book/)
 
-</div>
+
