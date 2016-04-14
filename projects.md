@@ -37,7 +37,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 # Workshops
 
-[Structural Equation Modeling](../docs/sem.html)
+[Structural Equation Modeling](../docs/sem.html) This document regards a recent workshop given on structural equation modeling.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the SEM 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [lavaan](http://lavaan.ugent.be/) package.
 
 [Ceci n’est pas une %>%](https://htmlpreview.github.io/?https://github.com/mclark--/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
  
