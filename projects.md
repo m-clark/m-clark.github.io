@@ -37,6 +37,8 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 # Workshops
 
+[Structural Equation Modeling](../docs/index.md)
+
 [Ceci n’est pas une %>%](https://htmlpreview.github.io/?https://github.com/mclark--/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
  
 Introduction to R     An attempt to orient newcomers to programming in R and make sure they understand what they are getting into. The focus is on getting started quickly with basic operations and knowing how to get help to become self-sufficient as easily as possible. While this assumes no programming background in particular, I will possibly be adding a course for an intro to R that assumes programming experience. Older pdf link.
