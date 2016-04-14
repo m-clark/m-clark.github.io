@@ -32,7 +32,7 @@ CSCAR Consultant Michael Clark's Intro notes
 
 # Python
 
-[Statsmodels](http://www.statsmodels.org/stable/index.html) Standard stats models in Python.
+[Statsmodels](http://www.statsmodels.org/stable/index.html) Standard statistical models in Python.
 
 [Scikit-learn](http://scikit-learn.org/stable/)  Simple and efficient tools for data mining and data analysis.
 
