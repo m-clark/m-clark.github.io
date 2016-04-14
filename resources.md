@@ -1,9 +1,10 @@
 ---
 layout: page
+toc: true
 title: Resources
 ---
 
-This will be a list especially geared toward something I can point clients/researchers to.  It is very early and only contains stuff I send link
+This will be a list especially geared toward something I can point clients/researchers to.  It is very much in the early stages, but I will probably try to keep it brief anyway so that it can be quickly and lightly perused.
 
 
 # Learning Commonly Used Statistical Programs
@@ -24,15 +25,18 @@ My Intro notes
 ## Specific techniques and tools
 
 [Use R series](http://www.springer.com/series/6991): for umich folks, this is electronically [available](http://mirlyn.lib.umich.edu/Search/Home?lookfor=%22%20Use%20R!%22&type=series)
+
 [Awesome R](https://github.com/qinwf/awesome-R) A notably lengthy 'awesome' list for R stuff, in case you have an afternoon to spare.  Essentially a complement of [CRAN Task Views](https://cran.r-project.org/web/views/).
 
 ## Misc
 
-[RSeek](http://rseek.org/)
-[Rbloggers](http://www.r-bloggers.com/)  Tons of blogs about R.
-[Ropensci](https://ropensci.org/) Packages for Open Science.
-[Hadleyverse](http://barryrowlingson.github.io/hadleyverse/) A nice summary.
+[RSeek](http://rseek.org/) R specific search engine.
 
+[Rbloggers](http://www.r-bloggers.com/)  Tons of blogs about R.
+
+[Ropensci](https://ropensci.org/) Packages for Open Science.
+
+[Hadleyverse](http://barryrowlingson.github.io/hadleyverse/) A nice summary.
 
 
 
@@ -55,7 +59,7 @@ My Intro notes
 # Mplus
 [Mplus forums](https://www.statmodel.com/cgi-bin/discus/discus.cgi)
 
-For SPSS users that use the Processing macro, [all of processing models and then some in Mplus](http://offbeat.group.shef.ac.uk/FIO/mplusmedmod.htm ) (and hence, lavaan in R)
+For SPSS users that use the Processing macro, [all of processing models and then some in Mplus syntax](http://offbeat.group.shef.ac.uk/FIO/mplusmedmod.htm ) (and hence, lavaan in R)
 
 
 # Programming (general)
@@ -66,5 +70,7 @@ For SPSS users that use the Processing macro, [all of processing models and then
 
 ## SEM/psychometrics
 Revelle's site for [psychometrics](http://www.personality-project.org/r/book/)
+
+[SEM Workshop notes](http://mclark--.github.io/docs/sem/) (mostly using lavaan)
 
 ## Mixed Models
