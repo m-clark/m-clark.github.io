@@ -37,7 +37,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 # Workshops
 
-[Structural Equation Modeling](../docs/index.md)
+[Structural Equation Modeling](../docs/sem.html)
 
 [Ceci n’est pas une %>%](https://htmlpreview.github.io/?https://github.com/mclark--/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
  
