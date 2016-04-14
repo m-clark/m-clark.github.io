@@ -3,7 +3,7 @@ layout: page
 title: Resources
 ---
 
-This will be a list especially geared toward something I can point researchers to
+This will be a list especially geared toward something I can point clients/researchers to
 
 <div style:'font-size=8'>
 
@@ -24,7 +24,7 @@ My Intro notes
 
 [Rbloggers](http://www.r-bloggers.com/)  Tons of blogs about R.
 
-[Awesome R](https://github.com/qinwf/awesome-R) A notably too lenghty awesome list for R stuff, in case you have an afternoon to spare.
+[Awesome R](https://github.com/qinwf/awesome-R) A notably lengthy 'awesome' list for R stuff, in case you have an afternoon to spare.  Essentially a complement of [CRAN Task Views](https://cran.r-project.org/web/views/).
 
 [Swirl](http://swirlstats.com/) Learn R in R, interactively.
 
