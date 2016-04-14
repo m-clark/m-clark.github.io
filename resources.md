@@ -3,33 +3,37 @@ layout: page
 title: Resources
 ---
 
-This will be a list especially geared toward something I can point clients/researchers to
+This will be a list especially geared toward something I can point clients/researchers to.  It is very early and only contains stuff I send link
 
 
 # Learning Commonly Used Statistical Programs
 
-<span class="">[UCLA ATS](http://www.ats.ucla.edu/stat/)</span>: While somewhat dated in appearance, this has been a good resource for those starting out with statistical programming, and has been for a very long time.
+[UCLA ATS](http://www.ats.ucla.edu/stat/): While somewhat dated in appearance, this has been a good resource for those starting out with statistical programming, and has been for a very long time.
 
-<span class="">[princeton dss](http://libguides.princeton.edu/dss)</span>: a similar resource.
+[princeton dss](http://libguides.princeton.edu/dss): a similar resource.
 
 # R
+
+## Learning
 [R example repository](http://www.uni-kiel.de/psychologie/rexrepos/)
-
-My Intro notes
-
-[RSeek](http://rseek.org/)
-
-[Use R series](http://www.springer.com/series/6991): for umich folks, this is electronically [available](http://mirlyn.lib.umich.edu/Search/Home?lookfor=%22%20Use%20R!%22&type=series)
-
-[Rbloggers](http://www.r-bloggers.com/)  Tons of blogs about R.
-
-[Awesome R](https://github.com/qinwf/awesome-R) A notably lengthy 'awesome' list for R stuff, in case you have an afternoon to spare.  Essentially a complement of [CRAN Task Views](https://cran.r-project.org/web/views/).
 
 [Swirl](http://swirlstats.com/) Learn R in R, interactively.
 
-[Ropensci](https://ropensci.org/) Packages for Open Science.
+My Intro notes
 
+## Specific techniques and tools
+
+[Use R series](http://www.springer.com/series/6991): for umich folks, this is electronically [available](http://mirlyn.lib.umich.edu/Search/Home?lookfor=%22%20Use%20R!%22&type=series)
+[Awesome R](https://github.com/qinwf/awesome-R) A notably lengthy 'awesome' list for R stuff, in case you have an afternoon to spare.  Essentially a complement of [CRAN Task Views](https://cran.r-project.org/web/views/).
+
+## Misc
+
+[RSeek](http://rseek.org/)
+[Rbloggers](http://www.r-bloggers.com/)  Tons of blogs about R.
+[Ropensci](https://ropensci.org/) Packages for Open Science.
 [Hadleyverse](http://barryrowlingson.github.io/hadleyverse/) A nice summary.
+
+
 
 
 # Python
@@ -60,6 +64,7 @@ For SPSS users that use the Processing macro, [all of processing models and then
 # Statistics
 [Cross-validated](http://stats.stackexchange.com/)
 
+## SEM/psychometrics
 Revelle's site for [psychometrics](http://www.personality-project.org/r/book/)
 
-
+## Mixed Models
