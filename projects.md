@@ -23,7 +23,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 [Last Statements of the Texas Executed](http://micl.shinyapps.io/texEx/texEx.Rmd)     A demonstration of both text analysis and literate programming/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
 
-[Bayesian Basics](../docs/IntroBayes.pdf)     This serves as a conceptual introduction to Bayesian modeling with examples using R, Stan, and to a lesser extent, BUGS and JAGS.
+[Bayesian Basics](../docs/IntroBayes.html)     This serves as a conceptual introduction to Bayesian modeling with examples using R, Stan, and to a lesser extent, BUGS and JAGS.
 
 [Generalized Additive Models](../docs/GAMS.pdf)     An introduction to generalized additive models with an emphasis on generalization from familiar linear models and using the mgcv package in R.
 
