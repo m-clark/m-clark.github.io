@@ -27,6 +27,8 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 [Generalized Additive Models](../docs/GAMS.pdf)     An introduction to generalized additive models with an emphasis on generalization from familiar linear models and using the mgcv package in R.
 
+[Mixed Models Overview](../docs/mixedModels.html)  An overview that introduces mixed models for those with varying technical/statistical backgrounds. 
+
 [Introduction to Machine Learning](../docs/mlcrash.pdf)     A gentle introduction to machine learning concepts with some application in R.
 
 [Comparing Measures of Dependency](../docs/CorrelationComparison.pdf)     A summary of relatively recent articles that look at various measures of dependency Pearson's r, Spearman's rho, and Hoeffding's D, and newer ones such as Distance Correlation and Maximal Information Coefficient.
