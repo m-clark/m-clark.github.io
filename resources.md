@@ -71,6 +71,6 @@ For SPSS users that use the Processing macro, [all of processing models and then
 ## SEM/psychometrics
 Revelle's site for [psychometrics](http://www.personality-project.org/r/book/)
 
-[SEM Workshop notes](http://mclark--.github.io/docs/sem/) (mostly using lavaan)
+[SEM Workshop notes](http://m-clark.github.io/docs/sem/) (mostly using lavaan)
 
 ## Mixed Models
