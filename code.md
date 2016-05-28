@@ -71,6 +71,8 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 
 ## Workshops
 
+I may put workshop related code here at some point.
+
 
 ## Programming Shenanigans
 

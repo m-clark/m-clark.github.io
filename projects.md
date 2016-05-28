@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Projects
-subtitle:
+subtitle: test
 ---
 
 
@@ -17,32 +17,52 @@ As of Spring 2016. Primary researcher in parenthesis.
 
 [Sleep Disorders in Youth after Adenotonsillectomy](https://www.researchgate.net/profile/Ronald_Chervin) (Ronald Chervin)
 
-
-
 # Technical Documents
 
-[Last Statements of the Texas Executed](http://micl.shinyapps.io/texEx/texEx.Rmd)     A demonstration of both text analysis and literate programming/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
+<div itemscope itemtype ="http://schema.org/ScholarlyArticle">
+[<span itemprop="name">Last Statements of the Texas Executed</span>](http://micl.shinyapps.io/texEx/texEx.Rmd)     <span itemprop="description">A demonstration of both <span itemprop="keywords">text analysis</span> and <span itemprop="keywords">literate programming</span>/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.</span>
+</div>
 
-[Bayesian Basics](../docs/IntroBayes.html)     This serves as a conceptual introduction to Bayesian modeling with examples using R, Stan, and to a lesser extent, BUGS and JAGS.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Bayesian Basics</span>](../docs/IntroBayes.html)     <span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span>, <span itemprop="keywords">Stan</span>, and to a lesser extent, <span itemprop="keywords">BUGS</span> and <span itemprop="keywords">JAGS</span>.</span>
+</div>
 
-[Generalized Additive Models](../docs/GAMS.pdf)     An introduction to generalized additive models with an emphasis on generalization from familiar linear models and using the mgcv package in R.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAMS.pdf)     <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.</span>
+</div>
 
-[Mixed Models Overview](../docs/mixedModels.html)  An overview that introduces mixed models for those with varying technical/statistical backgrounds. 
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels.html)  <span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span> 
+</div>
 
-[Introduction to Machine Learning](../docs/mlcrash.pdf)     A gentle introduction to machine learning concepts with some application in R.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.</span>
+</div>
 
-[Comparing Measures of Dependency](../docs/CorrelationComparison.pdf)     A summary of relatively recent articles that look at various measures of dependency Pearson's r, Spearman's rho, and Hoeffding's D, and newer ones such as Distance Correlation and Maximal Information Coefficient.
+<div itemscope itemtype ="http://schema.org/ScholarlyArticle">
+[<span itemprop="name">Comparing Measures of Dependency</span>](../docs/CorrelationComparison.pdf)     <span itemprop="description">A summary of relatively recent articles that look at various measures of dependency <span itemprop="keywords">Pearson's r</span>, <span itemprop="keywords">Spearman's rho</span>, and <span itemprop="keywords">Hoeffding's D</span>, and newer ones such as <span itemprop="keywords">Distance Correlation</span> and <span itemprop="keywords">Maximal Information Coefficient</span>.</span>
+</div>
 
-[R for Social Science](../docs/RSocialScience.pdf)   This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">R for Social Science</span>](../docs/RSocialScience.pdf)   <span itemprop="description">This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).</span>
+</div>
 
 
 
 # Workshops
 
-[Structural Equation Modeling](../docs/sem/) This document regards a recent workshop given on structural equation modeling.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the SEM 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [lavaan](http://lavaan.ugent.be/) package.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/) This document regards a recent workshop given on structural equation modeling.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the SEM 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [lavaan](http://lavaan.ugent.be/) package.
+<div>
 
-[Ceci n’est pas une %>%](https://htmlpreview.github.io/?https://github.com/m-clark/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
- 
-Introduction to R     An attempt to orient newcomers to programming in R and make sure they understand what they are getting into. The focus is on getting started quickly with basic operations and knowing how to get help to become self-sufficient as easily as possible. While this assumes no programming background in particular, I will possibly be adding a course for an intro to R that assumes programming experience. Older pdf link.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Ceci n’est pas une %>%</span>](https://htmlpreview.github.io/?https://github.com/m-clark/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
+</div>
 
-[Literate Statistical Programming](../docs/RDA_intro.pdf)     A presentation on literate programming and reproducible research. Introduces key concepts with demonstration via Rstudio using markdown, LaTeX, R etc.
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">R Bootcamp</span>](https://htmlpreview.github.io/?https://github.com/m-clark/r-bootcamp/master/master.html)    An afternoon workshop I hope to develop further at some point.
+</div>
+
+<div itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     A presentation on literate programming and reproducible research. Introduces key concepts with demonstration via Rstudio using markdown, LaTeX, R etc.
+</div>
