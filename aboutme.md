@@ -4,7 +4,8 @@ title: About MC
 subtitle: 
 ---
 
-<div itemscope itemtype ="http://schema.org/Person">
+<span itemscope itemtype ="http://schema.org/Person">
+
 ### Background
 
 While my interest is in statistical science, I started off majoring in [psychology](http://www.psy.tcu.edu/) and [philosophy](http://www.phil.tcu.edu/) as an undergraduate, and eventually obtained a Ph.D. in [Experimental Psychology](http://psychology.unt.edu/graduate-programs/applied-experimental-psychology). During graduate school I became interested in statistics, eventually choosing it as a concentration, and also started consulting at that time. That turned out to be a good fit for me, and I've been a analyzing data ever since.
@@ -17,4 +18,4 @@ Currently I am <span itemprop="jobTitle">Statistician</span> Lead for the [<span
 
 What drew me to the world of statistics and keeps my interest is that it frees me to engage in whatever science I like, and provides a great many tools with which to discover more about the things we humans are most interested in. I can be reached at <micl@umich.edu>. CV can be found [here](../cv.html).
 
-</div>
+</span>
