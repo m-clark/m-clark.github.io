@@ -28,7 +28,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAMS.pdf)     <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.</span>
+[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.</span> An older pdf version available [here]((../docs/GAMS.pdf).
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -39,12 +39,16 @@ As of Spring 2016. Primary researcher in parenthesis.
 [<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.</span>
 </span>
 
-<span itemscope itemtype ="http://schema.org/ScholarlyArticle">
+<span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Comparing Measures of Dependency</span>](../docs/CorrelationComparison.pdf)     <span itemprop="description">A summary of relatively recent articles that look at various measures of dependency <span itemprop="keywords">Pearson's r</span>, <span itemprop="keywords">Spearman's rho</span>, and <span itemprop="keywords">Hoeffding's D</span>, and newer ones such as <span itemprop="keywords">Distance Correlation</span> and <span itemprop="keywords">Maximal Information Coefficient</span>.</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">R for Social Science</span>](../docs/RSocialScience.pdf)   <span itemprop="description">This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).</span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Mixed Models Introduction</span>](../docs/anovamixed.html)  <span itemprop="description">A non-technical document to introduce <span itemprop="keywords">mixed models</span> for those who have used ANOVA.</span> 
 </span>
 
 
