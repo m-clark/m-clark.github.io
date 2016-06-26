@@ -28,7 +28,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.</span> An older pdf version available [here]((../docs/GAMS.pdf).
+[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.</span> An older pdf version available [here](../docs/GAMS.pdf).
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
