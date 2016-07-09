@@ -10,7 +10,7 @@ This will be a list especially geared toward something I can point clients/resea
 
 # <a name="statprograms" style="color:'#ff5503'">Learning Commonly Used Statistical Programs</a>
 
-- [UCLA ATS](http://www.ats.ucla.edu/stat/): While somewhat dated in appearance, this has long been a good resource for those starting out with statistical programming.
+- [UCLA ATS](http://www.ats.ucla.edu/stat/): This has long been a good resource for those starting out with traditional statistical programming.
 - [princeton dss](http://libguides.princeton.edu/dss): a similar resource.
 
 
@@ -21,7 +21,7 @@ This will be a list especially geared toward something I can point clients/resea
 
 - [R example repository](http://www.uni-kiel.de/psychologie/rexrepos/)
 - [Swirl](http://swirlstats.com/) Learn R in R, interactively.
-- [My Intro notes](http://m-clark.github.io/docs/R/)
+- [My Intro notes](http://m-clark.github.io/docs/introR/master.html)
 
 
 ## Specific techniques and tools
@@ -45,7 +45,7 @@ This will be a list especially geared toward something I can point clients/resea
 - [Scikit-learn](http://scikit-learn.org/stable/)  Simple and efficient tools for data mining and data analysis.
 - [Pandas](http://pandas.pydata.org/) Dealing with data in an R-like way.
 - [Compared to R for stats](http://www.kdnuggets.com/2015/05/r-vs-python-data-science.html)
-- [Data Science Series](https://github.com/kshedden/python-workshop/wiki) Kerby Sheddens series notes
+- [Workshops](http://kshedden.github.io/) Kerby Sheddens series notes
 
 
 # <a name="Stata" style="color:'#ff5503'">Stata</a>
@@ -67,7 +67,7 @@ This will be a list especially geared toward something I can point clients/resea
 
 
 # <a name="techniques" style="color:'#ff5503'">Statistical Techniques</a>
-[Cross-validated](http://stats.stackexchange.com/)
+- [Cross-validated](http://stats.stackexchange.com/)
 
 
 ## SEM/psychometrics
@@ -90,6 +90,7 @@ This will be a list especially geared toward something I can point clients/resea
 # <a name="questions" style="color:'#ff5503'">Miscellaneous common questions</a>
 
 - [Factor Analysis vs. Principal Component Analysis](http://stats.stackexchange.com/questions/1576/what-are-the-differences-between-factor-analysis-and-principal-component-analysi)
+- [Change scores vs. ANCOVA](http://m-clark.github.io/docs/lord/)
 
 
 # <a name="books" style="color:'#ff5503'">Books</a>
