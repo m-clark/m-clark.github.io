@@ -8,14 +8,14 @@ This will be a list especially geared toward something I can point clients/resea
 
 [Statistical Programs](#statprograms), [R](#R), [Python](#Python),  [Stata](#Stata), [Mplus](#Mplus), [Programming](#Programming) (general), [statistical techniques](#techniques), [commonly asked questions](#questions), [free books](#books)
 
-# <a href="statprograms" style="color:'#ff5503'">Learning Commonly Used Statistical Programs</a>
+# <a name="statprograms" style="color:'#ff5503'">Learning Commonly Used Statistical Programs</a>
 
 - [UCLA ATS](http://www.ats.ucla.edu/stat/): While somewhat dated in appearance, this has long been a good resource for those starting out with statistical programming.
 - [princeton dss](http://libguides.princeton.edu/dss): a similar resource.
 
 
 
-# <a href="R" style="color:'#ff5503'">R</a>
+# <a name="R" style="color:'#ff5503'">R</a>
 
 ## Learning
 
@@ -39,7 +39,7 @@ This will be a list especially geared toward something I can point clients/resea
 
 
 
-# <a href="Python" style="color:'#ff5503'">Python</a>
+# <a name="Python" style="color:'#ff5503'">Python</a>
 
 - [Statsmodels](http://www.statsmodels.org/stable/index.html) Standard statistical models in Python.
 - [Scikit-learn](http://scikit-learn.org/stable/)  Simple and efficient tools for data mining and data analysis.
@@ -48,25 +48,25 @@ This will be a list especially geared toward something I can point clients/resea
 - [Data Science Series](https://github.com/kshedden/python-workshop/wiki) Kerby Sheddens series notes
 
 
-# <a href="Stata" style="color:'#ff5503'">Stata</a>
+# <a name="Stata" style="color:'#ff5503'">Stata</a>
 
 - [Stata forums](http://www.statalist.org/forums)
 - [Stata blog](http://blog.stata.com/)
 
 
 
-# <a href="Mplus" style="color:'#ff5503'">Mplus</a>
+# <a name="Mplus" style="color:'#ff5503'">Mplus</a>
 - [Mplus forums](https://www.statmodel.com/cgi-bin/discus/discus.cgi)
 - For SPSS users that use the Processing macro, [all of processing models and then some in Mplus syntax](http://offbeat.group.shef.ac.uk/FIO/mplusmedmod.htm ) (and hence, lavaan in R)
 
 
 
-# <a href="Programming" style="color:'#ff5503'">Programming (general)</a>
+# <a name="Programming" style="color:'#ff5503'">Programming (general)</a>
 - [Stackoverflow](http://stackoverflow.com/) (look for specific program [tag](http://stackoverflow.com/tags))
 
 
 
-# <a href="techniques" style="color:'#ff5503'">Statistical Techniques</a>
+# <a name="techniques" style="color:'#ff5503'">Statistical Techniques</a>
 [Cross-validated](http://stats.stackexchange.com/)
 
 
@@ -87,12 +87,13 @@ This will be a list especially geared toward something I can point clients/resea
 - [Statistical Learning Glossary](http://alumni.media.mit.edu/~tpminka/statlearn/glossary/glossary.html)
 
 
-# <a href="questions" style="color:'#ff5503'">Miscellaneous common questions</a>
+# <a name="questions" style="color:'#ff5503'">Miscellaneous common questions</a>
 
 - [Factor Analysis vs. Principal Component Analysis](http://stats.stackexchange.com/questions/1576/what-are-the-differences-between-factor-analysis-and-principal-component-analysi)
 
 
-# <a href="books" style="color:'#ff5503'">Books</a>
+# <a name="books" style="color:'#ff5503'">Books</a>
 
-- [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Bible of ML.
-- [Advanced R](http://adv-r.had.co.nz/)
+- [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Bible of ML by Hastie, Tibshirani, & Friedman.
+- [Advanced R](http://adv-r.had.co.nz/)  Hadley Wickham
+- [R Packages](http://r-pkgs.had.co.nz/)  Hadley Wickham
