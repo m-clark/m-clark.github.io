@@ -66,6 +66,10 @@ As of Spring 2016. Primary researcher in parenthesis.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Getting More from RStudio</span>](https://m-clark.github.io/docs/introRstudio.html)    An afternoon talk on how to use RStudio for more than just coding.
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">R Bootcamp</span>](https://htmlpreview.github.io/?https://github.com/m-clark/r-bootcamp/master/master.html)    An afternoon workshop I hope to develop further at some point.
 </span>
 
