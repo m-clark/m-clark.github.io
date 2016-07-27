@@ -32,7 +32,7 @@ As of Spring 2016. Primary researcher in parenthesis.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels.html)  <span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span> 
+[<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  <span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span> 
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
