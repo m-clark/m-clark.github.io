@@ -58,15 +58,15 @@ As of Spring 2016. Primary researcher in parenthesis.
 # Workshops
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/) This document regards a recent workshop given on structural equation modeling.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the SEM 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [lavaan](http://lavaan.ugent.be/) package.
-<span>
-
-<span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Ceci n’est pas une %>%</span>](https://htmlpreview.github.io/?https://github.com/m-clark/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with R. A workshop that introduces some newer modes of data wrangling within R, with an eye toward visualization.
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/) This document regards a recent workshop given on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the <span itemprop="keywords">SEM</span> 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Getting More from RStudio</span>](https://m-clark.github.io/docs/introRstudio.html)    An afternoon talk on how to use RStudio for more than just coding.
+[<span itemprop="name">Ceci n’est pas une %>%</span>](https://htmlpreview.github.io/?https://github.com/m-clark/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with <span itemprop="keywords">R</span>. A workshop that introduces some newer modes of <span itemprop="keywords">data wrangling</span> within R, with an eye toward <span itemprop="keywords">visualization</span>. Focus on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">magrittr</span> packages.
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Getting More from RStudio</span>](https://m-clark.github.io/docs/introRstudio.html)    An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for more than just coding.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -74,5 +74,5 @@ As of Spring 2016. Primary researcher in parenthesis.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     A presentation on literate programming and reproducible research. Introduces key concepts with demonstration via Rstudio using markdown, LaTeX, R etc.
+[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via Rstudio using <span itemprop="keywords">Rmarkdown</span>, LaTeX, R etc.
 </span>
