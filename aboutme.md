@@ -36,4 +36,3 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 
 <span itemscope itemtype="http://schema.org/Organization"><span itemprop="name">University of Michigan</span></span>
 
-</span>
