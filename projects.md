@@ -5,7 +5,7 @@ subtitle:
 ---
 
 
-Part of my job entails analysis or consulting on various projects in differing levels of involvement. I note those here.
+Part of my job entails analysis or consulting on various projects in differing levels of involvement. I note the ones I am/was more involved with here.
 
 # Projects
 

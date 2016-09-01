@@ -23,6 +23,8 @@ This will be a list especially geared toward something I can point clients/resea
 - [Swirl](http://swirlstats.com/) Learn R in R, interactively.
 - [My Intro notes](http://m-clark.github.io/docs/introR/master.html)
 
+See the workshops page also.
+
 
 ## Specific techniques and tools
 
@@ -72,7 +74,7 @@ This will be a list especially geared toward something I can point clients/resea
 
 ## SEM/psychometrics
 - [Psychometrics](http://www.personality-project.org/r/book/) William Revelle's site
-- [SEM notes](http://m-clark.github.io/docs/sem/) (mostly using lavaan)
+- [My SEM notes](http://m-clark.github.io/docs/sem/) (mostly using lavaan)
 
 
 ## Mixed Models
@@ -84,7 +86,9 @@ This will be a list especially geared toward something I can point clients/resea
 ## Machine/Statistical Learning
 
 - [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Freely available bible of ML.
+- [Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/) Application of the above in R.
 - [Statistical Learning Glossary](http://alumni.media.mit.edu/~tpminka/statlearn/glossary/glossary.html)
+- ['Awesome list' of freebies](https://github.com/josephmisiti/awesome-machine-learning/blob/master/books.md)
 
 
 # <a name="questions" style="color:'#ff5503'">Miscellaneous common questions</a>
@@ -93,8 +97,11 @@ This will be a list especially geared toward something I can point clients/resea
 - [Change scores vs. ANCOVA](http://m-clark.github.io/docs/lord/)
 
 
-# <a name="books" style="color:'#ff5503'">Books</a>
+# <a name="books" style="color:'#ff5503'">Free Books</a>
 
 - [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Bible of ML by Hastie, Tibshirani, & Friedman.
+- [Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/) Application of the above in R.
 - [Advanced R](http://adv-r.had.co.nz/)  Hadley Wickham
 - [R Packages](http://r-pkgs.had.co.nz/)  Hadley Wickham
+- [Gaussian Processes for Machine Learning](http://www.gaussianprocess.org/gpml/) Carl Rasmussen
+- [Discrete Choice Methods with Simulation](http://eml.berkeley.edu/books/choice2.html) Kenneth Train
