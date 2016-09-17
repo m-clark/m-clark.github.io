@@ -16,15 +16,15 @@ Here you'll find (viewable) workshop slides and similar, eventually. In progress
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Ceci n’est pas une %>%</span>](https://htmlpreview.github.io/?https://github.com/m-clark/data-manipulation-in-r/blob/master/mainSlides.html)     Exploring your data with <span itemprop="keywords">R</span>. A workshop that introduces some newer modes of <span itemprop="keywords">data wrangling</span> within R, with an eye toward <span itemprop="keywords">visualization</span>. Focus on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">magrittr</span> packages.
+[<span itemprop="name">Ceci n’est pas une %>%</span>](../workshops/dplyr/mainSlides.html)     Exploring your data with <span itemprop="keywords">R</span>. A workshop that introduces some newer modes of <span itemprop="keywords">data wrangling</span> within R, with an eye toward <span itemprop="keywords">visualization</span>. Focus on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">magrittr</span> packages.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Getting More from RStudio</span>](https://m-clark.github.io/docs/introRstudio.html)    An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for more than just coding.
+[<span itemprop="name">Getting More from RStudio</span>](../docs/introRstudio.html)    An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for more than just coding.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">R Bootcamp</span>](https://htmlpreview.github.io/?https://github.com/m-clark/r-bootcamp/master/master.html)    An afternoon workshop I hope to develop further at some point.
+[<span itemprop="name">R Bootcamp</span>](../workshops/r_bootcamp/master/master.html)    An afternoon workshop I hope to develop further at some point.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
