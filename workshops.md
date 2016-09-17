@@ -24,7 +24,7 @@ Here you'll find (viewable) workshop slides and similar, eventually. In progress
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">R Bootcamp</span>](../workshops/r_bootcamp/master/master.html)    An afternoon workshop I hope to develop further at some point.
+[<span itemprop="name">R Bootcamp</span>](../workshops/r_bootcamp/master.html)    An afternoon workshop I hope to develop further at some point.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
