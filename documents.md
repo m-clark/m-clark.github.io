@@ -33,6 +33,11 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Lord's Paradox</span>](../docs/lord/index.html)     <span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.</span>
+</span>
+
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.</span>
 </span>
 
