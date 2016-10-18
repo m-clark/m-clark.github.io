@@ -33,7 +33,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Lord's Paradox</span>](../docs/lord/index.html)     <span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.</span>
+[Lord's Paradox](../docs/lord/index.html)     <span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.</span>
 </span>
 
 
