@@ -4,7 +4,7 @@ title: New and Updated
 ---
 Content added:
 
-- Update workshop slides: [Ceci n’est pas une %>% Exploring your data with R](../workshops/dplyr/mainSlides.html)
+- Update workshop slides: [Ceci n’est pas une %\>% Exploring your data with R](../workshops/dplyr/mainSlides.html)
 
 - New Doc: [<span style="font-variant:small-caps; font-style:italic;">Engaging the Web with R</span>](../docs/web/).
 
