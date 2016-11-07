@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Clustered Data</title>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta name="description" content="A comparison of various approaches to dealing with clustered data situations.">
+  <meta name="generator" content="bookdown 0.1 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Clustered Data" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  <meta name="github-repo" content="m-clark/docs" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Clustered Data" />
+  
+  <meta name="twitter:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  
+
+
+<meta name="date" content="2016-11-06">
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="generalized-estimating-equations.html">
+<link rel="next" href="summary.html">
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<script src="libs/htmlwidgets-0.7/htmlwidgets.js"></script>
+<script src="libs/datatables-binding-0.2/datatables.js"></script>
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
+<link href="libs/plotlyjs-1.16.3/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.16.3/plotly-latest.min.js"></script>
+<script src="libs/plotly-binding-4.5.2/plotly.js"></script>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="clustered.css" type="text/css" />
+</head>
+
+<body>
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="https://m-clark.github.io/docs/clustered/"><span style="font-size:150%; font-variant:small-caps; font-style:italic; color:#ff5503">Clustered Data</span></a></li>
+
+<li class="divider"></li>
+<li><a href="index.html#section"></a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#what-approach-to-use"><i class="fa fa-check"></i>What approach to use?</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#preliminaries"><i class="fa fa-check"></i>Preliminaries</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#things-to-note"><i class="fa fa-check"></i>Things to note</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="data-setup.html"><a href="data-setup.html"><i class="fa fa-check"></i>Data setup</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html"><i class="fa fa-check"></i>Ignore data dependency</a><ul>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#pros"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#cons"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html"><i class="fa fa-check"></i>Model every group</a><ul>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#pros-1"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#cons-1"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html"><i class="fa fa-check"></i>Cluster robust variances</a><ul>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#pros-2"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#cons-2"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html"><i class="fa fa-check"></i>Fixed Effects Models</a><ul>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#pros-3"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#cons-3"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html"><i class="fa fa-check"></i>Mixed Models</a><ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#pros-4"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#cons-4"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html"><i class="fa fa-check"></i>Generalized Estimating Equations</a><ul>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#pros-5"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#cons-5"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html"><i class="fa fa-check"></i>Latent Growth Curve</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#pros-6"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#cons-6"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i>Summary</a><ul>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#fixed-effects"><i class="fa fa-check"></i>Fixed Effects</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#variance-estimates"><i class="fa fa-check"></i>Variance estimates</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#conclusion"><i class="fa fa-check"></i>Conclusion</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a><ul>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#robust-se"><i class="fa fa-check"></i>Robust SE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#fixed-effects-and-panel-data-models"><i class="fa fa-check"></i>Fixed effects and ‘panel’ data models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#mixed-models-1"><i class="fa fa-check"></i>Mixed models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#gee"><i class="fa fa-check"></i>GEE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#growth-curve-models"><i class="fa fa-check"></i>Growth Curve Models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#comparisonissues"><i class="fa fa-check"></i>Comparison/Issues</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://m-clark.github.io" target="blank" style="font-size:150%; font-variant:small-caps; color:#ff5500">Michael Clark</a></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank" style="font-size:75%;">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"><span style="font-size:200%; font-variant:small-caps; font-style:italic; color:#1e90ff">Clustered Data</span></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="latent-growth-curve" class="section level1">
+<h1>Latent Growth Curve</h1>
+<p>An alternative approach to mixed models considers the random effects as <span class="emph">latent variables</span> with the outcome at each time point an indicator for the latent variable. I have details <a href="https://m-clark.github.io/docs/sem">elsewhere</a>, but I want to explore this as it is a commonly used technique in the social sciences, especially psychology. <span class="emph">Latent Growth Curve Models</span> are a special case of <span class="emph">structural equation modeling</span>, a highly flexible tool that can incorporate latent variables, indirect effects, multiple outcomes etc. Growth curve models are actually somewhat irregular SEM in the way that they are specified, but for our purposes, we only want to see how the approach works and compare it to previous methods.</p>
+<p>The first thing is that the data has to be in <em>wide</em> format, such that we have one column per time point, and thus only one row per individual. Once the data is ready we specify the model syntax. By default, the SEM approach also assumes unequal variances across time, so to make it more comparable, we fix that value to be constant. We’ll use <span class="pack">lavaan</span> to estimate the model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dwide =<span class="st"> </span><span class="kw">spread</span>(d, <span class="dt">key=</span>time, <span class="dt">value=</span>y, <span class="dt">sep=</span><span class="st">&#39;_&#39;</span>) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">treatment =</span> treatment==<span class="st">&#39;treatment&#39;</span>)  <span class="co"># otherwise converted to numeric directly as 1-2 instead of 1-0</span>
+<span class="kw">head</span>(dwide)</code></pre></div>
+<pre><code>  treatment id     time_0    time_1    time_2     time_3
+1     FALSE  1  0.1760974 0.6928733 0.1920017 -0.2205356
+2     FALSE  2  1.4265781 1.6607311 1.2515623  2.9685755
+3     FALSE  3 -0.1383776 0.8689109 1.2446484  2.9954976
+4     FALSE  4  2.0575643 1.7831405 1.6413706  1.7078853
+5     FALSE  5  0.9899045 1.7892770 1.7883325  2.4579697
+6     FALSE  6  0.6079163 0.1161267 0.6956824  0.8326176</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">growthmod_syntax =<span class="st"> &quot;</span>
+<span class="st"># model for the intercept and slope latent variables</span>
+<span class="st">  int   =~ 1*time_0 + 1*time_1 + 1*time_2 + 1*time_3</span>
+<span class="st">  slope =~ 0*time_0 + 1*time_1 + 2*time_2 + 3*time_3</span>
+
+<span class="st"># cluster-level effect</span>
+<span class="st">  int ~ treatment</span>
+
+<span class="st"># intercept-slope correlation</span>
+<span class="st">  int ~~ slope</span>
+
+
+<span class="st"># fix to equal variances (parameter &#39;res&#39;)</span>
+<span class="st">  time_0 ~~ res*time_0</span>
+<span class="st">  time_1 ~~ res*time_1</span>
+<span class="st">  time_2 ~~ res*time_2</span>
+<span class="st">  time_3 ~~ res*time_3</span>
+<span class="st">&quot;</span>
+
+<span class="kw">library</span>(lavaan)
+growth_mod =<span class="st"> </span><span class="kw">growth</span>(growthmod_syntax, <span class="dt">data=</span>dwide)
+<span class="kw">summary</span>(growth_mod, <span class="dt">standardized=</span>T)</code></pre></div>
+<pre><code>lavaan (0.5-22) converged normally after  27 iterations
+
+  Number of observations                          2500
+
+  Estimator                                         ML
+  Minimum Function Test Statistic              234.733
+  Degrees of freedom                                11
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Standard Errors                             Standard
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  int =~                                                                
+    time_0            1.000                               1.048    0.896
+    time_1            1.000                               1.048    0.931
+    time_2            1.000                               1.048    0.863
+    time_3            1.000                               1.048    0.742
+  slope =~                                                              
+    time_0            0.000                               0.000    0.000
+    time_1            1.000                               0.394    0.350
+    time_2            2.000                               0.788    0.648
+    time_3            3.000                               1.182    0.836
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  int ~                                                                 
+    treatment        -0.434    0.041  -10.686    0.000   -0.414   -0.207
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+ .int ~~                                                                
+    slope            -0.128    0.011  -11.522    0.000   -0.317   -0.317
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .time_0            0.000                               0.000    0.000
+   .time_1            0.000                               0.000    0.000
+   .time_2            0.000                               0.000    0.000
+   .time_3            0.000                               0.000    0.000
+   .int               0.137    0.030    4.553    0.000    0.131    0.131
+    slope             0.509    0.009   55.635    0.000    1.291    1.291
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .time_0   (res)    0.269    0.005   50.000    0.000    0.269    0.197
+   .time_1   (res)    0.269    0.005   50.000    0.000    0.269    0.212
+   .time_2   (res)    0.269    0.005   50.000    0.000    0.269    0.182
+   .time_3   (res)    0.269    0.005   50.000    0.000    0.269    0.135
+   .int               1.052    0.035   29.817    0.000    0.957    0.957
+    slope             0.155    0.006   25.828    0.000    1.000    1.000</code></pre>
+<p>The <code>Intercepts:</code> section of the output shows what would be the fixed effects in the mixed model, and in this case, they are also ‘intercepts’ in this latent variable approach, so that is why they are named as such. The Regression of <code>i</code> on treatment depicts the treatment effect, and will make more sense to those who come to mixed models from the <span class="emph">multilevel modeling</span> literature. If you go back to the model depiction for the mixed model, this model more explicitly denotes <span class="math inline">\(\beta_{0c} = \beta_0 + \beta_2*\textrm{Treatment} + \gamma_c\)</span>. The <code>res</code> parameter is akin to residual variance, and is roughly equivalent to the square of the residual standard deviation in the mixed model output. The above model does not allow for correlated residuals, though this is possible<a href="#fn15" class="footnoteRef" id="fnref15"><sup>15</sup></a>.</p>
+<p>The primary point here is not to precisely reproduce the correct model but to show the identity between the mixed model and the latent growth curve approach. Proper specification will lead to identical results. The following creates a mixed model that is the equivalent.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mixed_mod_nocorr =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="st"> </span>time +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">random=</span>~<span class="dv">1</span>+time|id, <span class="dt">method=</span><span class="st">&quot;ML&quot;</span>)</code></pre></div>
+<table style="width:97%;">
+<caption>Fixed effects: y ~ time + treatment</caption>
+<colgroup>
+<col width="34%" />
+<col width="11%" />
+<col width="16%" />
+<col width="6%" />
+<col width="13%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Value</th>
+<th align="center">Std.Error</th>
+<th align="center">DF</th>
+<th align="center">t-value</th>
+<th align="center">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">0.1372</td>
+<td align="center">0.03015</td>
+<td align="center">7499</td>
+<td align="center">4.552</td>
+<td align="center">5.395e-06</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>time</strong></td>
+<td align="center">0.5086</td>
+<td align="center">0.009142</td>
+<td align="center">7499</td>
+<td align="center">55.63</td>
+<td align="center">0</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>treatmenttreatment</strong></td>
+<td align="center">-0.4341</td>
+<td align="center">0.04063</td>
+<td align="center">2498</td>
+<td align="center">-10.68</td>
+<td align="center">4.351e-26</td>
+</tr>
+</tbody>
+</table>
+<table style="width:53%;">
+<caption>Standardized Within-Group Residuals</caption>
+<colgroup>
+<col width="9%" />
+<col width="11%" />
+<col width="12%" />
+<col width="9%" />
+<col width="9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Min</th>
+<th align="center">Q1</th>
+<th align="center">Med</th>
+<th align="center">Q3</th>
+<th align="center">Max</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">-3.578</td>
+<td align="center">-0.5069</td>
+<td align="center">0.005247</td>
+<td align="center">0.5049</td>
+<td align="center">3.276</td>
+</tr>
+</tbody>
+</table>
+<table style="width:83%;">
+<caption>Linear mixed-effects model fit by maximum likelihood : y ~ time + treatment</caption>
+<colgroup>
+<col width="12%" />
+<col width="20%" />
+<col width="12%" />
+<col width="37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Observations</th>
+<th align="center">Groups</th>
+<th align="center">Log-restricted-likelihood</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>id</strong></td>
+<td align="center">10000</td>
+<td align="center">2500</td>
+<td align="center">-12732</td>
+</tr>
+</tbody>
+</table>
+<table style="width:56%;">
+<colgroup>
+<col width="25%" />
+<col width="15%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Variance</th>
+<th align="center">StdDev</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">1.0517588</td>
+<td align="center">1.0255529</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>time</strong></td>
+<td align="center">0.1551120</td>
+<td align="center">0.3938426</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>Residual</strong></td>
+<td align="center">0.2689193</td>
+<td align="center">0.5185743</td>
+</tr>
+</tbody>
+</table>
+<div id="pros-6" class="section level2">
+<h2>Pros</h2>
+<ul>
+<li>Can be utilized on less data than typical SEM</li>
+<li>Very efficient estimation</li>
+<li>Can deal with very complex models, including mediation, parallel processes etc.</li>
+</ul>
+</div>
+<div id="cons-6" class="section level2">
+<h2>Cons</h2>
+<ul>
+<li>Tedious to specify even the simplest of models</li>
+<li>Very tedious to specify even common models</li>
+<li>Even worse to get into correlated residuals</li>
+<li>More complex cluster structure is not dealt with well (if at all)<a href="#fn16" class="footnoteRef" id="fnref16"><sup>16</sup></a></li>
+<li>Assumes balanced time points</li>
+<li>Doesn’t deal with many time points well (if also time-varying covariates especially)</li>
+</ul>
+<p>Gist: Growth curve models are very flexible, but they are also problematic simply because they are from the SEM world, which is one where models are notoriously misapplied. Furthermore, there are no common uses of growth curve models that would not be more easily implemented in one of several R packages<a href="#fn17" class="footnoteRef" id="fnref17"><sup>17</sup></a> and various other languages and statistical programs. While I find the latent variable interpretation very much intriguing, I personally cannot find a reason for the latent variable approach as something I’d normally consider.</p>
+
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="15">
+<li id="fn15"><p>See my LGC chapter in this <a href="https://m-clark.github.io/docs/sem">SEM document</a>. Once you see it there you’ll know why I did not do so here.<a href="latent-growth-curve.html#fnref15">↩</a></p></li>
+<li id="fn16"><p>MPlus has <a href="https://www.statmodel.com/download/handouts/MuthenV7Part3.pdf">recently</a> incorporated the ability to handle crossed random effects (and see example 9.24 in the version 7 manual), but I have no idea how they work in realistic situations with potentially many, possibly time-varying, covariates, and it’s actually done with their multilevel approach rather than the LGC we’ve been discussing. Furthermore, it requires the Bayesian estimator, which, if you’re going that route you might as well use <span class="pack">rstan</span>, <span class="pack">rjags</span> or similar and have a lot more utility (and clarity) at your disposal. For tools like <span class="pack">lme4</span> and similar, incorporating crossed random effects are no more difficult than other situations, i.e. are 1 line of code, while you’d be debugging the MPlus output for days.<a href="latent-growth-curve.html#fnref16">↩</a></p></li>
+<li id="fn17"><p>See the <span class="pack">mediation</span> package for mediation with mixed models, <span class="pack">flexMix</span> for growth mixture models, Bayesian approaches for parallel processes etc.<a href="latent-growth-curve.html#fnref17">↩</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="generalized-estimating-equations.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="summary.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"facebook": false,
+"twitter": false,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": false,
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

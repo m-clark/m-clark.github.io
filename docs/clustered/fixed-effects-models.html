@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Clustered Data</title>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta name="description" content="A comparison of various approaches to dealing with clustered data situations.">
+  <meta name="generator" content="bookdown 0.1 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Clustered Data" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  <meta name="github-repo" content="m-clark/docs" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Clustered Data" />
+  
+  <meta name="twitter:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  
+
+
+<meta name="date" content="2016-11-06">
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="cluster-robust-variances.html">
+<link rel="next" href="mixed-models.html">
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<script src="libs/htmlwidgets-0.7/htmlwidgets.js"></script>
+<script src="libs/datatables-binding-0.2/datatables.js"></script>
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
+<link href="libs/plotlyjs-1.16.3/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.16.3/plotly-latest.min.js"></script>
+<script src="libs/plotly-binding-4.5.2/plotly.js"></script>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="clustered.css" type="text/css" />
+</head>
+
+<body>
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="https://m-clark.github.io/docs/clustered/"><span style="font-size:150%; font-variant:small-caps; font-style:italic; color:#ff5503">Clustered Data</span></a></li>
+
+<li class="divider"></li>
+<li><a href="index.html#section"></a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#what-approach-to-use"><i class="fa fa-check"></i>What approach to use?</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#preliminaries"><i class="fa fa-check"></i>Preliminaries</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#things-to-note"><i class="fa fa-check"></i>Things to note</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="data-setup.html"><a href="data-setup.html"><i class="fa fa-check"></i>Data setup</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html"><i class="fa fa-check"></i>Ignore data dependency</a><ul>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#pros"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#cons"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html"><i class="fa fa-check"></i>Model every group</a><ul>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#pros-1"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#cons-1"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html"><i class="fa fa-check"></i>Cluster robust variances</a><ul>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#pros-2"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#cons-2"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html"><i class="fa fa-check"></i>Fixed Effects Models</a><ul>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#pros-3"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#cons-3"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html"><i class="fa fa-check"></i>Mixed Models</a><ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#pros-4"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#cons-4"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html"><i class="fa fa-check"></i>Generalized Estimating Equations</a><ul>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#pros-5"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#cons-5"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html"><i class="fa fa-check"></i>Latent Growth Curve</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#pros-6"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#cons-6"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i>Summary</a><ul>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#fixed-effects"><i class="fa fa-check"></i>Fixed Effects</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#variance-estimates"><i class="fa fa-check"></i>Variance estimates</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#conclusion"><i class="fa fa-check"></i>Conclusion</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a><ul>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#robust-se"><i class="fa fa-check"></i>Robust SE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#fixed-effects-and-panel-data-models"><i class="fa fa-check"></i>Fixed effects and ‘panel’ data models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#mixed-models-1"><i class="fa fa-check"></i>Mixed models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#gee"><i class="fa fa-check"></i>GEE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#growth-curve-models"><i class="fa fa-check"></i>Growth Curve Models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#comparisonissues"><i class="fa fa-check"></i>Comparison/Issues</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://m-clark.github.io" target="blank" style="font-size:150%; font-variant:small-caps; color:#ff5500">Michael Clark</a></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank" style="font-size:75%;">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"><span style="font-size:200%; font-variant:small-caps; font-style:italic; color:#1e90ff">Clustered Data</span></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="fixed-effects-models" class="section level1">
+<h1>Fixed Effects Models</h1>
+<p><span class="emph">Fixed Effects</span> (FE) models are a terribly named approach to dealing with clustered data, but in the simplest case, serve as a contrast to the random effects (RE) approach in which there are only random intercepts<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a>. Despite the nomenclature, there is mainly one key difference between these models and the ‘mixed’ models we discuss. Both allow a (random) cluster-specific effect to be added to model, but the FE approach allows that effect to correlate with the predictors, while the RE does not (by default). In practice however, this means that they may end up being quite different conceptual models as well. As with cluster robust standard errors, economists, and again those trained in that fashion, have historically preferred these models. In my experience they are rarely used in other disciplines.</p>
+<p>First, let us understand this cluster-specific effect. In the standard regression setting we have a basic intercept, while here, each cluster will provide a nudge above or below that overall effect. Consider the following model (ignoring treatment for now):</p>
+<p><span class="math display">\[ y  = \textrm{Int} + \textrm{ClusterEffect} + b*\mathrm{time} + \epsilon  \]</span></p>
+<p>The cluster effect is different from one cluster to the next, but constant for a given cluster. One way we could perform such a model is just to include <code>id</code> as a predictor, thereby getting a unique estimate for each cluster added to the model. In other words, we can also see the situation as if one had simply created a dummy variable for <code>id</code> and conducted a standard linear model. This is in fact how one can think of the FE model, though where the cluster-specific effects are assumed constants to be estimated, and in the past these models were sometimes referred to as least squares dummy variable (LSDV) regression models<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a>. If you actually run the LSDV model, the statistical results for time will be identical.</p>
+<p>Why would we be worried about the potential correlation between the cluster-specific effects and the model covariates? In typical social science and economic data it’s probably likely that unspecified cluster level effects might have some correlation with the individual level covariates. This leads to inconsistent estimates in the RE approach, and as such the FE might be used instead.</p>
+<p>In the following we use the <span class="pack">plm</span> package to estimate the FE model. I highly recommend reading the excellent <a href="https://cran.r-project.org/web/packages/plm/vignettes/plm.pdf">vignette</a> for this package if you are one of those econometrically trained folk new to R or the mixed model approach, or conversely, other folk wishing to understand the econometric perspective.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">FE_mod =<span class="st"> </span><span class="kw">plm</span>(y ~<span class="st"> </span><span class="kw">as.numeric</span>(time) +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">index=</span><span class="st">&#39;id&#39;</span>, <span class="dt">model=</span><span class="st">&#39;within&#39;</span>)
+<span class="kw">summary</span>(FE_mod)</code></pre></div>
+<pre><code>Oneway (individual) effect Within Model
+
+Call:
+plm(formula = y ~ as.numeric(time) + treatment, data = d, model = &quot;within&quot;, 
+    index = &quot;id&quot;)
+
+Balanced Panel: n=2500, T=4, N=10000
+
+Residuals :
+    Min.  1st Qu.   Median  3rd Qu.     Max. 
+-2.66000 -0.40500  0.00265  0.40000  2.56000 
+
+Coefficients :
+                  Estimate Std. Error t-value  Pr(&gt;|t|)    
+as.numeric(time) 0.5085588  0.0064962  78.285 &lt; 2.2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Total Sum of Squares:    7188.7
+Residual Sum of Squares: 3955.8
+R-Squared:      0.44972
+Adj. R-Squared: 0.33725
+F-statistic: 6128.62 on 1 and 7499 DF, p-value: &lt; 2.22e-16</code></pre>
+<p>Note how there is no intercept or treatment effect. In this circumstance of a random intercept model, the FE model can also be seen as a ‘demeaning’ approach, were the model within a cluster is:</p>
+<p><span class="math display">\[y_i-\bar{y_i} = (X_i-\bar{X_i})\beta + (\epsilon-\bar{\epsilon_i})\]</span></p>
+<p>In other words, we subtract the mean from each covariate and response and run the model that way (this is also known as the within transformation). Note the following produces the same result, although the standard error for time is off<a href="#fn6" class="footnoteRef" id="fnref6"><sup>6</sup></a>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">d %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(id) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">ybar =</span> y-<span class="kw">mean</span>(y),
+         <span class="dt">timebar =</span> time-<span class="kw">mean</span>(time)) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">lm</span>(ybar ~<span class="st"> </span>timebar, <span class="dt">data=</span>.)</code></pre></div>
+<pre><code>
+Call:
+lm(formula = ybar ~ timebar, data = .)
+
+Coefficients:
+(Intercept)      timebar  
+  5.741e-19    5.086e-01  </code></pre>
+<p>Because of this, if something is constant within a cluster, it drops out of the model, and this includes anything that has only one observation even if the covariate is normally time-varying. So, not only do you lose the ability to model cluster level effects, though these are ‘controlled for’, you also lose data. In this we lose the treatment effect entirely, which would be completely unacceptable in most circumstances<a href="#fn7" class="footnoteRef" id="fnref7"><sup>7</sup></a>.</p>
+<p>There seem to be philosophical reasons why some prefer FE models that go beyond the practical, because I don’t understand the often rigid preference over RE models given the drawbacks. I personally have never come across a valid justification for not investigating cluster level covariates if they are available (i.e. almost always in social science, educational, economic, epidemiological and other data, and often would simply include cluster-level averages of available variables). In addition, few of the applications of FE models actually seem interested in the cluster-specific effects, in short treating the clustering as a nuisance, much like the cluster-robust standard error approach<a href="#fn8" class="footnoteRef" id="fnref8"><sup>8</sup></a>.</p>
+<div id="pros-3" class="section level2">
+<h2>Pros</h2>
+<ul>
+<li>Does not assume X and random effects are uncorrelated.</li>
+</ul>
+</div>
+<div id="cons-3" class="section level2">
+<h2>Cons</h2>
+<ul>
+<li>Ignores cluster level covariates or anything cluster constant (i.e. will almost always lose data).</li>
+<li>Doesn’t easily extend to more complex clustering structures.</li>
+<li>Less efficient that RE if RE assumption holds</li>
+<li>Technically one can do random slopes also (mentioned in passing in Greene), but nothing out there does.</li>
+<li>Awkward (my opinion) extension to GLM setting for binary and counts</li>
+<li>More will be pointed out with the mixed models</li>
+</ul>
+<p>Gist: If your goal is statistical consistency above all other considerations, this approach is for you. However, given that with mixed models we can potentially overcome the primary issue that the FE model addresses (RE correlated with covariates<a href="#fn9" class="footnoteRef" id="fnref9"><sup>9</sup></a>), this seems a difficult modeling approach to justify.</p>
+
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="4">
+<li id="fn4"><p>Actually, FE models extend beyond this but I’ve never seen the treatment in textbook presentations, nor am familiar with tools that do so aside from the latent variable approach.<a href="fixed-effects-models.html#fnref4">↩</a></p></li>
+<li id="fn5"><p>This <a href="http://www.stata.com/support/faqs/statistics/intercept-in-fixed-effects-model/">Stata note</a> highlights the distinction.<a href="fixed-effects-models.html#fnref5">↩</a></p></li>
+<li id="fn6"><p>This is due to the fact that estimation of the group means was not taken into account.<a href="fixed-effects-models.html#fnref6">↩</a></p></li>
+<li id="fn7"><p>Note that you could still get the interaction of time x treatment, which you’d definitely want to examine in the experimental longitudinal setting. In other circumstances and with numerous covariates, this may become unwieldy, and then there are the issues of when the interaction is not significant, you have no main effect to fall back on, and you’re also testing an interaction without all the component main effects.<a href="fixed-effects-models.html#fnref7">↩</a></p></li>
+<li id="fn8"><p>Still applies here, i.e. we can still use cluster robust standard errors.<a href="fixed-effects-models.html#fnref8">↩</a></p></li>
+<li id="fn9"><p>One can use aggregated values of the potentially offending covariates as cluster level covariates. For example, if we had people clustered within political district, we could use average income as a district-level covariate. Such models are sometimes referred to as hybrids, incorporating both the FE and RE approaches, but this is unwarranted. All three are simply random effects models of different kinds.<a href="fixed-effects-models.html#fnref9">↩</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="cluster-robust-variances.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="mixed-models.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"facebook": false,
+"twitter": false,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": false,
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

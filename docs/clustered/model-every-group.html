@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Clustered Data</title>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <meta name="description" content="A comparison of various approaches to dealing with clustered data situations.">
+  <meta name="generator" content="bookdown 0.1 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Clustered Data" />
+  <meta property="og:type" content="book" />
+  
+  
+  <meta property="og:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  <meta name="github-repo" content="m-clark/docs" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Clustered Data" />
+  
+  <meta name="twitter:description" content="A comparison of various approaches to dealing with clustered data situations." />
+  
+
+
+<meta name="date" content="2016-11-06">
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="ignore-data-dependency.html">
+<link rel="next" href="cluster-robust-variances.html">
+
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<script src="libs/htmlwidgets-0.7/htmlwidgets.js"></script>
+<script src="libs/datatables-binding-0.2/datatables.js"></script>
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
+<link href="libs/plotlyjs-1.16.3/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.16.3/plotly-latest.min.js"></script>
+<script src="libs/plotly-binding-4.5.2/plotly.js"></script>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="clustered.css" type="text/css" />
+</head>
+
+<body>
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="https://m-clark.github.io/docs/clustered/"><span style="font-size:150%; font-variant:small-caps; font-style:italic; color:#ff5503">Clustered Data</span></a></li>
+
+<li class="divider"></li>
+<li><a href="index.html#section"></a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#what-approach-to-use"><i class="fa fa-check"></i>What approach to use?</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#preliminaries"><i class="fa fa-check"></i>Preliminaries</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#things-to-note"><i class="fa fa-check"></i>Things to note</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="data-setup.html"><a href="data-setup.html"><i class="fa fa-check"></i>Data setup</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html"><i class="fa fa-check"></i>Ignore data dependency</a><ul>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#pros"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="ignore-data-dependency.html"><a href="ignore-data-dependency.html#cons"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html"><i class="fa fa-check"></i>Model every group</a><ul>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#pros-1"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="model-every-group.html"><a href="model-every-group.html#cons-1"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html"><i class="fa fa-check"></i>Cluster robust variances</a><ul>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#pros-2"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="cluster-robust-variances.html"><a href="cluster-robust-variances.html#cons-2"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html"><i class="fa fa-check"></i>Fixed Effects Models</a><ul>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#pros-3"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="fixed-effects-models.html"><a href="fixed-effects-models.html#cons-3"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html"><i class="fa fa-check"></i>Mixed Models</a><ul>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#pros-4"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="mixed-models.html"><a href="mixed-models.html#cons-4"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html"><i class="fa fa-check"></i>Generalized Estimating Equations</a><ul>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#pros-5"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="generalized-estimating-equations.html"><a href="generalized-estimating-equations.html#cons-5"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html"><i class="fa fa-check"></i>Latent Growth Curve</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#pros-6"><i class="fa fa-check"></i>Pros</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curve.html"><a href="latent-growth-curve.html#cons-6"><i class="fa fa-check"></i>Cons</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i>Summary</a><ul>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#fixed-effects"><i class="fa fa-check"></i>Fixed Effects</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#variance-estimates"><i class="fa fa-check"></i>Variance estimates</a></li>
+<li class="chapter" data-level="" data-path="summary.html"><a href="summary.html#conclusion"><i class="fa fa-check"></i>Conclusion</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a><ul>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#robust-se"><i class="fa fa-check"></i>Robust SE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#fixed-effects-and-panel-data-models"><i class="fa fa-check"></i>Fixed effects and ‘panel’ data models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#mixed-models-1"><i class="fa fa-check"></i>Mixed models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#gee"><i class="fa fa-check"></i>GEE</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#growth-curve-models"><i class="fa fa-check"></i>Growth Curve Models</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html#comparisonissues"><i class="fa fa-check"></i>Comparison/Issues</a></li>
+</ul></li>
+<li class="divider"></li>
+<li><a href="https://m-clark.github.io" target="blank" style="font-size:150%; font-variant:small-caps; color:#ff5500">Michael Clark</a></li>
+<li><a href="https://github.com/rstudio/bookdown" target="blank" style="font-size:75%;">Published with bookdown</a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"><span style="font-size:200%; font-variant:small-caps; font-style:italic; color:#1e90ff">Clustered Data</span></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="model-every-group" class="section level1">
+<h1>Model every group</h1>
+<p>We could also run a regression for every group. This is problematic since we would typically have so little data per group, and too many groups to make sense of. We’ll go ahead and do it anyway. What if we take the average of all the estimates?</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(nlme)
+lottalm =<span class="st"> </span><span class="kw">lmList</span>(y ~<span class="st"> </span>time |<span class="st"> </span>id, d)
+<span class="kw">colMeans</span>(<span class="kw">coef</span>(lottalm))</code></pre></div>
+<pre><code>(Intercept)        time 
+-0.07981721  0.50855877 </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">coef</span>(<span class="kw">lm</span>(y ~<span class="st"> </span>time, <span class="dt">data=</span>d, <span class="dt">x=</span>T))</code></pre></div>
+<pre><code>(Intercept)        time 
+-0.07981721  0.50855877 </code></pre>
+<p>Surprise! We get the same result as if we had simply run the standard linear model (I abbreviate this as SLiM sometimes). However, we would not get identical coefficients if the data are unbalanced, where individuals may have a different numbers of observations.</p>
+<p>In general, this is not the way we want to do things, and one of the biggest drawbacks is that we can never examine cluster level covariates, which may be of key interest, nor is there a straightforward way to do inference for this scenario. As we will see later, techniques are available that serve as a compromise between these first two alternatives of ignoring the clustering and overfitting to each cluster.</p>
+<div id="pros-1" class="section level2">
+<h2>Pros</h2>
+<ul>
+<li>None really.</li>
+</ul>
+</div>
+<div id="cons-1" class="section level2">
+<h2>Cons</h2>
+<ul>
+<li>Inefficient</li>
+<li>Overly complex</li>
+<li>Overfit at each cluster</li>
+<li>High variance in estimates at each cluster</li>
+<li>Ignores cluster level effects</li>
+</ul>
+<p>Gist: While it might be a fun exercise, there is little to be gained by this approach.</p>
+
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="ignore-data-dependency.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="cluster-robust-variances.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"facebook": false,
+"twitter": false,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": false,
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

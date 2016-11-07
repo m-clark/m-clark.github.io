@@ -22,6 +22,10 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
+[<span itemprop="name keywords">Clustered Data Situations</span>](../docs/clustered/)  <span itemprop="description">A comparison of standard models, <span itemprop="keywords">cluster robust standard errors</span>, <span itemprop="keywords">fixed effect models</span>,  <span itemprop="keywords">mixed models (random effects models)</span>, <span itemprop="keywords">generalized estimating equations (GEE)</span>, and <span itemprop="keywords">latent growth curve models</span> for dealing with clustered data (e.g. <span itemprop="keywords">longitudinal</span>, <span itemprop="keywords">hierarchical</span> etc.).</span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Mixed Models Introduction</span>](../docs/mixedModels/anovamixed.html)  <span itemprop="description">A non-technical document to introduce <span itemprop="keywords">mixed models</span> for those who have used ANOVA.</span>
 </span>
 
