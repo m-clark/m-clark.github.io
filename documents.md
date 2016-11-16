@@ -34,7 +34,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
-<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
+<span itemscope itemtype ="http://schema.org/ScholarlyArticle http://schema.org/TechArticle">
 [Lord's Paradox](../docs/lord/index.html)     <span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.</span>
 </span>
 
@@ -50,12 +50,12 @@ Here you'll find documents of varying technical degree covering things of intere
 # More Tools (esp. R)
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords" style="font-variant:small-caps; font-style:italic;">FastR</span>](../docs/fastr.html)     <span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
+[<span itemprop="name keywords" style="font-variant:small-caps;">FastR</span>](../docs/fastr.html)     <span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords" style="font-variant:small-caps; font-style:italic;">Engaging the Web with R</span>](../docs/web)     <span itemprop="description">Document regarding the use of R for <span itemprop="keywords">web scraping</span>, extracting data via an <span itemprop="keywords">API</span>, <span itemprop="keywords">interactive</span> web-based <span itemprop="keywords">visualizations</span>, and producing <span itemprop="keywords">web-ready documents</span>.  It serves as an overview of ways one might start to use R for web-based activities as opposed to a hand-on approach.</span>
+[<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     <span itemprop="description">Document regarding the use of R for <span itemprop="keywords">web scraping</span>, extracting data via an <span itemprop="keywords">API</span>, <span itemprop="keywords">interactive</span> web-based <span itemprop="keywords">visualizations</span>, and producing <span itemprop="keywords">web-ready documents</span>.  It serves as an overview of ways one might start to use R for web-based activities as opposed to a hand-on approach.</span>
 </span>
 
 

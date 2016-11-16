@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta property="og:title" content="Become a Bayesian with R &amp; Stan" />
+<meta property="og:type" content="book" />
+
+
+<meta property="og:description" content="An introduction to using R for Bayesian data analysis." />
+<meta name="github-repo" content="m-clark/Workshops" />
+
+
+<meta name="date" content="2016-11-15" />
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_CHTML-full" type="text/javascript"></script>
+
+<meta name="description" content="An introduction to using R for Bayesian data analysis.">
+
+<title>Become a Bayesian with R &amp; Stan</title>
+
+<link href="libs/tufte-css-2015.12.29/tufte.css" rel="stylesheet" />
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link rel="stylesheet" href="toc_test.css" type="text/css" />
+<link rel="stylesheet" href="notebooks.css" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="row">
+<div class="col-sm-12">
+<div id="TOC">
+<ul>
+<li><a href="index.html#home"><span style="color:transparent">Home</span></a></li>
+<li class="has-sub"><a href="01_intro.html#introduction">Introduction</a><ul>
+<li><a href="01_intro.html#outline">Outline</a></li>
+<li><a href="01_intro.html#prerequisites">Prerequisites</a></li>
+</ul></li>
+<li class="has-sub"><a href="02_key_concepts.html#key-concepts">Key Concepts</a><ul>
+<li><a href="02_key_concepts.html#distributions">Distributions</a></li>
+<li><a href="02_key_concepts.html#prior">Prior</a></li>
+<li><a href="02_key_concepts.html#likelihood">Likelihood</a></li>
+<li><a href="02_key_concepts.html#posterior">Posterior</a></li>
+<li><a href="02_key_concepts.html#p-values">P-values</a></li>
+</ul></li>
+<li class="has-sub"><a href="03_stan.html#stan">Stan</a><ul>
+<li><a href="03_stan.html#installing-stan">Installing Stan</a></li>
+<li><a href="03_stan.html#the-way-of-stanrstan">The Way of Stan/RStan</a></li>
+<li class="has-sub"><a href="03_stan.html#elements-of-a-stan-program">Elements of a Stan Program</a><ul>
+<li><a href="03_stan.html#data">Data</a></li>
+<li><a href="03_stan.html#transformed-data">Transformed Data</a></li>
+<li><a href="03_stan.html#parameters">Parameters</a></li>
+<li><a href="03_stan.html#transformed-parameters">Transformed Parameters</a></li>
+<li><a href="03_stan.html#model">Model</a></li>
+<li><a href="03_stan.html#generated-quantities">Generated Quantities</a></li>
+</ul></li>
+<li><a href="03_stan.html#using-stan">Using Stan</a></li>
+</ul></li>
+<li class="has-sub"><a href="04_R.html#r">R</a><ul>
+<li class="has-sub"><a href="04_R.html#rstan">rstan</a><ul>
+<li><a href="04_R.html#data-list">Data list</a></li>
+<li><a href="04_R.html#debug-model">Debug model</a></li>
+<li><a href="04_R.html#full-model">Full model</a></li>
+<li><a href="04_R.html#model-summary">Model summary</a></li>
+<li><a href="04_R.html#diagnostics-and-beyond">Diagnostics and beyond</a></li>
+</ul></li>
+<li><a href="04_R.html#rstanarm">rstanarm</a></li>
+<li><a href="04_R.html#brms">brms</a></li>
+<li><a href="04_R.html#rethinking">rethinking</a></li>
+<li><a href="04_R.html#summary">Summary</a></li>
+</ul></li>
+<li class="has-sub"><a href="05_extensions.html#extensions">Extensions</a><ul>
+<li><a href="05_extensions.html#r-1">R</a></li>
+<li><a href="05_extensions.html#stan-functions">Stan functions</a></li>
+<li><a href="05_extensions.html#other-frameworks">Other frameworks</a></li>
+</ul></li>
+<li><a href="1000_Conclusion.html#conclusion">Conclusion</a></li>
+<li><a href="1001_references.html#references">References</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-sm-12">
+<div id="stan" class="section level1">
+<h1>Stan</h1>
+<p><img src="D:/Documents/Work%20and%20Professional/CSCAR/Workshops/img/stan_logo.png" style="display:block; margin: 0 auto; width:25%"></p>
+<p>Stan is a modeling language for Bayesian data analysis<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> Stan 1.0 was released in 2012.</span>. The actual work is done in C++, but the Stan language specifies the necessary aspects of the model. It uses a variety of inference procedures, including standard optimization techniques commonly found elsewhere, but the primary Bayesian-specific approach regards Hamiltonian Monte Carlo<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> Originally called <em>Hybrid</em> Monte Carlo, such a name is a bit too vague for most.</span>. There are actually a number of ways in which Bayesian estimation/sampling can take place and this is one that has, like the others, advantages in some areas, and disadvantages in others<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> For many types of problems, relative to Gibbs and some other samplers, HMC will be more efficient in the sense it will take fewer iterations to describe the posterior distribution.</span>. It is however applicable in a wide variety of problems and will often do better than other approaches.</p>
+<p>To use Stan directly, one just needs to know their model intimately, which should be the case if you’re going to spend so much time in collecting, processing and analyzing data in the first place. I personally find the <em>style</em> of the Stan language clear, and it might be seen as a combination of C++ and R programming styles, though mostly the latter. The following will take you through the components of the Stan language.</p>
+<div id="installing-stan" class="section level2">
+<h2>Installing Stan</h2>
+<p>To get started with Stan (in R), one needs to install the <span class="pack">rstan</span> package. While this will proceed as with any other package, additional steps are required. First, you will need a C++ compiler, and this process will be different depending on your operating system. It won’t take much, there’s a chance you already have one even, but steps are clearly defined on the <a href="https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started">RStan wiki</a>. After going through that process, you may then install the <span class="pack">rstan</span> package and dependencies. You’ll be ready to go at that point.</p>
+</div>
+<div id="the-way-of-stanrstan" class="section level2">
+<h2>The Way of Stan/RStan</h2>
+<p>The basic workflow you’ll engage in to run a Stan program within R is as follows:</p>
+<ul>
+<li>Write the Stan program</li>
+<li>Create a data list</li>
+<li>Run a debug model to check compilation etc.</li>
+<li>Run the full model</li>
+<li>Summarize the model</li>
+<li>Check diagnostics, including posterior predictive inspection</li>
+</ul>
+<p>In this part we’ll consider the elements of the Stan program.</p>
+</div>
+<div id="elements-of-a-stan-program" class="section level2">
+<h2>Elements of a Stan Program</h2>
+<p>The following shows the primary parts of a Stan program for a standard linear model. We’ll go through each component in turn.</p>
+<pre class="stan"><code>data {                      // Data block
+  int&lt;lower=1&gt; N;           // Sample size
+  int&lt;lower=1&gt; K;           // Dimension of model matrix
+  matrix[N, K] X;           // Model Matrix
+  vector[N] y;              // Target variable
+}
+
+transformed data {          // Transformed data block.
+} 
+
+parameters {                // Parameters block
+  vector[K] beta;           // Coefficient vector
+  real&lt;lower=0&gt; sigma;      // Error scale
+}
+
+transformed parameters {    // Transformed parameters block.
+} 
+
+model {                     // Model block
+  vector[N] mu;
+  mu = X * beta;            // Creation of linear predictor
+  
+  // priors
+  beta ~ normal(0, 10);
+  sigma ~ cauchy(0, 5);     
+  
+  // likelihood
+  y ~ normal(mu, sigma);
+}
+
+generated quantities {      // Generated quantities block. 
+}</code></pre>
+<p>For a reference, the following is from the Stan manual, variables of interest and the associated blocks where they would be declared:</p>
+<table class="gmisc_table" style="border-collapse: collapse; margin-top: 1em; margin-bottom: 1em;">
+<thead>
+<tr>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+Variable Kind
+</th>
+<th style="border-bottom: 1px solid grey; border-top: 2px solid grey; text-align: center;">
+Declaration Block
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">
+modeled, unmodeled data
+</td>
+<td style="text-align: center;">
+data, transformed data
+</td>
+</tr>
+<tr>
+<td style="text-align: center;">
+modeled parameters, missing data
+</td>
+<td style="text-align: center;">
+parameters, transformed parameters
+</td>
+</tr>
+<tr>
+<td style="text-align: center;">
+unmodeled parameters
+</td>
+<td style="text-align: center;">
+data, transformed data
+</td>
+</tr>
+<tr>
+<td style="text-align: center;">
+generated quantities
+</td>
+<td style="text-align: center;">
+transformed data, transformed parameters, generated quantities
+</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+loop indices
+</td>
+<td style="border-bottom: 2px solid grey; text-align: center;">
+loop statement
+</td>
+</tr>
+</tbody>
+</table>
+<div id="data" class="section level3">
+<h3>Data</h3>
+<pre class="stan"><code>data {                      // Data block
+  int&lt;lower=1&gt; N;           // Sample size
+  int&lt;lower=1&gt; K;           // Dimension of model matrix
+  matrix[N, K] X;           // Model Matrix
+  vector[N] y;              // Target variable
+}</code></pre>
+<p>The first section is the <span class="emph">data</span> block, where we tell Stan the data it should be expecting from the data list. It is useful to put in bounds as a check on the data input, and that is what is being done between the &lt; &gt; (e.g. we should at least have a sample size of 1). The first two variables declared are N and K, both as integers. Next the code declares the model matrix and target vector respectively. As you’ll note here and for the next blocks, we declare the type and dimensions of the variable and then its name. In Stan, everything declared in one block is available to subsequent blocks, but those declared in a block may not be used in earlier blocks. Even within a block, anything declared, such as N and K, can then be used subsequently, as we did to specify dimensions.</p>
+</div>
+<div id="transformed-data" class="section level3">
+<h3>Transformed Data</h3>
+<pre class="stan"><code>transformed data {          // Transformed data block
+  vector[N] logX;
+  
+  logX = log(X);
+} </code></pre>
+<p>The <span class="emph">transformed data</span> block is where you could do such things as log or center variables and similar, i.e. you can create new data based on the input data or just in general. If you are using R though, it would almost always be easier to do those things in R first and just include them in the data list. You can also declare any unmodeled parameters here.</p>
+</div>
+<div id="parameters" class="section level3">
+<h3>Parameters</h3>
+<pre class="stan"><code>parameters {                // Parameters block
+  vector[K] beta;           // Coefficient vector
+  real&lt;lower=0&gt; sigma;      // Error scale
+}</code></pre>
+<p>The primary parameters of interest that are to be estimated go in the <span class="emph">parameters </span> block. As with the data block you can only declare these variables, you cannot make any assignments. Here we note the <span class="math inline">\(\beta\)</span> and <span class="math inline">\(\sigma\)</span> to be estimated, with a lower bound of zero on the latter. In practice you might prefer to split out the intercept or other coefficients to be modeled separately if they are on notably different scales.</p>
+</div>
+<div id="transformed-parameters" class="section level3">
+<h3>Transformed Parameters</h3>
+<pre class="stan"><code>transformed parameters {    // Transformed parameters block
+  real newpar;
+  
+  newpar = exp(oldpar);
+} </code></pre>
+<p>The <span class="emph">transformed parameters</span> block is where optional parameters of interest might be included. What might go here is fairly open, but for efficiency’s sake you will typically want to put things only of specific interest that are dependent on the parameters block. These are evaluated along with the parameters, so if they are not of special interest you can generate them in the model or generated quantities block to save time and space.</p>
+</div>
+<div id="model" class="section level3">
+<h3>Model</h3>
+<pre class="stan"><code>model {                     // Model block
+  vector[N] mu;
+  mu = X * beta;            // Creation of linear predictor
+  
+  // priors
+  beta ~ normal(0, 10);
+  sigma ~ cauchy(0, 5);     
+  
+  // likelihood
+  y ~ normal(mu, sigma);
+}
+</code></pre>
+<p>The <span class="emph">model</span> block is where your priors and likelihood are specified, along with the declaration of any variables necessary. As an example, the linear predictor is included here, as it will go towards the likelihood<label for="tufte-mn-1" class="margin-toggle">⊕</label><input type="checkbox" id="tufte-mn-1" class="margin-toggle"><span class="marginnote">The position within the model block isn’t crucial. I tend to like to do all the variable declarations at the start, but others might prefer to have them under the likelihood heading at the point they are actually used.</span>. Note that we could have instead put the linear predictor in the transformed parameters section, but this would slow down the process, and again, we’re not so interested in those specific values.</p>
+</div>
+<div id="generated-quantities" class="section level3">
+<h3>Generated Quantities</h3>
+<pre class="stan"><code>generated quantities {
+  vector[N] yhat;                // linear predictor
+  real&lt;lower=0&gt; rss;             // residual sum of squares
+  real&lt;lower=0&gt; totalss;         // total SS              
+  real Rsq;                      // Rsq
+  
+  yhat = X * beta;
+  rss = dot_self(y-mu);
+  totalss = dot_self(y);
+  Rsq = 1 - rss/totalss;
+}</code></pre>
+<p>The <span class="emph">generated quantities</span> block is a fantastical place where anything in your noggin can spring forth to life. <em>Anything</em> that you can think of that can be calculated based on the model results can be assessed here. What’s more, it will have a distribution just like everything else. The above calculates the typical R<sup>2</sup> as an example. Because of the priors, it is already ‘adjusted’, but we also have an interval estimate for it.</p>
+<p>As another example, to get a sense of how well you’re capturing the tails of the distribution for <code>y</code>, you could start by calculating your minimum mean prediction, and see how often it falls below the true minimum. From the Bayesian approach we could not only get an interval of the minimum prediction, we’d get the probability for how often it is above or below the true minimum, which is simply the proportion of samples for which this takes place. Ideally we’d like a symmetric distribution for the estimated minimum around the true minimum with no general tendency to be above or below. If it was a very high probability of being lower than the true minimum, perhaps the model over compensates for the lower tail of the distribution. If it was very low, it would perhaps signal we are not capturing lower extremes very well. We could do this for the maximum or any other value of interest.</p>
+</div>
+</div>
+<div id="using-stan" class="section level2">
+<h2>Using Stan</h2>
+<p>Now that you have a Stan program in place, you’re ready to proceed.</p>
+
+</div>
+</div>
+<p style="text-align: center;">
+<a href="02_key_concepts.html"><button class="btn btn-default">Previous</button></a>
+<a href="04_R.html"><button class="btn btn-default">Next</button></a>
+</p>
+</div>
+</div>
+
+
+
+</body>
+</html>

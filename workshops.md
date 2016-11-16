@@ -4,7 +4,13 @@ title: Workshops
 subtitle: 
 ---
 
-Here you'll find (viewable) workshop slides and similar, eventually. In progress.
+Here you'll find workshop slides and similar.  They are roughly in order of how recently they've been given.  Some are not so much workshops as talks without any expectation of hands-on exercises or similar.
+
+
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../workshops/bayesian/) This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> modeling language.  It is short on details, and doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.
+</span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/) This document regards a recent workshop given on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is a work in progress, particularly the sections after the <span itemprop="keywords">SEM</span> 'chapter'.  The initial workshop was given to an audience comprising in-person and remote participants, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package.
