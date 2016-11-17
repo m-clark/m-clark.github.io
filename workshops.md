@@ -9,7 +9,7 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Structural Equation Modeling</span>](../workshops/bayesian/) This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> modeling language.  It is short on details, and doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.
+[<span itemprop="name keywords">Become a Bayesian in 10 Minutes</span>](../workshops/bayesian/) This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> programming language.  It doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.  I post them here because they exist and provide a quick overview, but you'd get more from the more extensive [document](../docs/IntroBayes.html).
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -34,5 +34,5 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via Rstudio using <span itemprop="keywords">Rmarkdown</span>, LaTeX, R etc.
+[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via RStudio using <span itemprop="keywords">Rmarkdown</span>, $\LaTeX$, R etc.
 </span>
