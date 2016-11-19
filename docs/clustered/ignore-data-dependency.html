@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -210,24 +253,24 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <tbody>
 <tr class="odd">
 <td align="center"><strong>time</strong></td>
-<td align="center">0.5086</td>
-<td align="center">0.01088</td>
+<td align="center">0.51</td>
+<td align="center">0.01</td>
 <td align="center">46.74</td>
 <td align="center">0</td>
 </tr>
 <tr class="even">
 <td align="center"><strong>treatmenttreatment</strong></td>
-<td align="center">-0.4215</td>
-<td align="center">0.02433</td>
+<td align="center">-0.42</td>
+<td align="center">0.02</td>
 <td align="center">-17.33</td>
-<td align="center">2.791e-66</td>
+<td align="center">0</td>
 </tr>
 <tr class="odd">
 <td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.1309</td>
-<td align="center">0.02371</td>
-<td align="center">5.522</td>
-<td align="center">3.442e-08</td>
+<td align="center">0.13</td>
+<td align="center">0.02</td>
+<td align="center">5.52</td>
+<td align="center">0</td>
 </tr>
 </tbody>
 </table>
@@ -268,7 +311,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h2>Cons</h2>
 <ul>
 <li>Standard errors are off</li>
-<li>Ignores the cluster effects, which may be highly interesting</li>
+<li>Ignores the cluster-specific effects, which may be highly interesting</li>
 </ul>
 <p>Gist: Probably not viable for most situations.</p>
 
@@ -307,12 +350,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

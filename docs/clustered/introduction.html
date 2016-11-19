@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -198,6 +241,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="things-to-note" class="section level3">
 <h3>Things to note</h3>
 <p>No attempt is made at providing too much detail on model specifics. It is assumed that if you’re reading this you’re already at least conceptually familiar in some sense with a couple of these models. The primary purpose here is to compare, contrast, and note issues. Sometimes a little more detail is required, but again, the goal is not to teach the methods themselves. See the references for more detail.</p>
+<p>In many cases I hide the code but it is still available for viewing, especially in cases where it involves mostly data setup or wrangling, or involves more detailed technique than I am assuming some readers of this doc will understand. I prefer this document to be a more conceptual in nature and tool agnostic. Though it relies on R, the tool used doesn’t matter, and all the models conducted here could be run using other packages.</p>
 <p>In describing some of these approaches I suggest that some are more discipline specific or more common in certain areas. This assessment is based on years of consulting across many, many academic disciplines, as well as reading many discipline-specific texts and articles, but this admittedly is not a random sample, so take that info as you wish. I just provide it as a means for the reader to understand why they may not be familiar with such a technique, and where they might find more information or examples.</p>
 <div id="terminology" class="section level4">
 <h4>Terminology</h4>
@@ -210,6 +254,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><span class="objclass">object/class</span></li>
 <li><a href="">link</a></li>
 </ul>
+<p>This doc also available in .epub and .pdf (See the <i class="fa fa-download"></i> icon above), though the doc is automatically converted to those formats, and to be perfectly honest I don’t care what may or may not look good or transfer appropriately.</p>
 
 </div>
 </div>
@@ -254,12 +299,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

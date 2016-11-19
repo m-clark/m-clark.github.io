@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -190,24 +233,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h1>Cluster robust variances</h1>
 <p>As mentioned, if we ignore the clustering, the so-called fixed effects estimates (i.e. coefficients) are correct, but their variances are not. We can get proper estimates of the standard errors via <span class="emph">cluster robust standard errors</span>, which are very popular in econometrics and fields trained in that fashion, but not widely used elsewhere in my experience. Essentially, these allow one to fire-and-forget, and treat the clustering as more of a nuisance.</p>
 <p>In programs like Stata, obtaining these are basically an option for most modeling procedures. In R, it’s not quite as straightforward, but not difficult. There are packages such as <span class="pack">sandwich</span> that can provide heteroscedastic robust standard errors, but won’t necessarily take into account clustering. I provide a custom function that will work in this example so that the curtain can be pulled back a little, but the <span class="pack">plm</span> package would be the way to go for cluster robust standard errors. The <span class="pack">plm</span> package can take into account the serial autocorrelation via the ‘arellano’ input to the <code>type</code> argument.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">resids =<span class="st"> </span><span class="kw">resid</span>(lm_mod)                           <span class="co"># residuals</span>
-xvar =<span class="st"> </span><span class="kw">solve</span>(<span class="kw">crossprod</span>(lm_mod$x))                <span class="co"># (X&#39;X)^-1</span>
-gd0 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">id=</span>d$id, <span class="dt">r=</span>resids, lm_mod$x) 
-
-<span class="co"># custom function to be applied within cluster</span>
-cluscom =<span class="st"> </span>function(mat){
-  X =<span class="st"> </span><span class="kw">as.matrix</span>(mat)[, <span class="dv">3</span>:<span class="dv">5</span>]                      <span class="co"># magic numbers represent int, time and treatment columns</span>
-  <span class="kw">crossprod</span>(X, <span class="kw">tcrossprod</span>(mat$r)) %*%<span class="st"> </span>X
-}
-
-<span class="co"># calculate within cluster variance</span>
-gd =<span class="st"> </span>gd0 %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">group_by</span>(id) %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">do</span>(<span class="dt">xvar =</span> <span class="kw">cluscom</span>(.))
-
-
-<span class="kw">library</span>(plm)
-t2 =<span class="st"> </span>d$time                                      <span class="co"># so plm won&#39;t treat time as a factor, time is a reserved name in plm</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(plm)
+<span class="co"># create numeric time so plm won&#39;t treat as a factor, time is a reserved name in plm</span>
+t2 =<span class="st"> </span>d$time                   
 clusterrob_mod &lt;-<span class="st"> </span><span class="kw">plm</span>(y ~<span class="st"> </span>t2 +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">model=</span><span class="st">&#39;pooling&#39;</span>, <span class="dt">index=</span><span class="st">&#39;id&#39;</span>)
 <span class="kw">summary</span>(clusterrob_mod)</code></pre></div>
 <pre><code>Oneway (individual) effect Pooling Model
@@ -236,18 +264,50 @@ R-Squared:      0.1991
 Adj. R-Squared: 0.19904
 F-statistic: 1242.57 on 2 and 9997 DF, p-value: &lt; 2.22e-16</code></pre>
 <p>The following compares the different robust SEs we could produce at this point.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">vcovHC</span>(clusterrob_mod, <span class="dt">method=</span><span class="st">&#39;arellano&#39;</span>, <span class="dt">cluster=</span><span class="st">&#39;group&#39;</span>) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt      <span class="co"># plm</span></code></pre></div>
+<div class="fold s">
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">resids =<span class="st"> </span><span class="kw">resid</span>(lm_mod)                    <span class="co"># residuals</span>
+xvar =<span class="st"> </span><span class="kw">solve</span>(<span class="kw">crossprod</span>(lm_mod$x))         <span class="co"># (X&#39;X)^-1</span>
+gd0 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">id=</span>d$id, <span class="dt">r=</span>resids, lm_mod$x) 
+
+<span class="co"># custom function to be applied within cluster</span>
+cluscom =<span class="st"> </span>function(mat){
+  X =<span class="st"> </span><span class="kw">as.matrix</span>(mat)[, <span class="dv">3</span>:<span class="dv">5</span>]               <span class="co"># magic numbers represent int, time and treatment columns</span>
+  <span class="kw">crossprod</span>(X, <span class="kw">tcrossprod</span>(mat$r)) %*%<span class="st"> </span>X
+}
+
+<span class="co"># calculate within cluster variance</span>
+gd =<span class="st"> </span>gd0 %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">group_by</span>(id) %&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">do</span>(<span class="dt">xvar =</span> <span class="kw">cluscom</span>(.))
+
+<span class="co"># plm</span>
+plm_se =<span class="st"> </span><span class="kw">vcovHC</span>(clusterrob_mod, <span class="dt">method=</span><span class="st">&#39;arellano&#39;</span>, <span class="dt">cluster=</span><span class="st">&#39;group&#39;</span>) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt %&gt;%<span class="st"> </span><span class="kw">round</span>(<span class="dv">3</span>)
+
+<span class="co"># custom output</span>
+custom_se =<span class="st"> </span>(xvar %*%<span class="st"> </span><span class="kw">Reduce</span>(<span class="st">`</span><span class="dt">+</span><span class="st">`</span>, gd$xvar) %*%<span class="st"> </span>xvar) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt %&gt;%<span class="st"> </span><span class="kw">round</span>(<span class="dv">3</span>)
+
+<span class="co"># original lm</span>
+lm_se =<span class="st"> </span><span class="kw">vcov</span>(lm_mod) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt  %&gt;%<span class="st"> </span><span class="kw">round</span>(<span class="dv">3</span>)
+
+<span class="co"># non-clustered &#39;robust&#39; se</span>
+lm_robse =<span class="st"> </span><span class="kw">vcovHC</span>(lm_mod, <span class="dt">type=</span><span class="st">&#39;HC0&#39;</span>) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt %&gt;%<span class="st"> </span><span class="kw">round</span>(<span class="dv">3</span>)</code></pre></div>
+</div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># plm</span>
+plm_se</code></pre></div>
 <pre><code>       (Intercept)                 t2 treatmenttreatment 
-       0.030493668        0.009141015        0.041638211 </code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(xvar %*%<span class="st"> </span><span class="kw">Reduce</span>(<span class="st">`</span><span class="dt">+</span><span class="st">`</span>, gd$xvar) %*%<span class="st"> </span>xvar) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt                        <span class="co"># custom output</span></code></pre></div>
+             0.030              0.009              0.042 </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># custom output</span>
+custom_se</code></pre></div>
 <pre><code>       (Intercept)               time treatmenttreatment 
-       0.030493668        0.009141015        0.041638211 </code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">vcov</span>(lm_mod) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt                                                    <span class="co"># original lm</span></code></pre></div>
+             0.030              0.009              0.042 </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># original lm</span>
+lm_se</code></pre></div>
 <pre><code>       (Intercept)               time treatmenttreatment 
-        0.02371186         0.01087975         0.02432785 </code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">vcovHC</span>(lm_mod, <span class="dt">type=</span><span class="st">&#39;HC0&#39;</span>) %&gt;%<span class="st"> </span>diag %&gt;%<span class="st"> </span>sqrt                                      <span class="co"># non-clustered &#39;robust&#39; se</span></code></pre></div>
+             0.024              0.011              0.024 </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># non-clustered &#39;robust&#39; se</span>
+lm_robse</code></pre></div>
 <pre><code>       (Intercept)               time treatmenttreatment 
-        0.02252982         0.01105856         0.02432420 </code></pre>
+             0.023              0.011              0.024 </code></pre>
 <div id="pros-2" class="section level2">
 <h2>Pros</h2>
 <ul>
@@ -301,12 +361,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

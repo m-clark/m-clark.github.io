@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -211,7 +254,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h2>Conclusion</h2>
 <p>This is only a single and contrived data example that is based on random effects as part of the underlying data generating process. If there is no clustering effect, then the standard linear model would obviously the way to go, but that is also not the situation we’re interested in. If there is no residual correlation, or only cluster-specific effects akin to an ‘intercept-only’ model, little changes from what has been noted above, aside from latent growth curve models being less of an option, and they wouldn’t be in a non-longitudinal setting anyway. In general, the same issues noted above would still be in play for the most part for simpler settings.</p>
 <p>Specifically, I think it’s safe to say that the standard linear model approach has drawbacks and is simply not necessary given how easy it is to conduct more appropriate methods. Using cluster robust standard errors may help, but ignores what could potentially be a very rich investigation of cluster specific effects, and may be best used as a diagnostic or signal for a misspecified model. I also think it’s difficult to justify the FE approach where we can’t even investigate cluster level covariates, but again, that is my bias, and may not be shared by others. Latent growth curve models will probably only be useful if one is dealing with very complex SEM, and which in that case, one will have a host of other issues to contend with that aren’t applicable in this setting. Otherwise, LGCM will be identical to mixed models, and even some more complex than depicted, and may only make for more tedious coding with little else gained.</p>
-<p>That leaves the mixed model and GEE GLM approaches. Between these two, we don’t even have to choose if it’s a random intercept, linear model, as they would have similar ‘population-average’ interpretations, and similar estimates of like parameters, though the RE approach provides cluster-specific effects and predictions. Interpretations do change with nonlinear models such as with a binary outcome, but see the Gardiner reference below for how the estimated coefficients relate to one another in those cases.</p>
+<p>That leaves the mixed model and GEE GLM approaches. Between these two, we don’t even have to choose if it’s a random intercept, linear model, as they would have similar ‘population-average’ interpretations, and similar estimates of like parameters, though the mixed model provides cluster-specific effects and predictions. Interpretations do change with nonlinear models such as with a binary outcome and logit link, but see the Gardiner reference below for how the estimated coefficients relate to one another in those cases.</p>
 <p>Only the mixed model provides cluster-specific effects and predictions, while allowing for complex cluster structures and retaining cluster level covariates. What’s more, they can be specified to overcome the primary motivation for preferring FE models. In addition, they readily extend to other types of ‘random effects’ models (e.g. spatial).</p>
 <p>In conclusion then, the random effects/mixed model approach can provide most everything one could want in dealing with a variety of clustered data situations. It is highly flexible, and a very powerful tool to have at one’s disposal.</p>
 
@@ -258,12 +301,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

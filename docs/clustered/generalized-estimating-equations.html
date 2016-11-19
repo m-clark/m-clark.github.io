@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -190,14 +233,14 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h1>Generalized Estimating Equations</h1>
 <p>A <span class="emph">generalized estimating equation</span> is an <em>estimation procedure</em><a href="#fn11" class="footnoteRef" id="fnref11"><sup>11</sup></a> for dealing with clustered data, and is seemingly very popular in disciplines trained with a biostatistics perspective, but perhaps not too commonly used elsewhere. Models using this approach are sometimes called <span class="emph">marginal models</span>, and can be seen as follows, where the target <span class="math inline">\(y\)</span> is multivariate normal with mean vector <span class="math inline">\(X\beta\)</span> and covariance matrix <span class="math inline">\(\Sigma\)</span>, which is typically block diagonal as we created at the beginning<a href="#fn12" class="footnoteRef" id="fnref12"><sup>12</sup></a>.</p>
 <p><span class="math display">\[ y \sim \mathcal{N}(X\beta,  \Sigma) \]</span></p>
-<p>Here the focus is on the ‘population average’ effects, akin to ‘fixed’ effects in the RE model, though in some circumstances they are identical. In addition, one specifies the type of covariance structure thought to underlie the data. Among the more common are:</p>
+<p>Here the focus is on the ‘population average’ effects, akin to ‘fixed’ effects in the RE model, and in some circumstances they are identical. In addition, one specifies the type of covariance structure thought to underlie the data. Among the more common are:</p>
 <ul>
 <li><em>independence</em>: no correlation</li>
 <li><em>autoregressive</em>: as described previously</li>
 <li><em>exchangeable</em>: same correlation everywhere (aka ‘compound symmetry’ or ‘spherical’)</li>
 <li><em>unstructured</em>: all possible correlations are estimated as parameters</li>
 </ul>
-<p>And there are many others. The GEE approach is identical to RE intercept-only model approach if one conducts a linear Gaussian model, as in this case. In addition, these correlation structures are often available to mixed models tools, so this alone should not be a reason<a href="#fn13" class="footnoteRef" id="fnref13"><sup>13</sup></a> to use the GEE approach.</p>
+<p>And there are many others. The GEE approach is identical to RE intercept-only model approach if one conducts a linear Gaussian model, as in this case. In addition, these correlation structures are often available to mixed models tools, so this extension alone should not be a reason<a href="#fn13" class="footnoteRef" id="fnref13"><sup>13</sup></a> to use the GEE approach.</p>
 <p>We’ll use the <span class="pack">geepack</span> package in order to conduct the gee approach to the model. We’ll specify an autoregressive correlation structure as we did with the mixed model, and as the data was in fact designed with.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(geepack)
 
@@ -370,35 +413,31 @@ gee_mod =<span class="st"> </span><span class="kw">geeglm</span>(y ~<span class=
 </tr>
 </tbody>
 </table>
-<table style="width:58%;">
+<table style="width:26%;">
 <colgroup>
-<col width="25%" />
-<col width="16%" />
-<col width="16%" />
+<col width="15%" />
+<col width="11%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="center"> </th>
 <th align="center">Variance</th>
 <th align="center">StdDev</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.002584006</td>
-<td align="center">0.05083312</td>
+<td align="center">0.003</td>
+<td align="center">0.051</td>
 </tr>
 <tr class="even">
-<td align="center"><strong>Residual</strong></td>
-<td align="center">1.504460631</td>
-<td align="center">1.22656456</td>
+<td align="center">1.504</td>
+<td align="center">1.227</td>
 </tr>
 </tbody>
 </table>
-<table style="width:7%;">
+<table style="width:8%;">
 <colgroup>
-<col width="6%" />
+<col width="8%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -407,18 +446,18 @@ gee_mod =<span class="st"> </span><span class="kw">geeglm</span>(y ~<span class=
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center">0.781</td>
+<td align="center">0.7808</td>
 </tr>
 </tbody>
 </table>
-<p>The population average effects are identical (though the <span class="func">geeglm</span> function automatically does cluster robust standard errors). The estimated correlations for both are similar, and a bit high. There is essentially no cluster variance, as it is now all residual variance, and both estimated similarly, and similar to the standard linear model we started with. This makes sense as the variance is equal to the residual variance + the intercept variance + slope variance.</p>
+<p>The population average effects are identical (though the <span class="func">geeglm</span> function automatically does cluster robust standard errors). The estimated correlations for both are similar, and a bit high. There is essentially no cluster variance in the mixed model, and both estimated residual variances are similar, and similar to the standard linear model we started with. This makes sense as the variance is equal to the residual variance + the intercept variance + slope variance.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(lm_mod)$sigma^<span class="dv">2</span>                   <span class="co"># similar to gee and random intercept only</span></code></pre></div>
 <pre><code>[1] 1.479611</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sum</span>(<span class="kw">as.numeric</span>(<span class="kw">VarCorr</span>(mixed_mod)[,<span class="dv">1</span>]))   <span class="co"># model that incorporates all sources of variance</span></code></pre></div>
 <pre><code>[1] 1.306739</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">intsd^<span class="dv">2</span> +<span class="st"> </span>timesd^<span class="dv">2</span> +<span class="st"> </span>sigmasq              <span class="co"># &#39;truth&#39;</span></code></pre></div>
 <pre><code>[1] 1.3125</code></pre>
-<p>While GEE models are robust to misspecification of the covariance structure, they are rarely implemented for more than simple clustering<a href="#fn14" class="footnoteRef" id="fnref14"><sup>14</sup></a>.</p>
+<p>GEE models are generally robust to misspecification of the covariance structure. They are rarely implemented for more than simple clustering but some tools allow for it<a href="#fn14" class="footnoteRef" id="fnref14"><sup>14</sup></a>.</p>
 <div id="pros-5" class="section level2">
 <h2>Pros</h2>
 <ul>
@@ -481,12 +520,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

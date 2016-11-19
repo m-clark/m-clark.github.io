@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -190,6 +233,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h1>Latent Growth Curve</h1>
 <p>An alternative approach to mixed models considers the random effects as <span class="emph">latent variables</span> with the outcome at each time point an indicator for the latent variable. I have details <a href="https://m-clark.github.io/docs/sem">elsewhere</a>, but I want to explore this as it is a commonly used technique in the social sciences, especially psychology. <span class="emph">Latent Growth Curve Models</span> are a special case of <span class="emph">structural equation modeling</span>, a highly flexible tool that can incorporate latent variables, indirect effects, multiple outcomes etc. Growth curve models are actually somewhat irregular SEM in the way that they are specified, but for our purposes, we only want to see how the approach works and compare it to previous methods.</p>
 <p>The first thing is that the data has to be in <em>wide</em> format, such that we have one column per time point, and thus only one row per individual. Once the data is ready we specify the model syntax. By default, the SEM approach also assumes unequal variances across time, so to make it more comparable, we fix that value to be constant. We’ll use <span class="pack">lavaan</span> to estimate the model.</p>
+<div class="fold s">
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dwide =<span class="st"> </span><span class="kw">spread</span>(d, <span class="dt">key=</span>time, <span class="dt">value=</span>y, <span class="dt">sep=</span><span class="st">&#39;_&#39;</span>) %&gt;%<span class="st"> </span>
 <span class="st">  </span><span class="kw">mutate</span>(<span class="dt">treatment =</span> treatment==<span class="st">&#39;treatment&#39;</span>)  <span class="co"># otherwise converted to numeric directly as 1-2 instead of 1-0</span>
 <span class="kw">head</span>(dwide)</code></pre></div>
@@ -200,6 +244,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 4     FALSE  4  2.0575643 1.7831405 1.6413706  1.7078853
 5     FALSE  5  0.9899045 1.7892770 1.7883325  2.4579697
 6     FALSE  6  0.6079163 0.1161267 0.6956824  0.8326176</code></pre>
+</div>
+<div class="fold s">
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">growthmod_syntax =<span class="st"> &quot;</span>
 <span class="st"># model for the intercept and slope latent variables</span>
 <span class="st">  int   =~ 1*time_0 + 1*time_1 + 1*time_2 + 1*time_3</span>
@@ -211,15 +257,14 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <span class="st"># intercept-slope correlation</span>
 <span class="st">  int ~~ slope</span>
 
-
 <span class="st"># fix to equal variances (parameter &#39;res&#39;)</span>
 <span class="st">  time_0 ~~ res*time_0</span>
 <span class="st">  time_1 ~~ res*time_1</span>
 <span class="st">  time_2 ~~ res*time_2</span>
 <span class="st">  time_3 ~~ res*time_3</span>
-<span class="st">&quot;</span>
-
-<span class="kw">library</span>(lavaan)
+<span class="st">&quot;</span></code></pre></div>
+</div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(lavaan)
 growth_mod =<span class="st"> </span><span class="kw">growth</span>(growthmod_syntax, <span class="dt">data=</span>dwide)
 <span class="kw">summary</span>(growth_mod, <span class="dt">standardized=</span>T)</code></pre></div>
 <pre><code>lavaan (0.5-22) converged normally after  27 iterations
@@ -276,8 +321,8 @@ Variances:
    .time_3   (res)    0.269    0.005   50.000    0.000    0.269    0.135
    .int               1.052    0.035   29.817    0.000    0.957    0.957
     slope             0.155    0.006   25.828    0.000    1.000    1.000</code></pre>
-<p>The <code>Intercepts:</code> section of the output shows what would be the fixed effects in the mixed model, and in this case, they are also ‘intercepts’ in this latent variable approach, so that is why they are named as such. The Regression of <code>i</code> on treatment depicts the treatment effect, and will make more sense to those who come to mixed models from the <span class="emph">multilevel modeling</span> literature. If you go back to the model depiction for the mixed model, this model more explicitly denotes <span class="math inline">\(\beta_{0c} = \beta_0 + \beta_2*\textrm{Treatment} + \gamma_c\)</span>. The <code>res</code> parameter is akin to residual variance, and is roughly equivalent to the square of the residual standard deviation in the mixed model output. The above model does not allow for correlated residuals, though this is possible<a href="#fn15" class="footnoteRef" id="fnref15"><sup>15</sup></a>.</p>
-<p>The primary point here is not to precisely reproduce the correct model but to show the identity between the mixed model and the latent growth curve approach. Proper specification will lead to identical results. The following creates a mixed model that is the equivalent.</p>
+<p>The <code>Intercepts:</code> section of the output shows what would be the fixed effects in the mixed model, and in this case, they are in fact ‘intercepts’ in this latent variable approach, so that is why they are named as such. The Regression of <code>int</code> on treatment depicts the treatment effect, and will make more sense to those who come to mixed models from the <span class="emph">multilevel modeling</span> literature. If you go back to the model depiction for the mixed model, this model more explicitly denotes <span class="math inline">\(\beta_{0c} = \beta_0 + \beta_2*\textrm{Treatment} + \gamma_c\)</span>. The <code>res</code> parameter is the arbitray name I’ve given for the residual variance, and is roughly equivalent to the square of the residual standard deviation in the mixed model output. The above model does not allow for correlated residuals, though this is possible<a href="#fn15" class="footnoteRef" id="fnref15"><sup>15</sup></a>.</p>
+<p>The primary point here is not to precisely reproduce the correct model but to show the identity between the mixed model and the latent growth curve approach. Proper specification will lead to identical results between latent growth curve and mixed models. The following creates a mixed model that is the equivalent.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mixed_mod_nocorr =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="st"> </span>time +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">random=</span>~<span class="dv">1</span>+time|id, <span class="dt">method=</span><span class="st">&quot;ML&quot;</span>)</code></pre></div>
 <table style="width:97%;">
 <caption>Fixed effects: y ~ time + treatment</caption>
@@ -302,27 +347,27 @@ Variances:
 <tbody>
 <tr class="odd">
 <td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.1372</td>
-<td align="center">0.03015</td>
+<td align="center">0.137</td>
+<td align="center">0.03</td>
 <td align="center">7499</td>
 <td align="center">4.552</td>
-<td align="center">5.395e-06</td>
+<td align="center">0</td>
 </tr>
 <tr class="even">
 <td align="center"><strong>time</strong></td>
-<td align="center">0.5086</td>
-<td align="center">0.009142</td>
+<td align="center">0.509</td>
+<td align="center">0.009</td>
 <td align="center">7499</td>
 <td align="center">55.63</td>
 <td align="center">0</td>
 </tr>
 <tr class="odd">
 <td align="center"><strong>treatmenttreatment</strong></td>
-<td align="center">-0.4341</td>
-<td align="center">0.04063</td>
+<td align="center">-0.434</td>
+<td align="center">0.041</td>
 <td align="center">2498</td>
-<td align="center">-10.68</td>
-<td align="center">4.351e-26</td>
+<td align="center">-10.69</td>
+<td align="center">0</td>
 </tr>
 </tbody>
 </table>
@@ -379,34 +424,29 @@ Variances:
 </tr>
 </tbody>
 </table>
-<table style="width:56%;">
+<table style="width:26%;">
 <colgroup>
-<col width="25%" />
 <col width="15%" />
-<col width="15%" />
+<col width="11%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="center"> </th>
 <th align="center">Variance</th>
 <th align="center">StdDev</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><strong>(Intercept)</strong></td>
-<td align="center">1.0517588</td>
-<td align="center">1.0255529</td>
+<td align="center">1.052</td>
+<td align="center">1.026</td>
 </tr>
 <tr class="even">
-<td align="center"><strong>time</strong></td>
-<td align="center">0.1551120</td>
-<td align="center">0.3938426</td>
+<td align="center">0.155</td>
+<td align="center">0.394</td>
 </tr>
 <tr class="odd">
-<td align="center"><strong>Residual</strong></td>
-<td align="center">0.2689193</td>
-<td align="center">0.5185743</td>
+<td align="center">0.269</td>
+<td align="center">0.519</td>
 </tr>
 </tbody>
 </table>
@@ -422,13 +462,13 @@ Variances:
 <h2>Cons</h2>
 <ul>
 <li>Tedious to specify even the simplest of models</li>
-<li>Very tedious to specify even common models</li>
+<li>Very tedious to specify even common extensions (e.g. time-varying covariates)</li>
 <li>Even worse to get into correlated residuals</li>
 <li>More complex cluster structure is not dealt with well (if at all)<a href="#fn16" class="footnoteRef" id="fnref16"><sup>16</sup></a></li>
 <li>Assumes balanced time points</li>
 <li>Doesn’t deal with many time points well (if also time-varying covariates especially)</li>
 </ul>
-<p>Gist: Growth curve models are very flexible, but they are also problematic simply because they are from the SEM world, which is one where models are notoriously misapplied. Furthermore, there are no common uses of growth curve models that would not be more easily implemented in one of several R packages<a href="#fn17" class="footnoteRef" id="fnref17"><sup>17</sup></a> and various other languages and statistical programs. While I find the latent variable interpretation very much intriguing, I personally cannot find a reason for the latent variable approach as something I’d normally consider.</p>
+<p>Gist: Growth curve models are very flexible, but they are also problematic simply because they are from the SEM world, which is one where models are notoriously misapplied. Furthermore, there are no common uses of growth curve models that would not be more easily implemented in one of several R packages<a href="#fn17" class="footnoteRef" id="fnref17"><sup>17</sup></a> and various other languages and statistical programs. While I find the latent variable interpretation very much intriguing, the latent variable approach is not something I’d normally consider for this setting.</p>
 
 </div>
 </div>
@@ -473,12 +513,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>

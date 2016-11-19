@@ -24,7 +24,7 @@
   
 
 
-<meta name="date" content="2016-11-06">
+<meta name="date" content="2016-11-19">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -106,6 +106,49 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <body>
 
+<!-- http://stackoverflow.com/questions/37755037/how-to-add-code-folding-to-output-chunks-in-rmarkdown-html-documents/37839683#37839683 -->
+
+<script>
+$(document).ready(function() {
+
+  $chunks = $('.fold');
+
+  $chunks.each(function () {
+
+    // add button to source code chunks
+    if ( $(this).hasClass('s') ) {
+      $('pre.r', this).prepend("<div class=\"showopt\">Show Source</div><br style=\"line-height:22px;\"/>");
+      $('pre.r', this).children('code').attr('class', 'folded');
+    }
+
+    // add button to output chunks
+    if ( $(this).hasClass('o') ) {
+      $('pre:not(.r)', this).has('code').prepend("<div class=\"showopt\">Show Output</div><br style=\"line-height:22px;\"/>");
+      $('pre:not(.r)', this).children('code:not(r)').addClass('folded');
+
+      // add button to plots
+      $(this).find('img').wrap('<pre class=\"plot\"></pre>');
+      $('pre.plot', this).prepend("<div class=\"showopt\">Show Plot</div><br style=\"line-height:22px;\"/>");
+      $('pre.plot', this).children('img').addClass('folded');
+
+    }
+  });
+
+  // hide all chunks when document is loaded
+  $('.folded').css('display', 'none')
+
+  // function to toggle the visibility
+  $('.showopt').click(function() {
+    var label = $(this).html();
+    if (label.indexOf("Show") >= 0) {
+      $(this).html(label.replace("Show", "Hide"));
+    } else {
+      $(this).html(label.replace("Hide", "Show"));
+    }
+    $(this).siblings('code, img').slideToggle('fast', 'swing');
+  });
+});
+</script>
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
@@ -190,8 +233,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h1>Mixed Models</h1>
 <p><span class="emph">Mixed models</span>, also known by other names, explicitly model the random effects due to the clustering in the data. They are extremely flexible approaches that can handle crossed and nested clustering structures, as well as different residual dependency structures. In addition, they can fit within other modeling approaches that can be expressed essentially identically<a href="#fn10" class="footnoteRef" id="fnref10"><sup>10</sup></a>, allowing for even more modeling considerations. They also have a very natural extension to Bayesian estimation, and, as we will see later, an alternative ‘latent variable’ interpretation. In short, there is a lot going on here.</p>
 <p>For observations <span class="math inline">\(i\)</span> nested within cluster <span class="math inline">\(c\)</span>, we can depict the model in a couple of different ways, but the following is fairly straightforward and in keeping with how the data was created. The main idea is that we have cluster specific coefficients for the intercept and time.</p>
-<p><span class="math display">\[ y_{ic} = \beta_{0c} + \beta_{1c} * time_{ic} + \epsilon_{ic} \]</span> <span class="math display">\[\beta_{0c} = \beta_0 + \beta_2 * \mathrm{Treat_{c}} + \gamma_c\]</span> <span class="math display">\[\beta_{1c} = \beta_1 + \nu_c\]</span> <span class="math display">\[\gamma_c\sim \mathcal{N}(0, \tau^2)\]</span> <span class="math display">\[\nu_c\sim \mathcal{N}(0, \eta^2)\]</span> <span class="math display">\[\epsilon_ic \sim N(0, \sigma^2)\]</span> Putting the model together we get:</p>
-<p><span class="math display">\[ y_{ic} = (\beta_0 + \gamma_c) + (\beta_1 + \nu_c) * time_{ic} + \beta_2 * \mathrm{Treat_{c}} + \epsilon_{ic} \]</span> So what we end up with conceptually is the standard linear model, but with cluster specific deviations/effects. These effects are <em>random</em> in that they are drawn from a specific distribution, in this case normal, with mean 0 and some standard deviation, which is estimated as part of the model. Recall that we specified these values at the <a href="introduction.html#preliminaries">beginning</a> though in terms of standard deviation. In addition, the cluster level effect of treatment enters the model as would any other covariate.</p>
+<p><span class="math display">\[ y_{ic} = \beta_{0c} + \beta_{1c} * \mathrm{time}_{ic} + \epsilon_{ic} \]</span> <span class="math display">\[\beta_{0c} = \beta_0 + \beta_2 * \mathrm{Treat_{c}} + \gamma_c\]</span> <span class="math display">\[\beta_{1c} = \beta_1 + \nu_c\]</span> <span class="math display">\[\gamma_c\sim \mathcal{N}(0, \tau^2)\]</span> <span class="math display">\[\nu_c\sim \mathcal{N}(0, \eta^2)\]</span> <span class="math display">\[\epsilon_ic \sim N(0, \sigma^2)\]</span> Putting the model together we get:</p>
+<p><span class="math display">\[ y_{ic} = (\beta_0 + \gamma_c) + (\beta_1 + \nu_c) * \mathrm{time}_{ic} + \beta_2 * \mathrm{Treat_{c}} + \epsilon_{ic} \]</span> So what we end up with conceptually is the standard linear model, but with cluster specific deviations/effects. These effects are <em>random</em> in that they are drawn from a specific distribution, in this case normal, with mean 0 and some standard deviation, which is estimated as part of the model. Recall that we specified these values at the <a href="introduction.html#preliminaries">beginning</a> though in terms of standard deviation. In addition, the cluster level effect of treatment enters the model as would any other covariate.</p>
 <p>To estimate this model we’ll use the <span class="pack">nlme</span> package, as it will also allow us to easily estimate the residual correlation structure. The key part is the <code>random =</code> argument, where we note that we want random effects for the intercept and time.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(nlme)
 mixed_mod =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="st"> </span>time +<span class="st"> </span>treatment, <span class="dt">random =</span> ~<span class="dv">1</span>+time|id, <span class="dt">correlation=</span><span class="kw">corAR1</span>(<span class="dt">form=</span>~time|id))</code></pre></div>
@@ -218,27 +261,27 @@ mixed_mod =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="
 <tbody>
 <tr class="odd">
 <td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.1328</td>
-<td align="center">0.02987</td>
+<td align="center">0.133</td>
+<td align="center">0.03</td>
 <td align="center">7499</td>
 <td align="center">4.448</td>
-<td align="center">8.812e-06</td>
+<td align="center">0</td>
 </tr>
 <tr class="even">
 <td align="center"><strong>time</strong></td>
-<td align="center">0.5074</td>
-<td align="center">0.009085</td>
+<td align="center">0.507</td>
+<td align="center">0.009</td>
 <td align="center">7499</td>
 <td align="center">55.85</td>
 <td align="center">0</td>
 </tr>
 <tr class="odd">
 <td align="center"><strong>treatmenttreatment</strong></td>
-<td align="center">-0.4248</td>
-<td align="center">0.0402</td>
+<td align="center">-0.425</td>
+<td align="center">0.04</td>
 <td align="center">2498</td>
 <td align="center">-10.57</td>
-<td align="center">1.454e-25</td>
+<td align="center">0</td>
 </tr>
 </tbody>
 </table>
@@ -295,34 +338,29 @@ mixed_mod =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="
 </tr>
 </tbody>
 </table>
-<table style="width:56%;">
+<table style="width:26%;">
 <colgroup>
-<col width="25%" />
 <col width="15%" />
-<col width="15%" />
+<col width="11%" />
 </colgroup>
 <thead>
 <tr class="header">
-<th align="center"> </th>
 <th align="center">Variance</th>
 <th align="center">StdDev</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.33237241</td>
-<td align="center">0.5765175</td>
+<td align="center">0.332</td>
+<td align="center">0.577</td>
 </tr>
 <tr class="even">
-<td align="center"><strong>time</strong></td>
-<td align="center">0.06671119</td>
-<td align="center">0.2582851</td>
+<td align="center">0.067</td>
+<td align="center">0.258</td>
 </tr>
 <tr class="odd">
-<td align="center"><strong>Residual</strong></td>
-<td align="center">0.90765587</td>
-<td align="center">0.9527098</td>
+<td align="center">0.908</td>
+<td align="center">0.953</td>
 </tr>
 </tbody>
 </table>
@@ -410,12 +448,13 @@ gitbook.start({
 "size": 2
 },
 "edit": false,
-"download": null,
+"download": ["Clustered_data.pdf", "Clustered_data.epub"],
 "toc": {
 "collapse": "subsection"
 },
 "highlight": "pygments",
-"search": true
+"search": true,
+"epub": true
 });
 });
 </script>
