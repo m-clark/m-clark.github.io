@@ -7,7 +7,7 @@ subtitle:
 
 Part of my job entails analysis or consulting on various projects in differing levels of involvement. I note the ones I am/was more involved with here.
 
-# Projects
+# Recent
 
 As of Summer 2016. Primary researcher in parenthesis.
 
