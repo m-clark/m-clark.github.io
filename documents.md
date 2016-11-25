@@ -22,11 +22,13 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  <span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span>
+[<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  
+<span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords">Clustered Data Situations</span>](../docs/clustered/)  <span itemprop="description">A comparison of standard models, <span itemprop="keywords">cluster robust standard errors</span>, <span itemprop="keywords">fixed effect models</span>,  <span itemprop="keywords">mixed models (random effects models)</span>, <span itemprop="keywords">generalized estimating equations (GEE)</span>, and <span itemprop="keywords">latent growth curve models</span> for dealing with clustered data (e.g. <span itemprop="keywords">longitudinal</span>, <span itemprop="keywords">hierarchical</span> etc.).
+[<span itemprop="name keywords">Clustered Data Situations</span>](../docs/clustered/)  
+<span itemprop="description">A comparison of standard models, <span itemprop="keywords">cluster robust standard errors</span>, <span itemprop="keywords">fixed effect models</span>,  <span itemprop="keywords">mixed models (random effects models)</span>, <span itemprop="keywords">generalized estimating equations (GEE)</span>, and <span itemprop="keywords">latent growth curve models</span> for dealing with clustered data (e.g. <span itemprop="keywords">longitudinal</span>, <span itemprop="keywords">hierarchical</span> etc.).
 </span>
 </span>
 
@@ -43,35 +45,41 @@ Here you'll find documents of varying technical degree covering things of intere
 
 
 <span itemscope itemtype ="http://schema.org/ScholarlyArticle http://schema.org/TechArticle">
-[<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html) <span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
+[<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html) 
+<span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
 </span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/ScholarlyArticle http://schema.org/TechArticle">
-[Lord's Paradox](../docs/lord/index.html)     <span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.
+[Lord's Paradox](../docs/lord/index.html)     
+<span itemprop="description">Summary of <span itemprop="keywords">Pearl</span>’s 2014 and 2013 technical reports on some modeling situations such as <span itemprop="keywords">Lord's Paradox and Simpson's Paradox</span> that lead to surprising results that are initially at odds with our intuition.  Looks particularly at the issue of change scores vs. controlling for baseline.
 </span>
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.
+[<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     
+<span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.
 </span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name">Comparing Measures of Dependency</span>](../docs/CorrelationComparison.pdf)     <span itemprop="description">A summary of relatively recent articles that look at various measures of dependency <span itemprop="keywords">Pearson's r</span>, <span itemprop="keywords">Spearman's rho</span>, and <span itemprop="keywords">Hoeffding's D</span>, and newer ones such as <span itemprop="keywords">Distance Correlation</span> and <span itemprop="keywords">Maximal Information Coefficient</span>.</span>
+[<span itemprop="name">Comparing Measures of Dependency</span>](../docs/CorrelationComparison.pdf)     
+<span itemprop="description">A summary of relatively recent articles that look at various measures of dependency <span itemprop="keywords">Pearson's r</span>, <span itemprop="keywords">Spearman's rho</span>, and <span itemprop="keywords">Hoeffding's D</span>, and newer ones such as <span itemprop="keywords">Distance Correlation</span> and <span itemprop="keywords">Maximal Information Coefficient</span>.</span>
 </span>
 
 # More Tools (esp. R)
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords" style="font-variant:small-caps;">FastR</span>](../docs/fastr.html)     <span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
+[<span itemprop="name keywords" style="font-variant:small-caps;">FastR</span>](../docs/fastr.html)     
+<span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
 </span>
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     <span itemprop="description">Document regarding the use of R for <span itemprop="keywords">web scraping</span>, extracting data via an <span itemprop="keywords">API</span>, <span itemprop="keywords">interactive</span> web-based <span itemprop="keywords">visualizations</span>, and producing <span itemprop="keywords">web-ready documents</span>.  It serves as an overview of ways one might start to use R for web-based activities as opposed to a hand-on approach.
+[<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     
+<span itemprop="description">Document regarding the use of R for <span itemprop="keywords">web scraping</span>, extracting data via an <span itemprop="keywords">API</span>, <span itemprop="keywords">interactive</span> web-based <span itemprop="keywords">visualizations</span>, and producing <span itemprop="keywords">web-ready documents</span>.  It serves as an overview of ways one might start to use R for web-based activities as opposed to a hand-on approach.
 </span>
 </span>
 
