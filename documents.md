@@ -38,14 +38,14 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/) 
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/)   
 <span itemprop="description">This document (and related workshop) focuses on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The initial workshop was given to an audience of varying background and statistical skill, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package. It will continue to be a work in progress, particularly the sections after the <span itemprop="keywords">SEM</span> chapter.  Topics include: <span itemprop="keywords">graphical</span> models (<span itemprop="keywords">directed</span> and <span itemprop="keywords">undirected</span>, including <span itemprop="keywords">path analysis</span>, <span itemprop="keywords">bayesian networks</span>, and <span itemprop="keywords">network analysis</span>), <span itemprop="keywords">mediation</span>, <span itemprop="keywords">moderation</span>, <span itemprop="keywords">latent variable</span> models (including <span itemprop="keywords">principal components</span> analysis and '<span itemprop="keywords">factor analysis</span>'), <span itemprop="keywords">measurement</span> models, <span itemprop="keywords">structural equation models</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">growth curves</span>.  Topics I hope to provide overviews of in the future include other latent variable techniques/extensions such as <span itemprop="keywords">IRT</span>, <span itemprop="keywords">collaborative filtering</span>/<span itemprop="keywords">recommender systems</span>, <span itemprop="keywords">hidden markov models</span>, <span itemprop="keywords">multi-group models</span> etc.
 </span>
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/ScholarlyArticle http://schema.org/TechArticle">
-[<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html) 
+[<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html)   
 <span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
 </span>
 </span>
@@ -87,12 +87,14 @@ Here you'll find documents of varying technical degree covering things of intere
 # Misc
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name">Last Statements of the Texas Executed</span>](http://micl.shinyapps.io/texEx/texEx.Rmd)     <span itemprop="description">A demonstration of both <span itemprop="keywords">text analysis</span> and <span itemprop="keywords">literate programming</span>/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
+[<span itemprop="name">Last Statements of the Texas Executed</span>](http://micl.shinyapps.io/texEx/texEx.Rmd)     
+<span itemprop="description">A demonstration of both <span itemprop="keywords">text analysis</span> and <span itemprop="keywords">literate programming</span>/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
 </span>
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name">R for Social Science</span>](../docs/RSocialScience.pdf)   <span itemprop="description">This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).
+[<span itemprop="name">R for Social Science</span>](../docs/RSocialScience.pdf)   
+<span itemprop="description">This was put together in a couple of days under duress, and is put here in case someone can find it useful (and thus make the time spent on it not completely wasted).
 </span>
 </span>
