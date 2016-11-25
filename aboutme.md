@@ -31,6 +31,6 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 
 <br>
 
-<span itemscope itemtype="http://schema.org/Organization" style="font-size:75%"><span itemprop="name">Consulting for Statistics, Computing, and Analytics Research</span>
-<span itemscope itemtype="http://schema.org/Organization" style="font-size:75%"><span itemprop="name">Advanced Research Computing</span></span>
-<span itemscope itemtype="http://schema.org/Organization" style="font-size:75%"><span itemprop="name">University of Michigan</span></span>
+<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, and Analytics Research</span>
+<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span><br>
+<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">University of Michigan</span></span>
