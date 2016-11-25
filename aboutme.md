@@ -29,8 +29,7 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 
 <span itemprop="name" style="font-variant: small-caps;">Michael Clark</span>
 
-<br>
 
-<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, and Analytics Research</span>
+<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, and Analytics Research</span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">University of Michigan</span></span>
