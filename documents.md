@@ -9,7 +9,7 @@ Here you'll find documents of varying technical degree covering things of intere
 
 # Statistical
 
-## Bayesian
+### Bayesian
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Bayesian Basics</span>](../docs/IntroBayes.html)     
@@ -30,7 +30,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
-## Mixed Models
+### Mixed Models
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  
@@ -49,7 +49,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
-## Latent Variables/SEM
+### Latent Variables/SEM
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/)   
@@ -71,7 +71,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
-## Other
+### Other
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     
