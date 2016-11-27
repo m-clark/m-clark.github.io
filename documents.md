@@ -5,9 +5,11 @@ subtitle:
 ---
 
 
-Here you'll find documents of varying technical degree covering things of interest to me.  Most are demonstration of statistical concepts or programming and may be geared towards beginners or more advanced.
+Here you'll find documents of varying technical degree covering things of interest to me.  Most are demonstration of statistical concepts or programming and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
 
-# More Statistical
+# Statistical
+
+## Bayesian
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Bayesian Basics</span>](../docs/IntroBayes.html)     
@@ -16,10 +18,19 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     
-<span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.
-</span> An older pdf version available [here](../docs/GAMS.pdf).
+[<span itemprop="name keywords">MCMC algorithms</span>](../docs/ld_mcmc/)     
+<span itemprop="description">List of MCMC algorithms with brief descriptions.
 </span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
+[<span itemprop="name">Bayesian Demonstratino</span>](http://micl.shinyapps.io/prior2post/)     
+<span itemprop="description">A simple interactive demonstration for those just starting on their <span itemprop="keywords">Bayesian</span> journey.
+</span>
+</span>
+
+
+## Mixed Models
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  
@@ -37,6 +48,9 @@ Here you'll find documents of varying technical degree covering things of intere
 <span itemprop="description">A non-technical document to introduce <span itemprop="keywords">mixed models</span> for those who have used ANOVA.</span>
 </span>
 
+
+## Latent Variables/SEM
+
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/)   
 <span itemprop="description">This document (and related workshop) focuses on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The initial workshop was given to an audience of varying background and statistical skill, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package. It will continue to be a work in progress, particularly the sections after the <span itemprop="keywords">SEM</span> chapter.  Topics include: <span itemprop="keywords">graphical</span> models (<span itemprop="keywords">directed</span> and <span itemprop="keywords">undirected</span>, including <span itemprop="keywords">path analysis</span>, <span itemprop="keywords">bayesian networks</span>, and <span itemprop="keywords">network analysis</span>), <span itemprop="keywords">mediation</span>, <span itemprop="keywords">moderation</span>, <span itemprop="keywords">latent variable</span> models (including <span itemprop="keywords">principal components</span> analysis and '<span itemprop="keywords">factor analysis</span>'), <span itemprop="keywords">measurement</span> models, <span itemprop="keywords">structural equation models</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">growth curves</span>.  Topics I hope to provide overviews of in the future include other latent variable techniques/extensions such as <span itemprop="keywords">IRT</span>, <span itemprop="keywords">collaborative filtering</span>/<span itemprop="keywords">recommender systems</span>, <span itemprop="keywords">hidden markov models</span>, <span itemprop="keywords">multi-group models</span> etc.
@@ -44,7 +58,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
-<span itemscope itemtype ="http://schema.org/ScholarlyArticle http://schema.org/TechArticle">
+<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html)   
 <span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
 </span>
@@ -57,6 +71,14 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 
+## Other
+
+<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
+[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     
+<span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.
+</span> An older pdf version available [here](../docs/GAMS.pdf).
+</span>
+
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/mlcrash.pdf)     
 <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.
@@ -68,14 +90,17 @@ Here you'll find documents of varying technical degree covering things of intere
 <span itemprop="description">A summary of relatively recent articles that look at various measures of dependency <span itemprop="keywords">Pearson's r</span>, <span itemprop="keywords">Spearman's rho</span>, and <span itemprop="keywords">Hoeffding's D</span>, and newer ones such as <span itemprop="keywords">Distance Correlation</span> and <span itemprop="keywords">Maximal Information Coefficient</span>.</span>
 </span>
 
-# More Tools (esp. R)
+
+
+# Tools (esp. R)
+
+Check the workshops section also.
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords" style="font-variant:small-caps;">FastR</span>](../docs/fastr.html)     
 <span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
 </span>
 </span>
-
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     
@@ -87,11 +112,16 @@ Here you'll find documents of varying technical degree covering things of intere
 # Misc
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
+[<span itemprop="name">A History of Tornados</span>](http://micl.shinyapps.io/tornados/)     
+<span itemprop="description">Because I had too much time on my hands and wanted to try out the <span itemprop="keywords">dashboard</span> feature of <span itemprop="keywords">Rmarkdown</span>.  Maps <span itemprop="keywords">tornado</span> activity from 1950-2015.  At some point I'll go back and fix the lag issue.
+</span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name">Last Statements of the Texas Executed</span>](http://micl.shinyapps.io/texEx/texEx.Rmd)     
 <span itemprop="description">A demonstration of both <span itemprop="keywords">text analysis</span> and <span itemprop="keywords">literate programming</span>/document generation with a dynamic and interactive research document. The texts regard the last statements of offenders in Texas.
 </span>
 </span>
-
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name">R for Social Science</span>](../docs/RSocialScience.pdf)   
