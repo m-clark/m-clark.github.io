@@ -24,7 +24,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
-[<span itemprop="name">Bayesian Demonstratino</span>](http://micl.shinyapps.io/prior2post/)     
+[<span itemprop="name">Bayesian Demonstration</span>](http://micl.shinyapps.io/prior2post/)     
 <span itemprop="description">A simple interactive demonstration for those just starting on their <span itemprop="keywords">Bayesian</span> journey.
 </span>
 </span>
@@ -109,7 +109,7 @@ Check the workshops section also.
 </span>
 
 
-# Misc
+# Miscellaneous
 
 <span itemscope itemtype ="http://schema.org/TechArticle http://schema.org/ScholarlyArticle">
 [<span itemprop="name">A History of Tornados</span>](http://micl.shinyapps.io/tornados/)     
