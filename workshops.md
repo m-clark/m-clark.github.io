@@ -7,6 +7,7 @@ subtitle:
 Here you'll find workshop slides and similar.  They are roughly in order of how recently they've been given.  Some are not so much workshops as talks without any expectation of hands-on exercises or similar.
 
 
+## Current
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Become a Bayesian in 10 Minutes</span>](../workshops/bayesian/)  
@@ -34,12 +35,23 @@ Exploring your data with <span itemprop="keywords">R</span>. A workshop that int
 An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for more than just coding.
 </span>
 
+
+
+## Under development
+
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">R Bootcamp</span>](../workshops/r_bootcamp/master.html)    
-An afternoon workshop I hope to develop further at some point.
+[<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](https://github.com/m-clark/stars) Talk on structured additive regression models, and generalized additive models in particular. Under development, to be given Winter 2017
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     
-A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via RStudio using <span itemprop="keywords">Rmarkdown</span>, $\LaTeX$, R etc.
+A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via RStudio using <span itemprop="keywords">Rmarkdown</span>, $\LaTeX$, R etc. This set of notes regarded a talk given with Andres Martinez, but I hope to return to it at some point for an update and extension.
+</span>
+
+
+## Other
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">R Bootcamp</span>](../workshops/r_bootcamp/master.html)    
+An afternoon workshop I hope to develop further at some point.
 </span>

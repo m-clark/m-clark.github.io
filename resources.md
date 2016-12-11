@@ -79,7 +79,7 @@ See the workshops page also.
 
 ## Mixed Models
 
-- [Overview](http://m-clark.github.io/docs/mixedModels/) 
+- [Overview](http://m-clark.github.io/docs/mixedModels/mixedModels.html) 
 - [Introduction](http://m-clark.github.io/docs/mixedModels/anovamixed.html) 
 
 
