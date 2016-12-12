@@ -13,7 +13,7 @@ As of Summer 2016. Primary researcher in parenthesis.
 
 [Youth Depression and Suicide Prevention Program](https://sites.lsa.umich.edu/king-lab/) (Cheryl King)
 
-[Longitudinal Study of Health and Survival in the Dogon of Mali](http://sites.lsa.umich.edu/bis/research/) (Beverly Strassman)
+[Longitudinal Study of Health and Survival in the Dogon of Mali](http://sites.lsa.umich.edu/bis/research/) (Beverly Strassmann)
 
 [Sleep Disorders in Youth after Adenotonsillectomy](https://www.researchgate.net/profile/Ronald_Chervin) (Ronald Chervin)
 
