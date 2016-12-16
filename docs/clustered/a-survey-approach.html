@@ -37,8 +37,8 @@ MathJax.Hub.Config({
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="generalized-estimating-equations.html">
-<link rel="next" href="summary.html">
+<link rel="prev" href="cluster-robust-variances.html">
+<link rel="next" href="fixed-effects-models.html">
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -233,264 +233,64 @@ $(document).ready(function() {
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="latent-growth-curve" class="section level1">
-<h1>Latent Growth Curve</h1>
-<p>An alternative approach to mixed models considers the random effects as <span class="emph">latent variables</span> with the outcome at each time point an indicator for the latent variable. I have details <a href="https://m-clark.github.io/docs/sem">elsewhere</a>, but I want to explore this as it is a commonly used technique in the social sciences, especially psychology. <span class="emph">Latent Growth Curve Models</span> are a special case of <span class="emph">structural equation modeling</span>, a highly flexible tool that can incorporate latent variables, indirect effects, multiple outcomes etc. Growth curve models are actually somewhat irregular SEM in the way that they are specified, but for our purposes, we only want to see how the approach works and compare it to previous methods.</p>
-<p>The first thing is that the data has to be in <em>wide</em> format, such that we have one column per time point, and thus only one row per individual. Once the data is ready we specify the model syntax. By default, the SEM approach also assumes unequal variances across time, so to make it more comparable, we fix that value to be constant. We’ll use <span class="pack">lavaan</span> to estimate the model.</p>
-<div class="fold s">
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dwide =<span class="st"> </span><span class="kw">spread</span>(d, <span class="dt">key=</span>time, <span class="dt">value=</span>y, <span class="dt">sep=</span><span class="st">&#39;_&#39;</span>) %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">treatment =</span> treatment==<span class="st">&#39;treatment&#39;</span>)  <span class="co"># otherwise converted to numeric directly as 1-2 instead of 1-0</span>
-<span class="kw">head</span>(dwide)</code></pre></div>
-<pre><code>  treatment id     time_0    time_1    time_2     time_3
-1     FALSE  1  0.1760974 0.6928733 0.1920017 -0.2205356
-2     FALSE  2  1.4265781 1.6607311 1.2515623  2.9685755
-3     FALSE  3 -0.1383776 0.8689109 1.2446484  2.9954976
-4     FALSE  4  2.0575643 1.7831405 1.6413706  1.7078853
-5     FALSE  5  0.9899045 1.7892770 1.7883325  2.4579697
-6     FALSE  6  0.6079163 0.1161267 0.6956824  0.8326176</code></pre>
-</div>
-<div class="fold s">
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">growthmod_syntax =<span class="st"> &quot;</span>
-<span class="st"># model for the intercept and slope latent variables</span>
-<span class="st">  int   =~ 1*time_0 + 1*time_1 + 1*time_2 + 1*time_3</span>
-<span class="st">  slope =~ 0*time_0 + 1*time_1 + 2*time_2 + 3*time_3</span>
+<div id="a-survey-approach" class="section level1">
+<h1>A Survey Approach</h1>
+<p>I will only briefly mention an approach using survey design to show the similarity of results in that scenario to using cluster robust standard errors. We’ll use the <span class="pack">survey</span> package and subsequent <span class="func">svyglm</span> function.</p>
+<p>For comparison, we’ll use a cluster-based sampling design and nothing more. This assumes we are sampling clusters from the population of interest for which we want to make inferences to. To use most survey versions of models, the design must be specified a priori.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(survey)
 
-<span class="st"># cluster-level effect</span>
-<span class="st">  int ~ treatment</span>
+design =<span class="st"> </span><span class="kw">svydesign</span>(<span class="dt">ids=</span>~id, <span class="dt">data=</span>d)
+svy_mod =<span class="st"> </span><span class="kw">svyglm</span>(y ~<span class="st"> </span>time +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">design=</span>design)
+<span class="kw">summary</span>(svy_mod)</code></pre></div>
+<pre><code>
+Call:
+svyglm(formula = y ~ time + treatment, data = d, design = design)
 
-<span class="st"># intercept-slope correlation</span>
-<span class="st">  int ~~ slope</span>
+Survey design:
+svydesign(ids = ~id, data = d)
 
-<span class="st"># fix to equal variances (parameter &#39;res&#39;)</span>
-<span class="st">  time_0 ~~ res*time_0</span>
-<span class="st">  time_1 ~~ res*time_1</span>
-<span class="st">  time_2 ~~ res*time_2</span>
-<span class="st">  time_3 ~~ res*time_3</span>
-<span class="st">&quot;</span></code></pre></div>
-</div>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(lavaan)
-growth_mod =<span class="st"> </span><span class="kw">growth</span>(growthmod_syntax, <span class="dt">data=</span>dwide)
-<span class="kw">summary</span>(growth_mod, <span class="dt">standardized=</span>T)</code></pre></div>
-<pre><code>lavaan (0.5-22) converged normally after  27 iterations
+Coefficients:
+                    Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)         0.130929   0.030500   4.293 1.83e-05 ***
+time                0.508559   0.009143  55.624  &lt; 2e-16 ***
+treatmenttreatment -0.421493   0.041647 -10.121  &lt; 2e-16 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 
-  Number of observations                          2500
+(Dispersion parameter for gaussian family taken to be 1.479315)
 
-  Estimator                                         ML
-  Minimum Function Test Statistic              234.733
-  Degrees of freedom                                11
-  P-value (Chi-square)                           0.000
-
-Parameter Estimates:
-
-  Information                                 Expected
-  Standard Errors                             Standard
-
-Latent Variables:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-  int =~                                                                
-    time_0            1.000                               1.048    0.896
-    time_1            1.000                               1.048    0.931
-    time_2            1.000                               1.048    0.863
-    time_3            1.000                               1.048    0.742
-  slope =~                                                              
-    time_0            0.000                               0.000    0.000
-    time_1            1.000                               0.394    0.350
-    time_2            2.000                               0.788    0.648
-    time_3            3.000                               1.182    0.836
-
-Regressions:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-  int ~                                                                 
-    treatment        -0.434    0.041  -10.686    0.000   -0.414   -0.207
-
-Covariances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
- .int ~~                                                                
-    slope            -0.128    0.011  -11.522    0.000   -0.317   -0.317
-
-Intercepts:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-   .time_0            0.000                               0.000    0.000
-   .time_1            0.000                               0.000    0.000
-   .time_2            0.000                               0.000    0.000
-   .time_3            0.000                               0.000    0.000
-   .int               0.137    0.030    4.553    0.000    0.131    0.131
-    slope             0.509    0.009   55.635    0.000    1.291    1.291
-
-Variances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
-   .time_0   (res)    0.269    0.005   50.000    0.000    0.269    0.197
-   .time_1   (res)    0.269    0.005   50.000    0.000    0.269    0.212
-   .time_2   (res)    0.269    0.005   50.000    0.000    0.269    0.182
-   .time_3   (res)    0.269    0.005   50.000    0.000    0.269    0.135
-   .int               1.052    0.035   29.817    0.000    0.957    0.957
-    slope             0.155    0.006   25.828    0.000    1.000    1.000</code></pre>
-<p>The <code>Intercepts:</code> section of the output shows what would be the fixed effects in the mixed model, and in this case, they are in fact ‘intercepts’ in this latent variable approach, so that is why they are named as such. The Regression of <code>int</code> on treatment depicts the treatment effect, and will make more sense to those who come to mixed models from the <span class="emph">multilevel modeling</span> literature. If you go back to the model depiction for the mixed model, this model more explicitly denotes <span class="math inline">\(\beta_{0c} = \beta_0 + \beta_2*\textrm{Treatment} + \gamma_c\)</span>. The <code>res</code> parameter is the arbitray name I’ve given for the residual variance, and is roughly equivalent to the square of the residual standard deviation in the mixed model output. The above model does not allow for correlated residuals, though this is possible<a href="#fn17" class="footnoteRef" id="fnref17"><sup>17</sup></a>.</p>
-<p>The primary point here is not to precisely reproduce the correct model but to show the identity between the mixed model and the latent growth curve approach. Proper specification will lead to identical results between latent growth curve and mixed models. The following creates a mixed model that is the equivalent.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mixed_mod_nocorr =<span class="st"> </span><span class="kw">lme</span>(y ~<span class="st"> </span>time +<span class="st"> </span>treatment, <span class="dt">data=</span>d, <span class="dt">random=</span>~<span class="dv">1</span>+time|id, <span class="dt">method=</span><span class="st">&quot;ML&quot;</span>)</code></pre></div>
-<table style="width:97%;">
-<caption>Fixed effects: y ~ time + treatment</caption>
-<colgroup>
-<col width="34%" />
-<col width="11%" />
-<col width="16%" />
-<col width="6%" />
-<col width="13%" />
-<col width="13%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="center"> </th>
-<th align="center">Value</th>
-<th align="center">Std.Error</th>
-<th align="center">DF</th>
-<th align="center">t-value</th>
-<th align="center">p-value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center"><strong>(Intercept)</strong></td>
-<td align="center">0.137</td>
-<td align="center">0.03</td>
-<td align="center">7499</td>
-<td align="center">4.552</td>
-<td align="center">0</td>
-</tr>
-<tr class="even">
-<td align="center"><strong>time</strong></td>
-<td align="center">0.509</td>
-<td align="center">0.009</td>
-<td align="center">7499</td>
-<td align="center">55.63</td>
-<td align="center">0</td>
-</tr>
-<tr class="odd">
-<td align="center"><strong>treatmenttreatment</strong></td>
-<td align="center">-0.434</td>
-<td align="center">0.041</td>
-<td align="center">2498</td>
-<td align="center">-10.69</td>
-<td align="center">0</td>
-</tr>
-</tbody>
-</table>
-<table style="width:53%;">
-<caption>Standardized Within-Group Residuals</caption>
-<colgroup>
-<col width="9%" />
-<col width="11%" />
-<col width="12%" />
-<col width="9%" />
-<col width="9%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="center">Min</th>
-<th align="center">Q1</th>
-<th align="center">Med</th>
-<th align="center">Q3</th>
-<th align="center">Max</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">-3.578</td>
-<td align="center">-0.5069</td>
-<td align="center">0.005247</td>
-<td align="center">0.5049</td>
-<td align="center">3.276</td>
-</tr>
-</tbody>
-</table>
-<table style="width:83%;">
-<caption>Linear mixed-effects model fit by maximum likelihood : y ~ time + treatment</caption>
-<colgroup>
-<col width="12%" />
-<col width="20%" />
-<col width="12%" />
-<col width="37%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="center"> </th>
-<th align="center">Observations</th>
-<th align="center">Groups</th>
-<th align="center">Log-restricted-likelihood</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center"><strong>id</strong></td>
-<td align="center">10000</td>
-<td align="center">2500</td>
-<td align="center">-12732</td>
-</tr>
-</tbody>
-</table>
-<table style="width:26%;">
-<colgroup>
-<col width="15%" />
-<col width="11%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="center">Variance</th>
-<th align="center">StdDev</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="center">1.052</td>
-<td align="center">1.026</td>
-</tr>
-<tr class="even">
-<td align="center">0.155</td>
-<td align="center">0.394</td>
-</tr>
-<tr class="odd">
-<td align="center">0.269</td>
-<td align="center">0.519</td>
-</tr>
-</tbody>
-</table>
-<div id="pros-7" class="section level2">
+Number of Fisher Scoring iterations: 2</code></pre>
+<p>These are quite similar to the cluster robust standard errors we got earlier.</p>
+<pre><code>       (Intercept)               time treatmenttreatment 
+          0.030494           0.009141           0.041638 </code></pre>
+<p>In fact, they’d be identical by using a <span class="emph">finite population correction</span> on the latter.</p>
+<pre><code>       (Intercept)               time treatmenttreatment 
+          0.030500           0.009143           0.041647 </code></pre>
+<p>I only note pros and cons that are relevant for our purposes. The pros and cons of dealing with survey design in general are quite complex and better hashed out elsewhere.</p>
+<div id="pros-3" class="section level2">
 <h2>Pros</h2>
 <ul>
-<li>Can be utilized on less data than typical SEM</li>
-<li>Very efficient estimation</li>
-<li>Can deal with very complex models, including mediation, parallel processes etc.</li>
+<li>Can incorporate different and quite complicated sampling designs</li>
+<li>More confidence in inference to the populations of interest</li>
 </ul>
 </div>
-<div id="cons-7" class="section level2">
+<div id="cons-3" class="section level2">
 <h2>Cons</h2>
 <ul>
-<li>Tedious to specify even the simplest of models</li>
-<li>Very tedious to specify even common extensions (e.g. time-varying covariates)</li>
-<li>Even worse to get into correlated residuals</li>
-<li>More complex cluster structure is not dealt with well (if at all)<a href="#fn18" class="footnoteRef" id="fnref18"><sup>18</sup></a></li>
-<li>Assumes balanced time points</li>
-<li>Doesn’t deal with many time points well (if also time-varying covariates especially)</li>
+<li>The complexity of incorporating complex design and associated weights</li>
+<li>Beyond simpler settings it can be difficult to tell how best to utilize survey design within the modeling context</li>
 </ul>
-<p>Gist: Growth curve models are very flexible, but they are also problematic simply because they are from the SEM world, which is one where models are notoriously misapplied. Furthermore, there are no common uses of growth curve models that would not be more easily implemented in one of several R packages<a href="#fn19" class="footnoteRef" id="fnref19"><sup>19</sup></a> and various other languages and statistical programs. While I find the latent variable interpretation very much intriguing, the latent variable approach is not something I’d normally consider for this setting.</p>
+<p>Gist: Our goal here was merely to provide a connection to survey design, but that’s a whole other situation that will not be considered further.</p>
 
 </div>
-</div>
-<div class="footnotes">
-<hr />
-<ol start="17">
-<li id="fn17"><p>See my LGC chapter in this <a href="https://m-clark.github.io/docs/sem">SEM document</a>. Once you see it there you’ll know why I did not do so here.<a href="latent-growth-curve.html#fnref17">↩</a></p></li>
-<li id="fn18"><p>MPlus has <a href="https://www.statmodel.com/download/handouts/MuthenV7Part3.pdf">recently</a> incorporated the ability to handle crossed random effects (and see example 9.24 in the version 7 manual), but I have no idea how they work in realistic situations with potentially many, possibly time-varying, covariates, and it’s actually done with their multilevel approach rather than the LGC we’ve been discussing. Furthermore, it requires the Bayesian estimator, which, if you’re going that route you might as well use <span class="pack">rstan</span>, <span class="pack">rjags</span> or similar and have a lot more utility (and clarity) at your disposal. For tools like <span class="pack">lme4</span> and similar, incorporating crossed random effects are no more difficult than other situations, i.e. are 1 line of code, while you’d be debugging the MPlus output for days.<a href="latent-growth-curve.html#fnref18">↩</a></p></li>
-<li id="fn19"><p>See the <span class="pack">mediation</span> package for mediation with mixed models, <span class="pack">flexMix</span> for growth mixture models, Bayesian approaches for parallel processes etc.<a href="latent-growth-curve.html#fnref19">↩</a></p></li>
-</ol>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-<a href="generalized-estimating-equations.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="summary.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+<a href="cluster-robust-variances.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="fixed-effects-models.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
 
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
