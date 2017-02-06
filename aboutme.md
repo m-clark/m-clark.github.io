@@ -10,6 +10,7 @@ subtitle:
 ### Background
 
 
+
 <span itemprop="description">
 While my interest is in statistical science, I started off majoring in [psychology](http://www.psy.tcu.edu/) and [philosophy](http://www.phil.tcu.edu/) as an undergraduate, and eventually obtained a Ph.D. in [Experimental Psychology](http://psychology.unt.edu/graduate-programs/applied-experimental-psychology). During graduate school I became interested in statistics, eventually choosing it as a concentration, and also started consulting at that time. That turned out to be a good fit for me, and I've been analyzing data ever since.</span>
 
