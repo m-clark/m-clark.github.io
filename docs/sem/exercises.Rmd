@@ -19,7 +19,7 @@ output:
  
 ```{r setupExercises, include=FALSE}
 knitr::opts_chunk$set(cache = F, message = F, warning = F, R.options=list(width=120), comment=NA)
-library(magrittr); library(dplyr); library(lavaan); library(semPlot)
+library(magrittr); library(dplyr); library(lavaan); library(semPlot); library(htmltools)
 ```
 
 
@@ -352,7 +352,7 @@ summary(compareFit(model1, model2))
 
 ## SEM
 
-You get the choice of doing exercise 1 or 2.
+If time allows do both, otherwise, pick one of the following.
 
 ### Exercise 1
 
@@ -379,6 +379,7 @@ marshCov = lavaan::cor2cov(R=marshCov, sds=unlist(meanssds[2,]))
 # write.csv(marshCov, file='../data/Marsh85_SEMExercise.csv', row.names=T)
 marshCov = read.csv('../data/Marsh85_SEMExercise.csv', row.names = 1)  
 marshCov = as.matrix(marshCov)
+# save(marshCov, file='data/Marsh85_SEMExercise.RData')
 
 
 peerRel_ModelCode = "
@@ -395,7 +396,7 @@ peerRel_Results = sem(peerRel_ModelCode, sample.cov=marshCov, sample.nobs=385)
 summary(peerRel_Results)
 ```
 
-```{r sem1fig, echo=FALSE, fig.align='center', dev='svg'}
+```{r sem1fig, echo=FALSE, fig.align='center', dev='svglite'}
 # semPlot::semPaths(peerRel_Results, residuals=T, style='lisrel', edgeLabels='', 
 #                   residScale=10, nCharNodes=6, exoVar=T, edge.label.cex=1)
 semPlot::semPaths(peerRel_Results, layout='tree2', style='lisrel', covAtResiduals=F, residuals = T,
@@ -413,22 +414,22 @@ The following will get you started. All you need to do is fill in the model code
 
 ```{r corplot, echo=FALSE, eval=T, message=F, warning=F}
 # corrplot::corrplot(cov2cor(marshCov), order='hclust', addrect=3, rect.col='#ff5503', tl.col='gray50')
-suppressMessages(lazerhawk::corrheat(cov2cor(marshCov)))  # knitr won't ignore message otherwise
+suppressMessages(lazerhawk::corrheat(cov2cor(marshCov), width='100%') %>% 
+  tags$div(style="width:75%; margin:auto auto;"))  # knitr won't ignore message otherwise
 ```
 
 <br>
 
 ```{r sem1Starter, eval=FALSE}
-marsh85 = read.csv('../data/Marsh85_SEMExercise.csv', row.names = 1)
-marsh85 = as.matrix(marsh85)
+load('data/Marsh85_SEMExercise.RData')
 peerRel_ModelCode = ''
-peerRel_Results = sem(peerRel_ModelCode, sample.cov=marsh85, sample.nobs=385)
+peerRel_Results = sem(peerRel_ModelCode, sample.cov=marshCov, sample.nobs=385)
 summary(peerRel_Results, standardized=T, fit=T, rsquare=T)
 ```
 
 <br><br>
 
-> Write a brief summary in terms of an assessment of the measurement components of the model, overall impression of model fit, and specifics of the structural relations (i.e. the paths among the latent variables) and model performance in terms of R^2^.
+- Write a brief summary in terms of an assessment of the measurement components of the model, overall impression of model fit, and specifics of the structural relations (i.e. the paths among the latent variables) and model performance in terms of R^2^.
 
 
 
@@ -453,7 +454,7 @@ The model we wish to estimate is in according to the following diagram.
 
 <br><br>
 
-```{r sem2, echo=F}
+```{r sem2, echo=F, dev='svglite'}
 poldem = read.csv('../data/PoliticalDemocracy.csv')
 poldem_ModelCode = '
   # measurement model
@@ -495,6 +496,6 @@ summary(poldem_Results, standardized=T, fit=T, rsquare=T)
 
 <br><br>
 
-> Write a brief summary in terms of an assessment of the measurement components of the model, overall impression of model fit, and specifics of the structural relations (i.e. the paths among the latent variables) and model performance in terms of R^2^.
+- Write a brief summary in terms of an assessment of the measurement components of the model, overall impression of model fit, and specifics of the structural relations (i.e. the paths among the latent variables) and model performance in terms of R^2^.
 
 
