@@ -21,7 +21,7 @@ This document regards a recent workshop given on <span itemprop="keywords">struc
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Data Processing and Visualization in R</span>](../workshops/DataProcViz/DataProcViz.html)     
+[<span itemprop="name">Data Processing and Visualization in R</span>](../workshops/DataProcViz/)     
 Focus is on common <span itemprop="keywords">data processing</span> and exploration techniques, especially as a prelude to <span itemprop="keywords">visualization</span>.  The main focus will be the <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">data.table</span> packages, which enhance and facilitate the sorts of operations that typically arise when dealing with data, including faster <span itemprop="keywords">I/O</span> and grouped operations.  For visualization, the focus will be on using <span itemprop="keywords">ggplot2</span> and other packages that allow for interactivity. [Exercises](../workshops/DataProcViz/exerciselist.html).
 </span>
 
