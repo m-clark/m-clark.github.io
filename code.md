@@ -4,7 +4,7 @@ title: Code
 subtitle:
 ---
 
-I try to organize my github files here.  The vast majority of these code snippets are conceptual demonstrations of more complicated models. Still in progress of migration.
+I try to organize my github files here.  The vast majority of these code snippets are conceptual demonstrations of more complicated models. 
 
 ## Model Fitting
 
@@ -20,9 +20,12 @@ I try to organize my github files here.  The vast majority of these code snippet
 [stochastic volatility](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/stochasticVolatility.R),
 [bivariate probit](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/bivariateProbit.R),
 [quantile regression](http://htmlpreview.github.io/?https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/quantileRegression.html)
-...
+[ordinal regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/ordinal_regression.R)
+[extreme learning machine](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/elm.R)
+[Chinese restaurant process, Indian buffet process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/crp.R), ...
 
 ### Mixed models
+
 one factor random effects [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/onefactorRE.R) 
 [(Julia)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/onefactorRE.jl) 
 [(Matlab)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/onefactorRE.m), 
@@ -30,10 +33,10 @@ two factor random effects [(R)](https://github.com/m-clark/Miscellaneous-R-Code/
 [(Julia)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/twofactorRE.jl) 
 [(Matlab)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/twofactorRE.m),
 [mixed model](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy.R), 
-[mixed model with correlated random effects](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy_withREcorrelation.R), 
-...
+[mixed model with correlated random effects](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy_withREcorrelation.R), ...
 
 ### Bayesian
+
 [BEST t-test](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstant_testBEST.R),
 [linear regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_linregwithprior.R)
 (Compare with [BUGS version](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/bugs_linreg.R), [JAGS](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/jags_linreg.R)),
@@ -45,10 +48,13 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 [topic model](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/topicModelgibbs.R),
 [multilevel mediation](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_multilevelMediation.R), 
 [variational bayes regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/variationalBayesRegression.Rmd), 
-[gaussian process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting//gp%20Examples/gaussianProcessStan.Rmd), ...
+[gaussian process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting//gp%20Examples/gaussianProcessStan.Rmd),
+[horseshoe prior](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/horseshoe/README.md), 
+[item response theory](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/StanBugsJags/IRT_models), ...
 
 
 ### EM
+
 [EM mixture univariate](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20Mixture.R),
 [EM mixture multivariate](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20Mixture%20MV.R),
 [EM probit](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20algorithm%20for%20probit%20example.R),
@@ -67,11 +73,7 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 
 #### Additive models
 
-[cubic spline](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/cubicsplines.R), 
-
-## Workshops
-
-I may put workshop related code here at some point.
+[cubic spline](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/cubicsplines.R), ...
 
 
 ## Programming Shenanigans
@@ -84,5 +86,3 @@ Scrape xkcd [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Ot
 [Shakespearean Insulter](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/shakespeareanInsulter.R), 
 [ggplot2 theme](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/ggtheme.R),
 [R matrix speedups](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/matrixOperations.md), ...
-
-## Other stuff

@@ -9,13 +9,15 @@ Part of my job entails analysis or consulting on various projects in differing l
 
 # Recent
 
-As of Summer 2016. Primary researcher in parenthesis.
+As of early 2017. Primary researcher in parenthesis.
 
-[Youth Depression and Suicide Prevention Program](https://sites.lsa.umich.edu/king-lab/) (Cheryl King)
+[Readiness of Trauma Surgeons](http://www.procedurallearning.org/about/team/53-george) (Brian George)
 
 [Longitudinal Study of Health and Survival in the Dogon of Mali](http://sites.lsa.umich.edu/bis/research/) (Beverly Strassmann)
 
 [Sleep Disorders in Youth after Adenotonsillectomy](https://www.researchgate.net/profile/Ronald_Chervin) (Ronald Chervin)
+
+[Youth Depression and Suicide Prevention Program](https://sites.lsa.umich.edu/king-lab/) (Cheryl King)
 
 
 
