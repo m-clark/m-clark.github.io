@@ -10,7 +10,7 @@ subtitle:
 ### Background
 
 <span itemprop="description">
-While my interest is in statistical science, I started off majoring in [psychology](http://www.psy.tcu.edu/) and [philosophy](http://www.phil.tcu.edu/) as an undergraduate, and eventually obtained a Ph.D. in [Experimental Psychology](http://psychology.unt.edu/graduate-programs/applied-experimental-psychology). During graduate school I became interested in statistics, eventually choosing it as a concentration, and also started consulting at that time. That turned out to be a good fit for me, and I've been exploring and analyzing data ever since.</span>
+While my interest is in statistical science, I started off majoring in [psychology](http://www.psy.tcu.edu/) and [philosophy](http://www.phil.tcu.edu/) as an undergraduate, and eventually obtained a Ph.D. in [Experimental Psychology](http://psychology.unt.edu/graduate-programs/applied-experimental-psychology). During graduate school I became interested in statistics, eventually choosing it as a concentration, and I also started consulting at that time. That turned out to be a good fit for me, and I've been exploring and analyzing data ever since.</span>
 
 <span itemprop="description">
 Previous to my current position, I was a statistical consultant for the [Center for Social Research](http://csr.nd.edu/) at the University of Notre Dame. Before that, I was previously affiliated with the <span itemprop="affiliation alumniOf">University of North Texas</span> with the departments of [Psychology](http://www.psyc.unt.edu/) as lecturer, and [Research and Statistical Support](http://www.unt.edu/rss) as statistical consultant.</span>
@@ -28,7 +28,9 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 
 <span itemprop="name" style="font-variant: small-caps;">Michael Clark</span>
 
+<img src="img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width=50%>
 
-<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, and Analytics Research</span><br>
+
+<span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, & Analytics Research</span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">University of Michigan</span></span>
