@@ -4,7 +4,7 @@ title: Code
 subtitle:
 ---
 
-I try to organize my github files here.  The vast majority of these code snippets are conceptual demonstrations of more complicated models. 
+The vast majority of these code snippets are conceptual demonstrations of more complicated models. The audience is generally faculty, researchers, and graduate students in applied fields who, like I did, want to go beyond their basic statistical training.  However, I hope it helps anyone who happens to stumble across it.
 
 ## Model Fitting
 
@@ -62,7 +62,7 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 [EM probabilistic pca](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20algorithm%20for%20ppca.R),
 [EM state space model](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/EM%20Examples/EM%20for%20state%20space%20unobserved%20components.R)
 
-### Curvy
+### Wiggly
 
 #### Gaussian processses
 
