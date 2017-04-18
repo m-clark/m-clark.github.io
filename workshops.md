@@ -10,7 +10,7 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 ## Current
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](https://github.com/m-clark/stars) Talk on structured additive regression models, and generalized additive models in particular.
+[<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](../workshops/stars/)  Talk on structured additive regression models, and generalized additive models in particular.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
