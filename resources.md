@@ -33,7 +33,7 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 - [Pandas](http://pandas.pydata.org/) Dealing with data in an R-like way.
 - [Compared to R for stats](http://www.kdnuggets.com/2015/05/r-vs-python-data-science.html)
 - [Workshops](http://kshedden.github.io/) Kerby Shedden's workshop notes
-- [Workshops](marcio-mourao.github.io)) Marcio's workshop notes
+- [Workshops](marcio-mourao.github.io) Marcio's workshop notes
 - [NLTK](http://www.nltk.org/)
 - [gensim](https://radimrehurek.com/gensim/)
 
