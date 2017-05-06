@@ -6,6 +6,7 @@ subtitle:
 
 The vast majority of these code snippets are conceptual demonstrations of more complicated models. The audience is generally faculty, researchers, and graduate students in applied fields who, like I did, want to go beyond their basic statistical training.  However, I hope it helps anyone who happens to stumble across it.
 
+
 ## Model Fitting
 
 [standard regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/standardlm.R), 
@@ -21,8 +22,11 @@ The vast majority of these code snippets are conceptual demonstrations of more c
 [bivariate probit](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/bivariateProbit.R),
 [quantile regression](http://htmlpreview.github.io/?https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/quantileRegression.html),
 [ordinal regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/ordinal_regression.R),
+[naive bayes](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/naivebayes.R),
 [extreme learning machine](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/elm.R),
-[Chinese restaurant process, Indian buffet process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/crp.R), ...
+[Chinese restaurant process, Indian buffet process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/crp.R),
+[One-line models (an exercise)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/one_line_models.R), ...
+
 
 ### Mixed models
 
@@ -33,7 +37,8 @@ two factor random effects [(R)](https://github.com/m-clark/Miscellaneous-R-Code/
 [(Julia)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/twofactorRE.jl) 
 [(Matlab)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/twofactorRE.m),
 [mixed model](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy.R), 
-[mixed model with correlated random effects](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy_withREcorrelation.R), ...
+[mixed model with correlated random effects](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/Bayesian/rstan_MixedModelSleepstudy_withREcorrelation.R), See the documents section for more...
+
 
 ### Bayesian
 
@@ -78,11 +83,22 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 
 ## Programming Shenanigans
 
+
 FizzBuzz test [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/fizzbuzz.R) [(julia)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/fizzbuzz.jl) [(Python)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/fizzbuzz.py),
 Reverse a string recursively [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/stringReverseRecursively.R) [(Python)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/stringReverseRecursively.py),
 Recursive Word Wrap [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/wordWrap.R) [(Python)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/wordWrap.py),
+[calculate compound interest recursively](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/compound.R),
 [get US Congress roll call data](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/getRollCall.R),
 Scrape xkcd [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/xkcdscrape.R) [(Python)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/xkcdscrape.py), 
 [Shakespearean Insulter](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/shakespeareanInsulter.R), 
-[ggplot2 theme](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/ggtheme.R),
+[spurious correlation with ratios](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/spuriousCorrelationwithRatios.R),
 [R matrix speedups](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/matrixOperations.md), ...
+
+
+## Packages
+
+I have a couple packages for personal use and to learn more about the code development process, but in case someone might find something useful therein, here they are:
+
+[lazerhawk](https://github.com/m-clark/lazerhawk)
+
+[heatR](https://github.com/m-clark/heatR)
