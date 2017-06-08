@@ -180,7 +180,7 @@ require(["gitbook", "lodash", "jQuery"], function(gitbook, _, $) {
               scrollToHighlighted();
             }
         }).on("input", ".book-search input", function(e) {
-            var q = $(this).val().trim();
+            var q = $(this).val();
             if (q.length === 0) {
                 gitbook.sidebar.filter(null);
                 gitbook.storage.remove("keyword");
