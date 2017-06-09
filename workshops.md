@@ -10,7 +10,7 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 ## Current
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Mixed Models with R</span>](../workshops/mixed_models_R/)  This workshop focuses on mixed effects models using R, covering basic random effects models (random intercepts and slopes) as well as extensions into generalized mixed models and discussion of realms beyond.
+[<span itemprop="name">Mixed Models with R</span>](../workshops/mixed_models_r/)  This workshop focuses on mixed effects models using R, covering basic random effects models (random intercepts and slopes) as well as extensions into generalized mixed models and discussion of realms beyond.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
