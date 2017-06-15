@@ -6,9 +6,8 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Mixed Models in R</title>
-  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
   <meta name="description" content="Introduction to Mixed Models in R">
-  <meta name="generator" content="bookdown 0.3 and GitBook 2.6.7">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
 
   <meta property="og:title" content="Mixed Models in R" />
   <meta property="og:type" content="book" />
@@ -25,7 +24,7 @@
 
 
 
-<meta name="date" content="2017-06-10">
+<meta name="date" content="2017-06-15">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -34,7 +33,6 @@
   
 <link rel="prev" href="common-extensions.html">
 <link rel="next" href="going-further.html">
-
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -106,6 +104,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 
 
+
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
     <div class="book-summary">
@@ -118,6 +117,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#goals"><i class="fa fa-check"></i>Goals</a></li>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#prerequisites"><i class="fa fa-check"></i>Prerequisites</a></li>
 </ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#initial-steps"><i class="fa fa-check"></i>Initial Steps</a></li>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#terminology"><i class="fa fa-check"></i>Terminology</a><ul>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#kinds-of-clustering"><i class="fa fa-check"></i>Kinds of clustering</a></li>
 </ul></li>
@@ -133,6 +133,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#exercises"><i class="fa fa-check"></i>Exercises</a><ul>
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#sleep"><i class="fa fa-check"></i>Sleep</a></li>
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#cluster-level-covariate-1"><i class="fa fa-check"></i>Cluster level covariate</a></li>
+<li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#simulation"><i class="fa fa-check"></i>Simulation</a></li>
 </ul></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="more-random-effects.html"><a href="more-random-effects.html"><i class="fa fa-check"></i>More Random Effects</a><ul>
@@ -151,6 +152,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#residual-structure"><i class="fa fa-check"></i>Residual Structure</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#generalized-linear-mixed-models"><i class="fa fa-check"></i>Generalized Linear Mixed Models</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#exercises-2"><i class="fa fa-check"></i>Exercises</a><ul>
+<li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#sociometric-data"><i class="fa fa-check"></i>Sociometric data</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#patents"><i class="fa fa-check"></i>Patents</a></li>
 </ul></li>
 </ul></li>
@@ -226,21 +228,21 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="balancedmissing-values" class="section level3">
 <h3>Balanced/Missing values</h3>
 <p>We’ve primarily been looking at <span class="emph">balanced</span> data, where each clusters have the same number of observations within them. There is no requirement for this, and in many cases we wouldn’t even expect it, e.g. people within geographical units.</p>
-<p>However, if data is only missing on the outcome, or a mix of variables, we essentially have the same issue as with typical data situations, and will have the same considerations for dealing with missingness. If you don’t lose much data, the practical gain by ignoring missingness generally outweighs the complexities that can come with, for example, multiple imputation<a href="#fn12" class="footnoteRef" id="fnref12"><sup>12</sup></a>, even in the best of settings. By default, mixed models assume missing at random. On the other hand, longitudinal data has special considerations, as there is increasing dropout over time.</p>
+<p>However, if data is only missing on the outcome, or a mix of variables, we essentially have the same issue as with typical data situations, and will have the same considerations for dealing with missingness. If you don’t lose much data, the practical gain by ignoring missingness generally outweighs the complexities that can come with, for example, multiple imputation<a href="#fn14" class="footnoteRef" id="fnref14"><sup>14</sup></a>, even in the best of settings. By default, mixed models assume missing at random. On the other hand, longitudinal data has special considerations, as there is increasing dropout over time.</p>
 </div>
 </div>
 <div id="model-comparison" class="section level2">
 <h2>Model Comparison</h2>
 <p>Model comparison takes place in the usual way in the sense of potentially having statistical tests and information criteria. Unfortunately, the typical likelihood ratio tests one might use in standard settings are not so straightforward here. For example, at a minimum you’d have to change the default estimation from REML to ML, and the models must have the same random effects structure, in order to compare models with different fixed effects for the resulting test p-value to be correct. It works the other way to compare models with different random effects structure.</p>
-<p>In my opinion, model selection involves considerations of theory, parsimony, and prediction, and those tests do not. I’m not partial to such tests even in the standard setting, and would use AIC here to potentially aid (not make) a model choice if I thought it was necessary, as I would there<a href="#fn13" class="footnoteRef" id="fnref13"><sup>13</sup></a>. In general though, trying to determine a ‘best’ model with one set of data is a problematic endeavor at best, and at worst, completely misguided. I think it’s very useful to build models of increasing complexity, and select one to focus based on the available evidence. Just don’t get hung up on choosing one based solely on the outcome of a single statistic. If you have a lot of data, you should consider some sort of explicit validation approach if you really want to compare competing models, but that is not without complication given the dependency in the data.</p>
+<p>In my opinion, model selection involves considerations of theory, parsimony, and prediction, and those tests do not. I’m not partial to such tests even in the standard setting, and would use AIC here to potentially aid (not make) a model choice if I thought it was necessary, as I would there<a href="#fn15" class="footnoteRef" id="fnref15"><sup>15</sup></a>. In general though, trying to determine a ‘best’ model with one set of data is a problematic endeavor at best, and at worst, completely misguided. I think it’s very useful to build models of increasing complexity, and select one to focus based on the available evidence. Just don’t get hung up on choosing one based solely on the outcome of a single statistic. If you have a lot of data, you should consider some sort of explicit validation approach if you really want to compare competing models, but that is not without complication given the dependency in the data.</p>
 
 </div>
 </div>
 <div class="footnotes">
 <hr />
-<ol start="12">
-<li id="fn12"><p>Multiple imputation is straightforward only in theory. In practice it becomes a major pain to go very far beyond getting the parameter estimates for simple models. Full information maximum likelihood is little implemented outside of SEM software/packages.<a href="issues.html#fnref12">↩</a></p></li>
-<li id="fn13"><p>If you really want them see the <span class="pack">lmertest</span> package. Note also that AIC does not come with a free lunch. See the <span class="pack">cAIC4</span> package and references therein.<a href="issues.html#fnref13">↩</a></p></li>
+<ol start="14">
+<li id="fn14"><p>Multiple imputation is straightforward only in theory. In practice it becomes a major pain to go very far beyond getting the parameter estimates for simple models. Full information maximum likelihood is little implemented outside of SEM software/packages.<a href="issues.html#fnref14">↩</a></p></li>
+<li id="fn15"><p>If you really want them see the <span class="pack">lmertest</span> package. Note also that AIC does not come with a free lunch. See the <span class="pack">cAIC4</span> package and references therein.<a href="issues.html#fnref15">↩</a></p></li>
 </ol>
 </div>
             </section>
@@ -249,8 +251,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
         </div>
       </div>
 <a href="common-extensions.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="going-further.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
-
+<a href="going-further.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
@@ -296,7 +299,7 @@ gitbook.start({
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
     if (location.protocol !== "file:" && /^https?:/.test(script.src))
       script.src  = script.src.replace(/^https?:/, '');
     document.getElementsByTagName("head")[0].appendChild(script);

@@ -6,9 +6,8 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Mixed Models in R</title>
-  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
   <meta name="description" content="Introduction to Mixed Models in R">
-  <meta name="generator" content="bookdown 0.3 and GitBook 2.6.7">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
 
   <meta property="og:title" content="Mixed Models in R" />
   <meta property="og:type" content="book" />
@@ -25,7 +24,7 @@
 
 
 
-<meta name="date" content="2017-06-10">
+<meta name="date" content="2017-06-15">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,7 +32,6 @@
   
   
 <link rel="prev" href="summary-1.html">
-
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -106,6 +104,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <body>
 
 
+
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
 
     <div class="book-summary">
@@ -118,6 +117,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#goals"><i class="fa fa-check"></i>Goals</a></li>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#prerequisites"><i class="fa fa-check"></i>Prerequisites</a></li>
 </ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#initial-steps"><i class="fa fa-check"></i>Initial Steps</a></li>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#terminology"><i class="fa fa-check"></i>Terminology</a><ul>
 <li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#kinds-of-clustering"><i class="fa fa-check"></i>Kinds of clustering</a></li>
 </ul></li>
@@ -133,6 +133,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#exercises"><i class="fa fa-check"></i>Exercises</a><ul>
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#sleep"><i class="fa fa-check"></i>Sleep</a></li>
 <li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#cluster-level-covariate-1"><i class="fa fa-check"></i>Cluster level covariate</a></li>
+<li class="chapter" data-level="" data-path="correlated-data.html"><a href="correlated-data.html#simulation"><i class="fa fa-check"></i>Simulation</a></li>
 </ul></li>
 </ul></li>
 <li class="chapter" data-level="" data-path="more-random-effects.html"><a href="more-random-effects.html"><i class="fa fa-check"></i>More Random Effects</a><ul>
@@ -151,6 +152,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#residual-structure"><i class="fa fa-check"></i>Residual Structure</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#generalized-linear-mixed-models"><i class="fa fa-check"></i>Generalized Linear Mixed Models</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#exercises-2"><i class="fa fa-check"></i>Exercises</a><ul>
+<li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#sociometric-data"><i class="fa fa-check"></i>Sociometric data</a></li>
 <li class="chapter" data-level="" data-path="common-extensions.html"><a href="common-extensions.html#patents"><i class="fa fa-check"></i>Patents</a></li>
 </ul></li>
 </ul></li>
@@ -205,6 +207,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><p><span class="emph">GPA</span>: The GPA data are a longitudinal data set, where 200 college students have been followed 6 consecutive semesters. In this data set, there are GPA measures on 6 consecutive occasions, with a JOB status variable (how many hours worked) for the same 6 occasions. There are two student-level explanatory variables: the gender (1= male, 2= female) and the high school GPA. There is also a dichotomous student-level outcome variable, which indicates whether a student has been admitted to the university of their choice. Since not every student applies to a university, this variable has many missing values.</p></li>
 <li><p><span class="emph">pupils</span>: Assume that we have data from 1000 pupils who have attended 100 different primary schools, and subsequently went on to 30 secondary schools. Similar to the situation where we have pupils within schools and neighborhoods, we have a cross-classified structure. Pupils are nested within primary and within secondary schools, with primary and secondary schools crossed. In other words: pupils are nested within the cross-classification of primary and secondary schools. In our example, we have a response variable achievement which is measured in secondary school. We have two explanatory variables at the pupil level: pupil gender (0 = male, 1 = female) and a six-point scale for pupil socioeconomic status, pupil ses. We have at the school level a dichotomous variable that indicates if the school is public (denom = 0) or denominational (denom = 1). Since we have both primary and secondary schools, we have two such variables (named pdenom for the primary school and sdenom for the secondary school).</p></li>
 <li><p><span class="emph">nurses</span>: The data in this example are from a hypothetical study on stress in hospitals. The data are from nurses working in wards nested within hospitals. In each of 25 hospitals, four wards are selected and randomly assigned to an experimental and control condition. In the experimental condition, a training program is offered to all nurses to cope with job- related stress. After the program is completed, a sample of about 10 nurses from each ward is given a test that measures job-related stress. Additional variables are: nurse age (years), nurse experience (years), nurse gender (0 = male, 1 = female), type of ward (0 = general care, 1 = special care), and hospital size (0 = small, 1 = medium, 2 = large). This is an example of an experiment where the experimental intervention is carried out at the group level. In biomedical research this design is known as a cluster randomized trial. They are quite common also in educational and organizational research, where entire classes or schools are assigned to experimental and control conditions. Since the design variable Experimental versus Control group (ExpCon) is manipulated at the second (ward) level, we can study whether the experimental effect is different in different hospitals, by defining the regression coefficient for the ExpCon variable as random at the hospital level. In this example, the variable ExpCon is of main interest, and the other variables are covariates. Their function is to control for differences between the groups, which should be small given that randomization is used, and to explain variance in the outcome variable stress. To the extent that they are successful in explaining variance, the power of the test for the effect of ExpCon will be increased. Therefore, although logically we can test if explanatory variables at the first level have random coefficients at the second or third level, and if explanatory variables at the second level have random coefficients at the third level, these possibilities are not pursued. We do test a model with a random coefficient for ExpCon at the third level, where there turns out to be significant slope variation. This varying slope can be predicted by adding a cross-level interaction between the variables ExpCon and HospSize. In view of this interaction, the variables ExpCon and HospSize have been centered on their overall mean.</p></li>
+<li><p><span class="emph">sociometric</span>: The sociometric data are intended to demonstrate a data structure where the cross-classification is at the lowest level, with an added group structure because there are several groups. The story is that in small groups all members are asked to rate each other on a scale of 1-9, where higher numbers indicate a more positive view of the individual (i.e. how much they would like to share some activity with the rated person). Each record is defined by the sender–receiver pairs, with explanatory variables age and sex defined separately for the sender and the receiver. The group variable ‘group size’ is added to this file. There are 20 groups, with sizes ranging from 4 to 11.</p></li>
 <li><p><span class="emph">speed dating</span>: Data involve a speed dating experiment on a sample of a few hundred students in graduate and professional schools at Columbia University. In the speed dating events, the experiment randomly assigned each participant to ten short dates (four minutes) with participants of the opposite sex. For each date, each person rated six attributes (attractive, sincere, intelligent, fun, ambitious, shared interests) of the other person on a 10-point scale and wrote down whether he or she would like to see the other person again. The data have been filtered to remove constant responders, i.e. those who always or never wanted to see their partner again, those six attributes have scaled versions with mean 0 and standard deviation 1 (<code>_sc</code>), column names have been made useful, and only some of the variables have been kept for the demo. If you run the same model, you can get very similar estimates to that in the Fahrmeier et al. text, table 7.4 (though there is a typo for the Male effect).</p></li>
 <li><p>The data come from Gelman’s website but are based on <a href="http://faculty.chicagobooth.edu/emir.kamenica/documents/genderDifferences.pdf">this article</a>.</p></li>
 <li><p><span class="emph">patents</span>: The European Patent Office is able to protect a patent from competition for a certain period of time. The Patent Office has the task to examine inventions and to declare patent if certain prerequisites are fulfilled. The most important requirement is that the invention is something truly new. Even though the office examines each patent carefully, in about 80% of cases competitors raise an objection against already assigned patents. In the economic literature the analysis of patent opposition plays an important role as it allows one to (indirectly) investigate a number of economic questions. For instance, the frequency of patent opposition can be used as an indicator for the intensity of the competition in different market segments.</p></li>
@@ -239,9 +242,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>For intermediate to advanced treatment I find Fahrmeier et al. <a href="http://www.springer.com/us/book/9783642343322">Regression - Models, Methods and Applications</a> to be very good. It will also tie mixed models to spatial and nonparametric approaches.</p>
 <p>There is literally <a href="http://lme4.r-forge.r-project.org/lMMwR/lrgprt.pdf">a book on mixed models with lme4</a> by Douglas Bates, one of the developers. While dated with regard to <span class="pack">lme4</span>, it’s definitely not in general, and worth having around.</p>
 <p><a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html">Mixed model FAQ</a></p>
+<p>I have <a href="http://m-clark.github.io/documents/#mixed-models">several other docs</a> on various aspects of mixed models.</p>
 
 </div>
 </div>
+
+
 
 
 
@@ -268,7 +274,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
       </div>
 <a href="summary-1.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
 
-
+    </div>
+  </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
@@ -314,7 +321,7 @@ gitbook.start({
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
     if (location.protocol !== "file:" && /^https?:/.test(script.src))
       script.src  = script.src.replace(/^https?:/, '');
     document.getElementsByTagName("head")[0].appendChild(script);
