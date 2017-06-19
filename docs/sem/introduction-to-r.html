@@ -6,8 +6,9 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Graphical and Latent Variable Modeling</title>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
   <meta name="description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc.">
-  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
+  <meta name="generator" content="bookdown 0.3 and GitBook 2.6.7">
 
   <meta property="og:title" content="Graphical and Latent Variable Modeling" />
   <meta property="og:type" content="book" />
@@ -24,7 +25,7 @@
 
 
 
-<meta name="date" content="2017-06-16">
+<meta name="date" content="2017-06-18">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,6 +34,7 @@
   
 <link rel="prev" href="introduction.html">
 <link rel="next" href="graphical-models-1.html">
+
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
 <link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
@@ -62,12 +64,12 @@
 <link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
 <link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
 <script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
-<script src="libs/plotly-binding-4.7.0/plotly.js"></script>
-<script src="libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="libs/plotlyjs-1.26.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.26.1/plotly-latest.min.js"></script>
+<script src="libs/plotly-binding-4.6.0/plotly.js"></script>
 <link href="libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
 <script src="libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
-<link href="libs/plotlyjs-1.27.1/plotly-htmlwidgets.css" rel="stylesheet" />
-<script src="libs/plotlyjs-1.27.1/plotly-latest.min.js"></script>
+<script src="libs/typedarray-0.1/typedarray.min.js"></script>
 
 
 <style type="text/css">
@@ -112,7 +114,6 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </head>
 
 <body>
-
 
 
   <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
@@ -443,8 +444,8 @@ myObject &lt;-<span class="st"> </span>something</code></pre></div>
 y =<span class="st"> </span>x +<span class="st"> </span><span class="kw">rnorm</span>(<span class="dv">100</span>)
 mod =<span class="st"> </span><span class="kw">lm</span>(y ~<span class="st"> </span>x)
 <span class="kw">summary</span>(x)</code></pre></div>
-<pre><code>      Min.    1st Qu.     Median       Mean    3rd Qu.       Max. 
--3.1408025 -0.7044557  0.0574375 -0.0004836  0.7051893  2.7408777 </code></pre>
+<pre><code>    Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+-2.17047 -0.50579  0.03269  0.06460  0.84973  2.93255 </code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(mod)</code></pre></div>
 <pre><code>
 Call:
@@ -452,18 +453,18 @@ lm(formula = y ~ x)
 
 Residuals:
      Min       1Q   Median       3Q      Max 
--2.47452 -0.56648 -0.09474  0.50850  2.26018 
+-2.73639 -0.61335 -0.01227  0.80187  2.32953 
 
 Coefficients:
             Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)  0.07113    0.09349   0.761    0.449    
-x            0.96469    0.08898  10.842   &lt;2e-16 ***
+(Intercept) -0.07034    0.10050  -0.700    0.486    
+x            0.83951    0.10682   7.859 5.06e-12 ***
 ---
 Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 
-Residual standard error: 0.9349 on 98 degrees of freedom
-Multiple R-squared:  0.5453,    Adjusted R-squared:  0.5407 
-F-statistic: 117.5 on 1 and 98 DF,  p-value: &lt; 2.2e-16</code></pre>
+Residual standard error: 1.003 on 98 degrees of freedom
+Multiple R-squared:  0.3866,    Adjusted R-squared:  0.3804 
+F-statistic: 61.77 on 1 and 98 DF,  p-value: 5.056e-12</code></pre>
 <p>In both cases we used the <code>summary</code> function, but get different results. There are two <span class="emph">methods</span> for summary at work here: <span>summary.default</span> and <span>summary.lm</span>. Which is used depends on the class of the object given as an argument to the summary function. Most of the time however, there are unique functions that will only work on one class of object.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">class</span>(x)</code></pre></div>
 <pre><code>[1] &quot;numeric&quot;</code></pre>
@@ -579,9 +580,8 @@ mymodel =<span class="st"> </span><span class="kw">sem</span>(modelCode, <span c
         </div>
       </div>
 <a href="introduction.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="graphical-models-1.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
-    </div>
-  </div>
+<a href="graphical-models-1.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
 <script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
@@ -626,7 +626,7 @@ gitbook.start({
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     if (location.protocol !== "file:" && /^https?:/.test(script.src))
       script.src  = script.src.replace(/^https?:/, '');
     document.getElementsByTagName("head")[0].appendChild(script);
