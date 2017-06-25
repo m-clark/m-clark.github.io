@@ -106,7 +106,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Topic Modeling Demo</span>](../docs/machine_learning/)     
+[<span itemprop="name keywords">Topic Modeling Demo</span>](../docs/topic_models/topic-model-demo.html)     
 <span itemprop="description">A demonstration of <span itemprop="keywords">Latent Dirichlet Allocation</span> for <span itemprop="keywords">topic modeling</span> in <span itemprop="keywords">R</span>.
 </span>
 </span>
