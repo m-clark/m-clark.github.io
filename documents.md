@@ -101,7 +101,13 @@ Here you'll find documents of varying technical degree covering things of intere
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Categorical Regression Models</span>](../docs/logregmodels.html)     
-<span itemprop="description">An overview of regression models for <span itemprop="keywords">binary, multinomial, and ordinal outcomes</span>, with connections among various types of models. Not quite complete, and under conversion to a different format.
+<span itemprop="description">An overview of regression models for <span itemprop="keywords">binary, multinomial, and ordinal outcomes</span>, with connections among various types of models.
+</span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Topic Modeling Demo</span>](../docs/machine_learning/)     
+<span itemprop="description">A demonstration of <span itemprop="keywords">Latent Dirichlet Allocation</span> for <span itemprop="keywords">topic modeling</span> in <span itemprop="keywords">R</span>.
 </span>
 </span>
 
