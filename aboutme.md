@@ -35,10 +35,10 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 <br>
 
 
-<table>
+<table  class="sigtable">
   <tr>
-    <td><span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, & Analytics Research</span></td>
-    <td rowspan="3"><img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'></td>
+    <th><span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, & Analytics Research</span></td>
+    <th rowspan="3"><img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'></td>
   </tr>
   <tr>
     <td><span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span></td>
