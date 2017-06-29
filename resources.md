@@ -8,10 +8,10 @@ This is a list of resources for me primarily, essentially a reminder of things t
 
 If you are a CSCAR client and want some resources for statistics, programming, etc., check out the [CSCAR wiki](https://github.com/CSCAR/Resources/wiki).
 
-[R](#R), [Stan](#Stan), [Python](#Python), [SEM](#SEM), [People, Blogs, etc.](#people), [Miscellaneous](#Miscellaneous), [Books](#free-books)
+[R](#r), [Stan](#stan), [Python](#python), [SEM](#sem), [People, Blogs, etc.](#people-blogs-etc), [Miscellaneous](#miscellaneous), [Books](#free-books)
 
 
-# <a name="R">R</a>
+# R
 
 
 - [Use R series](http://www.springer.com/series/6991): for umich folks, this is electronically [available](http://mirlyn.lib.umich.edu/Search/Home?lookfor=%22%20Use%20R!%22&type=series)
@@ -19,14 +19,14 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 - [GitHub trending](https://github.com/trending/r)
 
 
-# <a name="Stan">Stan</a>
+# Stan
 
 - [Forums](https://groups.google.com/d/forum/stan-users)
 - [Discourse](http://discourse.mc-stan.org/)
 - [Example models](https://github.com/stan-dev/example-models/wiki)
 
 
-# <a name="Python">Python</a>
+# Python
 
 - [Statsmodels](http://www.statsmodels.org/stable/index.html) Standard statistical models in Python.
 - [Scikit-learn](http://scikit-learn.org/stable/)  Simple and efficient tools for data mining and data analysis.
@@ -38,7 +38,7 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 - [gensim](https://radimrehurek.com/gensim/)
 
 
-# <a name="SEM">SEM</a>
+# SEM
 
 - [Pearl](http://bayes.cs.ucla.edu/jp_home.html)
 - [Imai](http://imai.princeton.edu/)
@@ -46,7 +46,7 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 - [Mplus manual](https://www.statmodel.com/download/usersguide/MplusUserGuideVer_8.pdf)
 
 
-# <a name="people">People, Blogs etc.</a>
+# People, Blogs etc.
 
 - [Andrew Gelman](http://andrewgelman.com/)
 - [Cosma Shalizi](http://bactra.org/weblog/)
@@ -60,7 +60,7 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 
 
 
-# <a name="misc">Miscellaneous</a>
+# Miscellaneous
 
 - [Distill](http://distill.pub/)
 - [Mixed Model FAQ](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html)
