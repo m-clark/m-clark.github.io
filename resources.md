@@ -8,7 +8,7 @@ This is a list of resources for me primarily, essentially a reminder of things t
 
 If you are a CSCAR client and want some resources for statistics, programming, etc., check out the [CSCAR wiki](https://github.com/CSCAR/Resources/wiki).
 
-[R](#R), [Stan](#Stan), [Python](#Python), [SEM](#SEM), [People, Blogs, etc.](#people), [Miscellaneous](#misc), [Books][Free Books]
+[R](#R), [Stan](#Stan), [Python](#Python), [SEM](#SEM), [People, Blogs, etc.](#people), [Miscellaneous](#misc), [Books](#Free-Books)
 
 
 # <a name="R">R</a>
