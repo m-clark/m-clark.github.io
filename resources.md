@@ -8,7 +8,7 @@ This is a list of resources for me primarily, essentially a reminder of things t
 
 If you are a CSCAR client and want some resources for statistics, programming, etc., check out the [CSCAR wiki](https://github.com/CSCAR/Resources/wiki).
 
-[R](#R), [Stan](#Stan), [Python](#Python), [SEM](#SEM), [People, Blogs, etc.](#people), [Miscellaneous](#misc), [Books](#books)
+[R](#R), [Stan](#Stan), [Python](#Python), [SEM](#SEM), [People, Blogs, etc.](#people), [Miscellaneous](#misc), [Books][Free Books]
 
 
 # <a name="R">R</a>
@@ -68,14 +68,20 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 - [dplyr vs. data.table](https://stackoverflow.com/questions/21435339/data-table-vs-dplyr-can-one-do-something-well-the-other-cant-or-does-poorly/27840349#27840349)
 
 
-# <a name="books">Free Books</a>
+# Free Books
+
+## Stats
 
 - [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Bible of ML by Hastie, Tibshirani, & Friedman.
 - [Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/) Application of the above in R.
-- [Advanced R](http://adv-r.had.co.nz/)  Hadley Wickham
-- [R Packages](http://r-pkgs.had.co.nz/)  Hadley Wickham
+- [Advanced Data Analysis from an Elementary Point of View](http://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/)
 - [Gaussian Processes for Machine Learning](http://www.gaussianprocess.org/gpml/) Carl Rasmussen
 - [Discrete Choice Methods with Simulation](http://eml.berkeley.edu/books/choice2.html) Kenneth Train
+- [An introduction to psychometric theory with applications in R](http://www.personality-project.org/r/book/)
+
+## Programming
+
+- [Advanced R](http://adv-r.had.co.nz/)  Hadley Wickham
+- [R Packages](http://r-pkgs.had.co.nz/)  Hadley Wickham
 - [Bookdown website](https://bookdown.org/) All R related
 - [Happy Git and GitHub for the useR](http://happygitwithr.com/)
-- [An introduction to psychometric theory with applications in R](http://www.personality-project.org/r/book/)
