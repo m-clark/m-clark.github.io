@@ -28,18 +28,13 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 
 <span itemprop="name" style="font-variant: small-caps;">Michael Clark</span>
 
-
-
-
-<br>
-<br>
-
+<img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'></img>
 
 <table  class="sigtable">
   <tr>
     <td><span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Consulting for Statistics, Computing, & Analytics Research</span></td>
     
-    <td rowspan="3"><img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'></img></td>
+    <td rowspan="3"></td>
   </tr>
   <tr>
     <td><span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span></td>
