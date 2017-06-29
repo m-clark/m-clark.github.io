@@ -6,7 +6,7 @@ title: Resources
 
 This is a list of resources for me primarily, essentially a reminder of things to check out from time to time or links I've gone back to.  
 
-If you are a CSCAR client and want some resources for statistics, programming, etc., check out the [CSCAR resources page](https://cscar-github.io/).
+If you are a CSCAR client and want some resources for statistics, programming, etc., check out the [CSCAR resources page](https://cscar.github.io/).
 
 [R](#r), [Stan](#stan), [Python](#python), [SEM](#sem), [People, Blogs, etc.](#people-blogs-etc), [Miscellaneous](#miscellaneous), [Books](#free-books)
 
