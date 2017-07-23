@@ -12,11 +12,8 @@ Here you'll find documents of varying technical degree covering things of intere
 ### Bayesian
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Bayesian Basics</span>](../docs/IntroBayes.html)     
-<span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span>, <span itemprop="keywords">Stan</span>, and to a lesser extent, <span itemprop="keywords">BUGS</span> and <span itemprop="keywords">JAGS</span>.
-<br>
-[Recently updated content](../docs/bayesian_book/).  Notable changes to content, and changed layout. Not satisfied with the layout yet and may change it soon.
-</span>
+[<span itemprop="name keywords">Bayesian Basics</span>](../docs/bayesian_book)     
+<span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span> and <span itemprop="keywords">Stan</span>.</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
