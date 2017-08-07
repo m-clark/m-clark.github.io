@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Graphical and Latent Variable Modeling</title>
+  <meta name="description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc.">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Graphical and Latent Variable Modeling" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://m-clark.github.io/docs/sem/" />
+  <meta property="og:image" content="https://m-clark.github.io/docs/sem/img/198R_1.png" />
+  <meta property="og:description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc." />
+  <meta name="github-repo" content="m-clark/sem/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Graphical and Latent Variable Modeling" />
+  
+  <meta name="twitter:description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc." />
+  <meta name="twitter:image" content="https://m-clark.github.io/docs/sem/img/198R_1.png" />
+
+
+
+<meta name="date" content="2017-08-06">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="exercises-1.html">
+<link rel="next" href="other-3.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<script src="libs/htmlwidgets-0.9/htmlwidgets.js"></script>
+<script src="libs/viz-0.3/viz.js"></script>
+<link href="libs/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+<script src="libs/grViz-binding-0.9.0/grViz.js"></script>
+<script src="libs/d3-3.5.3/./d3.min.js"></script>
+<link href="libs/d3heatmapcore-0.0.0/heatmapcore.css" rel="stylesheet" />
+<script src="libs/d3heatmapcore-0.0.0/heatmapcore.js"></script>
+<script src="libs/d3-tip-0.6.6/index.js"></script>
+<script src="libs/d3heatmap-binding-0.6.1.1/d3heatmap.js"></script>
+<link href="libs/vis-4.20.0/vis.css" rel="stylesheet" />
+<script src="libs/vis-4.20.0/vis.min.js"></script>
+<script src="libs/visNetwork-binding-2.0.0/visNetwork.js"></script>
+<script src="libs/datatables-binding-0.2/datatables.js"></script>
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
+<script src="libs/plotly-binding-4.7.0/plotly.js"></script>
+<script src="libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="libs/plotlyjs-1.27.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.27.1/plotly-latest.min.js"></script>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="sem.css" type="text/css" />
+<link rel="stylesheet" href="book.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="https://m-clark.github.io/docs/sem/"><span style="font-size:125%; font-variant:small-caps; font-style:italic; color:#1f65b7">Structural Equation Models</span></a></li>
+
+<li class="divider"></li>
+<li><a href="index.html#section"></a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a><ul>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#prerequisites"><i class="fa fa-check"></i>Prerequisites</a><ul>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#statistical"><i class="fa fa-check"></i>Statistical</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#programming"><i class="fa fa-check"></i>Programming</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#outline"><i class="fa fa-check"></i>Outline</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#graphical-models"><i class="fa fa-check"></i>Graphical Models</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#latent-variables"><i class="fa fa-check"></i>Latent Variables</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#sem"><i class="fa fa-check"></i>SEM</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#others"><i class="fa fa-check"></i>Others</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#programming-language-choice"><i class="fa fa-check"></i>Programming Language Choice</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#setup"><i class="fa fa-check"></i>Setup</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html"><i class="fa fa-check"></i>Introduction to R</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#getting-started"><i class="fa fa-check"></i>Getting Started</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#installation"><i class="fa fa-check"></i>Installation</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#packages"><i class="fa fa-check"></i>Packages</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#rstudio"><i class="fa fa-check"></i>RStudio</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#importing-data"><i class="fa fa-check"></i>Importing Data</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#key-things-to-know-about-r"><i class="fa fa-check"></i>Key things to know about R</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#r-is-a-programming-language-not-a-stats-package"><i class="fa fa-check"></i>R is a programming language, not a ‘stats package’</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#never-ask-if-r-can-do-what-you-want.-it-can."><i class="fa fa-check"></i>Never ask if R can do what you want. It can.</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#main-components-script-console-graphics-device"><i class="fa fa-check"></i>Main components: script, console, graphics device</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#r-is-easy-to-use-but-difficult-to-master."><i class="fa fa-check"></i>R is easy to use, but difficult to master.</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#object-oriented"><i class="fa fa-check"></i>Object-oriented</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#case-sensitive"><i class="fa fa-check"></i>Case sensitive</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#the-lavaan-package"><i class="fa fa-check"></i>The lavaan package</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#getting-help"><i class="fa fa-check"></i>Getting help</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#moving-forward"><i class="fa fa-check"></i>Moving forward</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#exercises"><i class="fa fa-check"></i>Exercises</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#summary"><i class="fa fa-check"></i>Summary</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html"><i class="fa fa-check"></i>Graphical Models</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#directed-graphs"><i class="fa fa-check"></i>Directed Graphs</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#standard-linear-model"><i class="fa fa-check"></i>Standard linear model</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#path-analysis"><i class="fa fa-check"></i>Path Analysis</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#bayesian-networks"><i class="fa fa-check"></i>Bayesian Networks</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#undirected-graphs"><i class="fa fa-check"></i>Undirected Graphs</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#network-analysis"><i class="fa fa-check"></i>Network analysis</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#summary-1"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#r-packages-used"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html"><i class="fa fa-check"></i>Latent Variables</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#dimension-reductioncompression"><i class="fa fa-check"></i>Dimension Reduction/Compression</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#principal-components-analysis"><i class="fa fa-check"></i>Principal Components Analysis</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#factor-analysis"><i class="fa fa-check"></i>Factor Analysis</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#other-techniques"><i class="fa fa-check"></i>Other Techniques</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#summary-2"><i class="fa fa-check"></i>Summary</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#constructs-and-measurement-models"><i class="fa fa-check"></i>Constructs and Measurement Models</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#other-issues-in-factor-analysis"><i class="fa fa-check"></i>Other issues in Factor Analysis</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#some-specific-factor-models-in-sem"><i class="fa fa-check"></i>Some specific factor models in SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#scale-development"><i class="fa fa-check"></i>Scale development</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#factor-scores"><i class="fa fa-check"></i>Factor Scores</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#terminology"><i class="fa fa-check"></i>Terminology</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#some-other-uses-of-latent-variables"><i class="fa fa-check"></i>Some Other Uses of Latent Variables</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#summary-3"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#r-packages-used-1"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html"><i class="fa fa-check"></i>Structural Equation Modeling</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#measurement-model"><i class="fa fa-check"></i>Measurement Model</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#structural-model"><i class="fa fa-check"></i>Structural Model</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#the-process"><i class="fa fa-check"></i>The Process</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#initial-considerations-of-complexity"><i class="fa fa-check"></i>Initial Considerations of Complexity</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#steps-to-take"><i class="fa fa-check"></i>Steps to Take</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#sem-example"><i class="fa fa-check"></i>SEM Example</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#issues-in-sem"><i class="fa fa-check"></i>Issues in SEM</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#identification"><i class="fa fa-check"></i>Identification</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#fit"><i class="fa fa-check"></i>Fit</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#model-comparison"><i class="fa fa-check"></i>Model Comparison</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#prediction"><i class="fa fa-check"></i>Prediction</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#observed-covariates"><i class="fa fa-check"></i>Observed covariates</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#interactions"><i class="fa fa-check"></i>Interactions</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#estimation"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#missing-data"><i class="fa fa-check"></i>Missing data</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#other-sem-approaches"><i class="fa fa-check"></i>Other SEM approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#how-to-fool-yourself-with-sem"><i class="fa fa-check"></i>How to fool yourself with SEM</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#sample-size"><i class="fa fa-check"></i>Sample size</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#poor-data"><i class="fa fa-check"></i>Poor data</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#naming-a-latent-variable-doesnt-mean-it-exists"><i class="fa fa-check"></i>Naming a latent variable doesn’t mean it exists</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#ignoring-diagnostics"><i class="fa fa-check"></i>Ignoring diagnostics</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#ignoring-performance"><i class="fa fa-check"></i>Ignoring performance</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#summary-4"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#terminology-1"><i class="fa fa-check"></i>Terminology</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#r-packages-used-2"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html"><i class="fa fa-check"></i>Latent Growth Curves</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-effects"><i class="fa fa-check"></i>Random effects</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#model-formality"><i class="fa fa-check"></i>Model formality</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-effects-in-sem"><i class="fa fa-check"></i>Random Effects in SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#simulating-random-effects"><i class="fa fa-check"></i>Simulating Random Effects</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#running-a-growth-curve-model"><i class="fa fa-check"></i>Running a Growth Curve Model</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#thinking-more-generally-about-regression"><i class="fa fa-check"></i>Thinking more generally about regression</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#more-on-lgc"><i class="fa fa-check"></i>More on LGC</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#lgc-are-non-standard-sem"><i class="fa fa-check"></i>LGC are non-standard SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#residual-correlations"><i class="fa fa-check"></i>Residual correlations</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#nonlinear-time-effect"><i class="fa fa-check"></i>Nonlinear time effect</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#growth-mixture-models"><i class="fa fa-check"></i>Growth Mixture Models</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#other-covariates"><i class="fa fa-check"></i>Other covariates</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#some-differences-between-mixed-models-and-growth-curves"><i class="fa fa-check"></i>Some Differences between Mixed Models and Growth Curves</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-slopes"><i class="fa fa-check"></i>Random slopes</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#wide-vs.long"><i class="fa fa-check"></i>Wide vs. long</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#sample-size-1"><i class="fa fa-check"></i>Sample size</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#number-of-time-points"><i class="fa fa-check"></i>Number of time points</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#balance"><i class="fa fa-check"></i>Balance</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#numbering-the-time-points"><i class="fa fa-check"></i>Numbering the time points</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#other-stuff"><i class="fa fa-check"></i>Other stuff</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#summary-5"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#r-packages-used-3"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html"><i class="fa fa-check"></i>Mixture Models</a><ul>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#a-motivating-example"><i class="fa fa-check"></i>A Motivating Example</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#create-clustered-data"><i class="fa fa-check"></i>Create Clustered Data</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#mixture-modeling-with-old-faithful"><i class="fa fa-check"></i>Mixture modeling with Old Faithful</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#sem-and-latent-categorical-variables"><i class="fa fa-check"></i>SEM and Latent Categorical Variables</a><ul>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#latent-categories-vs.multi-group-analysis"><i class="fa fa-check"></i>Latent Categories vs. Multi-group Analysis</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#latent-trajectories"><i class="fa fa-check"></i>Latent Trajectories</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#estimation-1"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#terminology-in-sem"><i class="fa fa-check"></i>Terminology in SEM</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#summary-6"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#r-packages-used-4"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html"><i class="fa fa-check"></i>Item Response Theory</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#standard-models"><i class="fa fa-check"></i>Standard Models</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#one-parameter-model"><i class="fa fa-check"></i>One Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#two-parameter-model"><i class="fa fa-check"></i>Two Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#three-parameter-model"><i class="fa fa-check"></i>Three Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#four-parameter-model"><i class="fa fa-check"></i>Four Parameter Model</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#other-irt-models"><i class="fa fa-check"></i>Other IRT Models</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#additional-covariates"><i class="fa fa-check"></i>Additional covariates</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#graded-response-model"><i class="fa fa-check"></i>Graded Response Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#multidimensional-irt"><i class="fa fa-check"></i>Multidimensional IRT</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#other-irt"><i class="fa fa-check"></i>Other IRT</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#summary-7"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#irt-terminology"><i class="fa fa-check"></i>IRT Terminology</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#r-packages-used-5"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html"><i class="fa fa-check"></i>Topic Models</a><ul>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#latent-dirichlet-allocation"><i class="fa fa-check"></i>Latent Dirichlet Allocation</a></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#analysis"><i class="fa fa-check"></i>Analysis</a></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#summary-of-topic-models"><i class="fa fa-check"></i>Summary of Topic Models</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html"><i class="fa fa-check"></i>Bayesian Nonparametric Models</a><ul>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#chinese-restaurant-process"><i class="fa fa-check"></i>Chinese Restaurant Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#indian-buffet-process"><i class="fa fa-check"></i>Indian Buffet Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#summary-8"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#r-packages-used-6"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="exercises-1.html"><a href="exercises-1.html"><i class="fa fa-check"></i>Exercises</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html"><i class="fa fa-check"></i>Appendix</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#data-set-descriptions"><i class="fa fa-check"></i>Data Set Descriptions</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#mcclelland"><i class="fa fa-check"></i>McClelland</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#national-longitudinal-survey-of-youth-1997-nlsy97"><i class="fa fa-check"></i>National Longitudinal Survey of Youth (1997, NLSY97)</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#wheaton-1977-data"><i class="fa fa-check"></i>Wheaton 1977 data</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#harman-5"><i class="fa fa-check"></i>Harman 5</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#big-five"><i class="fa fa-check"></i>Big Five</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#old-faithful"><i class="fa fa-check"></i>Old Faithful</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#harman-1974"><i class="fa fa-check"></i>Harman 1974</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#marsh-hocevar-1985"><i class="fa fa-check"></i>Marsh &amp; Hocevar 1985</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#abortion-attitudes"><i class="fa fa-check"></i>Abortion Attitudes</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#terminology-in-sem-1"><i class="fa fa-check"></i>Terminology in SEM</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#problematic-andor-not-very-useful-terms"><i class="fa fa-check"></i>Problematic and/or not very useful terms</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#lavaan-output-explained"><i class="fa fa-check"></i>Lavaan Output Explained</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#code-examples"><i class="fa fa-check"></i>Code Examples</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#factor-analysis-via-maximum-likelihood"><i class="fa fa-check"></i>Factor Analysis via Maximum Likelihood</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#parallel-process-example"><i class="fa fa-check"></i>Parallel Process Example</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#causal-bias"><i class="fa fa-check"></i>Causal Bias</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#prediction-1"><i class="fa fa-check"></i>Prediction</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#chance"><i class="fa fa-check"></i>Chance</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other"><i class="fa fa-check"></i>Other</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#some-references"><i class="fa fa-check"></i>Some references</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#software-revisited"><i class="fa fa-check"></i>Software Revisited</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#mplus"><i class="fa fa-check"></i>Mplus</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#r"><i class="fa fa-check"></i>R</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#stata"><i class="fa fa-check"></i>Stata</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other-2"><i class="fa fa-check"></i>Other</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#resources"><i class="fa fa-check"></i>Resources</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#graphical-models-2"><i class="fa fa-check"></i>Graphical Models</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#potential-outcomes"><i class="fa fa-check"></i>Potential Outcomes</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#measurement-models-including-irt"><i class="fa fa-check"></i>Measurement Models (including IRT)</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#applied-sem"><i class="fa fa-check"></i>Applied SEM</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#nonparametric-models"><i class="fa fa-check"></i>Nonparametric models</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#lavaan"><i class="fa fa-check"></i>lavaan</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other-sem-tools-in-r"><i class="fa fa-check"></i>Other SEM tools in R</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="other-3.html"><a href="other-3.html"><i class="fa fa-check"></i>Other</a></li>
+<li><a href="section-1.html#section-1"></a></li>
+<li class="divider"></li>
+<li><a href="https://m-clark.github.io" target="blank" style="font-size:150%; font-variant:small-caps; color:#1f65b7; margin: 0 auto;">Michael Clark</a></li><br><br>
+<li><a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0; display:block; margin: 0 auto;" src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"><span style="font-size:150%; font-variant:small-caps; font-style:italic; color:#1f65b7">Graphical and Latent Variable Modeling</span></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="appendix" class="section level1">
+<h1>Appendix</h1>
+<div id="data-set-descriptions" class="section level2">
+<h2>Data Set Descriptions</h2>
+<div id="mcclelland" class="section level3">
+<h3>McClelland</h3>
+<div id="description" class="section level4">
+<h4>Description</h4>
+<ul>
+<li>McClelland et al. (2013) abstract</li>
+</ul>
+<blockquote>
+<p>This study examined relations between children’s attention span-persistence in preschool and later school achievement and college completion. Children were drawn from the Colorado Adoption Project using adopted and non-adopted children (N = 430). Results of structural equation modeling indicated that children’s age 4 attention span-persistence significantly predicted math and reading achievement at age 21 after controlling for achievement levels at age 7, adopted status, child vocabulary skills, gender, and maternal education level. Relations between attention span-persistence and later achievement were not fully mediated by age 7 achievement levels. Logistic regressions also revealed that age 4 attention span-persistence skills significantly predicted the odds of completing college by age 25. The majority of this relationship was direct and was not significantly mediated by math or reading skills at age 7 or age 21. Specifically, children who were rated one standard deviation higher on attention span-persistence at age 4 had 48.7% greater odds of completing college by age 25. Discussion focuses on the importance of children’s early attention span-persistence for later school achievement and educational attainment.</p>
+</blockquote>
+</div>
+<div id="reference" class="section level4">
+<h4>Reference</h4>
+<p>McClelland, Acock, Piccinin, Rheac, Stallings. (2013). Relations between preschool attention span-persistence and age 25 educational outcomes. <a href="http://www.sciencedirect.com/science/article/pii/S0885200612000762">link</a> Note that there is only one age 25 outcome (college completion) and two age 21 outcomes.</p>
+<p>The following models duplicate the paper results. Additional non-mediation models are provided for comparison.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modReading =<span class="st"> &quot;</span>
+<span class="st">  read21 ~ rr*read7 + ar21*attention4 + vocab4 + male + adopted + momed</span>
+<span class="st">  read7 ~ ar7*attention4</span>
+
+<span class="st">  # in</span>
+<span class="st">  att4_read21 := ar7*rr</span>
+<span class="st">&quot;</span>
+reading  =<span class="st"> </span><span class="kw">sem</span>(modReading, <span class="dt">data=</span>mcclelland, <span class="dt">missing=</span><span class="st">&#39;fiml&#39;</span>, <span class="dt">mimic =</span> <span class="st">&#39;Mplus&#39;</span>, <span class="dt">std.ov=</span><span class="ot">TRUE</span>, <span class="dt">se =</span><span class="st">&#39;boot&#39;</span>)
+<span class="kw">summary</span>(reading, <span class="dt">rsquare=</span><span class="ot">TRUE</span>)
+
+modRead =<span class="st"> &quot;</span>
+<span class="st">  read21 ~ read7 + attention4 + vocab4 + male + adopted + momed</span>
+
+<span class="st">&quot;</span>
+readnomed  =<span class="st"> </span><span class="kw">sem</span>(modread, <span class="dt">data=</span>mcclelland, <span class="dt">missing=</span><span class="st">&#39;fiml&#39;</span>, <span class="dt">mimic =</span> <span class="st">&#39;Mplus&#39;</span>, <span class="dt">std.ov=</span><span class="ot">TRUE</span>, <span class="dt">se =</span><span class="st">&#39;boot&#39;</span>)
+<span class="kw">AIC</span>(read, readnomed)
+
+
+modMath =<span class="st"> &quot;</span>
+<span class="st">  math21 ~ mm*math7 + am21*attention4 + vocab4 + male + adopted + momed</span>
+<span class="st">  math7 ~ am7*attention4</span>
+
+<span class="st">  # in</span>
+<span class="st">  att4_math21 := am7*mm</span>
+<span class="st">&quot;</span>
+math  =<span class="st"> </span><span class="kw">sem</span>(modMath, <span class="dt">data=</span>mcclelland, <span class="dt">missing=</span><span class="st">&#39;fiml&#39;</span>, <span class="dt">mimic =</span> <span class="st">&#39;Mplus&#39;</span>, <span class="dt">std.ov=</span><span class="ot">TRUE</span>, <span class="dt">se =</span><span class="st">&#39;boot&#39;</span>)
+<span class="kw">summary</span>(math, <span class="dt">rsquare=</span><span class="ot">TRUE</span>, <span class="dt">fit=</span>T)
+
+modMath =<span class="st"> &quot;</span>
+<span class="st">  math21 ~ math7 + attention4 + vocab4 + male + adopted + momed</span>
+
+<span class="st">&quot;</span>
+mathnomed  =<span class="st"> </span><span class="kw">sem</span>(modMath, <span class="dt">data=</span>mcclelland, <span class="dt">missing=</span><span class="st">&#39;fiml&#39;</span>, <span class="dt">mimic =</span> <span class="st">&#39;Mplus&#39;</span>, <span class="dt">std.ov=</span><span class="ot">TRUE</span>, <span class="dt">se =</span><span class="st">&#39;boot&#39;</span>)
+<span class="kw">AIC</span>(math, mathnomed)</code></pre></div>
+</div>
+</div>
+<div id="national-longitudinal-survey-of-youth-1997-nlsy97" class="section level3">
+<h3>National Longitudinal Survey of Youth (1997, NLSY97)</h3>
+<div id="description-1" class="section level4">
+<h4>Description</h4>
+<p>NLSY97 consists of a nationally representative sample of approximately 9,000 youths who were 12 to 16 years old as of December 31, 1996. Round 1 of the survey took place in 1997. In that round, both the eligible youth and one of that youth’s parents received hour-long personal interviews. In addition, during the screening process, an extensive two-part questionnaire was administered that listed and gathered demographic information on members of the youth’s household and on his or her immediate family members living elsewhere. Youths are interviewed on an annual basis.</p>
+<p>The NLSY97 is designed to document the transition from school to work and into adulthood. It collects extensive information about youths’ labor market behavior and educational experiences over time. Employment information focuses on two types of jobs, “employee” jobs where youths work for a particular employer, and “freelance” jobs such as lawn mowing and babysitting. These distinctions will enable researchers to study effects of very early employment among youths. Employment data include start and stop dates of jobs, occupation, industry, hours, earnings, job search, and benefits. Measures of work experience, tenure with an employer, and employer transitions can also be obtained. Educational data include youths’ schooling history, performance on standardized tests, course of study, the timing and types of degrees, and a detailed account of progression through post-secondary schooling.</p>
+</div>
+<div id="reference-1" class="section level4">
+<h4>Reference</h4>
+<p><a href="http://www.bls.gov/nls/nlsy97.htm">Bureau of Labor Statistics</a></p>
+</div>
+</div>
+<div id="wheaton-1977-data" class="section level3">
+<h3>Wheaton 1977 data</h3>
+<div id="description-2" class="section level4">
+<h4>Description</h4>
+<blockquote>
+<p>Longitudinal data to develop a model of the stability of alienation from 1967 to 1971, accounting for socioeconomic status as a covariate. Each of the three factors have two indicator variables, SES in 1966 is measured by education and occupational status in 1966 and alienation in both years is measured by powerlessness and anomia.</p>
+</blockquote>
+</div>
+<div id="reference-2" class="section level4">
+<h4>Reference</h4>
+<p>Wheaton, B., Muthen B., Alwin, D., &amp; Summers, G., 1977, “Assessing reliability and stability in panel models”, in D. R. Heise (Ed.), <em>Sociological Methodology 1977</em> (pp. 84-136), San Francisco: Jossey-Bass, Inc.</p>
+</div>
+</div>
+<div id="harman-5" class="section level3">
+<h3>Harman 5</h3>
+<div id="description-3" class="section level4">
+<h4>Description</h4>
+<p>“data…were taken (not entirely arbitrarily) from a study of the Los Angeles Standard Metropolitan Statistical Area. The twelve individuals are used in the examples are census tracts.”</p>
+<p>Included are:</p>
+<ul>
+<li>Total population</li>
+<li>Median school years</li>
+<li>Total employment</li>
+<li>Miscellaneous professional services</li>
+<li>Median house value</li>
+</ul>
+</div>
+<div id="reference-3" class="section level4">
+<h4>Reference</h4>
+<p>Harman, H. <em>Modern Factor Analysis</em>. <a href="https://books.google.com/books?id=e-vMN68C3M4C&amp;printsec=frontcover&amp;dq=modern+factor+analysis+harman&amp;hl=en&amp;sa=X&amp;ved=0ahUKEwiDpvyXjOXRAhVD9YMKHZgACxQQ6AEIHDAA#v=snippet&amp;q=employment&amp;f=false">Google Books link</a></p>
+</div>
+</div>
+<div id="big-five" class="section level3">
+<h3>Big Five</h3>
+<div id="description-4" class="section level4">
+<h4>Description</h4>
+<p>25 personality self report items regarding five factors- Agreeableness, Conscientiousness, Extroversion, Neuroticism, and Openness - taken from the International Personality Item Pool (ipip.ori.org) were included as part of the Synthetic Aperture Personality Assessment (SAPA) web based personality assessment project. The data from 2800 subjects are included here as a demonstration set for scale construction, factor analysis, and Item Response Theory analysis. Three additional demographic variables (sex, education, and age) are also included.</p>
+<ul>
+<li><strong>A1</strong>: Am indifferent to the feelings of others. (q_146)</li>
+<li><strong>A2</strong>: Inquire about others’ well-being. (q_1162)</li>
+<li><strong>A3</strong>: Know how to comfort others. (q_1206)</li>
+<li><strong>A4</strong>: Love children. (q_1364)</li>
+<li><strong>A5</strong>: Make people feel at ease. (q_1419)</li>
+<li><strong>C1</strong>: Am exacting in my work. (q_124)</li>
+<li><strong>C2</strong>: Continue until everything is perfect. (q_530)</li>
+<li><strong>C3</strong>: Do things according to a plan. (q_619)</li>
+<li><strong>C4</strong>: Do things in a half-way manner. (q_626)</li>
+<li><strong>C5</strong>: Waste my time. (q_1949)</li>
+<li><strong>E1</strong>: Don’t talk a lot. (q_712)</li>
+<li><strong>E2</strong>: Find it difficult to approach others. (q_901)</li>
+<li><strong>E3</strong>: Know how to captivate people. (q_1205)</li>
+<li><strong>E4</strong>: Make friends easily. (q_1410)</li>
+<li><strong>E5</strong>: Take charge. (q_1768)</li>
+<li><strong>N1</strong>: Get angry easily. (q_952)</li>
+<li><strong>N2</strong>: Get irritated easily. (q_974)</li>
+<li><strong>N3</strong>: Have frequent mood swings. (q_1099)</li>
+<li><strong>N4</strong>: Often feel blue. (q_1479)</li>
+<li><strong>N5</strong>: Panic easily. (q_1505)</li>
+<li><strong>O1</strong>: Am full of ideas. (q_128)</li>
+<li><strong>O2</strong>: Avoid difficult reading material.(q_316)</li>
+<li><strong>O3</strong>: Carry the conversation to a higher level. (q_492)</li>
+<li><strong>O4</strong>: Spend time reflecting on things. (q_1738)</li>
+<li><strong>O5</strong>: Will not probe deeply into a subject. (q_1964)</li>
+<li><strong>gender</strong>: Males = 1, Females =2</li>
+<li><strong>education</strong>: 1 = HS, 2 = finished HS, 3 = some college, 4 = college graduate 5 = graduate degree</li>
+<li><strong>age</strong>: age in years</li>
+</ul>
+</div>
+<div id="reference-4" class="section level4">
+<h4>Reference</h4>
+<p>Goldberg, L.R. (1999) A broad-bandwidth, public domain, personality inventory measuring the lower-level facets of several five-factor models. In Mervielde, I. and Deary, I. and De Fruyt, F. and Ostendorf, F. (eds) Personality psychology in Europe. 7. Tilburg University Press. Tilburg, The Netherlands.</p>
+<p>Revelle, W., Wilt, J., and Rosenthal, A. (2010) Individual Differences in Cognition: New Methods for examining the Personality-Cognition Link In Gruszka, A. and Matthews, G. and Szymura, B. (Eds.) Handbook of Individual Differences in Cognition: Attention, Memory and Executive Control, Springer.</p>
+</div>
+</div>
+<div id="old-faithful" class="section level3">
+<h3>Old Faithful</h3>
+<div id="from-the-r-helpfile" class="section level4">
+<h4>From the R helpfile</h4>
+<p>Waiting time between eruptions and the duration of the eruption for the Old Faithful geyser in Yellowstone National Park, Wyoming, USA. A closer look at faithful$eruptions reveals that these are heavily rounded times originally in seconds, where multiples of 5 are more frequent than expected under non-human measurement. For a better version of the eruption times, see the example below.</p>
+<p>There are many versions of this dataset around: Azzalini and Bowman (1990) use a more complete version.</p>
+</div>
+</div>
+<div id="harman-1974" class="section level3">
+<h3>Harman 1974</h3>
+<div id="description-5" class="section level4">
+<h4>Description</h4>
+<p>A correlation matrix of 24 psychological tests given to 145 seventh and eight-grade children in a Chicago suburb by Holzinger and Swineford.</p>
+</div>
+<div id="reference-5" class="section level4">
+<h4>Reference</h4>
+<p>Harman, H. H. (1976) Modern Factor Analysis, Third Edition Revised, University of Chicago Press, Table 7.4.</p>
+</div>
+</div>
+<div id="marsh-hocevar-1985" class="section level3">
+<h3>Marsh &amp; Hocevar 1985</h3>
+<div id="description-6" class="section level4">
+<h4>Description</h4>
+<p>Data collected using the Self-Description Questionnaire and includes sixteen subscales designed to measure nonacademic status: four intended to measure self-perception of physical ability, four intended to measure self-perception of physical appearance, four intended to measure quality of relations with peers, and four intended to measure quality of relations with parents. The *.dta file has summary statistics based on 134 students in grade 4 and 251 students in grade 5 from Sydney, Australia. Group 1 is grade 4, group 2 is grade 5. It’s used as an example in the SEM reference manual for Stata.</p>
+</div>
+<div id="reference-6" class="section level4">
+<h4>Reference</h4>
+<p>Marsh, H. W. and Hocevar, D., (1985). “Application of confirmatory factor analysis to the study of self-concept: First- and higher order factor models and their invariance across groups”, <em>Psychological Bulletin</em>, 97: 562-582.</p>
+</div>
+</div>
+<div id="abortion-attitudes" class="section level3">
+<h3>Abortion Attitudes</h3>
+<div id="description-7" class="section level4">
+<h4>Description</h4>
+<p>The data contain responses given by 410 individuals to four out of seven items concerning attitude to abortion. A small number of individual did not answer to some of the questions and this data set contains only the complete cases. 379 individuals answered to the following questions after being asked if the law should allow abortion under the circumstances presented under each item.</p>
+<ul>
+<li>Item 1: The woman decides on her own that she does not.</li>
+<li>Item 2: The couple agree that they do not wish to have a child.</li>
+<li>Item 3: The woman is not married and does not wish to marry the man.</li>
+<li>Item 4: The couple cannot afford any more children.</li>
+</ul>
+</div>
+<div id="reference-7" class="section level4">
+<h4>Reference</h4>
+<p>McGrath, K. and Waterton, J. (1986) British social attitudes, 1983-86 panel survey.</p>
+</div>
+</div>
+</div>
+<div id="terminology-in-sem-1" class="section level2">
+<h2>Terminology in SEM</h2>
+<p>This just puts the terminology sections of the previous chapters together in one place.</p>
+<ul>
+<li><strong>Latent variable</strong>: an unobserved or hidden variable. It’s specific interpretation will depend on the modeling context. aka factor, construct, etc.</li>
+<li><strong>Factor Analysis</strong>: in the SEM literature, this refers to a latent variable (measurement) model to assess the underlying construct behind the correlations among a set of observed variables. Elsewhere it may refer to a very broad family of matrix factorization techniques that would include things like principal components analysis, non-negative matrix factorization, etc.</li>
+<li><strong>Item</strong>, <strong>Indicator</strong>, <strong>Observed</strong>, <strong>Manifest</strong>, <strong>Variable</strong>: Terms I use interchangeably within the context of factor analysis.</li>
+<li><strong>Loadings</strong>: measures of the relationship between an indicator and the latent variable. For clarity, it’s probably better to use <em>pattern</em> or <em>structure</em> coefficient.</li>
+<li><strong>Pattern coefficient</strong>: What is usually displayed in FA results. The path coefficient from a latent variable to some observed variable. In some cases it is a simple correlation coefficient.</li>
+<li><strong>Structure coefficient</strong>: The correlation between an observed an latent variable.</li>
+<li><strong>Communality</strong>: the amount of variance in the item/variable explained by the (retained) components. It is the sum of the squared loadings.</li>
+<li><strong>Uniqueness</strong>: 1 - communality. The unexplained variance of a variable. See disturbance.</li>
+<li><strong>Identification</strong>: Refers to whether a unique solution can possibly be estimated for a given model. Models may be under-, over- or just-identified. It is a function of the model specification rather than the data.</li>
+<li><strong>Fit</strong>: Model fit is something very difficult to ascertain in SEM, and notoriously problematic in this setting, where all proposed cutoffs for a good fit are ultimately arbitrary. Even if one had most fit indices suggesting a ‘good’ fit, there’s little indication the model has predictive capability.</li>
+<li><strong>Endo/Exogenous</strong>: Endogenous variables are determined by other variables, i.e. have an arrow pointing at their node. Exogenous variables have no analyzed causes.</li>
+<li><strong>Disturbance</strong>: residual variance. Includes measurement error and unknown causes.</li>
+<li><strong>Mixture Models</strong>: models using categorical latent variables.</li>
+<li><strong>Growth Curve Models</strong>: models for longitudinal data setting.</li>
+<li><strong>Growth Mixture Models</strong>: combines growth curves and mixture models. Sometimes called latent trajectory</li>
+<li><strong>Multiple group models</strong>: I’ll let you guess. Usually involves tests of measurement invariance, or the ability for measurement models to hold up in different settings.</li>
+<li><strong>Single indicator models</strong>: In some circumstances, and with the appropriate constraints, a latent variable can have a single indicator.</li>
+<li><strong>Non-/Recursive models</strong>: have all unidirectional causal effects and disturbances are not correlated. A model is considered nonrecursive if there is a reciprocal relationship, feedback loop, or correlated disturbance in the model</li>
+<li><strong>Modification Indices</strong>: A good way to further overfit the data without adding any explanatory power, since most will regard correlating residuals.</li>
+</ul>
+<div id="problematic-andor-not-very-useful-terms" class="section level3">
+<h3>Problematic and/or not very useful terms</h3>
+<p>This section is based on my opinion, but also on what I see in consulting that confuses clients and muddies their thinking time and time again. Honestly, give researchers and methodologists enough time and they will invent a unique term for every model one can think of, and applied researchers are already taught statistics poorly enough to not be able to see the bigger picture that ties many models together under one framework. The graphical depiction of your model should be clear enough to note what types of variables and paths are involved, and models do not require a new name due to slight adjustments of previous ones.</p>
+<ul>
+<li><strong>Exploratory vs. Confirmatory</strong>: This distinction is problematic. Science and data analysis is inherently exploratory, and most who use SEM do some model exploration as they would with any other model. Some SEM models have more constraints than others, but that does not require a separate name or way of thinking about the model.</li>
+<li><strong>Mediation</strong>: an indirect effect, e.g. A-&gt;B-&gt;C, A has an indirect effect on C. A can have a direct effect on C too. The term mediation should be reserved for explicitly causal scenarios.</li>
+<li><strong>Moderation</strong>: an interaction (the same ones utilized in a standard regression modeling) but with specific constraints on the relationships of the moderator and other variables. The term Moderation should be reserved for explicitly causal scenarios.</li>
+</ul>
+<p>See the <a href="graphical-models-1.html#terminology-issues">terminology section</a> in the graphical models chapter for more detail.</p>
+<ul>
+<li><strong>Exploratory SEM</strong>: a term as useful as ‘exploratory’ <a href="latent-variables-1.html#exploratory-vs.confirmatory">factor analysis</a>.<br />
+</li>
+<li><strong>Fully vs. Partially Latent SEM</strong>: see previous.</li>
+<li><strong>MIMIC Model</strong>: see previous. Honestly, what’s the difference between a MIMIC and partially latent model except for calling one of the observed variables an indicator?</li>
+</ul>
+<p>With categorical data:</p>
+<div id="htmlwidget-45a203f8ba6deeb86876" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-45a203f8ba6deeb86876">{"x":{"filter":"none","autoHideNavigation":true,"data":[["Latent Categorical","Latent Continuous"],["Latent Class","Latent Trait"],["Latent Profile","Factor Analysis"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Indicator Categorical<\/th>\n      <th>Indicator Continuous<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"paging":false,"searching":false,"ordering":false,"info":false,"columnDefs":[{"className":"dt-left","targets":[0,1,2]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row"}},"evals":[],"jsHooks":[]}</script>
+<p>Aside from noting whether the latent variable is categorical or not, these aren’t very enlightening, and in the end, it’s all just ‘latent variable analysis’.</p>
+</div>
+</div>
+<div id="lavaan-output-explained" class="section level2">
+<h2>Lavaan Output Explained</h2>
+<p>Here I provided the most detailed output from an SEM with lavaan with each component explained.</p>
+<pre><code>lavaan (0.5-23.1097) converged normally after  73 iterations
+
+  Number of observations                           932
+
+  Estimator                                         ML
+  Minimum Function Test Statistic                4.735
+  Degrees of freedom                                 4
+  P-value (Chi-square)                           0.316
+
+Model test baseline model:
+
+  Minimum Function Test Statistic             2133.722
+  Degrees of freedom                                15
+  P-value                                        0.000
+
+User model versus baseline model:
+
+  Comparative Fit Index (CFI)                    1.000
+  Tucker-Lewis Index (TLI)                       0.999
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)             -15213.274
+  Loglikelihood unrestricted model (H1)     -15210.906
+
+  Number of free parameters                         17
+  Akaike (AIC)                               30460.548
+  Bayesian (BIC)                             30542.783
+  Sample-size adjusted Bayesian (BIC)        30488.792
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.014
+  90 Percent Confidence Interval          0.000  0.053
+  P-value RMSEA &lt;= 0.05                          0.930
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.007
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Standard Errors                             Standard
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  ses =~                                                                
+    education         1.000                               2.607    0.842
+    sei               5.219    0.422   12.364    0.000   13.609    0.642
+  alien67 =~                                                            
+    anomia67          1.000                               2.663    0.774
+    powerless67       0.979    0.062   15.895    0.000    2.606    0.852
+  alien71 =~                                                            
+    anomia71          1.000                               2.850    0.805
+    powerless71       0.922    0.059   15.498    0.000    2.628    0.832
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  alien71 ~                                                             
+    alien67   (aa)    0.607    0.051   11.898    0.000    0.567    0.567
+    ses              -0.227    0.052   -4.334    0.000   -0.207   -0.207
+  alien67 ~                                                             
+    ses       (sa)   -0.575    0.056  -10.195    0.000   -0.563   -0.563
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+ .anomia67 ~~                                                           
+   .anomia71          1.623    0.314    5.176    0.000    1.623    0.356
+ .powerless67 ~~                                                        
+   .powerless71       0.339    0.261    1.298    0.194    0.339    0.121
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .education         2.801    0.507    5.525    0.000    2.801    0.292
+   .sei             264.597   18.126   14.597    0.000  264.597    0.588
+   .anomia67          4.731    0.453   10.441    0.000    4.731    0.400
+   .powerless67       2.563    0.403    6.359    0.000    2.563    0.274
+   .anomia71          4.399    0.515    8.542    0.000    4.399    0.351
+   .powerless71       3.070    0.434    7.070    0.000    3.070    0.308
+    ses               6.798    0.649   10.475    0.000    1.000    1.000
+   .alien67           4.841    0.467   10.359    0.000    0.683    0.683
+   .alien71           4.083    0.404   10.104    0.000    0.503    0.503
+
+R-Square:
+                   Estimate
+    education         0.708
+    sei               0.412
+    anomia67          0.600
+    powerless67       0.726
+    anomia71          0.649
+    powerless71       0.692
+    alien67           0.317
+    alien71           0.497
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+    IndirectEffect   -0.349    0.041   -8.538    0.000   -0.319   -0.319</code></pre>
+<pre><code>lavaan (0.5-22) converged normally after  73 iterations</code></pre>
+<p>The first is the iterations, i.e. how many steps the estimation process took to arrive at the final conclusion for parameter estimates. It could potentially be a useful diagnostic if, for example, an alteration to the model resulted in many more iterations, but this is highly dependent on a number of things. To understand more about this you’d need to get more familiar with maximum likelihood estimation.</p>
+<pre><code>  Number of observations                           932</code></pre>
+<p>Next is the sample size, which you should check against your expectations. You will get two values if you did some something to deal with missing values. One will regard the complete cases only, the other larger one will regard the full data. As with every other modeling setting, larger samples will result in smaller standard errors, all else being equal.</p>
+<pre><code>  Estimator                                         ML
+  Minimum Function Test Statistic                4.735
+  Degrees of freedom                                 4
+  P-value (Chi-square)                           0.316</code></pre>
+<p>The next part regards the estimation technique along with the standard <span class="math inline">\(\mathcal{\chi}^2\)</span> test that is reported in all SEM studies. This first line tells us we’re doing standard maximum likelihood estimation. Much of the output following will be duplicated if you run a robust version, as it will give you both the standard ML output and the robust results. The <code>Minimum Function Test Statistic</code> is the <span class="math inline">\(\mathcal{\chi}^2\)</span> value. The degrees of freedom are essentially the number of observations in terms of covariances and variances minus the number of ‘free’ parameters, i.e. the number of parameters estimated. Recall that when these are equal, we the model is <em>just-identified</em>, and the fit is perfect. If it’s negative, the model is <em>under-identified</em> and you will need to go back to the drawing board. In general, this reflects how far away the model implied covariance matrix is from the observed covariance matrix. See the <a href="structural-equation-modeling.html#chi-square-test">SEM chapter</a> for more information.</p>
+<pre><code>Model test baseline model:
+
+  Minimum Function Test Statistic             2133.722
+  Degrees of freedom                                15
+  P-value                                        0.000</code></pre>
+<p>The <code>Model test baseline model</code> is another <span class="math inline">\(\mathcal{\chi}^2\)</span> test essentially comparing the model fit vs. a model that assumes no covariances among the data, i.e. the worst-fitting model. As such, this is similar to the model test result we get in standard regression settings, where the null model is an intercept-only model. It should be statistically significant, but one shouldn’t be doing cartwheels in the streets if it is. However, one can use it to test an another (nested) <span class="objclass">lavaan model</span> result for statistical comparison.</p>
+<pre><code>User model versus baseline model:
+
+  Comparative Fit Index (CFI)                    1.000
+  Tucker-Lewis Index (TLI)                       0.999</code></pre>
+<p>Next are two of many fit indices, several of which are based on the previous test. See the <a href="structural-equation-modeling.html#cfi-etc.">fit section</a> for more detail.</p>
+<pre><code>Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)             -15213.274
+  Loglikelihood unrestricted model (H1)     -15210.906</code></pre>
+<p>Next is the log likelihood values that go into the initial <span class="math inline">\(\mathcal{\chi}^2\)</span>. If you multiply their values by two and take the difference, you’ll get the <code>Minimum Function Test Statistic</code>. Note that your model is the null model here, and is compared to an unrestricted, i.e. saturated model.</p>
+<pre><code>  Number of free parameters                         17
+  Akaike (AIC)                               30460.548
+  Bayesian (BIC)                             30542.783
+  Sample-size adjusted Bayesian (BIC)        30488.792</code></pre>
+<p>Now we see how many parameters were estimated and information criteria. See if you can look at the results of the coefficients etc. further down to come up with the value of 17. The information criteria, which are not in any way specific to SEM and are widely used for model comparison, are based on the log-likelihood, but add a penalty for the number of parameters estimated. For example, <span class="math inline">\(\textrm{AIC} = -2\mathcal{L} + 2k\)</span>, i.e. 2 times the ‘user model’ log-likelihood plus the log of the number of parameters estimated. The others are variations on this theme. See the <a href="structural-equation-modeling.html#aic">fit indices section</a>.</p>
+<pre><code>Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.014
+  90 Percent Confidence Interval          0.000  0.053
+  P-value RMSEA &lt;= 0.05                          0.930
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.007</code></pre>
+<p>These are discussed in the <a href="structural-equation-modeling.html#rmsea">fit indices section</a>.</p>
+<pre><code>Parameter Estimates:
+
+  Information                                 Expected
+  Standard Errors                             Standard</code></pre>
+<p>This bit of information that starts the parameter estimates section of output regards how the standard errors are calculated. As an example, one might desire bootstrapped standard errors, and this would be noted here, along with the number of bootstrap iterations.</p>
+<p>The rest regards the parameter estimates, i.e. the paths, variances, covariances, and possibly ‘intercepts’ if examination of mean structure is desired (e.g. as in growth curve models), and these may regard both latent and observed variables. We will also get any user-defined parameter estimates. See any of the previous sections for more detail.</p>
+</div>
+<div id="code-examples" class="section level2">
+<h2>Code Examples</h2>
+<div id="factor-analysis-via-maximum-likelihood" class="section level3">
+<h3>Factor Analysis via Maximum Likelihood</h3>
+<p>On GitHub I have some <a href="https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/cfa_ml.R">R code</a> I’ve put together that will estimate a factor analysis via maximum likelihood, i.e. a ‘by-hand’ approach fully within R. It will simulate some data for two correlated factors with four indicators each, and produce raw (function shown below) and standardized loadings, the log-likelihood, AIC, and BIC. It will also compare these results to <span class="pack">lavaan</span> output for the same data, as well as provide the corresponding Mplus code.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># measurement model, covariance approach</span>
+cfa.cov =<span class="st"> </span>function (parms, data) {
+  <span class="co"># Arguments- parms: initial values (named); data: raw data</span>
+  <span class="co"># Extract paramters by name</span>
+  
+  <span class="kw">require</span>(psych) <span class="co"># for tr</span>
+  
+  l1 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, parms[<span class="kw">grep</span>(<span class="st">&#39;l1&#39;</span>, <span class="kw">names</span>(parms))])      <span class="co"># loadings for factor 1</span>
+  l2 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>, parms[<span class="kw">grep</span>(<span class="st">&#39;l2&#39;</span>, <span class="kw">names</span>(parms))])      <span class="co"># loadings for factor 2</span>
+  cov0 =<span class="st"> </span>parms[<span class="kw">grep</span>(<span class="st">&#39;cov&#39;</span>, <span class="kw">names</span>(parms))]         <span class="co"># factor covariance, variances</span>
+  
+  <span class="co"># Covariance matrix</span>
+  S =<span class="st"> </span><span class="kw">cov</span>(data)*((<span class="kw">nrow</span>(data)-<span class="dv">1</span>)/<span class="kw">nrow</span>(data))       <span class="co"># ML covariance div by N rather than N-1, the multiplier adjusts</span>
+  
+  <span class="co"># loading estimates</span>
+  lambda =<span class="st"> </span><span class="kw">cbind</span>(<span class="kw">c</span>(l1, <span class="kw">rep</span>(<span class="dv">0</span>, <span class="kw">length</span>(l2))),
+                 <span class="kw">c</span>(<span class="kw">rep</span>(<span class="dv">0</span>, <span class="kw">length</span>(l1)), l2))
+  
+  <span class="co"># disturbances</span>
+  dist.init =<span class="st"> </span>parms[<span class="kw">grep</span>(<span class="st">&#39;dist&#39;</span>, <span class="kw">names</span>(parms))]    
+  disturbs =<span class="st"> </span><span class="kw">diag</span>(dist.init)
+  
+  <span class="co"># factor correlation</span>
+  phi.init =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(cov0[<span class="dv">1</span>], cov0[<span class="dv">2</span>], cov0[<span class="dv">2</span>], cov0[<span class="dv">3</span>]), <span class="dv">2</span>, <span class="dv">2</span>)  <span class="co">#factor cov/correlation matrix</span>
+  
+  <span class="co"># other calculations and log likelihood</span>
+  sigtheta =<span class="st"> </span>lambda%*%phi.init%*%<span class="kw">t</span>(lambda) +<span class="st"> </span>disturbs
+  pq =<span class="st"> </span><span class="kw">dim</span>(data)[<span class="dv">2</span>]  <span class="co">#in Bollen p + q (but for the purposes of this just p) = tr(data)</span>
+  <span class="co">#out = -(log(det(sigtheta)) + tr(S%*%solve(sigtheta)) - log(det(S)) - pq)  #a reduced version; Bollen 1989 p.107</span>
+  ll =<span class="st"> </span>((-<span class="kw">nrow</span>(data)*pq/<span class="dv">2</span>)*<span class="kw">log</span>(<span class="dv">2</span>*pi)) -<span class="st"> </span>(<span class="kw">nrow</span>(data)/<span class="dv">2</span>)*(<span class="kw">log</span>(<span class="kw">det</span>(sigtheta)) +<span class="st"> </span><span class="kw">tr</span>(S%*%<span class="kw">solve</span>(sigtheta)))  <span class="co">#should be same as Mplus H0 loglike</span>
+  ll
+}</code></pre></div>
+</div>
+<div id="parallel-process-example" class="section level3">
+<h3>Parallel Process Example</h3>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># parallel process --------------------------------------------------------</span>
+<span class="co"># See EXAMPLE 6.13 in Mplus User&#39;s Guide</span>
+
+<span class="co"># let&#39;s simulate data with a negative slope average and positive correlation among intercepts and other process slopes</span>
+<span class="kw">set.seed</span>(<span class="dv">1234</span>)
+n =<span class="st"> </span><span class="dv">500</span>
+timepoints =<span class="st"> </span><span class="dv">4</span>
+time =<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>:<span class="dv">3</span>, <span class="dt">times=</span>n)
+subject =<span class="st"> </span><span class="kw">rep</span>(<span class="dv">1</span>:n, <span class="dt">each=</span><span class="dv">4</span>)
+
+<span class="co"># first we&#39;ll draw intercepts with overall mean .5 and -.5 for the two</span>
+<span class="co"># processes, and let them have a slight correlation. Their variance is 1.</span>
+intCorr =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">c</span>(<span class="dv">1</span>,.<span class="dv">2</span>,.<span class="dv">2</span>,<span class="dv">1</span>), <span class="dt">ncol=</span><span class="dv">2</span>) 
+<span class="kw">colnames</span>(intCorr) =<span class="st"> </span><span class="kw">rownames</span>(intCorr) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;i1&#39;</span>, <span class="st">&#39;i2&#39;</span>)
+intCorr
+
+interceptP1 =<span class="st"> </span>.<span class="dv">5</span>
+interceptP2 =<span class="st"> </span>-.<span class="dv">5</span>
+
+ranInts =<span class="st"> </span>MASS::<span class="kw">mvrnorm</span>(n, <span class="dt">mu=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>), <span class="dt">Sigma =</span> intCorr, <span class="dt">empirical=</span>T)
+ranInts =<span class="st"> </span><span class="kw">data.frame</span>(ranInts)
+<span class="kw">head</span>(ranInts)
+<span class="kw">cor</span>(ranInts)
+<span class="kw">colMeans</span>(ranInts)
+
+<span class="co"># now create slopes with intercept/mean .4, -.4, but the same positive</span>
+<span class="co"># relationship with their respective intercept. Their variances are also 1.</span>
+slopeP1 =<span class="st"> </span>.<span class="dv">4</span>
+slopeP2 =<span class="st"> </span>-.<span class="dv">4</span>
+
+s1 =<span class="st"> </span>.<span class="dv">3</span>*ranInts$i2  +<span class="st"> </span><span class="kw">rnorm</span>(n)
+s2 =<span class="st"> </span>.<span class="dv">3</span>*ranInts$i1  +<span class="st"> </span><span class="kw">rnorm</span>(n)
+
+ranef =<span class="st"> </span><span class="kw">data.frame</span>(ranInts, s1, s2)
+<span class="kw">head</span>(ranef)
+
+
+<span class="co"># so we have slight positive correlations among all random intercepts and slopes</span>
+y1 =<span class="st"> </span>(interceptP1 +<span class="st"> </span>ranef$i1[subject]) +<span class="st"> </span>(slopeP1+ranef$s1[subject])*time +<span class="st"> </span><span class="kw">rnorm</span>(n*timepoints, <span class="dt">sd=</span>.<span class="dv">5</span>)
+d1 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Subject=</span>subject, <span class="dt">time=</span>time, y1)
+<span class="kw">head</span>(d1)
+
+<span class="kw">library</span>(ggplot2)
+<span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>y1), <span class="dt">data=</span>d1) +<span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">group=</span>Subject), <span class="dt">alpha=</span>.<span class="dv">1</span>) +<span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="dt">method=</span><span class="st">&#39;lm&#39;</span>,<span class="dt">color=</span><span class="st">&#39;red&#39;</span>) +
+<span class="st">  </span>lazerhawk::<span class="kw">theme_trueMinimal</span>()
+
+
+y2 =<span class="st"> </span>(interceptP2 +<span class="st"> </span>ranef$i2[subject]) +<span class="st"> </span>(slopeP2+ranef$s2[subject])*time +<span class="st"> </span><span class="kw">rnorm</span>(n*timepoints, <span class="dt">sd=</span>.<span class="dv">5</span>)
+d2 =<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Subject=</span>subject, <span class="dt">time=</span>time, y2)
+
+<span class="co"># process 2 shows the downward overall trend as expected</span>
+<span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>y2), <span class="dt">data=</span>d2) +<span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">group=</span>Subject), <span class="dt">alpha=</span>.<span class="dv">1</span>) +<span class="st"> </span>
+<span class="st">  </span><span class="kw">geom_smooth</span>(<span class="dt">method=</span><span class="st">&#39;lm&#39;</span>,<span class="dt">color=</span><span class="st">&#39;red&#39;</span>) +
+<span class="st">  </span>lazerhawk::<span class="kw">theme_trueMinimal</span>()
+
+<span class="co"># Widen from long form for lavaan</span>
+<span class="kw">library</span>(tidyr)
+negslopepospath1 =<span class="st"> </span>d1 %&gt;%<span class="st"> </span><span class="kw">spread</span>(time, y1)
+<span class="kw">colnames</span>(negslopepospath1) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Subject&#39;</span>, <span class="kw">paste0</span>(<span class="st">&#39;y1&#39;</span>, <span class="dv">1</span>:<span class="dv">4</span>))
+<span class="kw">head</span>(negslopepospath1)
+
+negslopepospath2 =<span class="st"> </span>d2 %&gt;%<span class="st"> </span><span class="kw">spread</span>(time, y2)
+<span class="kw">colnames</span>(negslopepospath2) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Subject&#39;</span>, <span class="kw">paste0</span>(<span class="st">&#39;y2&#39;</span>, <span class="dv">1</span>:<span class="dv">4</span>))
+
+<span class="co"># combine</span>
+dparallel =<span class="st"> </span>dplyr::<span class="kw">left_join</span>(negslopepospath1, negslopepospath2)
+<span class="kw">head</span>(dparallel)
+
+mainModel =<span class="st"> &quot;</span>
+<span class="st">i1 =~ 1*y11 + 1*y12 + 1*y13 + 1*y14</span>
+<span class="st">s1 =~ 0*y11 + 1*y12 + 2*y13 + 3*y14</span>
+
+
+<span class="st">i2 =~ 1*y21 + 1*y22 + 1*y23 + 1*y24</span>
+<span class="st">s2 =~ 0*y21 + 1*y22 + 2*y23 + 3*y24</span>
+
+<span class="st">s1 ~ i2</span>
+<span class="st">s2 ~ i1</span>
+<span class="st">&quot;</span>
+
+<span class="kw">library</span>(lavaan)
+mainRes  =<span class="st"> </span><span class="kw">growth</span>(mainModel, <span class="dt">data=</span>dparallel)
+<span class="kw">summary</span>(mainRes)
+fscores =<span class="st"> </span><span class="kw">lavPredict</span>(mainRes)
+broom::<span class="kw">tidy</span>(<span class="kw">data.frame</span>(fscores))
+<span class="kw">lm</span>(s2~., fscores)
+
+heatR::<span class="kw">corrheat</span>(<span class="kw">cor</span>(fscores))
+<span class="kw">qplot</span>(s1, i2, <span class="dt">data=</span><span class="kw">data.frame</span>(fscores)) +<span class="st"> </span><span class="kw">geom_smooth</span>(<span class="dt">method=</span><span class="st">&#39;lm&#39;</span>, <span class="dt">se=</span>F)
+fv =<span class="st"> </span><span class="kw">lavPredict</span>(mainRes, <span class="st">&#39;ov&#39;</span>)
+<span class="kw">summary</span>(mainRes, <span class="dt">standardized=</span>T)
+d3heatmap::<span class="kw">d3heatmap</span>(<span class="kw">cor</span>(fv, fscores))
+d3heatmap::<span class="kw">d3heatmap</span>(<span class="kw">cor</span>(<span class="kw">select</span>(dparallel, -Subject), ranef), <span class="dt">Rowv =</span> F, <span class="dt">Colv =</span> F)
+
+
+process1Model =<span class="st"> &quot;</span>
+<span class="st">  i1 =~ 1*y11 + 1*y12 + 1*y13 + 1*y14</span>
+<span class="st">  s1 =~ 0*y11 + 1*y12 + 2*y13 + 3*y14</span>
+<span class="st">&quot;</span>
+p1Res =<span class="st"> </span><span class="kw">growth</span>(process1Model, <span class="dt">data=</span>dparallel)
+fscoresP1 =<span class="st"> </span><span class="kw">lavPredict</span>(p1Res)
+
+process2Model =<span class="st"> &quot;</span>
+<span class="st">  i2 =~ 1*y21 + 1*y22 + 1*y23 + 1*y24</span>
+<span class="st">  s2 =~ 0*y21 + 1*y22 + 2*y23 + 3*y24</span>
+<span class="st">&quot;</span>
+p2Res =<span class="st"> </span><span class="kw">growth</span>(process2Model, <span class="dt">data=</span>dparallel)
+fscoresP2 =<span class="st"> </span><span class="kw">lavPredict</span>(p2Res)
+
+fscoresSeparate =<span class="st"> </span><span class="kw">data.frame</span>(fscoresP1, fscoresP2)
+
+pathMod =<span class="st"> &quot;</span>
+<span class="st">  s1 ~ i2</span>
+<span class="st">  s2 ~ i1</span>
+<span class="st">  </span>
+<span class="st">  i1~~i2</span>
+<span class="st">&quot;</span>
+
+pathModRes =<span class="st"> </span><span class="kw">sem</span>(pathMod, <span class="dt">data=</span>fscoresSeparate, <span class="dt">fixed.x =</span> F)
+<span class="kw">summary</span>(pathModRes)  <span class="co"># you&#39;d have come to the same conclusions</span>
+<span class="kw">summary</span>(mainRes)</code></pre></div>
+</div>
+</div>
+<div id="causal-bias" class="section level2">
+<h2>Causal Bias</h2>
+<blockquote>
+<p>Consider what effects, that might conceivably have practical bearings, we conceive the object of our conception to have. Then, our conception of these effects is the whole of our conception of the object.</p>
+</blockquote>
+<p>I figure I should note my stance on soi-disant <em>causal modeling</em> so that whatever I might say in this document is taken with the appropriate context. What follows is more or less a philosophical stance, perhaps a naïve and not very well developed one at that, despite my philosophy background from long ago, but one that I think is a safer perspective than others commonly held regarding causes and statistics. Mostly this is just me jotting down some things I’m thinking about while working on this document, and perhaps I’ll be able to spend more time with it later.</p>
+<p>To begin, no statistical model <em>by itself</em> will ever provide evidence of causal effects. This is a fact that cannot be disputed. Statistical models of the sort we are usually interested in are inherently probabilistic, atheoretical in and of themselves, and wholly dependent on the data collected. No amount of fancy analysis or double-blind randomization will change the fact that in the end you have a probabilistic result, and one that is highly dependent on many assumptions both statistical and theoretical, as well as nuances of the data. The data itself might suggest several statistical models that are essentially if not exactly equally adequate. If you are using SEM or other approach to <em>discover</em> causal effects you will thus be unsuccessful, and as such, you should not be using the technique if that is the primary reason for doing so.</p>
+<p>Philosophically speaking, I also don’t think the methods of scientific analysis, i.e. statistics, can be used to <em>prove</em> causal relations, and more so if one considers that we’ve been debating the nature of causality for thousands of years and have yet to come to a conclusion about its definition that everyone can agree on. Such bold ‘proof-like’ and ‘causal’ claims, consistently shown to be wrong because they <em>must be</em> in order to be a scientific claim in the first place, have much to do with undermining public faith in scientific results. However, if we can’t entirely agree on what constitutes a causal relation in the first place, we definitely can’t hope that there is some magical statistical technique that would help us determine it.</p>
+<p>As an example, available data should not convince you that smoking causes lung cancer, and that is because it doesn’t. If it did, everyone who ever smoked would have lung cancer. This is a <em>deterministic</em> notion of causality, and there are others, but it is the one I think is used in everyday parlance. Using a <em>probabilistic</em> interpretation instead, e.g. a smoker is more likely to have cancer, just serves to emphasize the uncertainty that exists in the underlying model. I’m perfectly okay with this, but many seem uncomfortable with any lack of certainty. I might even say that smoking has an ‘effect’ on the likelihood of getting lung cancer<a href="#fn70" class="footnoteRef" id="fnref70"><sup>70</sup></a>. In the end, all we have in the data are those that have lung cancer or not, and there is no uncertainty about them having it, nor does our knowledge of their smoking habits change the fact of whether they do.</p>
+<p>As another example, you can randomly assign people who have cancer to two groups- in one they take an aspirin every day, in the other they drink orange juice every day. You may then find that they are equally effective in terms of remission rates, but it would be silly to think the ‘treatments’ had any causal effect at all, even though the effects could be non-zero statistically. Randomization, which is assumed by many to have the magical ability to confer causality on a scientific endeavor, doesn’t help the situation either. In fact, it could be said that <em>control</em> is the key element in determining causal relations (a claim that like others is not without issue), and the random nature of assignment actually undermines that.</p>
+<p>Modern health science is not removed from this issue, or even far removed from this example, and regularly finds ‘effects’ of drugs or behavior that have no causal relation to the phenomenon under study. This is especially the case with psychological phenomena, many of which to this day still have little or no tie to operational definitions based on physiology rather than behavior. People even go so far as to ascribe an actual causal effect to nothing at all (placebo effect).</p>
+<p>I personally think it’s somewhat misguided to think that a major goal of (at least most of working) science is to establish formal causal relations. Its primary tool for weighing evidence, i.e. statistical modeling, certainly cannot do that. As much as we want control, which is one thing that could potentially establish causality, it eludes us, and problematically seems to beg for a human element to causality besides. <em>Ceteris peribus</em> can only work for what is included in our models. Furthermore, if we actually knew the cause of something, we definitely would not need a statistical model. On the practical side, few seem to be engaging in science for reasons of determining causal effects (except perhaps in the discussion sections of papers), and rather do so to discover new potential explanations and predict something better than we did before.</p>
+<div id="prediction-1" class="section level3">
+<h3>Prediction</h3>
+<p>A well-worn data set on which to test classification algorithms is the <a href="https://en.wikipedia.org/wiki/MNIST_database">MNIST hand written digits data</a>. The methods use the pixel gray-scale information to classify an image of what are originally handwritten digits as being one of the values 0-9. Modern approaches can get accurate classification <em>on test data</em> with less than 1% error. If one’s goal is to understand why the digits are the way they are, the algorithm cannot help you. And yet, a statistical approach can be extremely successful while still having nothing to say about the causal mechanisms influencing the target variable we wish to speak about.</p>
+<p>If you can predict something with 99%+ accuracy, how much are you concerned about the underlying causal reality from a practical point of view? It depends on the nature of the research, but this is in fact what I think is the primary <em>practical</em> goal of scientific endeavor, i.e. accurate prediction. It definitely is not about finding ‘true’ parameters and p-values. In physical and related sciences there is often a confusion between deterministic models and causal understanding. But knowing the functional relationship between variables doesn’t in any way necessarily relate to the causal circumstances surrounding the situation under investigation. As an example, we might be able to predict the trajectory of an asteroid in our solar system with high accuracy based on deterministic model, but such a model tells us nothing about how the asteroid got there in the first place. That said, we care about that a lot less than whether the asteroid will impact the earth.</p>
+<p>In general our models are wrong, but they can work, and we’d prefer those that work better. That is something science can and does provide if it’s conducted well, almost by default. Models can even correspond to ‘reality’ as we currently understand it, but we all know that knowledge of reality changes as well, often due to scientific discoveries. Which model will be closer to being correct now versus later is hard to say (Peirce figured this out long ago). In a lot of situations, I’d personally rather have something that works than have one of the ‘true causes’ and a model that leaves me little better than guessing. Now let’s say you have a ‘causal’ model and another model that uses other covariates, and yet they both predict equally well. What would be the basis for preferring one over the other? I think we’d all prefer the causal model, but what would tangibly be gained in the preference in many circumstances, and how will such knowledge be acted upon? Outside of some obvious/more extreme instances, e.g. in disease prevention, it might be difficult to say.</p>
+</div>
+<div id="chance" class="section level3">
+<h3>Chance</h3>
+<p>Another related point, <em>chance</em> definitely does not cause anything. There are mechanisms you do not know about contributing to the variability in the subject matter under study, but nothing from your results are <em>due to chance</em>. Statistical models will always have uncertainty regarding them, and how much or how little there is depends on many things. But just because we don’t know what’s going on, we cannot put the unknown as due to some magical notion akin to coincidence.</p>
+</div>
+<div id="other" class="section level3">
+<h3>Other</h3>
+<ul>
+<li><p>There are people, who have been taken seriously in other contexts, actively devoting time, money and energy to determine a. that our current existence is a simulation, and b. to find a way to ‘break out of it’ (I suspect this has to do with them taking their experience at Burning Man too seriously). However useless an endeavor this may be, if it was a simulation, where would any theory about causality reside then?</p></li>
+<li><p>An interesting point noted by Pearl is that causal assumptions are not encoded via the paths/edges, which only note possible causal relations, but in the missing ones. This reminds me of a chapter of the <em>Tao Te Ching</em>, that talks about the effectiveness of nothingness. An example being that it is not the walls or physical aspects of a house, but the rooms, i.e. spaces, that make it an effective home.</p></li>
+<li><p>If one adheres strictly to the <em>strong</em> causal assumptions for SEM, it is difficult for me to see where any discovery or exploration comes in. In that perspective, one uses statistical tools to merely uncover the parameter values that are assumed to be non-zero. I don’t even see why one would even reference statistical significance, interval estimates etc., as the causal aspects are assumed to be true. I’m not sure how the sampling variability, which could potentially result in conflicting causal understanding, is incorporated. <br> If you go to the <em>weak</em> causal assumption, where the parameter can take on a potentially infinite range of values, we now have something that is more practical and amenable to statistical analysis as traditionally engaged. However, I don’t know what definition of causality it is consistent with. An example would be that for some model, one of the causal assumptions is that X causes Y, and that relationship may be weak or strong, positive or negative, possibly even indistinguishable from zero, but we won’t know until we look at the data. In other words, the effect could be A, its opposite, or not A. This is in fact how SEM is practiced the vast majority of the time. However, that doesn’t sound like any causal claim is being made at all to me, and instead merely posits some correlation to be explored. I’m fine with that, but I’d take issue that some causal assumption is given more credibility by the statistical result, which could have been anything and still have been consistent with the ‘prior knowledge’.</p></li>
+<li><p>As noted previously, the strong causal claims in SEM come from where we set paths equal to zero. However, a far more realistic assumption is that every effect is non-zero, however trivially small. Such models would be unidentifiable in SEM though.</p></li>
+</ul>
+</div>
+<div id="some-references" class="section level3">
+<h3>Some references</h3>
+<p>Practically anything by <strong>Judea Pearl</strong>, even though some of the above might seem like I’m entirely missing many of the points he tries to make. On the contrary, I actually find it hard to disagree with Pearl, I just prefer to focus on the practical aspects of modeling, which in the end includes a statistical model that can exist independently of any causal notion, and on ways of improving such models. He is very clear however, that structural models rest on untestable assumptions and statistical results.</p>
+<p>The quote at the beginning is by <strong>C.S. Peirce</strong>. I note it because I am more interested in clear ideas, without which one cannot hope to even begin to understand causal relations, however defined. The notion of a thing intimately entails <em>all</em> of its <em>practical effects</em>. In other words, my definition of you must include how you are potentially able to act upon the universe, and in fact, my definition of you <em>is</em> what practical effects you have on the universe. The lack of clear ideas in scientific research is a fundamental problem too often ignored.</p>
+<p>Philosophical, such as Aristotle, Hume, non-Western as well.</p>
+</div>
+</div>
+<div id="software-revisited" class="section level2">
+<h2>Software Revisited</h2>
+<div id="mplus" class="section level3">
+<h3>Mplus</h3>
+<p>Mplus is more or less the gold standard for SEM programming, and there is no SEM-specific package or suite of commands that has all the functionality seen with Mplus.</p>
+<div id="pros" class="section level4">
+<h4>Pros</h4>
+<ul>
+<li>Mplus can potentially do practically everything one would want to in the SEM setting</li>
+<li>Help forum: among the best you’ll come across in that the Muthens themselves are willing to answer practically any question quickly</li>
+<li>Relatively cheap to upgrade/maintain</li>
+<li>User manual has many, many working examples</li>
+</ul>
+</div>
+<div id="cons" class="section level4">
+<h4>Cons</h4>
+<ul>
+<li>Cost: very expensive for initial purchase</li>
+<li>License: Most universities will not have a campus-wide license</li>
+<li>Data processing: This is not what Mplus is for, so don’t</li>
+<li>Exploration: the lack of a proper programming language environment makes it difficult to do model exploration. It would be easier to use the Mplusautomation in R than do this with Mplus (even the Mplus website suggests this)</li>
+<li>User manual: None of the output is explained, which for some models is notably complicated. The simulated data examples are not very contextually helpful, and are overly optimistic relative to what researchers will actually face. Too much space is devoted to conceptually identical models with only minor syntax differences, which without explanation of the output differences, is not very helpful to users.</li>
+<li>Closed source: not only that, it’s only one programmer doing everything.</li>
+</ul>
+</div>
+<div id="other-1" class="section level4">
+<h4>Other</h4>
+<p>It’s not clear to me where the future of Mplus lies. Bengt Muthén, the driving force behind Mplus has been emeritus faculty for some time now, and version 7 has been out without a full release longer than any previous version of Mplus. ‘Minor’ corrections are typically taking several months. Meanwhile, many things that users commonly find confusing or could be made automatic are left unchanged.</p>
+</div>
+</div>
+<div id="r" class="section level3">
+<h3>R</h3>
+<p>R does everything, SEM or otherwise. It even helps you use Mplus more efficiently. There’s no reason not to use it for SEM. Between the SEM-specific tools, and other packages that can fill in the remaining functionality, it can do any model Mplus can, and many of them better and more efficiently.</p>
+<p>What follows is a list of R packages for SEM on CRAN, put together by a simple search on ‘structural equation model’ at metacran. It is obviously not exhaustive, nor do I include packages that might do equivalent models (e.g. <span class="pack">lme4</span> can do latent growth curve models as mixed models, <span class="pack">flexmix</span> for mixture models), nor are github-only packages noted. What should be clear is that R has well surpassed Mplus in what it can offer in the SEM world.</p>
+<div style="font-size=6">
+<ul>
+<li>autoSEM</li>
+<li>bnpa*</li>
+<li>ctsem</li>
+<li>CorReg</li>
+<li>dlsem</li>
+<li>dpa</li>
+<li>EffectLiteR</li>
+<li>faoutlier</li>
+<li>fSRM</li>
+<li>gesca</li>
+<li>gimme</li>
+<li>gof</li>
+<li>gSEM</li>
+<li>influence.SEM</li>
+<li>lavaan family: lavaan, blavaan, survey.lavaan, lavaan.shiny</li>
+<li>lsl</li>
+<li>lvnet</li>
+<li>metaSEM</li>
+<li>MIIVsem</li>
+<li>Mplusautomation</li>
+<li>nlsem</li>
+<li>OpenMx</li>
+<li>onyx</li>
+<li>piecewiseSEM</li>
+<li>plotSEMM</li>
+<li>psych*</li>
+<li>RAMpath*</li>
+<li>RMediation</li>
+<li>regsem*</li>
+<li>rsem</li>
+<li>sem</li>
+<li>semdiag</li>
+<li>semds</li>
+<li>semGOF</li>
+<li>SEMID</li>
+<li>semTools*</li>
+<li>semPlot*</li>
+<li>semPLS</li>
+<li>semtree</li>
+<li>sesem</li>
+<li>simsem</li>
+<li>sirt</li>
+<li>sparseSEM</li>
+<li>stablespec</li>
+<li>strum</li>
+<li>umx</li>
+</ul>
+</div>
+<p>* Known connection to lavaan models. There may be many others.</p>
+<div id="pros-1" class="section level4">
+<h4>Pros</h4>
+<ul>
+<li>Cost: free</li>
+<li>Development: source is freely available, issues are made known and tracked, and multiple people are involved in development.</li>
+<li>Help forum: possibly several outlets for different packages.</li>
+</ul>
+</div>
+<div id="cons-1" class="section level4">
+<h4>Cons</h4>
+<p>I would say learning curve, but no one knows SEM syntax until they do it, and it will always be different from the syntax typically employed by a statistical program or programming language. If your data is already processed and ready to go, it is no more difficult to run an SEM in R than Stata, and it will be <em>easier</em> than Mplus, Amos, etc.</p>
+</div>
+</div>
+<div id="stata" class="section level3">
+<h3>Stata</h3>
+<p>Stata was very late to the SEM game, and it’s not going to do as much as Mplus, but it’s pretty easy to use, and is a nice statistical tool besides. Stata probably has more readily available functionality for instrumental variable regression and other econometrics oriented techniques, but that isn’t part of or specific to their SEM commands, and has been around a long time.</p>
+<div id="pros-2" class="section level4">
+<h4>Pros</h4>
+<ul>
+<li>Cost: for the price of Mplus you get an entire statistical software package with vastly more functionality.</li>
+<li>License: research universities are far more likely to have a campus-wide license for Stata</li>
+<li>Help forum: the Stata community is generally very friendly and helpful</li>
+</ul>
+</div>
+<div id="cons-2" class="section level4">
+<h4>Cons</h4>
+<ul>
+<li>Cost: still costs more than free</li>
+<li>License: You still won’t be able to take it home.</li>
+<li>I have seen issues with SEM in Stata that otherwise run fine with lavaan or Mplus.</li>
+<li>No SEM specific forum</li>
+<li>If you are using Mplus and/or R, there is no reason to use Stata for SEM.</li>
+</ul>
+</div>
+</div>
+<div id="other-2" class="section level3">
+<h3>Other</h3>
+<div id="other-sem-specific-software" class="section level4">
+<h4>Other SEM-specific software</h4>
+<p>Lisrel, EQS, Amos, which were popular in the past, are no longer viable these days, either largely no longer developed or restricted to a single operating system, and yet they still want you to shell out hundreds of dollars to use them. SAS has some functionality but it’s rarely used for SEM relative to the other options. Other statistical programs have functionality, but they are relatively little used for standard models, and much less for SEM.</p>
+</div>
+<div id="other-modeling-tools" class="section level4">
+<h4>Other Modeling Tools</h4>
+<p>Within R one can do mixture/latent class models, growth mixture models, multilevel models, etc., and they will almost always provide more tools and output for understanding and exploring those models.</p>
+<p>Similarly, Stata has a lot more to offer for many other non-SEM tools relative to SEM-specific software.</p>
+<p>If you aren’t doing SEM, there is zero reason to use software that was designed specifically for it. The old adage of ‘just because you can doesn’t mean you should’ applies. The programming time alone would be reason not to, but a great deal of additional functionality would be lost too.</p>
+<p>Python, which is the most popular data science tool outside of R, has minimal SEM capabilities presently, but I will update if I come across anything.</p>
+</div>
+<div id="bayesian" class="section level4">
+<h4>Bayesian</h4>
+<p>Any of these analysis could be run with Bayesian programming languages such as Stan or BUGS, and you could feel more confident about understanding the underlying uncertainty when there are many parameters relative to the sample size.</p>
+</div>
+</div>
+</div>
+<div id="resources" class="section level2">
+<h2>Resources</h2>
+<p>This list serves only as a starting point, geared toward those that would be taking the workshop, though may be added to over time.</p>
+<div id="graphical-models-2" class="section level3">
+<h3>Graphical Models</h3>
+<p><a href="http://bayes.cs.ucla.edu/jp_home.html">Judea Pearl’s website</a>: Includes papers and technical reports.</p>
+<p><a href="http://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/ADAfaEPoV.pdf">Shalizi’s text</a> Has a part on causal inference that summarizes a lot of work in Pearl, Spirtes et al., and others. It’s a work in progress (indefinitely), and parts are incomplete, but what’s there is useful.</p>
+<p><a href="http://link.springer.com/bookseries/6991">UseR Series</a>: Contains texts on graphical models, Bayesian networks, and network analysis.</p>
+</div>
+<div id="potential-outcomes" class="section level3">
+<h3>Potential Outcomes</h3>
+<p><a href="http://imai.princeton.edu/projects/mechanisms.html">Imai’s website</a>: Papers and other info.</p>
+</div>
+<div id="measurement-models-including-irt" class="section level3">
+<h3>Measurement Models (including IRT)</h3>
+<p><a href="http://personality-project.org/index.html">Personality Project</a>: William Revelle’s website and text on psychometric theory.</p>
+<p>Zinbarg et al. <a href="http://avzy.personality-project.org/revelle/publications/zinbarg.revelle.pmet.05.pdf">Cronbach’s α, Revelle’s β, &amp; McDonald’s ω_H_: Their realations with each other and two alternative conceptualizations of reliability</a>.</p>
+<p><a href="http://jonathantemplin.com/teaching/methodological-workshops/item-response-theory/item-response-theory-workshop-summer-2015-icpsr/">Jonathan Templin’s ICPSR workshop notes</a></p>
+</div>
+<div id="applied-sem" class="section level3">
+<h3>Applied SEM</h3>
+<p>Kline, Rex. <em>Principles and Practice of Structural Equation Modeling</em>. A very applied introduction that covers a lot of ground. The latest edition finally includes explicit discussion of the more general graphical modeling framework within which SEM resides.</p>
+<p>Beaujean, A. A. (2014). <a href="http://blogs.baylor.edu/rlatentvariable/">Latent variable modeling using R: A step by step guide</a>. New York, NY: Routledge/Taylor and Francis. Lavaan based guide to SEM</p>
+<p><a href="http://www2.gsu.edu/~mkteer/semnet.html">SEMNET forum</a></p>
+</div>
+<div id="nonparametric-models" class="section level3">
+<h3>Nonparametric models</h3>
+<p>Gershman &amp; Blei (2011). A Tutorial on Bayesian Nonparametric Models.</p>
+<p>Griffiths &amp; Ghahramani (2005). Infinite latent feature models and the Indian buffet process.</p>
+</div>
+<div id="lavaan" class="section level3">
+<h3>lavaan</h3>
+<p><a href="http://lavaan.ugent.be/">lavaan website</a></p>
+<p><a href="https://groups.google.com/forum/#!forum/lavaan">lavaan google group</a></p>
+<p><a href="http://lavaan.ugent.be/tutorial/tutorial.pdf">Tutorial</a></p>
+<p><a href="https://cran.r-project.org/package=blavaan">Bayesian estimation with lavaan</a></p>
+<p><a href="https://cran.r-project.org/package=lavaan.survey">Complex surveys with lavaan</a></p>
+<p><a href="https://github.com/kylehamilton/lavaan.shiny">Interactive lavaan</a></p>
+</div>
+<div id="other-sem-tools-in-r" class="section level3">
+<h3>Other SEM tools in R</h3>
+<p>[MetaCran]: <a href="https://www.r-pkg.org/search.html?q=structural+equation+modeling">search results</a>.</p>
+
+</div>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="70">
+<li id="fn70"><p>Though it might be less of an effect than simply <a href="http://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0050185">being African-American</a>, something I’m sure we can agree is not a causal effect.<a href="appendix.html#fnref70">↩</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="exercises-1.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="other-3.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "serif",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/rstudio/bookdown-demo/edit/master/1001_appendix.Rmd",
+"text": "Edit"
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

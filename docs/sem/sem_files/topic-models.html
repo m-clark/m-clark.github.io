@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html >
+
+<head>
+
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Graphical and Latent Variable Modeling</title>
+  <meta name="description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc.">
+  <meta name="generator" content="bookdown 0.4 and GitBook 2.6.7">
+
+  <meta property="og:title" content="Graphical and Latent Variable Modeling" />
+  <meta property="og:type" content="book" />
+  <meta property="og:url" content="https://m-clark.github.io/docs/sem/" />
+  <meta property="og:image" content="https://m-clark.github.io/docs/sem/img/198R_1.png" />
+  <meta property="og:description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc." />
+  <meta name="github-repo" content="m-clark/sem/" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Graphical and Latent Variable Modeling" />
+  
+  <meta name="twitter:description" content="Structural Equation Modeling: This document focuses on structural equation modeling. It is conceptually based, and tries to generalize beyond the standard SEM treatment. It is has special emphasis on the lavaan package. It will continue to be a work in progress, particularly the sections after the SEM chapter. Topics include: graphical models, including path analysis, bayesian networks, and network analysis, mediation, moderation, latent variable models, including principal components analysis and ‘factor analysis’, measurement models, structural equation models, mixture models, growth curves. Topics I hope to provide overviews of in the future include other latent variable techniques and extensions such as IRT, collaborative filtering/recommender systems, hidden markov models, multi-group models etc." />
+  <meta name="twitter:image" content="https://m-clark.github.io/docs/sem/img/198R_1.png" />
+
+
+
+<meta name="date" content="2017-08-06">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  
+<link rel="prev" href="item-response-theory.html">
+<link rel="next" href="bayesian-nonparametric-models.html">
+<script src="libs/jquery-2.2.3/jquery.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+
+
+
+
+
+
+
+<script src="libs/htmlwidgets-0.9/htmlwidgets.js"></script>
+<script src="libs/viz-0.3/viz.js"></script>
+<link href="libs/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+<script src="libs/grViz-binding-0.9.0/grViz.js"></script>
+<script src="libs/d3-3.5.3/./d3.min.js"></script>
+<link href="libs/d3heatmapcore-0.0.0/heatmapcore.css" rel="stylesheet" />
+<script src="libs/d3heatmapcore-0.0.0/heatmapcore.js"></script>
+<script src="libs/d3-tip-0.6.6/index.js"></script>
+<script src="libs/d3heatmap-binding-0.6.1.1/d3heatmap.js"></script>
+<link href="libs/vis-4.20.0/vis.css" rel="stylesheet" />
+<script src="libs/vis-4.20.0/vis.min.js"></script>
+<script src="libs/visNetwork-binding-2.0.0/visNetwork.js"></script>
+<script src="libs/datatables-binding-0.2/datatables.js"></script>
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="libs/dt-core-1.10.12/css/jquery.dataTables.extra.css" rel="stylesheet" />
+<script src="libs/dt-core-1.10.12/js/jquery.dataTables.min.js"></script>
+<script src="libs/plotly-binding-4.7.0/plotly.js"></script>
+<script src="libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="libs/plotlyjs-1.27.1/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="libs/plotlyjs-1.27.1/plotly-latest.min.js"></script>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="sem.css" type="text/css" />
+<link rel="stylesheet" href="book.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="https://m-clark.github.io/docs/sem/"><span style="font-size:125%; font-variant:small-caps; font-style:italic; color:#1f65b7">Structural Equation Models</span></a></li>
+
+<li class="divider"></li>
+<li><a href="index.html#section"></a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a><ul>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#prerequisites"><i class="fa fa-check"></i>Prerequisites</a><ul>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#statistical"><i class="fa fa-check"></i>Statistical</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html#programming"><i class="fa fa-check"></i>Programming</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i>Introduction</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#outline"><i class="fa fa-check"></i>Outline</a><ul>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#graphical-models"><i class="fa fa-check"></i>Graphical Models</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#latent-variables"><i class="fa fa-check"></i>Latent Variables</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#sem"><i class="fa fa-check"></i>SEM</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#others"><i class="fa fa-check"></i>Others</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#programming-language-choice"><i class="fa fa-check"></i>Programming Language Choice</a></li>
+<li class="chapter" data-level="" data-path="introduction.html"><a href="introduction.html#setup"><i class="fa fa-check"></i>Setup</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html"><i class="fa fa-check"></i>Introduction to R</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#getting-started"><i class="fa fa-check"></i>Getting Started</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#installation"><i class="fa fa-check"></i>Installation</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#packages"><i class="fa fa-check"></i>Packages</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#rstudio"><i class="fa fa-check"></i>RStudio</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#importing-data"><i class="fa fa-check"></i>Importing Data</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#key-things-to-know-about-r"><i class="fa fa-check"></i>Key things to know about R</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#r-is-a-programming-language-not-a-stats-package"><i class="fa fa-check"></i>R is a programming language, not a ‘stats package’</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#never-ask-if-r-can-do-what-you-want.-it-can."><i class="fa fa-check"></i>Never ask if R can do what you want. It can.</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#main-components-script-console-graphics-device"><i class="fa fa-check"></i>Main components: script, console, graphics device</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#r-is-easy-to-use-but-difficult-to-master."><i class="fa fa-check"></i>R is easy to use, but difficult to master.</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#object-oriented"><i class="fa fa-check"></i>Object-oriented</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#case-sensitive"><i class="fa fa-check"></i>Case sensitive</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#the-lavaan-package"><i class="fa fa-check"></i>The lavaan package</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#getting-help"><i class="fa fa-check"></i>Getting help</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#moving-forward"><i class="fa fa-check"></i>Moving forward</a><ul>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#exercises"><i class="fa fa-check"></i>Exercises</a></li>
+<li class="chapter" data-level="" data-path="introduction-to-r.html"><a href="introduction-to-r.html#summary"><i class="fa fa-check"></i>Summary</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html"><i class="fa fa-check"></i>Graphical Models</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#directed-graphs"><i class="fa fa-check"></i>Directed Graphs</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#standard-linear-model"><i class="fa fa-check"></i>Standard linear model</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#path-analysis"><i class="fa fa-check"></i>Path Analysis</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#bayesian-networks"><i class="fa fa-check"></i>Bayesian Networks</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#undirected-graphs"><i class="fa fa-check"></i>Undirected Graphs</a><ul>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#network-analysis"><i class="fa fa-check"></i>Network analysis</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#summary-1"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="graphical-models-1.html"><a href="graphical-models-1.html#r-packages-used"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html"><i class="fa fa-check"></i>Latent Variables</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#dimension-reductioncompression"><i class="fa fa-check"></i>Dimension Reduction/Compression</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#principal-components-analysis"><i class="fa fa-check"></i>Principal Components Analysis</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#factor-analysis"><i class="fa fa-check"></i>Factor Analysis</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#other-techniques"><i class="fa fa-check"></i>Other Techniques</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#summary-2"><i class="fa fa-check"></i>Summary</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#constructs-and-measurement-models"><i class="fa fa-check"></i>Constructs and Measurement Models</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#other-issues-in-factor-analysis"><i class="fa fa-check"></i>Other issues in Factor Analysis</a><ul>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#some-specific-factor-models-in-sem"><i class="fa fa-check"></i>Some specific factor models in SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#scale-development"><i class="fa fa-check"></i>Scale development</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#factor-scores"><i class="fa fa-check"></i>Factor Scores</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#terminology"><i class="fa fa-check"></i>Terminology</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#some-other-uses-of-latent-variables"><i class="fa fa-check"></i>Some Other Uses of Latent Variables</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#summary-3"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="latent-variables-1.html"><a href="latent-variables-1.html#r-packages-used-1"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html"><i class="fa fa-check"></i>Structural Equation Modeling</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#measurement-model"><i class="fa fa-check"></i>Measurement Model</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#structural-model"><i class="fa fa-check"></i>Structural Model</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#the-process"><i class="fa fa-check"></i>The Process</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#initial-considerations-of-complexity"><i class="fa fa-check"></i>Initial Considerations of Complexity</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#steps-to-take"><i class="fa fa-check"></i>Steps to Take</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#sem-example"><i class="fa fa-check"></i>SEM Example</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#issues-in-sem"><i class="fa fa-check"></i>Issues in SEM</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#identification"><i class="fa fa-check"></i>Identification</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#fit"><i class="fa fa-check"></i>Fit</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#model-comparison"><i class="fa fa-check"></i>Model Comparison</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#prediction"><i class="fa fa-check"></i>Prediction</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#observed-covariates"><i class="fa fa-check"></i>Observed covariates</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#interactions"><i class="fa fa-check"></i>Interactions</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#estimation"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#missing-data"><i class="fa fa-check"></i>Missing data</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#other-sem-approaches"><i class="fa fa-check"></i>Other SEM approaches</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#how-to-fool-yourself-with-sem"><i class="fa fa-check"></i>How to fool yourself with SEM</a><ul>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#sample-size"><i class="fa fa-check"></i>Sample size</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#poor-data"><i class="fa fa-check"></i>Poor data</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#naming-a-latent-variable-doesnt-mean-it-exists"><i class="fa fa-check"></i>Naming a latent variable doesn’t mean it exists</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#ignoring-diagnostics"><i class="fa fa-check"></i>Ignoring diagnostics</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#ignoring-performance"><i class="fa fa-check"></i>Ignoring performance</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#summary-4"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#terminology-1"><i class="fa fa-check"></i>Terminology</a></li>
+<li class="chapter" data-level="" data-path="structural-equation-modeling.html"><a href="structural-equation-modeling.html#r-packages-used-2"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html"><i class="fa fa-check"></i>Latent Growth Curves</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-effects"><i class="fa fa-check"></i>Random effects</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#model-formality"><i class="fa fa-check"></i>Model formality</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-effects-in-sem"><i class="fa fa-check"></i>Random Effects in SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#simulating-random-effects"><i class="fa fa-check"></i>Simulating Random Effects</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#running-a-growth-curve-model"><i class="fa fa-check"></i>Running a Growth Curve Model</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#thinking-more-generally-about-regression"><i class="fa fa-check"></i>Thinking more generally about regression</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#more-on-lgc"><i class="fa fa-check"></i>More on LGC</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#lgc-are-non-standard-sem"><i class="fa fa-check"></i>LGC are non-standard SEM</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#residual-correlations"><i class="fa fa-check"></i>Residual correlations</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#nonlinear-time-effect"><i class="fa fa-check"></i>Nonlinear time effect</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#growth-mixture-models"><i class="fa fa-check"></i>Growth Mixture Models</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#other-covariates"><i class="fa fa-check"></i>Other covariates</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#some-differences-between-mixed-models-and-growth-curves"><i class="fa fa-check"></i>Some Differences between Mixed Models and Growth Curves</a><ul>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#random-slopes"><i class="fa fa-check"></i>Random slopes</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#wide-vs.long"><i class="fa fa-check"></i>Wide vs. long</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#sample-size-1"><i class="fa fa-check"></i>Sample size</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#number-of-time-points"><i class="fa fa-check"></i>Number of time points</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#balance"><i class="fa fa-check"></i>Balance</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#numbering-the-time-points"><i class="fa fa-check"></i>Numbering the time points</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#other-stuff"><i class="fa fa-check"></i>Other stuff</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#summary-5"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="latent-growth-curves.html"><a href="latent-growth-curves.html#r-packages-used-3"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html"><i class="fa fa-check"></i>Mixture Models</a><ul>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#a-motivating-example"><i class="fa fa-check"></i>A Motivating Example</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#create-clustered-data"><i class="fa fa-check"></i>Create Clustered Data</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#mixture-modeling-with-old-faithful"><i class="fa fa-check"></i>Mixture modeling with Old Faithful</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#sem-and-latent-categorical-variables"><i class="fa fa-check"></i>SEM and Latent Categorical Variables</a><ul>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#latent-categories-vs.multi-group-analysis"><i class="fa fa-check"></i>Latent Categories vs. Multi-group Analysis</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#latent-trajectories"><i class="fa fa-check"></i>Latent Trajectories</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#estimation-1"><i class="fa fa-check"></i>Estimation</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#terminology-in-sem"><i class="fa fa-check"></i>Terminology in SEM</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#summary-6"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="mixture-models.html"><a href="mixture-models.html#r-packages-used-4"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html"><i class="fa fa-check"></i>Item Response Theory</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#standard-models"><i class="fa fa-check"></i>Standard Models</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#one-parameter-model"><i class="fa fa-check"></i>One Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#two-parameter-model"><i class="fa fa-check"></i>Two Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#three-parameter-model"><i class="fa fa-check"></i>Three Parameter Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#four-parameter-model"><i class="fa fa-check"></i>Four Parameter Model</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#other-irt-models"><i class="fa fa-check"></i>Other IRT Models</a><ul>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#additional-covariates"><i class="fa fa-check"></i>Additional covariates</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#graded-response-model"><i class="fa fa-check"></i>Graded Response Model</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#multidimensional-irt"><i class="fa fa-check"></i>Multidimensional IRT</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#other-irt"><i class="fa fa-check"></i>Other IRT</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#summary-7"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#irt-terminology"><i class="fa fa-check"></i>IRT Terminology</a></li>
+<li class="chapter" data-level="" data-path="item-response-theory.html"><a href="item-response-theory.html#r-packages-used-5"><i class="fa fa-check"></i>R Packages Used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html"><i class="fa fa-check"></i>Topic Models</a><ul>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#latent-dirichlet-allocation"><i class="fa fa-check"></i>Latent Dirichlet Allocation</a></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#analysis"><i class="fa fa-check"></i>Analysis</a></li>
+<li class="chapter" data-level="" data-path="topic-models.html"><a href="topic-models.html#summary-of-topic-models"><i class="fa fa-check"></i>Summary of Topic Models</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html"><i class="fa fa-check"></i>Bayesian Nonparametric Models</a><ul>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#chinese-restaurant-process"><i class="fa fa-check"></i>Chinese Restaurant Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#indian-buffet-process"><i class="fa fa-check"></i>Indian Buffet Process</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#summary-8"><i class="fa fa-check"></i>Summary</a></li>
+<li class="chapter" data-level="" data-path="bayesian-nonparametric-models.html"><a href="bayesian-nonparametric-models.html#r-packages-used-6"><i class="fa fa-check"></i>R packages used</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="exercises-1.html"><a href="exercises-1.html"><i class="fa fa-check"></i>Exercises</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html"><i class="fa fa-check"></i>Appendix</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#data-set-descriptions"><i class="fa fa-check"></i>Data Set Descriptions</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#mcclelland"><i class="fa fa-check"></i>McClelland</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#national-longitudinal-survey-of-youth-1997-nlsy97"><i class="fa fa-check"></i>National Longitudinal Survey of Youth (1997, NLSY97)</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#wheaton-1977-data"><i class="fa fa-check"></i>Wheaton 1977 data</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#harman-5"><i class="fa fa-check"></i>Harman 5</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#big-five"><i class="fa fa-check"></i>Big Five</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#old-faithful"><i class="fa fa-check"></i>Old Faithful</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#harman-1974"><i class="fa fa-check"></i>Harman 1974</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#marsh-hocevar-1985"><i class="fa fa-check"></i>Marsh &amp; Hocevar 1985</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#abortion-attitudes"><i class="fa fa-check"></i>Abortion Attitudes</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#terminology-in-sem-1"><i class="fa fa-check"></i>Terminology in SEM</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#problematic-andor-not-very-useful-terms"><i class="fa fa-check"></i>Problematic and/or not very useful terms</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#lavaan-output-explained"><i class="fa fa-check"></i>Lavaan Output Explained</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#code-examples"><i class="fa fa-check"></i>Code Examples</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#factor-analysis-via-maximum-likelihood"><i class="fa fa-check"></i>Factor Analysis via Maximum Likelihood</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#parallel-process-example"><i class="fa fa-check"></i>Parallel Process Example</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#causal-bias"><i class="fa fa-check"></i>Causal Bias</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#prediction-1"><i class="fa fa-check"></i>Prediction</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#chance"><i class="fa fa-check"></i>Chance</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other"><i class="fa fa-check"></i>Other</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#some-references"><i class="fa fa-check"></i>Some references</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#software-revisited"><i class="fa fa-check"></i>Software Revisited</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#mplus"><i class="fa fa-check"></i>Mplus</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#r"><i class="fa fa-check"></i>R</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#stata"><i class="fa fa-check"></i>Stata</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other-2"><i class="fa fa-check"></i>Other</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#resources"><i class="fa fa-check"></i>Resources</a><ul>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#graphical-models-2"><i class="fa fa-check"></i>Graphical Models</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#potential-outcomes"><i class="fa fa-check"></i>Potential Outcomes</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#measurement-models-including-irt"><i class="fa fa-check"></i>Measurement Models (including IRT)</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#applied-sem"><i class="fa fa-check"></i>Applied SEM</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#nonparametric-models"><i class="fa fa-check"></i>Nonparametric models</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#lavaan"><i class="fa fa-check"></i>lavaan</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html#other-sem-tools-in-r"><i class="fa fa-check"></i>Other SEM tools in R</a></li>
+</ul></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="other-3.html"><a href="other-3.html"><i class="fa fa-check"></i>Other</a></li>
+<li><a href="section-1.html#section-1"></a></li>
+<li class="divider"></li>
+<li><a href="https://m-clark.github.io" target="blank" style="font-size:150%; font-variant:small-caps; color:#1f65b7; margin: 0 auto;">Michael Clark</a></li><br><br>
+<li><a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0; display:block; margin: 0 auto;" src="https://i.creativecommons.org/l/by-sa/4.0/80x15.png" /></a></li>
+
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./"><span style="font-size:150%; font-variant:small-caps; font-style:italic; color:#1f65b7">Graphical and Latent Variable Modeling</span></a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="topic-models" class="section level1">
+<h1>Topic Models</h1>
+<p>Anyone who has taken a literature class has been asked to discuss the various themes of a given text. How are such themes discovered? Upon close reading of the text, recurrent references to similar concepts might be bundled in our minds as some general theme hidden throughout the text. Discovery of such themes is part of the joy of reading in general.</p>
+<p>One can think of these hidden, or latent, themes much as we would latent variables in factor analysis. Different texts have both contrasting and common themes, but the author doesn’t usually come out and announce a theme explicitly. Now consider a situation in which you have a million books. You can’t read that many, but may still want to discover the themes in them. This is where <span class="emph">topic modeling</span> can be useful.</p>
+<p>We don’t actually analyze raw text, but what we can do is get word counts for every text<a href="#fn64" class="footnoteRef" id="fnref64"><sup>64</sup></a>, and construct a <span class="emph">document term matrix</span> (DTM). In this matrix, rows represent the documents and columns represent terms that are found in all documents. The values represent the counts of how many times a term is found in a text. With many texts, one will easily have thousands of columns, but most texts do not use most of the words, resulting in a very <span class="emph">sparse</span> matrix that is mostly zeros. Still, now that we have a numeric matrix, we can perform analysis on it. The goal is just like the goal PCA and factor analysis- we want to reduce these thousands of columns of terms to a far fewer number of topics. Furthermore, like factor analysis, we will want to interpret the topics, in this case based on the terms associated with them.</p>
+<div id="latent-dirichlet-allocation" class="section level2">
+<h2>Latent Dirichlet Allocation</h2>
+<p>The most common approach to topic modeling is <span class="emph">latent dirichlet allocation</span> (LDA), which one can think of as discrete PCA. In my opinion, this should be as much a part of your toolbox as PCA and Factor Analysis, as ‘compositional’ data, where we have counts of occurrences (out of some total), are quite common. In the past PCA was applied to such data, but it is essentially a less performant approach with less intuitive results.</p>
+<p>I have gone into far more detailed demonstration elsewhere, and have no desire to duplicate it. I have <a href="http://m-clark.github.io/workshops/text_analysis/">workshop notes</a> devoted exclusively to it, as well as hands-on demos <a href="http://m-clark.github.io/docs/topic_models/topic-model-demo.html">here</a> and <a href="http://micl.shinyapps.io/texEx/texEx.Rmd">here</a>. However we can discuss a couple things, starting with the Dirichlet distribution. A draw from the Dirichlet distribution can be seen as a probability distribution for a k category event. It has one parameter, we’ll call <span class="math inline">\(\alpha\)</span>, which is often referred to as the concentration parameter. If the k <span class="math inline">\(\alpha\)</span> values are equal, the resulting k probabilities will be equal on average, and with larger <span class="math inline">\(\alpha\)</span>, there will be less variance around that probability. When they are unequal, the larger values will result in larger probabilities assigned. Consider the following for <code>k=5</code> topics.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(gtools)
+probs1 =<span class="st"> </span><span class="kw">rdirichlet</span>(<span class="dt">n=</span><span class="dv">1000</span>, <span class="dt">alpha=</span><span class="kw">rep</span>(<span class="dv">1</span>,<span class="dv">5</span>))
+probs2 =<span class="st"> </span><span class="kw">rdirichlet</span>(<span class="dt">n=</span><span class="dv">1000</span>, <span class="dt">alpha=</span><span class="kw">rep</span>(<span class="dv">100</span>,<span class="dv">5</span>))  <span class="co"># less variance</span>
+probs3 =<span class="st"> </span><span class="kw">rdirichlet</span>(<span class="dt">n=</span><span class="dv">1000</span>, <span class="dt">alpha=</span>(<span class="dv">1</span>:<span class="dv">5</span>)^<span class="dv">2</span>)
+<span class="kw">map</span>(<span class="kw">list</span>(probs1, probs2, probs3), colMeans) %&gt;%<span class="st"> </span><span class="kw">map</span>(round, <span class="dv">2</span>)</code></pre></div>
+<pre><code>[[1]]
+[1] 0.20 0.19 0.20 0.20 0.20
+
+[[2]]
+[1] 0.2 0.2 0.2 0.2 0.2
+
+[[3]]
+[1] 0.02 0.07 0.17 0.29 0.45</code></pre>
+<p>In topic modeling, the probabilities can represent the probability of various topics, or the probability of terms within topics. However, the thing to note is that LDA can be applied to any appropriate data, it doesn’t have to be a document-term matrix resulting from text. Any count-based data matrix might potentially be appropriate.</p>
+</div>
+<div id="analysis" class="section level2">
+<h2>Analysis</h2>
+<p>When it comes to topic modeling, most of the time is spent on processing the text itself. Importing/scraping it, dealing with capitalization, punctuation, removing stopwords, dealing with encoding issues, removing other miscellaneous common words. It is a highly iterative process such that once you initially get to the document-term matrix, you’re just going to find the stuff that was missed before and repeat the process with new ‘cleaning parameters’ in place. So getting to the analysis stage is the hard part. The following image is from the <a href="http://tidytextmining.com/">tidytext book</a>, and gives some sense of the process, as well as some R packages that might be of use to you.</p>
+<p><a href="http://tidytextmining.com/images/tidyflow-ch-6.png"><img src="img/tidyflow.png" style="display:block; margin: 0 auto;" width=75%></a></p>
+<p>In what follows we’ll start at the point of having the DTM in place and ready for analysis. For our needs we’ll use the <span class="pack">topicModels</span> package for the analysis, and mostly others for post-processing. As mentioned, one of the primary results of such an analysis are the probabilities of terms within topics, which like factor loadings, can aid in interpreting the topics. The other result is the probability that a topic will be present in a given document.</p>
+<p>The texts we’ll analyze are Dante’s Divine Comedy. Each canto within the three texts of Inferno, Purgatory, and Paradise will be treated as a document. I have already created the DTM where stopwords have been removed, but plenty more cleaning could have been applied. To get a sense of what’s going into the analysis, I show some of the more common terms, but note also, as in most text analysis, most terms are not present in most documents, leading to a notably sparse DTM.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">load</span>(<span class="st">&#39;data/topic/divine_comedy_dtm.RData&#39;</span>)</code></pre></div>
+<div id="htmlwidget-8b4f295806a960a73ff7" style="width:500px;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-8b4f295806a960a73ff7">{"x":{"filter":"none","data":[["Inferno_5","Paradise_26","Paradise_27","Paradise_31","Paradise_32","Paradise_4","Purgatory_17","Purgatory_18","Purgatory_32","Paradise_10","Paradise_31","Paradise_7","Paradise_8","Inferno_26","Inferno_34","Paradise_14","Paradise_2","Paradise_2","Paradise_29","Paradise_33","Paradise_34","Purgatory_1","Purgatory_13","Purgatory_19","Purgatory_25","Purgatory_6","Inferno_11","Inferno_12","Inferno_13","Inferno_14","Inferno_16","Inferno_17","Inferno_21","Inferno_21","Inferno_25","Inferno_25","Inferno_26","Inferno_3","Inferno_3","Inferno_33","Inferno_34","Inferno_7","Inferno_8","Inferno_8","Paradise_1","Paradise_10","Paradise_10","Paradise_12","Paradise_15","Paradise_16","Paradise_2","Paradise_20","Paradise_21","Paradise_22","Paradise_24","Paradise_25","Paradise_27","Paradise_29","Paradise_33","Paradise_34","Paradise_6","Paradise_7","Purgatory_16","Purgatory_19","Purgatory_21","Purgatory_26","Purgatory_26","Purgatory_27","Purgatory_27","Purgatory_27","Purgatory_3","Purgatory_3","Purgatory_30","Purgatory_31","Purgatory_31","Purgatory_4","Purgatory_4","Purgatory_9","Inferno_1","Inferno_10","Inferno_11","Inferno_11","Inferno_11","Inferno_12","Inferno_12","Inferno_12","Inferno_12","Inferno_12","Inferno_13","Inferno_13","Inferno_13","Inferno_13","Inferno_13","Inferno_14","Inferno_14","Inferno_16","Inferno_17","Inferno_19","Inferno_19","Inferno_2"],["love","hope","love","light","eyes","truth","love","love","eyes","light","eyes","god","nature","flame","guide","light","body","light","circle","christ","light","heaven","eyes","eyes","virtue","behold","god","guide","speech","round","guide","round","bridge","rock","other's","serpent","time","god","pass","body","feet","race","cried","replied","fix'd","eye","love","mov'd","love","day","virtue","justice","eye","love","heav'n","faith","light","truth","grace","love","wrought","nature","world","earth","shade","love","time","eyes","heard","sun","beheld","ground","virgil","eyes","sight","sun","turn'd","steps","view","words","force","nature","round","blood","chiron","exclaim'd","spake","spirit","blood","hand","trunk","wood","words","sand","wood","feet","ill","rest","rock","fear"],[10,8,8,8,8,8,8,8,8,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>title_chapter<\/th>\n      <th>word<\/th>\n      <th>n<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"dom":"tp","autoWidth":true,"align":"center","columnDefs":[{"width":"100px","targets":0},{"width":"50px","targets":[1,2]},{"className":"dt-center","targets":[0,1,2]},{"className":"dt-right","targets":2}],"order":[],"orderClasses":false},"selection":{"mode":"multiple","selected":null,"target":"row"}},"evals":[],"jsHooks":[]}</script>
+<pre><code>&lt;&lt;DocumentTermMatrix (documents: 101, terms: 10516)&gt;&gt;
+Non-/sparse entries: 36748/1025368
+Sparsity           : 97%
+Maximal term length: 16
+Weighting          : term frequency (tf)</code></pre>
+<p>As with factor or cluster analysis, one must choose the number of topics to retain. There are various methods/statistics that can help with this, but simple interpretability could be used as well. We’ll go with three to see if the three books are uniquely expressive.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(topicmodels)
+chapters_lda =<span class="st"> </span><span class="kw">LDA</span>(divine_comedy_chapters_dtm, <span class="dt">k =</span> <span class="dv">3</span>, <span class="dt">control =</span> <span class="kw">list</span>(<span class="dt">seed =</span> <span class="dv">1234</span>))
+chapters_lda</code></pre></div>
+<pre><code>A LDA_VEM topic model with 3 topics.</code></pre>
+<p>First, we can simply look at probable terms. The following shows the top 10 most probable terms for each topic.</p>
+<p><img src="sem_files/figure-html/top_terms-1.svg" width="672" style="display: block; margin: auto;" /></p>
+<p>For the following I’ve collapsed across cantos to get an average topic probability for each book. For example, with the Inferno, the topic where <strong>god</strong>, <strong>heaven</strong>, and <strong>virtue</strong> are less probable, while the one with <strong>beneath</strong> and <strong>cried</strong> are more so. With Paradise you have the opposite situation, and are more likely to find the topics regarding <strong>virtue</strong>, <strong>heaven</strong>, <strong>sun</strong>, and <strong>god</strong>. Purgatory, perhaps not surprisingly is a fairly balanced mix of topics<a href="#fn65" class="footnoteRef" id="fnref65"><sup>65</sup></a>.</p>
+<p><img src="sem_files/figure-html/doc_topics-1.svg" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="summary-of-topic-models" class="section level2">
+<h2>Summary of Topic Models</h2>
+<p>This is just a snippet of the potential with topic modeling, but hopefully you get the idea. As in other latent variable approaches, one can see LDA as a dimension reduction technique, where thousands of terms are boiled down to a few topics. However, topic models can also possess a rich interpretive quality. Just remember that what you call ‘documents’, ‘terms’ and ‘topics’ is not limited to text, and is in fact highly flexible.</p>
+
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="64">
+<li id="fn64"><p>Words don’t have to be <em>just</em> words, but also might be collections of terms.<a href="topic-models.html#fnref64">↩</a></p></li>
+<li id="fn65"><p>This is just like in factor analysis where some variables load mostly on one factor while some have notable cross-loadings.<a href="topic-models.html#fnref65">↩</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="item-response-theory.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="bayesian-nonparametric-models.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/lunr.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script>
+require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"google": false,
+"weibo": false,
+"instapper": false,
+"vk": false,
+"all": ["facebook", "google", "twitter", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "serif",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/rstudio/bookdown-demo/edit/master/09_topic.Rmd",
+"text": "Edit"
+},
+"download": null,
+"toc": {
+"collapse": "subsection"
+},
+"highlight": "pygments",
+"search": true
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:" && /^https?:/.test(script.src))
+      script.src  = script.src.replace(/^https?:/, '');
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
