@@ -82,6 +82,7 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 ## Programming
 
 - [Advanced R](http://adv-r.had.co.nz/)  Hadley Wickham
+- [R for Data Science](http://r4ds.had.co.nz/)
 - [R Packages](http://r-pkgs.had.co.nz/)  Hadley Wickham
 - [Bookdown website](https://bookdown.org/) All R related
 - [Happy Git and GitHub for the useR](http://happygitwithr.com/)
