@@ -12,7 +12,7 @@ Here you'll find documents of varying technical degree covering things of intere
 ### Bayesian
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Bayesian Basics</span>](../docs/bayesian_book)     
+[<span itemprop="name keywords">Bayesian Basics</span>](../bayesian-basics/)     
 <span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span> and <span itemprop="keywords">Stan</span>.</span>
 </span>
 
