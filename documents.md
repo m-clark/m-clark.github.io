@@ -91,7 +91,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Introduction to Machine Learning</span>](../docs/machine_learning/)     
+[<span itemprop="name keywords">Introduction to Machine Learning</span>](../introduction-to-machine-learning/)     
 <span itemprop="description">A gentle introduction to <span itemprop="keywords">machine learning</span> concepts with some application in <span itemprop="keywords">R</span>.
 </span>
 </span>
