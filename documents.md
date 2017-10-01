@@ -53,7 +53,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Mixed and Growth Curve Models</span>](../docs/mixedModels/growth_vs_mixed.html)  
+[<span itemprop="name keywords">Mixed and Growth Curve Models</span>](../mixed-growth-comparison/)  
 <span itemprop="description">A comparison of the <span itemprop="keywords">mixed model</span> vs. <span itemprop="keywords">latent variable</span> approach for <span itemprop="keywords">longitudinal data</span> (<span itemprop="keywords">growth curve models</span>), with [simulation](../docs/mixedModels/growth_vs_mixed_sim.html) of performance in situations of small sample sizes.</span>
 </span>
 
