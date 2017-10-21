@@ -41,7 +41,7 @@ This document regards a recent workshop given on <span itemprop="keywords">struc
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Become a Bayesian in 10 Minutes</span>](../workshops/bayesian/)  
-This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> programming language.  It doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.  I post them here because they exist and provide a quick overview, but you'd get more from the more extensive [document](../docs/IntroBayes.html).
+This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> programming language.  It doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.  I post them here because they exist and provide a quick overview, but you'd get more from the more extensive [document](../bayesian-basics/).
 </span>
 
 
