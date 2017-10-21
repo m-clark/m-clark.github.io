@@ -16,17 +16,20 @@ Focus is on common <span itemprop="keywords">data processing</span> and explorat
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Text Analysis with R</span>](../text-analysis-with-R/)  This document covers a wide range of topics, including how to process text generally, and demonstrations of <span itemprop="keywords">sentiment analysis</span>, <span itemprop="keywords">parts-of-speech tagging</span>, and <span itemprop="keywords">topic modeling</span>.  Exercises are provided for some topics.  Some Python examples will also be added at some point.
+[<span itemprop="name">Text Analysis with R</span>](../text-analysis-with-R/)  
+This document covers a wide range of topics, including how to process text generally, and demonstrations of <span itemprop="keywords">sentiment analysis</span>, <span itemprop="keywords">parts-of-speech tagging</span>, and <span itemprop="keywords">topic modeling</span>.  Exercises are provided for some topics.  Some Python examples will also be added at some point.
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Mixed Models with R</span>](../mixed-models-with-R/)  This workshop focuses on <span itemprop="keywords">mixed effects models using R</span>, covering basic <span itemprop="keywords">random effects</span> models (<span itemprop="keywords">random intercepts and slopes</span>) as well as extensions into <span itemprop="keywords">generalized mixed models</span> and discussion of realms beyond.
+[<span itemprop="name">Mixed Models with R</span>](../mixed-models-with-R/)  
+This workshop focuses on <span itemprop="keywords">mixed effects models using R</span>, covering basic <span itemprop="keywords">random effects</span> models (<span itemprop="keywords">random intercepts and slopes</span>) as well as extensions into <span itemprop="keywords">generalized mixed models</span> and discussion of realms beyond.
 </span>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](../workshops/stars/)  Talk on <span itemprop="keywords">structured additive regression</span> models, and <span itemprop="keywords">generalized additive models</span> in particular.
+[<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](../workshops/stars/)  
+Talk on <span itemprop="keywords">structured additive regression</span> models, and <span itemprop="keywords">generalized additive models</span> in particular.
 </span>
 
 
