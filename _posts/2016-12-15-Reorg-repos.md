@@ -9,4 +9,4 @@ Content added:
 <br>
 
 - Added Docs: [<span style="font-variant:small-caps; font-style:italic;">Categorical Outcomes</span>](../docs/logregmodels.html), 
-[<span style="font-variant:small-caps; font-style:italic;">Mixed and Growth Curve Models</span>](../docs/mixedModels/growth_vs_mixed.html), and others.  See the [Documents][#documents] section for details. 
+[<span style="font-variant:small-caps; font-style:italic;">Mixed and Growth Curve Models</span>](../mixed-growth-comparison/), and others.  See the [Documents][#documents] section for details. 

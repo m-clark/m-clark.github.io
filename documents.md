@@ -5,7 +5,7 @@ subtitle:
 ---
 
 
-Here you'll find documents of varying technical degree covering things of interest to me.  Most are demonstration of statistical concepts or programming and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
+Here you'll find documents of varying technical degree covering things of interest to me or which I think will be interesting to those I engage with.  Most are demonstration of statistical concepts or programming and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
 
 # Statistical
 
@@ -85,9 +85,9 @@ Here you'll find documents of varying technical degree covering things of intere
 ### Other Statistical
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Generalized Additive Models</span>](../docs/GAM.html)     
+[<span itemprop="name keywords">Generalized Additive Models</span>](../generalized-additive-models/)     
 <span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.
-</span> An older pdf version available [here](../docs/GAMS.pdf).
+</span> 
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
