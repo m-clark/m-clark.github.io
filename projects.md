@@ -5,23 +5,22 @@ subtitle:
 ---
 
 
-Part of my job entails analysis or consulting on various projects in differing levels of involvement. I note the ones I am/was more involved with here.
+Part of my job entails analysis or consulting on various research projects in differing levels of involvement. I note the ones I am/was more involved with here.
 
-# Recent
+# Current
 
-As of early 2017. Primary researcher in parenthesis.
+As of early 2018. Primary researcher in parenthesis.
 
 [Readiness of Trauma Surgeons](http://www.procedurallearning.org/about/team/53-george) (Brian George)
 
-[Longitudinal Study of Health and Survival in the Dogon of Mali](http://sites.lsa.umich.edu/bis/research/) (Beverly Strassmann)
-
 [Sleep Disorders in Youth after Adenotonsillectomy](https://www.researchgate.net/profile/Ronald_Chervin) (Ronald Chervin)
-
-[Youth Depression and Suicide Prevention Program](https://sites.lsa.umich.edu/king-lab/) (Cheryl King)
 
 
 
 # Past
 
+[Longitudinal Study of Health and Survival in the Dogon of Mali](http://sites.lsa.umich.edu/bis/research/) (Beverly Strassmann)
+
+[Youth Depression and Suicide Prevention Program](https://sites.lsa.umich.edu/king-lab/) (Cheryl King)
 
 [Baboon Social Affiliation](http://rspb.royalsocietypublishing.org/content/281/1793/20141261.short) (Beth Archie) This led me down a path in which I've consulted on research involving baboons, macaques, chimps, geladas, etc., which I find can be kind of fun.
