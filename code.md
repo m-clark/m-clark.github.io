@@ -81,8 +81,8 @@ mixed model with beta response [(Stan)](https://github.com/m-clark/Miscellaneous
 
 [Gaussian Process noisy](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/gp%20Examples/gaussianprocessNoisy.R),
 [Gaussian Process noise-free](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/gp%20Examples/gaussianprocessNoiseFree.R), 
-[reproducing kernel hilbert space regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/RKHSReg/RKHSReg.md)
-[gaussian process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting//gp%20Examples/gaussianProcessStan.Rmd), ...
+[reproducing kernel hilbert space regression](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/RKHSReg/RKHSReg.md),
+[Bayesian Gaussian process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting//gp%20Examples/gaussianProcessStan.Rmd), ...
 
 #### Additive models
 

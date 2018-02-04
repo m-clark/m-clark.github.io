@@ -39,7 +39,7 @@ R with its collar flipped, or the movie Drive if it was all about R programming,
 
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">Historical Football Data</span>](http://micl.shinyapps.io/football/)     
-<span itemprop="description">My annual dive into the frustration of Shiny has produced an [app to explore historical football/soccer data](https://micl.shinyapps.io/football/) for various European leagues (<span itemprop="keywords">Premier</span>, <span itemprop="keywords">La Liga</span>, <span itemprop="keywords">Serie A</span> etc.) and <span itemprop="keywords">MLS</span>. One can create tables for a given country/league and year selected, with some leagues having multiple tiers available, and stretching back many decades.  Beyond that, one can get a specific team's historical finishing position, league games for a specific season, all-time tables, and all-time head-to-head results (within a league)."
+<span itemprop="description">My annual dive into the frustration of Shiny has produced an [app to explore historical football/soccer data](https://micl.shinyapps.io/football/) for various European leagues (<span itemprop="keywords">Premier</span>, <span itemprop="keywords">La Liga</span>, <span itemprop="keywords">Serie A</span> etc.) and <span itemprop="keywords">MLS</span>. One can create tables for a given country/league and year selected, with some leagues having multiple tiers available, and stretching back many decades.  Beyond that, one can get a specific team's historical finishing position, league games for a specific season, all-time tables, and all-time head-to-head results (within a league).
 </span>
 </span>
 
