@@ -34,6 +34,7 @@ R with its collar flipped, or the movie Drive if it was all about R programming,
 </span>
 
 
+In addition to these, though they are not publicly available, I've created even more involved packages for specific project work.
 
 # Shiny Apps
 
