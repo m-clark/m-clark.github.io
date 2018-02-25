@@ -12,7 +12,7 @@ Here you'll find things that just don't fit elsewhere, especially things I do fo
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">Lazerhawk</span>](https://github.com/m-clark/lazerhawk/)     
 <span itemprop="description">
-While the name is more or less explanatory, to clarify, this is a package of personal functions that are useful to me. Some might be useful to others, especially the tidyverse-oriented ones that provide some nice summary information (see describeAll, num_by, cat_by, sumNA), the palette generating function (create_palette), and clean visualization themes for ggplot and plotly.
+While the name is more or less explanatory, to clarify, this is a package of personal functions that are useful to me. Some might be useful to others, especially the tidyverse-oriented ones that provide some nice summary information (see describ_all, num_by, cat_by, sumNA), the palette generating function (create_palette), and clean visualization themes for ggplot and plotly.
 </span>
 </span>
 
@@ -46,7 +46,7 @@ In addition to these, though they are not publicly available, I've created even 
 
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">A History of Tornados</span>](http://micl.shinyapps.io/tornados/)     
-<span itemprop="description">Because I had too much time on my hands and wanted to try out the <span itemprop="keywords">dashboard</span> feature of <span itemprop="keywords">Rmarkdown</span>.  Maps <span itemprop="keywords">tornado</span> activity from 1950-2015.  At some point I'll go back and fix the lag issue, but otherwise it's interesting data.
+<span itemprop="description">Because I had too much time on my hands and wanted to try out the <span itemprop="keywords">dashboard</span> feature of <span itemprop="keywords">R Markdown</span>.  Maps <span itemprop="keywords">tornado</span> activity from 1950-2015.  At some point I'll go back and fix the lag issue, but otherwise it's interesting data.
 </span>
 </span>
 

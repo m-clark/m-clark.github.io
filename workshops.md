@@ -10,6 +10,16 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 ## Current
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Factor Analysis and Related Methods</span>](../sem/FA_notes.html)     
+This workshop will expose participants to a variety of related techniques that might fall under the heading of ‘<span itemprop="keywords">factor analysis</span>’, <span itemprop="keywords">latent variable modeling</span>, <span itemprop="keywords">dimension reduction</span> and similar, such as <span itemprop="keywords">principal components analysis</span>, <span itemprop="keywords">factor analysis</span>, and <span itemprop="keywords">measurement models</span>, with possible exposure to and demonstration of <span itemprop="keywords">latent Dirichlet allocation</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">item response theory</span>, and others.  Brief overviews with examples of the more common techniques will be provided.
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Introduction to R Markdown</span>](../Introduction-to-Rmarkdown/)     
+This workshop will introduce participants to the basics of <span itemprop="keywords">R Markdown</span>. After an introduction to concepts related to <span itemprop="keywords">reproducible programming and research</span>, demonstrations of standard <span itemprop="keywords">markdown</span> as well as overviews of different formats will be provided, including exercises.
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Data Processing and Visualization in R</span>](../data-processing-and-visualization/)     
 Focus is on common <span itemprop="keywords">data processing</span> and exploration techniques, especially as a prelude to <span itemprop="keywords">visualization</span>.  Part of the focus will be on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">tidyverse</span>, which enhance and facilitate the sorts of operations that typically arise when dealing with data, including faster <span itemprop="keywords">I/O</span> and grouped operations.  For visualization, the focus will be on using <span itemprop="keywords">ggplot2</span> and other packages that allow for interactivity. Exercises may be found in the document as well (including [Jupyter notebooks](https://github.com/m-clark/data-processing-and-visualization/tree/master/code) of the same demonstrations in Python).
 </span>
@@ -66,15 +76,8 @@ An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for mor
 
 ## Possibile future topics
 
-Introduction to <span itemprop="keywords">Rmarkdown</span>
-
 <span itemprop="keywords">Shiny</span> basics
 
-
-<span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Literate Statistical Programming</span>](../docs/RDA_intro.pdf)     
-A presentation on <span itemprop="keywords">literate programming</span> and <span itemprop="keywords">reproducible research</span>. Introduces key concepts with demonstration via RStudio using <span itemprop="keywords">Rmarkdown</span>, $\LaTeX$, R etc. This set of notes regarded a talk given with Andres Martinez, but I hope to return to it at some point for an update and extension.
-</span>
 
 
 ## Other
