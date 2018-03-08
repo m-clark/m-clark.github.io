@@ -10,13 +10,13 @@ Here you'll find workshop slides and similar.  They are roughly in order of how 
 ## Current
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Factor Analysis and Related Methods</span>](../sem/FA_notes.html)     
-This workshop will expose participants to a variety of related techniques that might fall under the heading of ‘<span itemprop="keywords">factor analysis</span>’, <span itemprop="keywords">latent variable modeling</span>, <span itemprop="keywords">dimension reduction</span> and similar, such as <span itemprop="keywords">principal components analysis</span>, <span itemprop="keywords">factor analysis</span>, and <span itemprop="keywords">measurement models</span>, with possible exposure to and demonstration of <span itemprop="keywords">latent Dirichlet allocation</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">item response theory</span>, and others.  Brief overviews with examples of the more common techniques will be provided.
+[<span itemprop="name">Introduction to R Markdown</span>](../Introduction-to-Rmarkdown/)     
+This workshop will introduce participants to the basics of <span itemprop="keywords">R Markdown</span>. After an introduction to concepts related to <span itemprop="keywords">reproducible programming and research</span>, demonstrations of standard <span itemprop="keywords">markdown</span> as well as overviews of different formats will be provided, including exercises.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Introduction to R Markdown</span>](../Introduction-to-Rmarkdown/)     
-This workshop will introduce participants to the basics of <span itemprop="keywords">R Markdown</span>. After an introduction to concepts related to <span itemprop="keywords">reproducible programming and research</span>, demonstrations of standard <span itemprop="keywords">markdown</span> as well as overviews of different formats will be provided, including exercises.
+[<span itemprop="name">Factor Analysis and Related Methods</span>](../sem/FA_notes.html)     
+This workshop will expose participants to a variety of related techniques that might fall under the heading of ‘<span itemprop="keywords">factor analysis</span>’, <span itemprop="keywords">latent variable modeling</span>, <span itemprop="keywords">dimension reduction</span> and similar, such as <span itemprop="keywords">principal components analysis</span>, <span itemprop="keywords">factor analysis</span>, and <span itemprop="keywords">measurement models</span>, with possible exposure to and demonstration of <span itemprop="keywords">latent Dirichlet allocation</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">item response theory</span>, and others.  Brief overviews with examples of the more common techniques will be provided.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -36,6 +36,10 @@ This document covers a wide range of topics, including how to process text gener
 This workshop focuses on <span itemprop="keywords">mixed effects models using R</span>, covering basic <span itemprop="keywords">random effects</span> models (<span itemprop="keywords">random intercepts and slopes</span>) as well as extensions into <span itemprop="keywords">generalized mixed models</span> and discussion of realms beyond.
 </span>
 
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../sem/)  
+This document regards a recent workshop given on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The document should be useful to anyone interested in the techniques covered, though it is R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package.
+</span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](../workshops/stars/)  
@@ -43,11 +47,11 @@ Talk on <span itemprop="keywords">structured additive regression</span> models, 
 </span>
 
 
-<span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords">Structural Equation Modeling</span>](../docs/sem/)  
-This document regards a recent workshop given on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The document should be useful to anyone interested in the techniques covered, though it is R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package.
-</span>
 
+
+## Been awhile...
+
+These haven't been given in at least a year or so.
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Become a Bayesian in 10 Minutes</span>](../workshops/bayesian/)  
@@ -68,7 +72,7 @@ Exploring your data with <span itemprop="keywords">R</span>. A workshop that int
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name">Getting More from RStudio</span>](../docs/introRstudio.html)    
+[<span itemprop="name">Getting More from RStudio</span>](../workshops/introRstudio.html)    
 An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for more than just coding.
 </span>
 
