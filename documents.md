@@ -5,7 +5,7 @@ subtitle:
 ---
 
 
-Here you'll find documents of varying technical degree covering things of interest to me or which I think will be interesting to those I engage with.  Most are demonstration of statistical concepts or programming and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
+Here you'll find documents of varying technical degree covering things of interest to me or which I think will be interesting to those I engage with.  Most are demonstration of statistical concepts or programming, and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
 
 # Statistical
 

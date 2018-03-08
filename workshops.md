@@ -7,7 +7,9 @@ subtitle:
 Here you'll find workshop slides and similar.  They are roughly in order of how recently they've been given (or will be).  Some are not so much workshops as talks without any expectation of hands-on exercises or similar.  Check out the [schedule](http://cscar.research.umich.edu/events/category/workshops/) to see times/dates for these as well as other CSCAR events (we give a lot of workshops!).
 
 
-## Current
+## Recent talks...
+
+If you're looking for the notes for a recent workshop I've given, you'll find it here.
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Introduction to R Markdown</span>](../Introduction-to-Rmarkdown/)     
@@ -24,12 +26,10 @@ This workshop will expose participants to a variety of related techniques that m
 Focus is on common <span itemprop="keywords">data processing</span> and exploration techniques, especially as a prelude to <span itemprop="keywords">visualization</span>.  Part of the focus will be on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">tidyverse</span>, which enhance and facilitate the sorts of operations that typically arise when dealing with data, including faster <span itemprop="keywords">I/O</span> and grouped operations.  For visualization, the focus will be on using <span itemprop="keywords">ggplot2</span> and other packages that allow for interactivity. Exercises may be found in the document as well (including [Jupyter notebooks](https://github.com/m-clark/data-processing-and-visualization/tree/master/code) of the same demonstrations in Python).
 </span>
 
-
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Text Analysis with R</span>](../text-analysis-with-R/)  
 This document covers a wide range of topics, including how to process text generally, and demonstrations of <span itemprop="keywords">sentiment analysis</span>, <span itemprop="keywords">parts-of-speech tagging</span>, and <span itemprop="keywords">topic modeling</span>.  Exercises are provided for some topics.  Some Python examples will also be added at some point.
 </span>
-
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Mixed Models with R</span>](../mixed-models-with-R/)  
@@ -41,23 +41,21 @@ This workshop focuses on <span itemprop="keywords">mixed effects models using R<
 This document regards a recent workshop given on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The document should be useful to anyone interested in the techniques covered, though it is R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package.
 </span>
 
+
+
+## Been awhile...
+
+These haven't been given in at least a year or so. The content is still likely useful, but until updated or given again, you may also find a more fully fleshed out related work on the [documents](../documents/) page.
+
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">My God, it's full of STARs! Using astrology to get more from your data.</span>](../workshops/stars/)  
 Talk on <span itemprop="keywords">structured additive regression</span> models, and <span itemprop="keywords">generalized additive models</span> in particular.
 </span>
 
-
-
-
-## Been awhile...
-
-These haven't been given in at least a year or so.
-
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Become a Bayesian in 10 Minutes</span>](../workshops/bayesian/)  
 This document regards a talk aimed at giving an introduction <span itemprop="keywords">Bayesian modeling</span> in <span itemprop="keywords">R</span> via the <span itemprop="keywords">Stan</span> programming language.  It doesn't assume too much statistically or any prior Bayesian experience.  For those with such experience, they can quickly work with the code or packages discussed.  I post them here because they exist and provide a quick overview, but you'd get more from the more extensive [document](../bayesian-basics/).
 </span>
-
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     
@@ -69,7 +67,6 @@ This document regards a talk aimed at giving an introduction <span itemprop="key
 [<span itemprop="name">Ceci n’est pas une %>%</span>](../workshops/dplyr/mainSlides.html)      
 Exploring your data with <span itemprop="keywords">R</span>. A workshop that introduces some newer modes of <span itemprop="keywords">data wrangling</span> within R, with an eye toward <span itemprop="keywords">visualization</span>. Focus on <span itemprop="keywords">dplyr</span> and <span itemprop="keywords">magrittr</span> packages.
 </span>
-
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name">Getting More from RStudio</span>](../workshops/introRstudio.html)    
