@@ -74,25 +74,26 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 </span>
 
-- <span style="font-size: 75%" itemprop="keywords">Principal Components Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Factor Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Probabilistic Components Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Non-negative Matrix Factorization</span>
-- <span style="font-size: 75%" itemprop="keywords">Latent Dirichlet Allocation</span>
-- <span style="font-size: 75%" itemprop="keywords">Structural Equation Modeling</span>
-- <span style="font-size: 75%" itemprop="keywords">Item Response Theory</span>
-- <span style="font-size: 75%" itemprop="keywords">Independent Components Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Multidimensional Scaling</span>
-- <span style="font-size: 75%" itemprop="keywords">t-Distributed Stocastic Neighborhood Embedding (t-sne)</span>
-- <span style="font-size: 75%" itemprop="keywords">Recommender Systems</span>
-- <span style="font-size: 75%" itemprop="keywords">Hidden Markov Models</span>
-- <span style="font-size: 75%" itemprop="keywords">Random Effects Models</span>
-- <span style="font-size: 75%" itemprop="keywords">Bayesian Approaches</span>
-- <span style="font-size: 75%" itemprop="keywords">Mixture Models</span>
-- <span style="font-size: 75%" itemprop="keywords">k-means Cluster Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Hierarchical Cluster Analysis</span>
-- <span style="font-size: 75%" itemprop="keywords">Latent Class Analysis</span>
-
+<div class="" style="font-size:75%">
+- Principal Components Analysis
+- Factor Analysis
+- Probabilistic Components Analysis
+- Non-negative Matrix Factorization
+- Latent Dirichlet Allocation
+- Structural Equation Modeling
+- Item Response Theory
+- Independent Components Analysis
+- Multidimensional Scaling
+- t-Distributed Stocastic Neighbor Embedding (t-sne)
+- Recommender Systems
+- Hidden Markov Models
+- Random Effects Models
+- Bayesian Approaches
+- Mixture Models
+- k-means Cluster Analysis
+- Hierarchical Cluster Analysis
+- Latent Class Analysis
+</div>
 
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
