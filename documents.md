@@ -76,24 +76,8 @@ Here you'll find documents of varying technical degree covering things of intere
 
 <div class="" style="font-size:75%">
 
-- Principal Components Analysis
-- Factor Analysis
-- Probabilistic Components Analysis
-- Non-negative Matrix Factorization
-- Latent Dirichlet Allocation
-- Structural Equation Modeling
-- Item Response Theory
-- Independent Components Analysis
-- Multidimensional Scaling
-- t-Distributed Stocastic Neighbor Embedding (t-sne)
-- Recommender Systems
-- Hidden Markov Models
-- Random Effects Models
-- Bayesian Approaches
-- Mixture Models
-- k-means Cluster Analysis
-- Hierarchical Cluster Analysis
-- Latent Class Analysis
+Principal Components Analysis
+- Factor Analysis - Probabilistic Components Analysis - Non-negative Matrix Factorization - Latent Dirichlet Allocation - Structural Equation Modeling - Item Response Theory - Independent Components Analysis - Multidimensional Scaling - t-Distributed Stocastic Neighbor Embedding (t-sne) - Recommender Systems - Hidden Markov Models - Random Effects Models - Bayesian Approaches - Mixture Models - k-means Cluster Analysis - Hierarchical Cluster Analysis - Latent Class Analysis 
 
 </div>
 
