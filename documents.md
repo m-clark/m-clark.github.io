@@ -75,6 +75,7 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 
 <div class="" style="font-size:75%">
+
 - Principal Components Analysis
 - Factor Analysis
 - Probabilistic Components Analysis
@@ -93,6 +94,7 @@ Here you'll find documents of varying technical degree covering things of intere
 - k-means Cluster Analysis
 - Hierarchical Cluster Analysis
 - Latent Class Analysis
+
 </div>
 
 
