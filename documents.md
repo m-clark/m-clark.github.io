@@ -68,10 +68,36 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 </span>
 
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Factor Analysis</span> and Related Methods](../sem/FA_notes.html)   
+<span itemprop="description">This document gives a brief overview of many <span itemprop="keywords">matrix factorization</span>, <span itemprop="keywords">dimension reduction</span>, and <span itemprop="keywords">latent variable</span> techniques. Here is a list:
+</span>
+</span>
+
+- <span styel="font-size: 75%" itemprop="keywords">Principal Components Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Factor Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Probabilistic Components Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Non-negative Matrix Factorization</span>
+- <span styel="font-size: 75%" itemprop="keywords">Latent Dirichlet Allocation</span>
+- <span styel="font-size: 75%" itemprop="keywords">Structural Equation Modeling</span>
+- <span styel="font-size: 75%" itemprop="keywords">Item Response Theory</span>
+- <span styel="font-size: 75%" itemprop="keywords">Independent Components Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Multidimensional Scaling</span>
+- <span styel="font-size: 75%" itemprop="keywords">t Distributed Stocastic Neighborhood Embedding (t-sne)</span>
+- <span styel="font-size: 75%" itemprop="keywords">Recommender Systems</span>
+- <span styel="font-size: 75%" itemprop="keywords">Hidden Markov Models</span>
+- <span styel="font-size: 75%" itemprop="keywords">Random Effects Models</span>
+- <span styel="font-size: 75%" itemprop="keywords">Bayesian Approaches</span>
+- <span styel="font-size: 75%" itemprop="keywords">Mixture Models</span>
+- <span styel="font-size: 75%" itemprop="keywords">k-means Cluster Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Hierarchical Cluster Analysis</span>
+- <span styel="font-size: 75%" itemprop="keywords">Latent Class Analysis</span>
+
+
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Latent Variables</span>, <span itemprop="name keywords">Sum Scores</span>, Single Items](../docs/lv_sim.html)   
-<span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
+<span itemprop="description">It is very common to use sum scores of several variables as a single entity to be used in subsequent analysis (e.g. a regression model).  Some may even more use a single variable even though multiple indicators are available. Assuming the multiple measures indicate a latent construct, such typical practice would be problematic relative to using estimated <span itemprop="name keywords">factor scores</span>, either constructed as part of a two-stage process or as part of a <span itemprop="name keywords">structural equation model</span>.  This document covers simulations in which comparisons in performance are made between latent variable and sum score or single item approaches.
 </span>
 </span>
 
@@ -121,7 +147,7 @@ Check the workshops section also.
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords" style="font-variant:small-caps;">FastR</span>](../docs/fastr.html)     
-<span itemprop="description">An in progress notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
+<span itemprop="description">A notebook on how to <span itemprop="keywords">make R faster</span> before or irrespective of the machinery used. Topics include <span itemprop="keywords">avoiding loops</span>, <span itemprop="keywords">vectorization</span>, faster <span itemprop="keywords">I/O</span> etc.
 </span>
 </span>
 

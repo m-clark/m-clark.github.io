@@ -75,7 +75,7 @@ An afternoon talk on how to use <span itemprop="keywords">RStudio</span> for mor
 
 
 
-## Possibile future topics
+## Possible future topics
 
 <span itemprop="keywords">Shiny</span> basics
 
