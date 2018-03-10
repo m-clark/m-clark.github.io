@@ -74,24 +74,24 @@ Here you'll find documents of varying technical degree covering things of intere
 </span>
 </span>
 
-- <span styel="font-size: 75%" itemprop="keywords">Principal Components Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Factor Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Probabilistic Components Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Non-negative Matrix Factorization</span>
-- <span styel="font-size: 75%" itemprop="keywords">Latent Dirichlet Allocation</span>
-- <span styel="font-size: 75%" itemprop="keywords">Structural Equation Modeling</span>
-- <span styel="font-size: 75%" itemprop="keywords">Item Response Theory</span>
-- <span styel="font-size: 75%" itemprop="keywords">Independent Components Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Multidimensional Scaling</span>
-- <span styel="font-size: 75%" itemprop="keywords">t Distributed Stocastic Neighborhood Embedding (t-sne)</span>
-- <span styel="font-size: 75%" itemprop="keywords">Recommender Systems</span>
-- <span styel="font-size: 75%" itemprop="keywords">Hidden Markov Models</span>
-- <span styel="font-size: 75%" itemprop="keywords">Random Effects Models</span>
-- <span styel="font-size: 75%" itemprop="keywords">Bayesian Approaches</span>
-- <span styel="font-size: 75%" itemprop="keywords">Mixture Models</span>
-- <span styel="font-size: 75%" itemprop="keywords">k-means Cluster Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Hierarchical Cluster Analysis</span>
-- <span styel="font-size: 75%" itemprop="keywords">Latent Class Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Principal Components Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Factor Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Probabilistic Components Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Non-negative Matrix Factorization</span>
+- <span style="font-size: 75%" itemprop="keywords">Latent Dirichlet Allocation</span>
+- <span style="font-size: 75%" itemprop="keywords">Structural Equation Modeling</span>
+- <span style="font-size: 75%" itemprop="keywords">Item Response Theory</span>
+- <span style="font-size: 75%" itemprop="keywords">Independent Components Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Multidimensional Scaling</span>
+- <span style="font-size: 75%" itemprop="keywords">t-Distributed Stocastic Neighborhood Embedding (t-sne)</span>
+- <span style="font-size: 75%" itemprop="keywords">Recommender Systems</span>
+- <span style="font-size: 75%" itemprop="keywords">Hidden Markov Models</span>
+- <span style="font-size: 75%" itemprop="keywords">Random Effects Models</span>
+- <span style="font-size: 75%" itemprop="keywords">Bayesian Approaches</span>
+- <span style="font-size: 75%" itemprop="keywords">Mixture Models</span>
+- <span style="font-size: 75%" itemprop="keywords">k-means Cluster Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Hierarchical Cluster Analysis</span>
+- <span style="font-size: 75%" itemprop="keywords">Latent Class Analysis</span>
 
 
 
