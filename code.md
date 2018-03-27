@@ -28,6 +28,9 @@ The vast majority of these code snippets are conceptual demonstrations of more c
 [zero-inflated negbin](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/NBzeroinfl.R), 
 [Cox survival](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/survivalCox.R),
 [confirmatory factor analysis](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/cfa_ml.R),
+[Markov model](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/markov_model.R),
+hidden Markov model [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/hmm_viterbi.R)
+[(Python)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/hmm_viterbi.py),
 [stochastic volatility](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/stochasticVolatility.R),
 [extreme learning machine](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/elm.R),
 [Chinese restaurant process, Indian buffet process](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/ModelFitting/crp.R),
