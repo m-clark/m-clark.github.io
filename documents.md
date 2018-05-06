@@ -9,11 +9,22 @@ Here you'll find documents of varying technical degree covering things of intere
 
 # Statistical
 
+### Data Modeling in R
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Data Modeling in R</span>](../R-models/)     
+<span itemprop="description">This document demonstrates a wide array of <span itemprop="keywords">statistical</span> and other <span itemprop="keywords">models</span> in <span itemprop="keywords">R</span>.  Generic code is provided for standard regression, mixed, additive, survival, and latent variable models, principal components, factor analysis, SEM, cluster analysis, time series, spatial models, zero-altered models, text analysis, Bayesian analysis, machine learning and more.
+
+The document is designed for newcomers to R, whether in a statistical sense or just a programming one.  It also should appeal to those working in other packages who are curious how to do the same sorts of things in R.
+</span>
+</span>
+
 ### Bayesian
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Bayesian Basics</span>](../bayesian-basics/)     
-<span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span> and <span itemprop="keywords">Stan</span>.</span>
+<span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span> and <span itemprop="keywords">Stan</span>.
+</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -33,12 +44,14 @@ Here you'll find documents of varying technical degree covering things of intere
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  
-<span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.</span>
+<span itemprop="description">An overview that introduces <span itemprop="keywords">mixed models</span> for those with varying technical/statistical backgrounds.
+</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Mixed Models Introduction</span>](../docs/mixedModels/anovamixed.html)  
-<span itemprop="description">A non-technical document to introduce <span itemprop="keywords">mixed models</span> for those who have used ANOVA.</span>
+<span itemprop="description">A non-technical document to introduce <span itemprop="keywords">mixed models</span> for those who have used ANOVA.
+</span>
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
@@ -76,8 +89,7 @@ Here you'll find documents of varying technical degree covering things of intere
 
 <div class="" style="font-size:75%">
 
-Principal Components Analysis
-- Factor Analysis - Probabilistic Components Analysis - Non-negative Matrix Factorization - Latent Dirichlet Allocation - Structural Equation Modeling - Item Response Theory - Independent Components Analysis - Multidimensional Scaling - t-Distributed Stocastic Neighbor Embedding (t-sne) - Recommender Systems - Hidden Markov Models - Random Effects Models - Bayesian Approaches - Mixture Models - k-means Cluster Analysis - Hierarchical Cluster Analysis - Latent Class Analysis 
+Principal Components Analysis - Factor Analysis - Probabilistic Components Analysis - Non-negative Matrix Factorization - Latent Dirichlet Allocation - Structural Equation Modeling - Item Response Theory - Independent Components Analysis - Multidimensional Scaling - t-Distributed Stochastic Neighbor Embedding (t-sne) - Recommender Systems - Hidden Markov Models - Random Effects Models - Bayesian Approaches - Mixture Models - k-means Cluster Analysis - Hierarchical Cluster Analysis - Latent Class Analysis 
 
 </div>
 
