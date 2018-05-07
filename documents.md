@@ -16,9 +16,7 @@ Here you'll find documents of varying technical degree covering things of intere
 <span itemprop="description">This document demonstrates a wide array of <span itemprop="keywords">statistical</span> and other <span itemprop="keywords">models</span> in <span itemprop="keywords">R</span>.  Generic code is provided for standard <span itemprop="keywords">regression</span>, <span itemprop="keywords">mixed</span>, <span itemprop="keywords">additive</span>, <span itemprop="keywords">survival</span>, and <span itemprop="keywords">latent variable</span> models, <span itemprop="keywords">principal components</span>, <span itemprop="keywords">factor analysis</span>, <span itemprop="keywords">SEM</span>, <span itemprop="keywords">cluster analysis</span>, <span itemprop="keywords">time series</span>, <span itemprop="keywords">spatial models</span>, <span itemprop="keywords">zero-altered models</span>, <span itemprop="keywords">text analysis</span>, <span itemprop="keywords">Bayesian analysis</span>, <span itemprop="keywords">machine learning</span> and more.
 </span>
 
-<span itemprop="description">
-The document is designed for newcomers to R, whether in a statistical sense or just a programming one.  It also should appeal to those working in other packages who are curious how to do the same sorts of things in R.
-</span>
+<span itemprop="description">The document is designed for newcomers to R, whether in a statistical sense or just a programming one.  It also should appeal to those working in other packages who are curious how to do the same sorts of things in R.</span>
 
 ### Bayesian
 
