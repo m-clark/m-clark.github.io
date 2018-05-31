@@ -10,12 +10,19 @@ Here you'll find things that just don't fit elsewhere, especially things I do fo
 # R Packages
 
 <span itemscope itemtype ="http://schema.org/WebApplication">
-[<span itemprop="name">Lazerhawk</span>](https://github.com/m-clark/lazerhawk/)     
+[<span itemprop="name">tidyext</span>](https://github.com/m-clark/tidyext/)     
 <span itemprop="description">
-While the name is more or less explanatory, to clarify, this is a package of personal functions that are useful to me. Some might be useful to others, especially the tidyverse-oriented ones that provide some nice summary information (see describ_all, num_by, cat_by, sumNA), the palette generating function (create_palette), and clean visualization themes for ggplot and plotly.
+This package is a collection of functions that do the things I commonly need to do with data while doing other processing within the dataverse. I work with data for myself and others everyday, and use these functions quite often.
 </span>
 </span>
 
+
+<span itemscope itemtype ="http://schema.org/WebApplication">
+[<span itemprop="name">Lazerhawk</span>](https://github.com/m-clark/lazerhawk/)     
+<span itemprop="description">
+While the name is more or less explanatory, to clarify, this is a package of miscellaneous functions that are useful to me. Some might be useful to others, e.g. the palette generating function (create_palette) and clean visualization themes for ggplot and plotly.
+</span>
+</span>
 
 
 <span itemscope itemtype ="http://schema.org/WebApplication">
