@@ -10,7 +10,7 @@ Here you'll find things that just don't fit elsewhere, especially things I do fo
 # R Packages
 
 <span itemscope itemtype ="http://schema.org/WebApplication">
-[<span itemprop="name">tidyext</span>](https://github.com/m-clark/tidyext/)     
+[<span itemprop="name">tidyext</span>](https://m-clark.github.io/tidyext/)     
 <span itemprop="description">
 This package is a collection of functions that do the things I commonly need to do with data while doing other processing within the dataverse. I work with data for myself and others everyday, and use these functions quite often.
 </span>
