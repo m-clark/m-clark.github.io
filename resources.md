@@ -72,12 +72,14 @@ If you are a CSCAR client and want some resources for statistics, programming, e
 
 ## Stats
 
+- [Deep Learning Book](http://www.deeplearningbook.org/) Goodfellow et al.
 - [Elements of Statistical Learning](http://statweb.stanford.edu/~tibs/ElemStatLearn/) Bible of ML by Hastie, Tibshirani, & Friedman.
 - [Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/) Application of the above in R.
+- [Computer Age Statistical Inference](https://web.stanford.edu/~hastie/CASI/) Efron & Hastie.
 - [Advanced Data Analysis from an Elementary Point of View](http://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/)
 - [Gaussian Processes for Machine Learning](http://www.gaussianprocess.org/gpml/) Carl Rasmussen
 - [Discrete Choice Methods with Simulation](http://eml.berkeley.edu/books/choice2.html) Kenneth Train
-- [An introduction to psychometric theory with applications in R](http://www.personality-project.org/r/book/)
+- [An Introduction to Psychometric Theory with Applications in R](http://www.personality-project.org/r/book/)
 
 ## Programming
 
