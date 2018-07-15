@@ -7,9 +7,38 @@ subtitle:
 
 Here you'll find documents of varying technical degree covering things of interest to me or which I think will be interesting to those I engage with.  Most are demonstration of statistical concepts or programming, and may be geared towards beginners or more advanced.  I group them based on whether they are more focused on statistical concepts, programming or tools, or miscellaneous.
 
+
+# Popular
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Bayesian Basics</span>](../bayesian-basics/)     
+<span itemprop="description">This serves as a conceptual introduction to <span itemprop="keywords">Bayesian</span> modeling with examples using <span itemprop="keywords">R</span> and <span itemprop="keywords">Stan</span>.
+</span>
+</span>
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Generalized Additive Models</span>](../generalized-additive-models/)     
+<span itemprop="description">An introduction to <span itemprop="keywords">generalized additive models</span> with an emphasis on generalization from familiar linear models and using the <span itemprop="keywords">mgcv</span> package in <span itemprop="keywords">R</span>.
+</span> 
+</span>
+
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Mixed Models with R</span>](../mixed-models-with-R/)  
+This workshop focuses on <span itemprop="keywords">mixed effects models using R</span>, covering basic <span itemprop="keywords">random effects</span> models (<span itemprop="keywords">random intercepts and slopes</span>) as well as extensions into <span itemprop="keywords">generalized mixed models</span> and discussion of realms beyond.
+</span>
+
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name keywords">Structural Equation Modeling</span>](../sem/)   
+<span itemprop="description">This document (and related workshop) focuses on <span itemprop="keywords">structural equation modeling</span>.  It is conceptually based, and tries to generalize beyond the standard SEM treatment. The initial workshop was given to an audience of varying background and statistical skill, but the document should be useful to anyone interested in the techniques covered. It is completely R-based, with special emphasis on the [<span itemprop="keywords">lavaan</span>](http://lavaan.ugent.be/) package. It will continue to be a work in progress, particularly the sections after the <span itemprop="keywords">SEM</span> chapter.  Topics include: <span itemprop="keywords">graphical</span> models (<span itemprop="keywords">directed</span> and <span itemprop="keywords">undirected</span>, including <span itemprop="keywords">path analysis</span>, <span itemprop="keywords">bayesian networks</span>, and <span itemprop="keywords">network analysis</span>), <span itemprop="keywords">mediation</span>, <span itemprop="keywords">moderation</span>, <span itemprop="keywords">latent variable</span> models (including <span itemprop="keywords">principal components</span> analysis and '<span itemprop="keywords">factor analysis</span>'), <span itemprop="keywords">measurement</span> models, <span itemprop="keywords">structural equation models</span>, <span itemprop="keywords">mixture models</span>, <span itemprop="keywords">growth curves</span>.  Topics I hope to provide overviews of in the future include other latent variable techniques/extensions such as <span itemprop="keywords">IRT</span>, <span itemprop="keywords">collaborative filtering</span>/<span itemprop="keywords">recommender systems</span>, <span itemprop="keywords">hidden Markov models</span>, <span itemprop="keywords">multi-group models</span> etc.
+</span>
+</span>
+
+
 # Statistical
 
-### Data Modeling in R
+### Modeling in R
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Data Modeling in R</span>](../R-models/)     
@@ -40,6 +69,11 @@ Here you'll find documents of varying technical degree covering things of intere
 
 
 ### Mixed Models
+
+<span itemscope itemtype ="http://schema.org/TechArticle">
+[<span itemprop="name">Mixed Models with R</span>](../mixed-models-with-R/)  
+This workshop focuses on <span itemprop="keywords">mixed effects models using R</span>, covering basic <span itemprop="keywords">random effects</span> models (<span itemprop="keywords">random intercepts and slopes</span>) as well as extensions into <span itemprop="keywords">generalized mixed models</span> and discussion of realms beyond.
+</span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
 [<span itemprop="name keywords">Mixed Models Overview</span>](../docs/mixedModels/mixedModels.html)  
