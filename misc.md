@@ -9,6 +9,15 @@ Here you'll find things that just don't fit elsewhere, especially things I do fo
 
 # R Packages
 
+
+<span itemscope itemtype ="http://schema.org/WebApplication">
+[<span itemprop="name">visibly</span>](https://m-clark.github.io/visibly/)     
+<span itemprop="description">
+This is a collection of functions that I use related to visualization, e.g. the palette generating function (create_palette) and clean visualization themes for ggplot and plotly.  In additon, there are visualizations specific to mixed and additive models.
+</span>
+</span>
+
+
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">tidyext</span>](https://m-clark.github.io/tidyext/)     
 <span itemprop="description">
@@ -20,7 +29,7 @@ This package is a collection of functions that do the things I commonly need to 
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">Lazerhawk</span>](https://github.com/m-clark/lazerhawk/)     
 <span itemprop="description">
-While the name is more or less explanatory, to clarify, this is a package of miscellaneous functions that are useful to me. Some might be useful to others, e.g. the palette generating function (create_palette) and clean visualization themes for ggplot and plotly.
+While the name is more or less explanatory, to clarify, this is a package of miscellaneous functions that are mostly useful to me. 
 </span>
 </span>
 
