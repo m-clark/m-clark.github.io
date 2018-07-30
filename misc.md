@@ -50,6 +50,14 @@ R with its collar flipped, or the movie Drive if it was all about R programming,
 </span>
 
 
+<span itemscope itemtype ="http://schema.org/WebApplication">
+[<span itemprop="name">538 football club rankings</span>](https://m-clark.github.io/five38clubrankings/)     
+<span itemprop="description">
+This package grabs the table located at [538](https://projects.fivethirtyeight.com/global-club-soccer-rankings/), and additionally does some summary by league and country. 
+</span>
+</span>
+
+
 In addition to these, though they are not publicly available, I've created even more involved packages for specific project work.
 
 # Shiny Apps
