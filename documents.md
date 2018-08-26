@@ -184,7 +184,7 @@ Check the workshops section also.
 </span>
 
 <span itemscope itemtype ="http://schema.org/TechArticle">
-[<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../docs/web)     
+[<span itemprop="name keywords" style="font-variant:small-caps;">Engaging the Web with R</span>](../webR/)     
 <span itemprop="description">Document regarding the use of R for <span itemprop="keywords">web scraping</span>, extracting data via an <span itemprop="keywords">API</span>, <span itemprop="keywords">interactive</span> web-based <span itemprop="keywords">visualizations</span>, and producing <span itemprop="keywords">web-ready documents</span>.  It serves as an overview of ways one might start to use R for web-based activities as opposed to a hand-on approach.
 </span>
 </span>
