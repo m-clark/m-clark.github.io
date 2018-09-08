@@ -35,9 +35,5 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">University of Michigan</span></span>
 
-<a href="https://github.com/m-clark/"><i class="fab fa-github fa-2x" aria-hidden="true"></i></a>
-<a href="mailto:micl@umich.edu"><i class="fas fa-at fa-2x" aria-hidden="true"></i></a>
-<a href="https://www.linkedin.com/in/michael-clark-b475b5170/"><i class="fab fa-linkedin-in fa-2x" aria-hidden="true"></i></a>
-
 
 <img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'>
