@@ -26,7 +26,7 @@ Currently I am <span itemprop="jobTitle">Statistician</span> Lead for the [<span
 
 
 
-What drew me to the world of statistics and keeps my interest is that it frees me to engage in whatever science I like, and provides a great many tools with which to discover more about the things we humans are most interested in. I can be reached at <micl@umich.edu>. CV can be found [here](../cv.html).
+What drew me to the world of statistics and keeps my interest is that it frees me to engage in whatever science I like, and provides a great many tools with which to discover more about the things we humans are most interested in. CV can be found [here](../cv.html).
 
 
 <span itemprop="name" style="font-variant: small-caps;">Michael Clark</span>
@@ -35,6 +35,9 @@ What drew me to the world of statistics and keeps my interest is that it frees m
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">Advanced Research Computing</span></span><br>
 <span itemscope itemtype="http://schema.org/Organization" style="font-size:100%"><span itemprop="name">University of Michigan</span></span>
 
+<a href="https://github.com/m-clark/"><i class="fab fa-github fa-2x" aria-hidden="true"></i></a>
+<a href="mailto:micl@umich.edu"><i class="fas fa-at fa-2x" aria-hidden="true"></i></a>
+<a href="https://www.linkedin.com/in/michael-clark-b475b5170/"><i class="fab fa-linkedin-in fa-2x" aria-hidden="true"></i></a>
 
 
 <img src="/img/signature-vertical-informal.png" style="display:block; margin: 0 auto;" width='10%'>
