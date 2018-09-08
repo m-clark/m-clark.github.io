@@ -107,10 +107,3 @@ Scrape xkcd [(R)](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Ot
 [R matrix speedups](https://github.com/m-clark/Miscellaneous-R-Code/blob/master/Other/Programming_Shenanigans/matrixOperations.md), ...
 
 
-## Packages
-
-I have a couple packages for personal use and to learn more about the code development process, but in case someone might find something useful therein, here they are:
-
-[lazerhawk](https://github.com/m-clark/lazerhawk)
-
-[heatR](https://github.com/m-clark/heatR)
