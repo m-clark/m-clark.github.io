@@ -60,6 +60,13 @@ In addition to these, though they are not publicly available, I've created even 
 </span>
 </span>
 
+
+<span itemscope itemtype ="http://schema.org/WebApplication">
+[<span itemprop="name">Bayesian Demonstration</span>](http://micl.shinyapps.io/prior2post/)     
+<span itemprop="description">A simple interactive demonstration for those just starting on their <span itemprop="keywords">Bayesian</span> journey.
+</span>
+</span>
+
 <span itemscope itemtype ="http://schema.org/WebApplication">
 [<span itemprop="name">A History of Tornados</span>](http://micl.shinyapps.io/tornados/)     
 <span itemprop="description">Because I had too much time on my hands and wanted to try out the <span itemprop="keywords">dashboard</span> feature of <span itemprop="keywords">R Markdown</span>.  Maps <span itemprop="keywords">tornado</span> activity from 1950-2015.  At some point I'll go back and fix the lag issue, but otherwise it's interesting data.
