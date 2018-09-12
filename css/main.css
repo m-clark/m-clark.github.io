@@ -281,6 +281,14 @@ img {
 }
 
 
+.navbar-header a .navbar-brand .navbar-brand-logo {
+  transition: all .25s ease;
+  transition-property: all;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+  transition-delay: 0s;
+}
+
 .navbar-custom .navbar-brand-logo {
   padding-top: 0;
   -webkit-transition: padding .5s ease-in-out;
@@ -394,7 +402,7 @@ img {
 }
 @media only screen and (max-width: 767px) {
   .navbar-custom .nav .navlinks-container.show-children {
-    background: #eee;
+    background: rgba(0, 0, 0, 0.2);
   }
   .navbar-custom .nav .navlinks-container.show-children .navlinks-children {
     display: block;
@@ -402,7 +410,7 @@ img {
 }
 @media only screen and (min-width: 768px) {
   .navbar-custom .nav .navlinks-container:hover {
-    background: #eee;
+    background: rgba(0, 0, 0, 0.1);
   }
   .navbar-custom .nav .navlinks-container:hover .navlinks-children {
     display: block;
@@ -426,10 +434,18 @@ footer {
   border-top: 1px #EAEAEA solid;
   margin-top: 50px;
   font-size: 14px;
+  {% if site.footer-img %}
+  background-image: url({{ site.footer-img }});
+  background-attachment: fixed;
+  {% endif %}
+}
+
+footer p.text-muted {
+  color: {{ site.footer-text-col }};
 }
 
 footer a {
-  color: #404040;
+  color: #404040;  /* {{site.footer-link-col}} */
 }
 
 footer .list-inline {
@@ -437,7 +453,7 @@ footer .list-inline {
   padding: 0;
 }
 footer .copyright {
-  font-family: Open Sans;
+  font-family: Open Sans, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   text-align: center;
   margin-bottom: 0;
 }
@@ -483,7 +499,7 @@ footer .theme-by {
 .post-preview a:focus,
 .post-preview a:hover {
   text-decoration: none;
-  color: #0085a1;
+  color: #0085a1;     /*{{ site.hover-col }}*/
 }
 
 .post-preview .post-title {
@@ -498,12 +514,34 @@ footer .theme-by {
 .post-preview .post-meta,
 .post-heading .post-meta {
   color: #808080;
-  font-size: 18px;
+  font-size: 10px;
   font-style: italic;
   margin: 0 0 10px;
 }
 .post-preview .post-entry {
   font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+.post-entry-container {
+  display: inline-block;
+  width: 100%;
+}
+.post-entry {
+  width: 100%;
+}
+.post-image {
+  float: right;
+  height: 192px;
+  width: 192px;
+  margin-top: -35px;
+  filter: grayscale(90%);
+}
+.post-image:hover {
+  filter: grayscale(0%);
+}
+.post-image img {
+  border-radius: 100px;
+  height: 192px;
+  width: 192px;
 }
 .post-preview .post-read-more {
   font-weight: 800;
@@ -514,6 +552,54 @@ footer .theme-by {
     font-size: 18px;
   }
 }
+
+
+/* --- Tags --- */
+
+.blog-tags {
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #999;
+  font-size: 15px;
+  margin-bottom: 30px;
+}
+
+.blog-tags a {
+  color: {{ site.link-col }};
+  text-decoration: none;
+  padding: 0px 5px;
+}
+
+.blog-tags a:hover {
+  border-radius: 2px;
+  color: {{ site.hover-col }};
+  background-color: #EEE;
+}
+
+.post-preview .blog-tags {
+  margin-top: 5px;
+  margin-bottom: 0;
+}
+
+@media only screen and (min-width: 768px) {
+  .post-preview .blog-tags {
+    margin-top: 10px;
+  }
+}
+
+@media only screen and (max-width: 500px) {
+  .post-image, .post-image img {
+    height: 100px;
+    width: 100px;
+  }
+
+  .post-image {
+    width: 100%;
+    text-align: center;
+    margin-top: 0;
+    float: left;
+  }
+}
+
 
 /* --- Post and page headers --- */
 
@@ -662,6 +748,16 @@ footer .theme-by {
   border-bottom-left-radius: 5px;
 }
 
+#header-gh-btns {
+  margin-bottom: 15px;
+}
+@media only screen and (max-width: 500px) {
+  #header-gh-btns > iframe {
+    display: block;
+    margin-bottom: 5px;
+  }
+}
+
 /* --- Pager --- */
 
 .pager li a {
@@ -683,8 +779,8 @@ footer .theme-by {
 .pager li a:hover,
 .pager li a:focus {
   color: #FFF;
-  background: #0085a1;
-  border: 1px solid #0085a1;
+  border: 1px solid #0085a1;  /*{{ site.hover-col }}*/
+  background: #0085a1;        /*{{ site.hover-col }}*/
 }
 
 .pager {
@@ -737,31 +833,120 @@ table tr td :last-child {
   margin-bottom: 0;
 }
 
-.sigtable  {
-  background-color: #FFFFF8;
-  border-collapse: collapse;
+/* --- Code blocks --- */
+
+pre {
+  font-size: 16px;
+  line-height: 1.5em;
+}
+pre code {
+  white-space: pre;
+}
+pre.highlight, .highlight > pre, td.code pre {
+  background-color: #FAFAFA;
+  background-image: linear-gradient(#F9F9F9 50%, #FDFDFD 50%);
+  background-repeat: repeat;
+  background-size: 3em 3em;
+  background-position: 0px 10px;
+  border-left: 7px solid #444;
+}
+code table, code table td, code table th, code table tbody, code table tr,
+td.gutter pre {
+  padding: 0;
+  border: none;
+  background-color: #fff;
+}
+.highlight > pre {
+  padding: 0;
+}
+.highlight > pre.highlight {
+  padding: 9.5px;
+}
+td.code pre {
+  border-width: 0 0 0 2px;
+  border-style: solid;
+  border-color: #444;
+  border-radius: 0;
+}
+td.gutter {
+  padding-top: 3px;
 }
 
-.sigtable td {
-  background-color: #FFFFF8;
-  padding: 10px 5px;
-  border-collapse: collapse;
-  overflow: hidden;
-  word-break: normal;
+/* --- Social media sharing section --- */
+
+#social-share-section {
+  margin-bottom: 30px;
 }
 
-.sigtable th {
-  background-color: #FFFFF8;
-  padding: 10px 5px;
-  border-collapse: collapse;
-  overflow: hidden;
-  word-break:  normal;
+/* --- Notification boxes --- */
+.box-note, .box-warning, .box-error {
+  padding: 15px 15px 15px 10px;
+  margin: 20px 20px 20px 5px;
+  border: 1px solid #eee;
+  border-left-width: 5px;
+  border-radius: 5px 3px 3px 5px;
 }
 
-.sigtable .sigtable-yw4l {
-  background-color: #FFFFF8;
-  vertical-align: top;
+.box-note {
+  background-color: #eee;
+  border-left-color: #2980b9;
 }
+
+.box-warning {
+  background-color: #fdf5d4;
+  border-left-color: #f1c40f;
+}
+
+.box-error {
+  background-color: #f4dddb;
+  border-left-color: #c0392b;
+}
+
+/* Fix table border github gist snippets */
+
+.gist, .gist-file table tr {
+  border: unset;
+}
+
+.gist, .gist-file table tr td {
+  border: unset;
+}
+
+/* Fix .navbar-toggle */
+
+.navbar-default button.navbar-toggle:focus,
+.navbar-default button.navbar-toggle:hover {
+  background-color: initial;
+}
+
+.navbar-default button.navbar-toggle[aria-expanded="true"] {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Tags page */
+
+.tag-btn {
+  margin: 5px;
+}
+
+#full-tags-list {
+  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+#full-tags-list .tag-entry {
+  margin: 0 0 15px 25px;
+}
+
+#full-tags-list .tag-entry a {
+  font-size: 20px;
+}
+
+#full-tags-list .tag-entry .entry-date {
+  color: #808080;
+  font-style: italic;
+  font-size: 16px;
+}
+
 
 /* --- Tufte related --- */
 @font-face {
@@ -796,10 +981,3 @@ table tr td :last-child {
   font-style: normal;
 }
 
-.navbar-header a .navbar-brand .navbar-brand-logo {
-  transition: all .25s ease;
-  transition-property: all;
-  transition-duration: 0.25s;
-  transition-timing-function: ease;
-  transition-delay: 0s;
-}
