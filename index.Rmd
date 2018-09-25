@@ -1,0 +1,130 @@
+---
+title: "Statistics, R, Data, Science"
+# author:
+#   - name: Michael Clark
+#     url: https://m-clark.github.io
+#     affiliation: University of Michigan, CSCAR
+#     affiliation_url: https://cscar.research.umich.edu
+#     mailto: micl@umich.edu
+# date: '`r format(Sys.Date(), "%B %d, %Y")`'
+# output:
+#   radix::radix_article:
+#     self_contained: false
+site: radix::radix_website
+listing: posts
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      dev.args=list(bg = 'transparent'), 
+                      # dev='svglite',                                
+                      # fig.align='center', 
+                      #out.width='75%', fig.asp=.75,                 
+                      cache.rebuild=F, cache=F)
+
+# Learn more about creating websites with Radix at:
+# https://rstudio.github.io/radix/website.html
+
+# Learn more about publishing to GitHub Pages at:
+# https://rstudio.github.io/radix/publish_website.html#github-pages
+
+library(tidyverse)
+```
+
+#
+
+<div style="font-size: 150%; color: #ff5500; font-variant: small-caps; font-family: 'Open Sans Condensed'">
+# Statistics, R, Data, Science
+</div>
+
+
+```{r title-page-plot, layout="l-page", eval=T, fig.width=15, fig.asp=.25}
+# whatever radix is doing to the image, width and height aren't really meaningful.  Making width smaller can actually result in a larger image
+# out.width='5%', fig.asp=.5
+
+
+
+# the mean function; in this case mean=0
+muFn = function(x){
+  x = sapply(x, function(x) x=0)
+  x
+}
+
+# The covariance function; here it is the squared exponential kernel.
+
+Kfn = function(x, y=NULL, l=1, sigmaf=1, sigman=.5){
+  if (!is.null(y)) {
+    sigmaf * exp( -(1/(2*l^2)) * as.matrix(dist(x, upper=T, diag=T)^2) ) + 
+      sigman*diag(length(x))    
+  } else {
+    sigmaf * exp( -(1/(2*l^2)) * as.matrix(dist(x, upper=T, diag=T)^2) )
+  }  
+}
+
+#####################
+### Preliminaries ###
+#####################
+
+l = 1           # for l, sigmaf, sigman, see note at covariance function
+sigmaf = 1      
+sigman = .25 
+keps = 1e-8     # see note at Kstarstar
+nprior = 5      # number of prior draws
+npostpred = 3   # number of posterior predictive draws
+
+
+####################################
+### generate noisy training data ###
+####################################
+
+Xtrain = 15*(runif(20)-.5)  
+nTrain = length(Xtrain)
+ytrain = sin(Xtrain) + rnorm(n=nTrain, sd=.1)  # kept sine function for comparison to noise free result
+
+Xtest = seq(-7.5, 7.5, length=200)
+nTest = length(Xtest)
+
+#####################################
+### generate posterior predictive ###
+#####################################
+
+### Create Ky, K*, and K** matrices as defined in the texts
+Ky = Kfn(x=Xtrain, y=ytrain, l=l, sigmaf=sigmaf, sigman=sigman)
+K_ = Kfn(c(Xtrain, Xtest), l=l, sigmaf=sigmaf, sigman=sigman)                    # initial matrix
+Kstar = K_[1:nTrain, (nTrain+1):ncol(K_)]                                        # dim = N x N*
+tKstar = t(Kstar)                                                                # dim = N* x N
+Kstarstar = K_[(nTrain+1):nrow(K_), (nTrain+1):ncol(K_)] + keps*diag(nTest)      # dim = N* x N*; the keps part is for positive definiteness
+Kyinv = solve(Ky)
+
+# calculate posterior mean and covariance
+postMu = muFn(Xtest) + tKstar %*% Kyinv %*% (ytrain-muFn(Xtrain))
+postCov = Kstarstar - tKstar %*% Kyinv %*% Kstar
+s2 = diag(postCov)
+# R = chol(postCov)  
+# L = t(R)      # L is used in alternative formulation below based on gaussSample.m
+
+# generate draws from posterior predictive
+y2 = data.frame(t(mvtnorm::rmvnorm(npostpred, mean=postMu, sigma=postCov)))
+# y2 = data.frame(replicate(npostpred, postMu + L %*% rnorm(postMu))) # alternative
+
+#################################
+### Posterior predictive plot ###
+#################################
+
+# reshape data for plotting
+gdat = data.frame(x=Xtest, y=y2, fmean=postMu, selower=postMu-2*sqrt(s2), seupper=postMu+2*sqrt(s2)) %>% 
+  gather(key=variable, value=value, -x, -fmean,-selower, -seupper)
+
+ggplot(aes(x=x, y=value), data=gdat) + 
+  geom_ribbon(aes(ymin=selower, ymax=seupper,group=variable), fill='gray98') +
+  geom_line(aes(group=variable), color='#FF5500', alpha=.5) +
+  geom_line(aes(group=variable, y=fmean), color='#d9edf7', size=2) +
+  geom_point(aes(x=Xtrain, y=ytrain), data=data.frame(Xtrain, ytrain), size=4, color='#0085a1', alpha=.5) +
+  geom_point(aes(x=Xtrain, y=ytrain), data=data.frame(Xtrain, ytrain), size=2, color='#0085a1', alpha=.25) +
+  # labs(title='Posterior Predictive') +
+  theme_void()
+
+
+
+```
+
