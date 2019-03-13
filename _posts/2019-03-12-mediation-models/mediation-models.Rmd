@@ -1,0 +1,142 @@
+---
+title: "Mediation Models"
+description: |
+  Various package options for conducting mediation analysis
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: 03-12-2019
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = F, warning = F, comment = NA)
+library(tidyverse)
+```
+
+First of all, very few people (at least that I see in consulting across dozens of disciplines) need a mediation model.  If you cannot think of your model in temp, phys terms, or arrows either way you don't need this.  If there is no strong correlation between key variables and mediator, you don't need this. If there is no strong correlation between the outcome(s) and mediator, you don't need this. If, when describing your model, everyone thinks you're talking about an interaction (moderation), you don't need this.
+
+
+
+
+## Data
+
+- Job Search Intervention Study (JOBS II). JOBS II is a randomized field experiment that investigates the efficacy of a job training intervention on unemployed workers. The program is designed to not only increase reemployment among the unemployed but also enhance the mental health of the job seekers. In the JOBS II field experiment, 1,801 unemployed workers received a pre-screening questionnaire and were then randomly assigned to treatment and control groups. Those in the treatment group participated in job-skills workshops. In the workshops, respondents learned job-search skills and coping strategies for dealing with setbacks in the job-search process. Those in the control condition received a booklet describing job-search tips. In follow-up interviews, the two key outcome variables were measured; a continuous measure of depressive symptoms based on the Hopkins Symptom Checklist, and a binary variable, representing whether the respondent had become employed.
+
+
+
+```{r mediation_pack}
+library(mediation)
+
+data(jobs)
+?mediate
+
+model_mediator <- lm(job_seek ~ treat + econ_hard + sex + age, data=jobs)
+model_outcome  <- lm(depress2 ~ treat + job_seek + econ_hard + sex + age, data=jobs)
+
+# Estimation via quasi-Bayesian approximation
+mediation_result <- mediate(model_mediator, model_outcome, sims=500, treat="treat", mediator="job_seek")
+
+summary(mediation_result)
+# plot(mediation_result)
+```
+
+```{r lavaan}
+library(lavaan)
+
+sem_model = '
+  job_seek ~ a*treat + econ_hard + sex + age
+  depress2 ~ c*treat + b*job_seek + econ_hard + sex + age
+ 
+  # direct effect
+  direct := c
+ 
+  # indirect effect
+  indirect := a*b
+ 
+  # total effect
+  total := c + (a*b)
+'
+
+model_sem = sem(sem_model, data=jobs, se='boot', bootstrap=500)
+summary(model_sem)  # compare with ACME in mediation
+```
+
+
+```{r}
+library(brms)
+
+f_mediator <- bf(job_seek ~ treat + econ_hard + sex + age)
+f_outcome  <- bf(depress2 ~ treat + job_seek + econ_hard + sex + age)
+
+model_bayes = brm(f_mediator + f_outcome + set_rescor(FALSE), data = jobs, cores=2)
+
+print(sjstats::mediation(model_bayes), digits=4)  # same output as mediation package
+# same as
+# hypothesis(model_bayes, 'jobseek_treat*depress2_job_seek = 0')
+```
+
+
+# More complex
+
+random intercept
+
+# Package comparison
+
+## Mediation
+
+##### Pros
+
+- Standard R models and syntax
+- Multiple types of models for both mediator and outcome
+- Provides multiple results simultaneously
+
+
+##### Limitations
+
+- single mediators
+- single random effects
+
+## lavaan
+
+##### Pros
+
+- Standard R models and syntax
+- Multiple types of models for both mediator and outcome
+- Provides multiple results simultaneously
+
+##### Limitations
+
+- Use of MASS
+- Only single mediators
+- Simple random effects
+
+
+## lavaan
+
+##### Pros
+
+- Multiple mediators
+
+##### Limitations
+
+- requires by hand coding
+- single random effects
+
+```{r}
+tibble(
+  package = c('mediation', 'lavaan', 'brms'),
+  Automatic = c('✔','', '✔'),
+  `Multiple Mediators` = c('','✔', '✔'),
+  `Beyond SLM` = c('✔','', '✔'),
+  `Random Effects` =  c('✔','✔', '✔'),
+  `Missing Values` = c('','✔', '✔'),
+  `Latent Variables` = c('','✔', ''),
+) %>% t()
+
+# additive models?
+```
+
