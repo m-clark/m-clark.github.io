@@ -19,6 +19,7 @@ library(tidyverse)
 
 First of all, very few people (at least that I see in consulting across dozens of disciplines) need a mediation model.  If you cannot think of your model in temp, phys terms, or arrows either way you don't need this.  If there is no strong correlation between key variables and mediator, you don't need this. If there is no strong correlation between the outcome(s) and mediator, you don't need this. If, when describing your model, everyone thinks you're talking about an interaction (moderation), you don't need this.
 
+In short, 
 
 
 
@@ -42,6 +43,8 @@ mediation_result <- mediate(model_mediator, model_outcome, sims=500, treat="trea
 
 summary(mediation_result)
 # plot(mediation_result)
+detach(package:mediation)
+detach(package:MASS)
 ```
 
 ```{r lavaan}
@@ -79,10 +82,41 @@ print(sjstats::mediation(model_bayes), digits=4)  # same output as mediation pac
 # hypothesis(model_bayes, 'jobseek_treat*depress2_job_seek = 0')
 ```
 
+```{r}
+library(bnlearn)
+whitelist = data.frame(
+  from = c('treat', 'treat', 'job_seek'),
+  to   = c('job_seek', 'depress2', 'depress2')
+)
+
+blacklist = expand.grid(
+  from = colnames(mediation_result$model.y$model),
+  to   = c('treat', 'sex', 'age')
+)
+
+jobs_trim = jobs %>% 
+  dplyr::select(
+    unique(colnames(mediation_result$model.y$model)),
+    unique(colnames(mediation_result$model.m$model))
+    ) %>% 
+  mutate(
+    treat = factor(treat),
+    sex = factor(sex),)
+
+model = gs(jobs_trim, whitelist = whitelist, blacklist = blacklist)
+plot(model)
+parameters = bn.fit(model, jobs_trim)
+parameters$depress2
+parameters$job_seek
+```
 
 # More complex
 
 random intercept
+
+# Alternatives
+
+
 
 # Package comparison
 
@@ -125,6 +159,9 @@ random intercept
 
 - requires by hand coding
 - single random effects
+
+
+
 
 ```{r}
 tibble(
