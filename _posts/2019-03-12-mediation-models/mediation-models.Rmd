@@ -10,46 +10,123 @@ preview: ../../img/198R.png   # apparently no way to change the size displayed v
 output:
   distill::distill_article:
     self_contained: false
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(message = F, warning = F, comment = NA)
-library(tidyverse)
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=FALSE,
+  fig.align='center', 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
 ```
 
+## Introduction
 
 
-First of all, very few people (at least that I see in consulting across dozens of disciplines) need a mediation model.  If you cannot think of your model in temp, phys terms, or arrows either way you don't need this.  If there is no strong correlation between key variables and mediator, you don't need this. If there is no strong correlation between the outcome(s) and mediator, you don't need this. If, when describing your model, everyone thinks you're talking about an interaction (moderation), you don't need this.
+In some situations we may consider the <span class="emph">indirect effect</span> of some variable on an outcome or result.  For example, poor living conditions in childhood may decrease learning outcomes in school, which subsequently have a negative effect on later quality of life, for example, lifetime income earnings. The basic idea is something like:
 
-In short, 
+$$\mathcal{A} \rightarrow \mathcal{B} \rightarrow \mathcal{C}$$
 
+In other words, $\mathcal{A}$ leads to $\mathcal{B}$, and then $\mathcal{B}$ leads to $\mathcal{C}$. With <span class="emph">mediation</span> models we posit an intervening variable between the normal covariate-outcome path that we might have in the normal regression setting, and these models allow us to investigate such behaviors.  In the above, the intervening variable, or *mediator*, is $\mathcal{B}$. It is often the case that we still might have a <span class="emph">direct effect</span> of $\mathcal{A}$ on $\mathcal{C}$, but as with the model in general, this would be theoretically motivated.
+
+Mediation analysis is very popular in social science disciplines, and usually conducted under the guise of structural equation modeling (SEM).  The graphical model of a mediation model might look like the following.
+
+```{r gm_mediation, echo=FALSE}
+DiagrammeR::grViz('scripts/mediation.gv', width = 800, height = 200)
+```
+
+First of all, very few people need a mediation model (at least that I see in consulting across dozens of disciplines).  If you cannot think of your model in temporal or physical terms, such that $\mathcal{A}$ necessarily leads to $\mathcal{B}$, which then necessarily leads to $\mathcal{C}$, you likely do not need a mediation model.  If you could see the arrows going either direction, again, you don't need such a model.  Also, if when describing your model, everyone thinks you're talking about an interaction (a.k.a. <span class="emph">moderation</span>), you don't need this.  And finally, while it should be obvious, if there is no **strong** correlation between key variables ($\mathcal{A}$) and mediator, you don't need this, and if there is no strong correlation between mediator and the outcome(s) ($\mathcal{C}$), you don't need this.
+
+
+In short, mediation works best when there are strongly implied causal connections among the variables.  Even then, such a model should be compared to simpler model of no mediation.
+
+In any case, there are a few very easy ways to investigate such models in R, and that is the goal here, just to demonstrate how you can get started.
 
 
 ## Data
 
-- Job Search Intervention Study (JOBS II). JOBS II is a randomized field experiment that investigates the efficacy of a job training intervention on unemployed workers. The program is designed to not only increase reemployment among the unemployed but also enhance the mental health of the job seekers. In the JOBS II field experiment, 1,801 unemployed workers received a pre-screening questionnaire and were then randomly assigned to treatment and control groups. Those in the treatment group participated in job-skills workshops. In the workshops, respondents learned job-search skills and coping strategies for dealing with setbacks in the job-search process. Those in the control condition received a booklet describing job-search tips. In follow-up interviews, the two key outcome variables were measured; a continuous measure of depressive symptoms based on the Hopkins Symptom Checklist, and a binary variable, representing whether the respondent had become employed.
+We will use the jobs data set that comes with the mediation package. Here is the description.
+
+- <span class="" style='font-size: 75%;'>Job Search Intervention Study (JOBS II). JOBS II is a randomized field experiment that investigates the efficacy of a job training intervention on unemployed workers. The program is designed to not only increase reemployment among the unemployed but also enhance the mental health of the job seekers. In the JOBS II field experiment, 1,801 unemployed workers received a pre-screening questionnaire and were then randomly assigned to treatment and control groups. Those in the treatment group participated in job-skills workshops. In the workshops, respondents learned job-search skills and coping strategies for dealing with setbacks in the job-search process. Those in the control condition received a booklet describing job-search tips. In follow-up interviews, the two key outcome variables were measured; a continuous measure of depressive symptoms based on the Hopkins Symptom Checklist, and a binary variable, representing whether the respondent had become employed.</span>
+
+## Packages
+
+We will look at the following packages to demonstrate how one can conduct mediation analysis in R:
+
+- <span class="pack">mediation</span>
+- <span class="pack">lavaan</span>
+- <span class="pack">brms</span>
+- other alternatives
 
 
 
-```{r mediation_pack}
+##### mediation
+
+We will start with the <span class="pack">mediation</span> package, as it basically requires no more knowledge to conduct than one possesses already from running standard regression models in R.  The package provides the <span class="emph">average causal mediation effect</span>, defined as follows from the help file and Imai's articles:
+
+> The average causal mediation effect (ACME) represents the expected difference in the potential outcome when the mediator took the value that would realize under the treatment condition as opposed to the control condition, while the treatment status itself is held constant.
+
+Note how this definition is focused on expected or predicted values conditional on the treatment value.  This is how it's able to incorporate different models for the mediator vs. the outcome.  For example, the mediator could be binary, requiring a logistic regression model, while the outcome model might be a survival model.  Think of it this way, if one is in the treatment group, they would have a specific value for the mediator, and, given that, they would then have a specific expected value for the outcome.
+
+```{r mediation_pack, echo=-(14:15), cache=TRUE}
 library(mediation)
 
 data(jobs)
-?mediate
 
 model_mediator <- lm(job_seek ~ treat + econ_hard + sex + age, data=jobs)
 model_outcome  <- lm(depress2 ~ treat + job_seek + econ_hard + sex + age, data=jobs)
 
 # Estimation via quasi-Bayesian approximation
-mediation_result <- mediate(model_mediator, model_outcome, sims=500, treat="treat", mediator="job_seek")
+?mediate
+mediation_result <- mediate(
+  model_mediator, 
+  model_outcome, 
+  sims=500, 
+  treat="treat", 
+  mediator="job_seek"
+)
 
-summary(mediation_result)
-# plot(mediation_result)
+# summary(mediation_result)
+plot(mediation_result, bty='none')
 detach(package:mediation)
 detach(package:MASS)
 ```
 
-```{r lavaan}
+```{r mediation_result_pretty, echo=FALSE}
+# from the print method; sadly, the summary object is not returned by summary or print
+smat <- c(mediation_result$d1, mediation_result$d1.ci, mediation_result$d1.p)
+smat <- rbind(smat, c(mediation_result$z0, mediation_result$z0.ci, mediation_result$z0.p))
+smat <- rbind(smat, c(mediation_result$tau.coef, mediation_result$tau.ci, mediation_result$tau.p))
+smat <- rbind(smat, c(mediation_result$n0, mediation_result$n0.ci, mediation_result$n0.p))
+rownames(smat) <- c("ACME", "ADE", "Total Effect", "Prop. Mediated")
+colnames(smat) <- c("Estimate", 
+                    paste(95, "% CI Lower", sep = ""), 
+                    paste(95, "% CI Upper", sep = ""), 
+                    "p-value")
+
+smat %>% as_tibble(rownames = ' ') %>% kable_df()
+
+```
+
+
+#### lavaan
+
+```{r lavaan, cache=TRUE}
 library(lavaan)
 
 sem_model = '
@@ -70,8 +147,9 @@ model_sem = sem(sem_model, data=jobs, se='boot', bootstrap=500)
 summary(model_sem)  # compare with ACME in mediation
 ```
 
+#### brms
 
-```{r}
+```{r brms, cache=TRUE}
 library(brms)
 
 f_mediator <- bf(job_seek ~ treat + econ_hard + sex + age)
@@ -84,7 +162,9 @@ print(sjstats::mediation(model_bayes), digits=4)  # same output as mediation pac
 # hypothesis(model_bayes, 'jobseek_treat*depress2_job_seek = 0')
 ```
 
-```{r}
+#### bnlearn
+
+```{r bnlearn, eval=FALSE}
 library(bnlearn)
 whitelist = data.frame(
   from = c('treat', 'treat', 'job_seek'),
@@ -112,37 +192,25 @@ parameters$depress2
 parameters$job_seek
 ```
 
-# More complex
+## More complex
 
-random intercept
+glm, gam, random intercept
 
-# Alternatives
-
-
-
-# Package comparison
-
-## Mediation
-
-##### Pros
-
-- Standard R models and syntax
-- Multiple types of models for both mediator and outcome
-- Provides multiple results simultaneously
+## Alternatives
 
 
-##### Limitations
 
-- single mediators
-- single random effects
+## Package comparison
 
-## lavaan
+### mediation
 
 ##### Pros
 
 - Standard R models and syntax
 - Multiple types of models for both mediator and outcome
 - Provides multiple results simultaneously
+- Good documentation and associated articles are freely available
+
 
 ##### Limitations
 
@@ -151,16 +219,20 @@ random intercept
 - Simple random effects
 
 
-## lavaan
+### lavaan
 
 ##### Pros
 
-- Multiple mediators
+- Can handle multiple mediators
+- Can handle multiple 'treatments'
+- Can handle multiple outcomes
+- Can be latent variables
+- Some multilevel support
 
 ##### Limitations
 
-- requires by hand coding
-- single random effects
+- Requires by hand coding
+- Single random effects
 
 
 
