@@ -247,19 +247,21 @@ mediation_psych = mediate(
   n.iter = 500
 )
 
-print(mediation_psych, short = F)  # short = F provides what you'd get from summary()
+print(mediation_psych, short = F, digits=3)  # short = F provides what you'd get from summary()
 
 detach(package:psych)
 # detach(package:MASS)
 ```
 
-Same results, different packaging.
+Same results, different packaging, but possibly the easiest route yet.  The psych package also handles multiple mediators as a bonus.
 
 ### brms
 
-For our last demo we come to what I feel is the most powerful package, brms.  The name stands for Bayesian Regression Modeling with Stan, and Stan is a powerful probabilistic programming language for Bayesian analysis.
+For our last demo we come to what I feel is the most powerful package, brms.  The name stands for Bayesian Regression Modeling with Stan, and Stan is a powerful probabilistic programming language for Bayesian analysis.  I won't go into details about Bayesian analysis, but feel free to see [my document](https://m-clark.github.io/bayesian-basics/) that does.
 
-```{r brms, cache=TRUE}
+We generally do as we have before, specifying the mediator model and the outcome model.  brms doesn't do anything special for mediation analysis, but its hypothesis function can allow us to test the product-of-paths approach.  Furthermore, the sjstats package will essentially provide the results in the same way the mediation package does for us, and for that matter, the mediation package is basically an attempt at a Bayesian solution using frequentist methods anyway.  If we did have different distributions for the outcome and mediator, we'd have an relatively easy time getting these average prediction values and their differences, as Bayesian approaches are always thinking about posterior predictive distributions.
+
+```{r brms, cache=TRUE, eval=-9, echo=-10, cache.rebuild=F}
 library(brms)
 
 f_mediator <- bf(job_seek ~ treat + econ_hard + sex + age)
@@ -269,10 +271,18 @@ model_bayes = brm(f_mediator + f_outcome + set_rescor(FALSE), data = jobs, cores
 summary(model_bayes)
 
 print(sjstats::mediation(model_bayes), digits=4)  # same output as mediation package
+sjstats::mediation(model_bayes) %>% kable_df()
 # same as
 # hypothesis(model_bayes, 'jobseek_treat*depress2_job_seek = 0')
 ```
 
+Same old story at this point, but with the Bayesian approach we have more fun things to look at.  For example, we can see that we aren't actually capturing the skewness of depression outcome well. Our predicted values vs. the observed don't quite match up.  We're a little better for the mediator, but perhaps still a little overly optimistic with some of our model-based predictions.
+
+```{r mediation_bayes_ppcheck, echo=-1}
+library(brms)
+pp_check(model_bayes, resp = 'depress2') + ggtitle('Depression Outcome')
+pp_check(model_bayes, resp = 'jobseek') + ggtitle('Mediator')
+```
 
 
 ## More complex
