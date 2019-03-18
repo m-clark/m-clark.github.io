@@ -202,6 +202,20 @@ smat %>%
 
 The results above demonstrate that the ACME is not statistically distinct from zero, or no mediation. The average direct effect is negative but likewise not statistically notable, neither is the total effect (indirect + direct effect).  Also provided is the soi disant 'proportion mediated', which is the ratio of the indirect effect to the total.  However this is not a proportion, can be negative, and so is mostly a meaningless number.
 
+#### Pros
+
+- Standard R models and syntax
+- Multiple types of models for both mediator and outcome
+- Provides multiple results simultaneously
+- Good documentation and associated articles are freely available
+- 'Moderated' mediation
+
+
+#### Limitations
+
+- Use of MASS
+- Only single mediators
+- Simple random effects
 
 ### lavaan
 
@@ -234,9 +248,25 @@ summary(model_sem, rsq=T)  # compare with ACME in mediation
 
 Note that the lavaan output shows the $\R^2$ value both models. In the case of `job_seek`, we can see that the reason we're not finding much in the way of mediation is because the covariates involved do not explain any variation in the mediator to begin with.  Preliminary investigation would have saved us the trouble in this case.
 
+
+#### Pros
+
+- Can handle multiple mediators
+- Can handle multiple 'treatments'
+- Can handle multiple outcomes
+- Can be latent variables
+- Some multilevel support
+
+#### Limitations
+
+- Requires by hand coding
+- Single random effects
+
 ### psych
 
-The psych package takes advantage of the fact that in the standard linear model case, one can obtain the results via the appropriate regression models based on the covariance matrices alone.  It's very similar to lavaan, although using an ordinary least squares approach as opposed to maximum likelihood.  The nice thing here is a syntax that allows you to focus on the effect of interest, or include everything, which is nice if you were interested in the indirect effects for economic hardship, age, and sex as well.  We'll use the cleaned up version useing the `-`, instead of `+`, for the non-treatment effects.  Another bonus is a quick plot of the results, showing the difference between the unadjusted and adjusted direct effects, and the appropriate bootstrapped interval.
+The psych package takes advantage of the fact that in the standard linear model case, one can obtain the results via the appropriate regression models based on the covariance matrices alone.  It's very similar to lavaan, although using an ordinary least squares approach as opposed to maximum likelihood.  The nice thing here is a syntax that allows you to focus only on the effect of interest, or include everything, which is nice if you were interested in the indirect effects for economic hardship, age, and sex as well.  
+
+For this demo we'll use the cleaned up version using the `-`, instead of `+`, for the non-treatment effects.  This just means they are included with the models but results are not shown about them.  The mediator is identified with `()`. Another bonus is a quick plot of the results, showing the difference between the unadjusted and adjusted direct effects, and the appropriate bootstrapped interval.
 
 ```{r psych_mediate, echo=1:5, fig.height=3.5}
 library(psych)
@@ -254,6 +284,22 @@ detach(package:psych)
 ```
 
 Same results, different packaging, but possibly the easiest route yet.  The psych package also handles multiple mediators as a bonus.
+
+
+#### Pros
+
+- Easiest syntax, basically a one line model
+- Quick plot of results
+- Can handle multiple mediators
+- Can handle multiple 'treatments'
+- Can handle multiple outcomes
+- 'Moderated' mediation 
+
+
+#### Limitations
+
+- Limited to standard linear model (`lm`)
+
 
 ### brms
 
@@ -284,12 +330,45 @@ pp_check(model_bayes, resp = 'depress2') + ggtitle('Depression Outcome')
 pp_check(model_bayes, resp = 'jobseek') + ggtitle('Mediator')
 ```
 
+#### Pros
 
-## More complex
+- Straightforward syntax
+- Extremely powerful- Models are mostly limited to one's imagination
+- Basically does what the mediation package approximates
+- All the perks of Bayesian inference: diagnostics, posterior predictive checks, model comparison, etc.
 
-glm, gam, random intercept
+#### Limitations
+
+- Slower to estimate
+- 'By-hand' calculations needed for going beyond the standard linear model, but this is already a common approach from the Bayesian perspective
+- Some comfort with the Bayesian approach required
+
+
+## More complexity
+
+Some of the packages mentioned can handle more complex models or provide additional approachess
+
+### Interactions
+
+Some models involve interactions either for the mediation model or outcome, and some unfortunately refer to this as mediated moderation or moderated mediation (sometimes called conditional indirect effects). I personally don't see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago.  I'm not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable or the mediator.
+
+Suffice it to say, since we're using standard modeling tools like `lm` and extensions of it, incorporating interactions is trivial for all of the above packages.
+
+### Generalized models
+
+In some cases our mediator or outcome may be binary or a count.  Or we might want to investigate nonlinear relationships among the treatment/mediator/outcome.  Or we might have data that has correlated observations like repeated measurements or similar.  The mediation package prides itself on this in particular, but brms can do anything it can do and more, though you might have to do a little more work to actually calculate the result.  lavaan can actually do a limited set of models for binary and ordinal variables, but getting the appropriate indirect estimate is a speculative endeavor at best.
+
+### Missing data
+
+lavaan psych brms
+
+
+
 
 ## Alternatives
+
+
+
 #### bnlearn
 
 ```{r bnlearn, eval=FALSE}
@@ -306,55 +385,47 @@ blacklist = expand.grid(
 
 jobs_trim = jobs %>% 
   dplyr::select(
-    unique(colnames(mediation_result$model.y$model)),
-    unique(colnames(mediation_result$model.m$model))
+    unique(colnames(mediation_result$model.y$model), 
+           colnames(mediation_result$model.m$model))
     ) %>% 
   mutate(
-    treat = factor(treat),
-    sex = factor(sex),)
+    treat = as.numeric(treat),
+    sex = as.numeric(sex)
+    )
 
 model = gs(jobs_trim, whitelist = whitelist, blacklist = blacklist)
 plot(model)
+
+# extract path coefficients
+parameters = bn.fit(model, jobs_trim)
+parameters$job_seek
+parameters$depress2
+```
+
+If we restrict the paths to only be what they are in our previous examples, we'd get the same results.
+
+```{r bnlearn_reproduction}
+whitelist = data.frame(
+  from = c('treat', 'age', 'sex', 'econ_hard', 'treat', 'job_seek', 'age', 'sex', 'econ_hard'),
+  to   = c('job_seek', 'job_seek','job_seek','job_seek', 'depress2', 'depress2', 'depress2', 'depress2', 'depress2')
+)
+
+blacklist = expand.grid(
+  from = colnames(mediation_result$model.y$model),
+  to   = c('treat', 'sex', 'age', 'econ_hard')
+) 
+
+model = gs(jobs_trim, whitelist = whitelist, blacklist = blacklist)
+plot(model)
+
 parameters = bn.fit(model, jobs_trim)
 parameters$depress2
 parameters$job_seek
 ```
 
+If we use treatment and sex as factors, <span class="pack">bnlearn</span> will produce conditional models that are different depending on the factor value taken.  In other words, one would have a separate model for when `treatment == 'treatment'` and one for when `treatment == control`. In our case this would be identical to allowing everything to interact with treatment, e.g. `lm( job_seek ~ treat * (econ_hard + sex + age))`, and likewise for the depression model.  This would extend to potentially any binary variable (e.g. including sex).  If the mediator is a binary variable, this is likely what we'd want to do.
 
 ## Package comparison
-
-### mediation
-
-### Pros
-
-- Standard R models and syntax
-- Multiple types of models for both mediator and outcome
-- Provides multiple results simultaneously
-- Good documentation and associated articles are freely available
-
-
-### Limitations
-
-- Use of MASS
-- Only single mediators
-- Simple random effects
-
-
-### lavaan
-
-### Pros
-
-- Can handle multiple mediators
-- Can handle multiple 'treatments'
-- Can handle multiple outcomes
-- Can be latent variables
-- Some multilevel support
-
-### Limitations
-
-- Requires by hand coding
-- Single random effects
-
 
 
 
