@@ -219,9 +219,9 @@ The results above demonstrate that the ACME is not statistically distinct from z
 
 ### lavaan
 
-In the specific case where both mediation and outcome models are standard linear models with a normal distribution for the target variable, the ACME is equivalent to the product of the `a` and `b` paths in the previous diagram.  The average direct effect is the `c'` path.  A comparison of standalone direct effect, which we might call `c`, vs this estimated direct effect `c'`, is such that `c - c' = a*b`.
+In the specific case where both mediation and outcome models are standard linear models with a normal distribution for the target variable, the ACME is equivalent to the product of the `a` and `b` paths in the previous diagram.  The average direct effect is the `c'` path.  A comparison of standalone direct effect, which we might call `c`, vs this estimated direct effect in the mediation model `c'`, is such that `c - c' = a*b`.
 
-This product-of-paths the approach we will take with the lavaan package, and in fact, as of this writing, that is our only way of going about it.  lavaan is specifically geared toward structural equation modeling, such as factor analysis, growth models, and mediation models like we're conducting here. While it is limited to the standard linear model case to assess mediation, it is the only one of our tools that can incorporate latent variables readily.  For example, we could have our depression outcome as a latent variable underlying the individual questionnaire items.  In addition, we could also incorporate multiple mediators and multiple outcomes.
+This product-of-paths (or difference in coefficients) approach is the one we will take with the lavaan package, and in fact, as of this writing, that is our only way of going about it.  lavaan is specifically geared toward structural equation modeling, such as factor analysis, growth models, and mediation models like we're conducting here. While it is limited to the standard linear model case to assess mediation, it is also the only one of our tools that can incorporate latent variables readily.  For example, we could have our depression outcome as a latent variable underlying the individual questionnaire items.  In addition, we could also incorporate multiple mediators and multiple outcomes.
 
 <aside>lavaan can still estimate the model with binary or ordinal variables, there just is no way to produce the proper indirect effect, at least not without a lot more effort </aside> To keep things as we have been discussing, I will label the `a`, `b` and `c'` paths in lavaan according to how they have been depicted previously.  Otherwise lavaan is very easy to use, and in the case of observed variables, uses standard R formula notation for the models.
 
@@ -350,9 +350,9 @@ Some of the packages mentioned can handle more complex models or provide additio
 
 ### Interactions
 
-Some models involve interactions either for the mediation model or outcome, and some unfortunately refer to this as mediated moderation or moderated mediation (sometimes called conditional indirect effects). I personally don't see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago.  I'm not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable or the mediator.
+Some models involve interactions either for the mediation model or outcome, and some unfortunately refer to this as mediated moderation or moderated mediation. I personally don't see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago.  I'm not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable or the mediator or both.
 
-Suffice it to say, since we're using standard modeling tools like `lm` and extensions of it, incorporating interactions is trivial for all of the above packages.
+Suffice it to say, since we're using standard modeling tools like `lm` and extensions of it, incorporating interactions is trivial for all of the above packages, but the product-of-paths type of approach doesn't hold.
 
 ### Generalized models
 
@@ -360,16 +360,22 @@ In some cases our mediator or outcome may be binary or a count.  Or we might wan
 
 ### Missing data
 
-lavaan psych brms
+Often when dealing with such data, especially in the social sciences, data is often missing on any of the covariates.  Sometimes we can drop these if there isn't too many, but in other cases we will want to do something about it.  The packages lavaan, psych, and brms provide one or more ways to deal with the situation (e.g. multiple imputation).
 
 
 
 
 ## Alternatives
 
+We have been depicting the models as networks of nodes, with arcs/edges/paths connecting them.  Our dicussion revolves around what are called <span class="emph">Directed Acyclic Graphs</span> (DAG) where the arrows can only go one direction with no feedback loops.  The result of any outcome variable is a function of the arrows preceding it, and conditionally independent of others.  Some theoretical models may relax this, and others may have no arrows at all, i.e. are <span class="emph">undirected</span>, such that we are interested in just the connections (e.g. with some social networks).
+
 
 
 #### bnlearn
+
+The bnlearn package allows investigation of directed, partially directed, and undirected graphs.  In terms of DAGs, we can use it to essentially duplicate the mediation models we've been discussing.  The nice thing though is that this package will efficiently test paths for inclusion rather than assume them, but we can still impose theoretical constraints as needed.  Not only can we then search for the paths of interest in a principled with bayesian networks and Pearl's causal graph theory as a basis, we also will have tools to further avoid overfitting via cross-validation.<aside></aside>
+
+For the initial model, we'll make sure that paths exist between treatment - mediator, treatment - outcome, and mediator - outcome (the <span class="emph">whitelist</span>).  We will disallow nonsensical paths like having arrows to the treatment (which was randomly assigned), sex, and age.  Otherwise, we'll see what the data suggests.
 
 ```{r bnlearn, eval=FALSE}
 library(bnlearn)
@@ -397,10 +403,14 @@ model = gs(jobs_trim, whitelist = whitelist, blacklist = blacklist)
 plot(model)
 
 # extract path coefficients
-parameters = bn.fit(model, jobs_trim)
-parameters$job_seek
-parameters$depress2
+# parameters = bn.fit(model, jobs_trim)
+# parameters$job_seek
+# parameters$econ_hard
+# parameters$depress2
 ```
+
+
+We see in the plot that age now only relates to job seeking self-efficacy, which itself now effects economic hardship, rather than the other way around. Sex only has an effect on depression.
 
 If we restrict the paths to only be what they are in our previous examples, we'd get the same results.
 
@@ -423,7 +433,9 @@ parameters$depress2
 parameters$job_seek
 ```
 
-If we use treatment and sex as factors, <span class="pack">bnlearn</span> will produce conditional models that are different depending on the factor value taken.  In other words, one would have a separate model for when `treatment == 'treatment'` and one for when `treatment == control`. In our case this would be identical to allowing everything to interact with treatment, e.g. `lm( job_seek ~ treat * (econ_hard + sex + age))`, and likewise for the depression model.  This would extend to potentially any binary variable (e.g. including sex).  If the mediator is a binary variable, this is likely what we'd want to do.
+The main thing to note is that the estimated parameters equal the same thing we got with previous packages.  It's essentially equivalent to using lavaan with the default maximum likelihood estimator.
+
+If we use treatment and sex as factors, <span class="pack">bnlearn</span> will produce conditional models that are different depending on the factor value taken.  In other words, one would have a separate model for when `treatment == 'treatment'` and one for when `treatment == control`. In our case, this would be identical to allowing everything to interact with treatment, e.g. `lm( job_seek ~ treat * (econ_hard + sex + age))`, and likewise for the depression model.  This would extend to potentially any binary variable (e.g. including sex).  If the mediator is a binary variable, this is likely what we'd want to do.
 
 ## Package comparison
 
