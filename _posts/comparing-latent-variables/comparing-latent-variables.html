@@ -49,7 +49,7 @@
   <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"NULL"}
+  {"type":"character","attributes":{},"value":["comparing-latent-variables_files/bowser-1.9.3/bowser.min.js","comparing-latent-variables_files/distill-2.2.21/template.v2.js","comparing-latent-variables_files/jquery-1.11.3/jquery.min.js","comparing-latent-variables_files/webcomponents-2.0.0/webcomponents.js"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
   <!--/radix_placeholder_navigation_in_header-->
@@ -934,7 +934,7 @@
   <!--radix_placeholder_site_in_header-->
   <!--/radix_placeholder_site_in_header-->
 
-  <link rel="stylesheet" href="..\..\test.css" type="text/css"/>
+  <link rel="stylesheet" href="../../test.css" type="text/css"/>
 
 </head>
 
@@ -964,240 +964,48 @@
 </div>
 
 <div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#multiple-group-analysis">Multiple group analysis</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<h2 id="introduction">Introduction</h2>
+<p>In some cases we are interested in looking at group differences in latent variables. For example, social scientists are interested in race and sex differences, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, and this post provides a demo using lavaan.</p>
+<p>My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder. As a starting point though, you can find some demonstration on the <a href="https://lavaan.ugent.be">lavaan website</a>. For more on factor analysis, structural equation modeling, and more, see <a href="https://m-clark.github.io/sem/">my document</a>.</p>
+<h2 id="multiple-group-analysis">Multiple group analysis</h2>
+<p>A common way to assess group differences is via multiple group analysis, which amounts to doing separate structural equation models of some kind across the groups. We will use a classic data set to demonstrate the approach. From the help file</p>
+<blockquote>
+<p>The classic Holzinger and Swineford (1939) dataset consists of mental ability test scores of seventh- and eighth-grade children from two different schools (Pasteur and Grant-White). In the original dataset (available in the MBESS package), there are scores for 26 tests. However, a smaller subset with 9 variables is more widely used in the literature</p>
+</blockquote>
 <div class="layout-chunk" data-layout="l-body">
-<pre><code>
-lavaan 0.6-3 ended normally after 101 iterations
+<pre class="r"><code>
+library(lavaan)
+data(HolzingerSwineford1939)</code></pre>
+</div>
+<p>The basic model is a factor analysis with three latent variables, with items for visual-spatial ability (<code>x1-x3</code>), verbal comprehension (<code>x4-x6</code>), and so-called speed tests (<code>x7-x9</code>), e.g. for addition and counting, which might be thought of general cognitive processing.</p>
+<p>With lavaan, we specify the model for three factor (or latent variables). After that, a simple group argument will allow the multigroup analysis.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(tidyverse)
+library(lavaan)
 
-  Optimization method                           NLMINB
-  Number of free parameters                         60
+HS.model1 &lt;- &#39; 
+  visual  =~ x1 + x2 + x3
+  verbal  =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+&#39;
 
-  Number of observations per group         
-  Pasteur                                          156
-  Grant-White                                      145
+model_baseline &lt;- cfa(
+  HS.model1, 
+  data = HolzingerSwineford1939, 
+  group = &quot;school&quot;,
+  meanstructure = T      # will provide intercept values for the observed variables
+)
 
-  Estimator                                         ML
-  Model Fit Test Statistic                     115.851
-  Degrees of freedom                                48
-  P-value (Chi-square)                           0.000
-
-Chi-square for each group:
-
-  Pasteur                                       64.309
-  Grant-White                                   51.542
-
-Parameter Estimates:
-
-  Information                                 Expected
-  Information saturated (h1) model          Structured
-  Standard Errors                             Standard
-
-
-Group 1 [Pasteur]:
-
-Latent Variables:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual =~                                                    
-    x1                1.000                               1.047
-    x2                0.394    0.122    3.220    0.001    0.412
-    x3                0.570    0.140    4.076    0.000    0.597
-  textual =~                                                   
-    x4                1.000                               0.946
-    x5                1.183    0.102   11.613    0.000    1.119
-    x6                0.875    0.077   11.421    0.000    0.827
-  speed =~                                                     
-    x7                1.000                               0.591
-    x8                1.125    0.277    4.058    0.000    0.665
-    x9                0.922    0.225    4.104    0.000    0.545
-  Std.all
-         
-    0.887
-    0.336
-    0.515
-         
-    0.823
-    0.856
-    0.838
-         
-    0.547
-    0.682
-    0.551
-
-Covariances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual ~~                                                    
-    textual           0.479    0.106    4.531    0.000    0.484
-    speed             0.185    0.077    2.397    0.017    0.299
-  textual ~~                                                   
-    speed             0.182    0.069    2.628    0.009    0.325
-  Std.all
-         
-    0.484
-    0.299
-         
-    0.325
-
-Intercepts:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.000                               0.000
-    visual     (a)    4.941    0.095   52.249    0.000    4.718
-   .x2                4.039    0.611    6.606    0.000    4.039
-   .x3               -0.329    0.696   -0.473    0.636   -0.329
-   .x4                2.823    0.092   30.689    0.000    2.823
-   .x5                3.995    0.105   38.183    0.000    3.995
-   .x6                1.922    0.079   24.321    0.000    1.922
-   .x7                4.432    0.087   51.181    0.000    4.432
-   .x8                5.563    0.078   71.214    0.000    5.563
-   .x9                5.418    0.079   68.440    0.000    5.418
-    textual           0.000                               0.000
-    speed             0.000                               0.000
-  Std.all
-    0.000
-    4.718
-    3.293
-   -0.284
-    2.457
-    3.057
-    1.947
-    4.098
-    5.702
-    5.480
-    0.000
-    0.000
-
-Variances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.298    0.232    1.286    0.198    0.298
-   .x2                1.334    0.158    8.464    0.000    1.334
-   .x3                0.989    0.136    7.271    0.000    0.989
-   .x4                0.425    0.069    6.138    0.000    0.425
-   .x5                0.456    0.086    5.292    0.000    0.456
-   .x6                0.290    0.050    5.780    0.000    0.290
-   .x7                0.820    0.125    6.580    0.000    0.820
-   .x8                0.510    0.116    4.406    0.000    0.510
-   .x9                0.680    0.104    6.516    0.000    0.680
-    visual            1.097    0.276    3.967    0.000    1.000
-    textual           0.894    0.150    5.963    0.000    1.000
-    speed             0.350    0.126    2.778    0.005    1.000
-  Std.all
-    0.214
-    0.887
-    0.735
-    0.322
-    0.267
-    0.297
-    0.701
-    0.535
-    0.696
-    1.000
-    1.000
-    1.000
-
-
-Group 2 [Grant-White]:
-
-Latent Variables:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual =~                                                    
-    x1                1.000                               0.777
-    x2                0.736    0.155    4.760    0.000    0.572
-    x3                0.925    0.166    5.584    0.000    0.719
-  textual =~                                                   
-    x4                1.000                               0.971
-    x5                0.990    0.087   11.418    0.000    0.961
-    x6                0.963    0.085   11.377    0.000    0.935
-  speed =~                                                     
-    x7                1.000                               0.679
-    x8                1.226    0.187    6.569    0.000    0.833
-    x9                1.058    0.165    6.429    0.000    0.719
-  Std.all
-         
-    0.677
-    0.517
-    0.694
-         
-    0.866
-    0.829
-    0.826
-         
-    0.659
-    0.796
-    0.701
-
-Covariances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual ~~                                                    
-    textual           0.408    0.098    4.153    0.000    0.541
-    speed             0.276    0.076    3.639    0.000    0.523
-  textual ~~                                                   
-    speed             0.222    0.073    3.022    0.003    0.336
-  Std.all
-         
-    0.541
-    0.523
-         
-    0.336
-
-Intercepts:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.000                               0.000
-    visual     (b)    4.930    0.095   51.696    0.000    6.345
-   .x2                2.571    0.768    3.347    0.001    2.571
-   .x3               -2.563    0.821   -3.121    0.002   -2.563
-   .x4                3.317    0.093   35.625    0.000    3.317
-   .x5                4.712    0.096   48.986    0.000    4.712
-   .x6                2.469    0.094   26.277    0.000    2.469
-   .x7                3.921    0.086   45.819    0.000    3.921
-   .x8                5.488    0.087   63.174    0.000    5.488
-   .x9                5.327    0.085   62.571    0.000    5.327
-    textual           0.000                               0.000
-    speed             0.000                               0.000
-  Std.all
-    0.000
-    6.345
-    2.321
-   -2.474
-    2.959
-    4.068
-    2.182
-    3.805
-    5.246
-    5.196
-    0.000
-    0.000
-
-Variances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.715    0.126    5.675    0.000    0.715
-   .x2                0.899    0.123    7.339    0.000    0.899
-   .x3                0.557    0.103    5.409    0.000    0.557
-   .x4                0.315    0.065    4.870    0.000    0.315
-   .x5                0.419    0.072    5.812    0.000    0.419
-   .x6                0.406    0.069    5.880    0.000    0.406
-   .x7                0.600    0.091    6.584    0.000    0.600
-   .x8                0.401    0.094    4.248    0.000    0.401
-   .x9                0.535    0.089    6.010    0.000    0.535
-    visual            0.604    0.160    3.762    0.000    1.000
-    textual           0.942    0.152    6.177    0.000    1.000
-    speed             0.461    0.118    3.910    0.000    1.000
-  Std.all
-    0.542
-    0.733
-    0.519
-    0.251
-    0.312
-    0.317
-    0.566
-    0.367
-    0.509
-    1.000
-    1.000
-    1.000
-
-Defined Parameters:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-    x1diff            0.011    0.134    0.085    0.933   -1.627
-  Std.all
-   -1.627</code></pre>
+summary(model_baseline)  </code></pre>
 <pre><code>
 lavaan 0.6-3 ended normally after 57 iterations
 
@@ -1228,209 +1036,710 @@ Parameter Estimates:
 Group 1 [Pasteur]:
 
 Latent Variables:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual =~                                                    
-    x1                1.000                               1.047
-    x2                0.394    0.122    3.220    0.001    0.412
-    x3                0.570    0.140    4.076    0.000    0.597
-  textual =~                                                   
-    x4                1.000                               0.946
-    x5                1.183    0.102   11.613    0.000    1.119
-    x6                0.875    0.077   11.421    0.000    0.827
-  speed =~                                                     
-    x7                1.000                               0.591
-    x8                1.125    0.277    4.057    0.000    0.665
-    x9                0.922    0.225    4.104    0.000    0.545
-  Std.all
-         
-    0.887
-    0.336
-    0.515
-         
-    0.823
-    0.856
-    0.838
-         
-    0.547
-    0.682
-    0.551
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.394    0.122    3.220    0.001
+    x3                0.570    0.140    4.076    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                1.183    0.102   11.613    0.000
+    x6                0.875    0.077   11.421    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.125    0.277    4.057    0.000
+    x9                0.922    0.225    4.104    0.000
 
 Covariances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual ~~                                                    
-    textual           0.479    0.106    4.531    0.000    0.484
-    speed             0.185    0.077    2.397    0.017    0.299
-  textual ~~                                                   
-    speed             0.182    0.069    2.628    0.009    0.325
-  Std.all
-         
-    0.484
-    0.299
-         
-    0.325
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.479    0.106    4.531    0.000
+    speed             0.185    0.077    2.397    0.017
+  verbal ~~                                           
+    speed             0.182    0.069    2.628    0.009
 
 Intercepts:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1         (a)    4.941    0.095   52.249    0.000    4.941
-   .x2                5.984    0.098   60.949    0.000    5.984
-   .x3                2.487    0.093   26.778    0.000    2.487
-   .x4                2.823    0.092   30.689    0.000    2.823
-   .x5                3.995    0.105   38.183    0.000    3.995
-   .x6                1.922    0.079   24.321    0.000    1.922
-   .x7                4.432    0.087   51.181    0.000    4.432
-   .x8                5.563    0.078   71.214    0.000    5.563
-   .x9                5.418    0.079   68.440    0.000    5.418
-    visual            0.000                               0.000
-    textual           0.000                               0.000
-    speed             0.000                               0.000
-  Std.all
-    4.183
-    4.880
-    2.144
-    2.457
-    3.057
-    1.947
-    4.098
-    5.702
-    5.480
-    0.000
-    0.000
-    0.000
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                4.941    0.095   52.249    0.000
+   .x2                5.984    0.098   60.949    0.000
+   .x3                2.487    0.093   26.778    0.000
+   .x4                2.823    0.092   30.689    0.000
+   .x5                3.995    0.105   38.183    0.000
+   .x6                1.922    0.079   24.321    0.000
+   .x7                4.432    0.087   51.181    0.000
+   .x8                5.563    0.078   71.214    0.000
+   .x9                5.418    0.079   68.440    0.000
+    visual            0.000                           
+    verbal            0.000                           
+    speed             0.000                           
 
 Variances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.298    0.232    1.286    0.198    0.298
-   .x2                1.334    0.158    8.464    0.000    1.334
-   .x3                0.989    0.136    7.271    0.000    0.989
-   .x4                0.425    0.069    6.138    0.000    0.425
-   .x5                0.456    0.086    5.292    0.000    0.456
-   .x6                0.290    0.050    5.780    0.000    0.290
-   .x7                0.820    0.125    6.580    0.000    0.820
-   .x8                0.510    0.116    4.406    0.000    0.510
-   .x9                0.680    0.104    6.516    0.000    0.680
-    visual            1.097    0.276    3.967    0.000    1.000
-    textual           0.894    0.150    5.963    0.000    1.000
-    speed             0.350    0.126    2.778    0.005    1.000
-  Std.all
-    0.214
-    0.887
-    0.735
-    0.322
-    0.267
-    0.297
-    0.701
-    0.535
-    0.696
-    1.000
-    1.000
-    1.000
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.298    0.232    1.286    0.198
+   .x2                1.334    0.158    8.464    0.000
+   .x3                0.989    0.136    7.271    0.000
+   .x4                0.425    0.069    6.138    0.000
+   .x5                0.456    0.086    5.292    0.000
+   .x6                0.290    0.050    5.780    0.000
+   .x7                0.820    0.125    6.580    0.000
+   .x8                0.510    0.116    4.406    0.000
+   .x9                0.680    0.104    6.516    0.000
+    visual            1.097    0.276    3.967    0.000
+    verbal            0.894    0.150    5.963    0.000
+    speed             0.350    0.126    2.778    0.005
 
 
 Group 2 [Grant-White]:
 
 Latent Variables:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual =~                                                    
-    x1                1.000                               0.777
-    x2                0.736    0.155    4.760    0.000    0.572
-    x3                0.925    0.166    5.583    0.000    0.719
-  textual =~                                                   
-    x4                1.000                               0.971
-    x5                0.990    0.087   11.418    0.000    0.961
-    x6                0.963    0.085   11.377    0.000    0.935
-  speed =~                                                     
-    x7                1.000                               0.679
-    x8                1.226    0.187    6.569    0.000    0.833
-    x9                1.058    0.165    6.429    0.000    0.719
-  Std.all
-         
-    0.677
-    0.517
-    0.694
-         
-    0.866
-    0.829
-    0.826
-         
-    0.659
-    0.796
-    0.701
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.736    0.155    4.760    0.000
+    x3                0.925    0.166    5.583    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                0.990    0.087   11.418    0.000
+    x6                0.963    0.085   11.377    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.226    0.187    6.569    0.000
+    x9                1.058    0.165    6.429    0.000
 
 Covariances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-  visual ~~                                                    
-    textual           0.408    0.098    4.153    0.000    0.541
-    speed             0.276    0.076    3.639    0.000    0.523
-  textual ~~                                                   
-    speed             0.222    0.073    3.022    0.003    0.336
-  Std.all
-         
-    0.541
-    0.523
-         
-    0.336
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.408    0.098    4.153    0.000
+    speed             0.276    0.076    3.639    0.000
+  verbal ~~                                           
+    speed             0.222    0.073    3.022    0.003
 
 Intercepts:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1         (b)    4.930    0.095   51.696    0.000    4.930
-   .x2                6.200    0.092   67.416    0.000    6.200
-   .x3                1.996    0.086   23.195    0.000    1.996
-   .x4                3.317    0.093   35.625    0.000    3.317
-   .x5                4.712    0.096   48.986    0.000    4.712
-   .x6                2.469    0.094   26.277    0.000    2.469
-   .x7                3.921    0.086   45.819    0.000    3.921
-   .x8                5.488    0.087   63.174    0.000    5.488
-   .x9                5.327    0.085   62.571    0.000    5.327
-    visual            0.000                               0.000
-    textual           0.000                               0.000
-    speed             0.000                               0.000
-  Std.all
-    4.293
-    5.599
-    1.926
-    2.959
-    4.068
-    2.182
-    3.805
-    5.246
-    5.196
-    0.000
-    0.000
-    0.000
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                4.930    0.095   51.696    0.000
+   .x2                6.200    0.092   67.416    0.000
+   .x3                1.996    0.086   23.195    0.000
+   .x4                3.317    0.093   35.625    0.000
+   .x5                4.712    0.096   48.986    0.000
+   .x6                2.469    0.094   26.277    0.000
+   .x7                3.921    0.086   45.819    0.000
+   .x8                5.488    0.087   63.174    0.000
+   .x9                5.327    0.085   62.571    0.000
+    visual            0.000                           
+    verbal            0.000                           
+    speed             0.000                           
 
 Variances:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-   .x1                0.715    0.126    5.676    0.000    0.715
-   .x2                0.899    0.123    7.339    0.000    0.899
-   .x3                0.557    0.103    5.409    0.000    0.557
-   .x4                0.315    0.065    4.870    0.000    0.315
-   .x5                0.419    0.072    5.812    0.000    0.419
-   .x6                0.406    0.069    5.880    0.000    0.406
-   .x7                0.600    0.091    6.584    0.000    0.600
-   .x8                0.401    0.094    4.249    0.000    0.401
-   .x9                0.535    0.089    6.010    0.000    0.535
-    visual            0.604    0.160    3.762    0.000    1.000
-    textual           0.942    0.152    6.177    0.000    1.000
-    speed             0.461    0.118    3.910    0.000    1.000
-  Std.all
-    0.542
-    0.733
-    0.519
-    0.251
-    0.312
-    0.317
-    0.566
-    0.367
-    0.509
-    1.000
-    1.000
-    1.000
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.715    0.126    5.676    0.000
+   .x2                0.899    0.123    7.339    0.000
+   .x3                0.557    0.103    5.409    0.000
+   .x4                0.315    0.065    4.870    0.000
+   .x5                0.419    0.072    5.812    0.000
+   .x6                0.406    0.069    5.880    0.000
+   .x7                0.600    0.091    6.584    0.000
+   .x8                0.401    0.094    4.249    0.000
+   .x9                0.535    0.089    6.010    0.000
+    visual            0.604    0.160    3.762    0.000
+    verbal            0.942    0.152    6.177    0.000
+    speed             0.461    0.118    3.910    0.000</code></pre>
+</div>
+<p>So we’re left with visual inspection to note whether there are general differences among the groups. This is all well and good, but perhaps we want a more statistical approach. Say our question specifically concerns a mean difference between schools on the visual latent variable.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+HS.model1 &lt;- &#39; 
+  visual  =~ x1 + x2 + x3
+  verbal  =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+  
+  
+  # intercepts: in order to have an identified model, you would have to fix the
+  # intercepts of observed to 0
+  x1 ~ 0*1   
+
+  visual ~  c(a, b)*1
+
+   
+  # comparisons
+   diff := a - b
+&#39;
+HS.model2 &lt;- &#39; 
+  visual  =~ x1 + x2 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+  
+  
+  # intercepts: but the above would be identical to comparing the intercepts on
+  # whichever observed variable you previously fixed to zero
+  x1 ~ c(a, b)*1   
+   
+  # comparisons
+   diff := a - b
+&#39;
+
+fit1 &lt;- cfa(HS.model1, 
+           data = HolzingerSwineford1939, 
+           group = &quot;school&quot;,
+           meanstructure = T)
+summary(fit1, std=T)</code></pre>
+<pre><code>
+lavaan 0.6-3 ended normally after 101 iterations
+
+  Optimization method                           NLMINB
+  Number of free parameters                         60
+
+  Number of observations per group         
+  Pasteur                                          156
+  Grant-White                                      145
+
+  Estimator                                         ML
+  Model Fit Test Statistic                     115.851
+  Degrees of freedom                                48
+  P-value (Chi-square)                           0.000
+
+Chi-square for each group:
+
+  Pasteur                                       64.309
+  Grant-White                                   51.542
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+  Standard Errors                             Standard
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x1                1.000                               1.047    0.887
+    x2                0.394    0.122    3.220    0.001    0.412    0.336
+    x3                0.570    0.140    4.076    0.000    0.597    0.515
+  verbal =~                                                             
+    x4                1.000                               0.946    0.823
+    x5                1.183    0.102   11.613    0.000    1.119    0.856
+    x6                0.875    0.077   11.421    0.000    0.827    0.838
+  speed =~                                                              
+    x7                1.000                               0.591    0.547
+    x8                1.125    0.277    4.058    0.000    0.665    0.682
+    x9                0.922    0.225    4.104    0.000    0.545    0.551
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~~                                                             
+    verbal            0.479    0.106    4.531    0.000    0.484    0.484
+    speed             0.185    0.077    2.397    0.017    0.299    0.299
+  verbal ~~                                                             
+    speed             0.182    0.069    2.628    0.009    0.325    0.325
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.000                               0.000    0.000
+    visual     (a)    4.941    0.095   52.249    0.000    4.718    4.718
+   .x2                4.039    0.611    6.606    0.000    4.039    3.293
+   .x3               -0.329    0.696   -0.473    0.636   -0.329   -0.284
+   .x4                2.823    0.092   30.689    0.000    2.823    2.457
+   .x5                3.995    0.105   38.183    0.000    3.995    3.057
+   .x6                1.922    0.079   24.321    0.000    1.922    1.947
+   .x7                4.432    0.087   51.181    0.000    4.432    4.098
+   .x8                5.563    0.078   71.214    0.000    5.563    5.702
+   .x9                5.418    0.079   68.440    0.000    5.418    5.480
+    verbal            0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.298    0.232    1.286    0.198    0.298    0.214
+   .x2                1.334    0.158    8.464    0.000    1.334    0.887
+   .x3                0.989    0.136    7.271    0.000    0.989    0.735
+   .x4                0.425    0.069    6.138    0.000    0.425    0.322
+   .x5                0.456    0.086    5.292    0.000    0.456    0.267
+   .x6                0.290    0.050    5.780    0.000    0.290    0.297
+   .x7                0.820    0.125    6.580    0.000    0.820    0.701
+   .x8                0.510    0.116    4.406    0.000    0.510    0.535
+   .x9                0.680    0.104    6.516    0.000    0.680    0.696
+    visual            1.097    0.276    3.967    0.000    1.000    1.000
+    verbal            0.894    0.150    5.963    0.000    1.000    1.000
+    speed             0.350    0.126    2.778    0.005    1.000    1.000
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x1                1.000                               0.777    0.677
+    x2                0.736    0.155    4.760    0.000    0.572    0.517
+    x3                0.925    0.166    5.584    0.000    0.719    0.694
+  verbal =~                                                             
+    x4                1.000                               0.971    0.866
+    x5                0.990    0.087   11.418    0.000    0.961    0.829
+    x6                0.963    0.085   11.377    0.000    0.935    0.826
+  speed =~                                                              
+    x7                1.000                               0.679    0.659
+    x8                1.226    0.187    6.569    0.000    0.833    0.796
+    x9                1.058    0.165    6.429    0.000    0.719    0.701
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~~                                                             
+    verbal            0.408    0.098    4.153    0.000    0.541    0.541
+    speed             0.276    0.076    3.639    0.000    0.523    0.523
+  verbal ~~                                                             
+    speed             0.222    0.073    3.022    0.003    0.336    0.336
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.000                               0.000    0.000
+    visual     (b)    4.930    0.095   51.696    0.000    6.345    6.345
+   .x2                2.571    0.768    3.347    0.001    2.571    2.321
+   .x3               -2.563    0.821   -3.121    0.002   -2.563   -2.474
+   .x4                3.317    0.093   35.625    0.000    3.317    2.959
+   .x5                4.712    0.096   48.986    0.000    4.712    4.068
+   .x6                2.469    0.094   26.277    0.000    2.469    2.182
+   .x7                3.921    0.086   45.819    0.000    3.921    3.805
+   .x8                5.488    0.087   63.174    0.000    5.488    5.246
+   .x9                5.327    0.085   62.571    0.000    5.327    5.196
+    verbal            0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.715    0.126    5.675    0.000    0.715    0.542
+   .x2                0.899    0.123    7.339    0.000    0.899    0.733
+   .x3                0.557    0.103    5.409    0.000    0.557    0.519
+   .x4                0.315    0.065    4.870    0.000    0.315    0.251
+   .x5                0.419    0.072    5.812    0.000    0.419    0.312
+   .x6                0.406    0.069    5.880    0.000    0.406    0.317
+   .x7                0.600    0.091    6.584    0.000    0.600    0.566
+   .x8                0.401    0.094    4.248    0.000    0.401    0.367
+   .x9                0.535    0.089    6.010    0.000    0.535    0.509
+    visual            0.604    0.160    3.762    0.000    1.000    1.000
+    verbal            0.942    0.152    6.177    0.000    1.000    1.000
+    speed             0.461    0.118    3.910    0.000    1.000    1.000
 
 Defined Parameters:
-                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv
-    x1diff            0.011    0.134    0.085    0.933    0.011
-  Std.all
-   -0.110</code></pre>
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+    diff              0.011    0.134    0.085    0.933   -1.627   -1.627</code></pre>
+<pre class="r"><code>
+coef_1 = broom::tidy(fit1) %&gt;% 
+  filter(label != &#39;&#39;)
+
+coef_1</code></pre>
+<pre><code>
+# A tibble: 3 x 14
+  term         op    block group label estimate std.error statistic p.value conf.low conf.high std.lv std.all std.nox
+  &lt;chr&gt;        &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+1 &quot;visual ~1 &quot; ~1        1     1 a       4.94      0.0946   52.2      0        4.76      5.13    4.72    4.72    4.72
+2 &quot;visual ~1 &quot; ~1        2     2 b       4.93      0.0954   51.7      0        4.74      5.12    6.34    6.34    6.34
+3 diff := a-b  :=        0     0 diff    0.0114    0.134     0.0846   0.933   -0.252     0.275  -1.63   -1.63   -1.63</code></pre>
+<pre class="r"><code>
+fit2 &lt;- cfa(HS.model2, 
+           data = HolzingerSwineford1939, 
+           group = &quot;school&quot;,
+           meanstructure = T)
+summary(fit2, std=T)</code></pre>
+<pre><code>
+lavaan 0.6-3 ended normally after 57 iterations
+
+  Optimization method                           NLMINB
+  Number of free parameters                         60
+
+  Number of observations per group         
+  Pasteur                                          156
+  Grant-White                                      145
+
+  Estimator                                         ML
+  Model Fit Test Statistic                     115.851
+  Degrees of freedom                                48
+  P-value (Chi-square)                           0.000
+
+Chi-square for each group:
+
+  Pasteur                                       64.309
+  Grant-White                                   51.542
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+  Standard Errors                             Standard
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x1                1.000                               1.047    0.887
+    x2                0.394    0.122    3.220    0.001    0.412    0.336
+    x3                0.570    0.140    4.076    0.000    0.597    0.515
+  textual =~                                                            
+    x4                1.000                               0.946    0.823
+    x5                1.183    0.102   11.613    0.000    1.119    0.856
+    x6                0.875    0.077   11.421    0.000    0.827    0.838
+  speed =~                                                              
+    x7                1.000                               0.591    0.547
+    x8                1.125    0.277    4.057    0.000    0.665    0.682
+    x9                0.922    0.225    4.104    0.000    0.545    0.551
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~~                                                             
+    textual           0.479    0.106    4.531    0.000    0.484    0.484
+    speed             0.185    0.077    2.397    0.017    0.299    0.299
+  textual ~~                                                            
+    speed             0.182    0.069    2.628    0.009    0.325    0.325
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1         (a)    4.941    0.095   52.249    0.000    4.941    4.183
+   .x2                5.984    0.098   60.949    0.000    5.984    4.880
+   .x3                2.487    0.093   26.778    0.000    2.487    2.144
+   .x4                2.823    0.092   30.689    0.000    2.823    2.457
+   .x5                3.995    0.105   38.183    0.000    3.995    3.057
+   .x6                1.922    0.079   24.321    0.000    1.922    1.947
+   .x7                4.432    0.087   51.181    0.000    4.432    4.098
+   .x8                5.563    0.078   71.214    0.000    5.563    5.702
+   .x9                5.418    0.079   68.440    0.000    5.418    5.480
+    visual            0.000                               0.000    0.000
+    textual           0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.298    0.232    1.286    0.198    0.298    0.214
+   .x2                1.334    0.158    8.464    0.000    1.334    0.887
+   .x3                0.989    0.136    7.271    0.000    0.989    0.735
+   .x4                0.425    0.069    6.138    0.000    0.425    0.322
+   .x5                0.456    0.086    5.292    0.000    0.456    0.267
+   .x6                0.290    0.050    5.780    0.000    0.290    0.297
+   .x7                0.820    0.125    6.580    0.000    0.820    0.701
+   .x8                0.510    0.116    4.406    0.000    0.510    0.535
+   .x9                0.680    0.104    6.516    0.000    0.680    0.696
+    visual            1.097    0.276    3.967    0.000    1.000    1.000
+    textual           0.894    0.150    5.963    0.000    1.000    1.000
+    speed             0.350    0.126    2.778    0.005    1.000    1.000
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x1                1.000                               0.777    0.677
+    x2                0.736    0.155    4.760    0.000    0.572    0.517
+    x3                0.925    0.166    5.583    0.000    0.719    0.694
+  textual =~                                                            
+    x4                1.000                               0.971    0.866
+    x5                0.990    0.087   11.418    0.000    0.961    0.829
+    x6                0.963    0.085   11.377    0.000    0.935    0.826
+  speed =~                                                              
+    x7                1.000                               0.679    0.659
+    x8                1.226    0.187    6.569    0.000    0.833    0.796
+    x9                1.058    0.165    6.429    0.000    0.719    0.701
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~~                                                             
+    textual           0.408    0.098    4.153    0.000    0.541    0.541
+    speed             0.276    0.076    3.639    0.000    0.523    0.523
+  textual ~~                                                            
+    speed             0.222    0.073    3.022    0.003    0.336    0.336
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1         (b)    4.930    0.095   51.696    0.000    4.930    4.293
+   .x2                6.200    0.092   67.416    0.000    6.200    5.599
+   .x3                1.996    0.086   23.195    0.000    1.996    1.926
+   .x4                3.317    0.093   35.625    0.000    3.317    2.959
+   .x5                4.712    0.096   48.986    0.000    4.712    4.068
+   .x6                2.469    0.094   26.277    0.000    2.469    2.182
+   .x7                3.921    0.086   45.819    0.000    3.921    3.805
+   .x8                5.488    0.087   63.174    0.000    5.488    5.246
+   .x9                5.327    0.085   62.571    0.000    5.327    5.196
+    visual            0.000                               0.000    0.000
+    textual           0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.715    0.126    5.676    0.000    0.715    0.542
+   .x2                0.899    0.123    7.339    0.000    0.899    0.733
+   .x3                0.557    0.103    5.409    0.000    0.557    0.519
+   .x4                0.315    0.065    4.870    0.000    0.315    0.251
+   .x5                0.419    0.072    5.812    0.000    0.419    0.312
+   .x6                0.406    0.069    5.880    0.000    0.406    0.317
+   .x7                0.600    0.091    6.584    0.000    0.600    0.566
+   .x8                0.401    0.094    4.249    0.000    0.401    0.367
+   .x9                0.535    0.089    6.010    0.000    0.535    0.509
+    visual            0.604    0.160    3.762    0.000    1.000    1.000
+    textual           0.942    0.152    6.177    0.000    1.000    1.000
+    speed             0.461    0.118    3.910    0.000    1.000    1.000
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+    diff              0.011    0.134    0.085    0.933    0.011   -0.110</code></pre>
+<pre class="r"><code>
+coef_2 = broom::tidy(fit2) %&gt;% 
+  filter(label != &#39;&#39;)
+
+coef_2</code></pre>
+<pre><code>
+# A tibble: 3 x 14
+  term        op    block group label estimate std.error statistic p.value conf.low conf.high std.lv std.all std.nox
+  &lt;chr&gt;       &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+1 &quot;x1 ~1 &quot;    ~1        1     1 a       4.94      0.0946   52.2      0        4.76      5.13  4.94     4.18    4.18 
+2 &quot;x1 ~1 &quot;    ~1        2     2 b       4.93      0.0954   51.7      0        4.74      5.12  4.93     4.29    4.29 
+3 diff := a-b :=        0     0 diff    0.0114    0.134     0.0845   0.933   -0.252     0.275 0.0114  -0.110  -0.110</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+HS.model3 &lt;- &#39; 
+  visual  =~ x1 + x2 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+  
+  x1 ~ diff*school 
+  x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school
+  
+&#39;
+fit3 &lt;- cfa(HS.model3, 
+           data = HolzingerSwineford1939)
+summary(fit3, std=T)</code></pre>
+<pre><code>
+lavaan 0.6-3 ended normally after 44 iterations
+
+  Optimization method                           NLMINB
+  Number of free parameters                         30
+
+  Number of observations                           301
+
+  Estimator                                         ML
+  Model Fit Test Statistic                      88.086
+  Degrees of freedom                                24
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+  Standard Errors                             Standard
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x1                1.000                               0.873    0.749
+    x2                0.592    0.101    5.837    0.000    0.517    0.440
+    x3                0.782    0.110    7.084    0.000    0.683    0.605
+  textual =~                                                            
+    x4                1.000                               0.959    0.825
+    x5                1.088    0.067   16.187    0.000    1.043    0.810
+    x6                0.914    0.057   15.928    0.000    0.876    0.801
+  speed =~                                                              
+    x7                1.000                               0.619    0.569
+    x8                1.186    0.163    7.299    0.000    0.735    0.727
+    x9                1.063    0.146    7.276    0.000    0.658    0.653
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  x1 ~                                                                  
+    school  (diff)    0.011    0.134    0.084    0.933    0.011    0.005
+  x2 ~                                                                  
+    school           -0.216    0.135   -1.600    0.110   -0.216   -0.092
+  x3 ~                                                                  
+    school            0.491    0.127    3.866    0.000    0.491    0.218
+  x4 ~                                                                  
+    school           -0.495    0.131   -3.776    0.000   -0.495   -0.213
+  x5 ~                                                                  
+    school           -0.717    0.143   -5.022    0.000   -0.717   -0.278
+  x6 ~                                                                  
+    school           -0.547    0.122   -4.476    0.000   -0.547   -0.250
+  x7 ~                                                                  
+    school            0.511    0.122    4.193    0.000    0.511    0.235
+  x8 ~                                                                  
+    school            0.075    0.117    0.642    0.521    0.075    0.037
+  x9 ~                                                                  
+    school            0.091    0.116    0.780    0.436    0.091    0.045
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~~                                                             
+    textual           0.414    0.072    5.777    0.000    0.495    0.495
+    speed             0.245    0.054    4.531    0.000    0.452    0.452
+  textual ~~                                                            
+    speed             0.199    0.049    4.042    0.000    0.336    0.336
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.596    0.106    5.641    0.000    0.596    0.439
+   .x2                1.103    0.100   11.038    0.000    1.103    0.798
+   .x3                0.748    0.086    8.752    0.000    0.748    0.587
+   .x4                0.371    0.048    7.737    0.000    0.371    0.274
+   .x5                0.444    0.057    7.788    0.000    0.444    0.267
+   .x6                0.354    0.043    8.329    0.000    0.354    0.296
+   .x7                0.735    0.076    9.616    0.000    0.735    0.621
+   .x8                0.481    0.074    6.538    0.000    0.481    0.471
+   .x9                0.580    0.070    8.320    0.000    0.580    0.572
+    visual            0.762    0.137    5.575    0.000    1.000    1.000
+    textual           0.919    0.107    8.562    0.000    1.000    1.000
+    speed             0.383    0.083    4.592    0.000    1.000    1.000</code></pre>
+<pre class="r"><code>
+coef_3 = broom::tidy(fit3) %&gt;% 
+  filter(label == &#39;diff&#39;)
+
+bind_rows(coef_1%&gt;% 
+  filter(label == &#39;diff&#39;), 
+  coef_2%&gt;% 
+  filter(label == &#39;diff&#39;), coef_3) </code></pre>
+<pre><code>
+# A tibble: 3 x 14
+  term        op    block group label estimate std.error statistic p.value conf.low conf.high  std.lv  std.all  std.nox
+  &lt;chr&gt;       &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 diff := a-b :=        0     0 diff    0.0114     0.134    0.0846   0.933   -0.252     0.275 -1.63   -1.63    -1.63   
+2 diff := a-b :=        0     0 diff    0.0114     0.134    0.0845   0.933   -0.252     0.275  0.0114 -0.110   -0.110  
+3 x1 ~ school ~        NA    NA diff    0.0114     0.134    0.0844   0.933   -0.252     0.275  0.0114  0.00487  0.00974</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+HS.model4 &lt;- &#39; 
+  visual  =~ x1 + x2 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+
+&#39;
+
+semTools::measurementInvariance(
+  model = HS.model4, 
+  data = HolzingerSwineford1939, 
+  group = &quot;school&quot;
+)</code></pre>
+<pre><code>
+Measurement invariance models:
+
+Model 1 : fit.configural
+Model 2 : fit.loadings
+Model 3 : fit.intercepts
+Model 4 : fit.means
+
+Chi Square Difference Test
+
+               Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
+fit.configural 48 7484.4 7706.8 115.85                                  
+fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244    
+fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
+fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+
+Fit measures:
+
+                 cfi rmsea cfi.delta rmsea.delta
+fit.configural 0.923 0.097        NA          NA
+fit.loadings   0.921 0.093     0.002       0.004
+fit.intercepts 0.882 0.107     0.038       0.015
+fit.means      0.840 0.122     0.042       0.015</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+HS.model4 &lt;- &#39; 
+  visual  =~ x2 + a*x1 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+
+  visual ~ b*school
+  # textual ~ school
+  # speed ~ school
+  
+  visual ~~ 0*textual + 0*speed
+  speed  ~~ 0*textual
+  
+  diff := a*b
+&#39;
+summary(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T), std=T)</code></pre>
+<pre><code>
+lavaan 0.6-3 ended normally after 46 iterations
+
+  Optimization method                           NLMINB
+  Number of free parameters                         28
+
+  Number of observations                           301
+
+  Estimator                                         ML
+  Model Fit Test Statistic                     229.678
+  Degrees of freedom                                35
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+  Standard Errors                             Standard
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual =~                                                             
+    x2                1.000                               0.459    0.390
+    x1         (a)    1.276    0.241    5.292    0.000    0.585    0.502
+    x3                2.188    0.548    3.992    0.000    1.004    0.889
+  textual =~                                                            
+    x4                1.000                               0.984    0.847
+    x5                1.133    0.067   16.906    0.000    1.115    0.866
+    x6                0.924    0.056   16.391    0.000    0.910    0.832
+  speed =~                                                              
+    x7                1.000                               0.661    0.608
+    x8                1.225    0.190    6.460    0.000    0.810    0.801
+    x9                0.854    0.121    7.046    0.000    0.565    0.561
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  visual ~                                                              
+    school     (b)    0.189    0.072    2.627    0.009    0.412    0.206
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+ .visual ~~                                                             
+    textual           0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+  textual ~~                                                            
+    speed             0.000                               0.000    0.000
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x2                5.801    0.129   45.129    0.000    5.801    4.935
+   .x1                4.569    0.151   30.218    0.000    4.569    3.920
+   .x3                1.622    0.203    7.991    0.000    1.622    1.436
+   .x4                3.061    0.067   45.694    0.000    3.061    2.634
+   .x5                4.341    0.074   58.452    0.000    4.341    3.369
+   .x6                2.186    0.063   34.667    0.000    2.186    1.998
+   .x7                4.186    0.063   66.766    0.000    4.186    3.848
+   .x8                5.527    0.058   94.854    0.000    5.527    5.467
+   .x9                5.374    0.058   92.546    0.000    5.374    5.334
+   .visual            0.000                               0.000    0.000
+    textual           0.000                               0.000    0.000
+    speed             0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x2                1.171    0.106   11.008    0.000    1.171    0.848
+   .x1                1.016    0.112    9.108    0.000    1.016    0.748
+   .x3                0.267    0.219    1.219    0.223    0.267    0.209
+   .x4                0.382    0.049    7.805    0.000    0.382    0.283
+   .x5                0.416    0.059    7.038    0.000    0.416    0.251
+   .x6                0.369    0.044    8.367    0.000    0.369    0.308
+   .x7                0.746    0.086    8.650    0.000    0.746    0.631
+   .x8                0.366    0.097    3.794    0.000    0.366    0.358
+   .x9                0.696    0.072    9.640    0.000    0.696    0.686
+   .visual            0.202    0.072    2.796    0.005    0.958    0.958
+    textual           0.969    0.112    8.640    0.000    1.000    1.000
+    speed             0.437    0.097    4.520    0.000    1.000    1.000
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+    diff              0.241    0.089    2.702    0.007    0.241    0.104</code></pre>
 </div>
 <!--radix_placeholder_article_footer-->
 <!--/radix_placeholder_article_footer-->

@@ -16,14 +16,81 @@ draft: true
 tags: [R, factor analysis, growth curve, structural equation modeling, SEM, intercepts, means]
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=FALSE,
+  fig.align='center', 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
 
-```{r}
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+```
+
+
+
+## Introduction
+
+In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, and this post provides a demo using lavaan.  
+
+My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
+
+## Multiple group analysis
+
+A common way to assess group differences is via multiple group analysis, which amounts to doing separate structural equation models of some kind across the groups.  We will use a classic data set to demonstrate the approach. From the help file
+
+>The classic Holzinger and Swineford (1939) dataset consists of mental ability test scores of seventh- and eighth-grade children from two different schools (Pasteur and Grant-White). In the original dataset (available in the MBESS package), there are scores for 26 tests. However, a smaller subset with 9 variables is more widely used in the literature 
+
+```{r data}
+library(lavaan)
+data(HolzingerSwineford1939)
+```
+
+The basic model is a factor analysis with three latent variables, with items for visual-spatial ability (`x1-x3`), verbal comprehension (`x4-x6`), and so-called speed tests (`x7-x9`), e.g. for addition and counting, which might be thought of general cognitive processing.
+
+With lavaan, we specify the model for three factor (or latent variables).  After that, a simple group argument will allow the multigroup analysis.
+
+```{r standard_multigroup}
 library(tidyverse)
 library(lavaan)
 
+hs_model <- ' 
+  visual  =~ x1 + x2 + x3
+  verbal  =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+'
+
+model_baseline <- cfa(
+  hs_model, 
+  data = HolzingerSwineford1939, 
+  group = "school"
+)
+
+summary(model_baseline)  
+```
+
+So we're left with visual inspection to note whether there are general differences among the groups. This is all well and good, but perhaps we want a more statistical approach.  Say our question specifically concerns a mean difference between schools on the visual latent variable.  How do we go about it?
+
+Note that the intercepts for the latent variables are zero.  They have to be for the model to be identified, much in the same way that at least one factor loading (the first by default) has to be fixed to one.  We only have so much information to estimate so many paramters.
+
+To get around this we could try and fix some parameters, thereby freeing the intercepts to be estimated.  For example, if instead we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable.
+
+
+```{r fix_x1}
 HS.model1 <- ' 
   visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
+  verbal  =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
   
   
@@ -31,21 +98,7 @@ HS.model1 <- '
   # intercepts of observed to 0
   x1 ~ 0*1   
 
-  visual ~  c(a, b)*1
-
-   
-  # comparisons
-   diff := a - b
-'
-HS.model2 <- ' 
-  visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
-  
-  
-  # intercepts: but the above would be identical to comparing the intercepts on
-  # whichever observed variable you previously fixed to zero
-  x1 ~ c(a, b)*1   
+  visual ~  c(a, b)*1    # a is intercept for Pasteur, b is intercept for Grant-White
    
   # comparisons
    diff := a - b
@@ -67,12 +120,31 @@ fit2 <- cfa(HS.model2,
            data = HolzingerSwineford1939, 
            group = "school",
            meanstructure = T)
+
+```
+
+However, this would would be identical to comparing the intercepts on whichever observed variable you previously fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of 
+
+```{r}
+HS.model2 <- ' 
+  visual  =~ x1 + x2 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+  
+  
+
+  x1 ~ c(a, b)*1   
+   
+  # comparisons
+   diff := a - b
+'
 summary(fit2, std=T)
 coef_2 = broom::tidy(fit2) %>% 
   filter(label != '')
 
 coef_2
 ```
+
 
 
 ```{r}
@@ -83,6 +155,7 @@ HS.model3 <- '
   
   x1 ~ diff*school 
   x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school
+  
 '
 fit3 <- cfa(HS.model3, 
            data = HolzingerSwineford1939)
@@ -103,6 +176,7 @@ HS.model4 <- '
   speed   =~ x7 + x8 + x9 
 
 '
+
 semTools::measurementInvariance(
   model = HS.model4, 
   data = HolzingerSwineford1939, 
@@ -110,4 +184,22 @@ semTools::measurementInvariance(
 )
 ```
 
+
+```{r}
+HS.model4 <- ' 
+  visual  =~ x2 + a*x1 + x3
+  textual =~ x4 + x5 + x6
+  speed   =~ x7 + x8 + x9 
+
+  visual ~ b*school
+  # textual ~ school
+  # speed ~ school
+  
+  visual ~~ 0*textual + 0*speed
+  speed  ~~ 0*textual
+  
+  diff := a*b
+'
+summary(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T), std=T)
+```
 
