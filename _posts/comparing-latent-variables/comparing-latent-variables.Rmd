@@ -87,42 +87,40 @@ Note that the intercepts for the latent variables are zero.  They have to be for
 To get around this we could try and fix some parameters, thereby freeing the intercepts to be estimated.  For example, if instead we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable.
 
 
-```{r fix_x1}
-HS.model1 <- ' 
+```{r hs_model_1}
+hs_model_1 <- ' 
   visual  =~ x1 + x2 + x3
   verbal  =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
   
   
   # intercepts: in order to have an identified model, you would have to fix the
-  # intercepts of observed to 0
+  # intercepts of observed to 0, 1 represents the intercept, 0* fixes it to be 0
   x1 ~ 0*1   
 
-  visual ~  c(int_p, int_gw)*1    # a is intercept for Pasteur, b is intercept for Grant-White
+  # intercept for Pasteur and Grant-White schools
+  visual ~  c(int_p, int_gw)*1    
    
   # comparisons
    diff := int_p - int_gw
 '
 
-fit1 <- cfa(HS.model1, 
+fit_1 <- cfa(hs_model_1, 
            data = HolzingerSwineford1939, 
            group = "school",
            meanstructure = T)
-summary(fit1, std=T)
+summary(fit_1, std=T)
 
-coef_1 = broom::tidy(fit1) %>% 
+coef_1 = broom::tidy(fit_1) %>% 
   filter(label != '')
 
 coef_1
-
-
-
 ```
 
 However, this would would be identical to comparing the intercepts on whichever observed variable you previously fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of 
 
-```{r}
-HS.model2 <- ' 
+```{r hs_model_2}
+hs_model_2 <- ' 
   visual  =~ x1 + x2 + x3
   textual =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
@@ -135,57 +133,98 @@ HS.model2 <- '
    diff := a - b
 '
 
-fit2 <- cfa(HS.model2, 
+fit_2 <- cfa(hs_model_2, 
            data = HolzingerSwineford1939, 
            group = "school",
-           meanstructure = Tint1
-summary(fit2, std=T)
-coef_2 = broom::tidy(fit2) %>% 
+           meanstructure = T)
+
+summary(fit_2, std=T)
+
+coef_2 = broom::tidy(fit_2) %>% 
   filter(label != '')
 
 coef_2
-
-
-
 ```
 
 
 
-```{r}
-HS.model3 <- ' 
+```{r hs_model_3}
+hs_model_3 <- ' 
   visual  =~ x1 + x2 + x3
   textual =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
   
   x1 ~ diff*school 
   x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school
-  
 '
-fit3 <- cfa(HS.model3, 
-           data = HolzingerSwineford1939)
-summary(fit3, std=T)
-coef_3 = broom::tidy(fit3) %>% 
-  filter(label == 'diff')
 
-bind_rows(coef_1%>% 
-  filter(label == 'diff'), 
-  coef_2%>% 
-  filter(label == 'diff'), coef_3) 
+fit_3 <- cfa(hs_model_3, 
+             data = HolzingerSwineford1939,
+             meanstructure = T)
+
+summary(fit_3, std=T)
+
+coef_3 = broom::tidy(fit_3)
 ```
 
+```{r compare_123}
+bind_rows(
+  coef_1 %>% filter(label == 'diff'), 
+  coef_2 %>% filter(label == 'diff'), 
+  coef_3 %>% filter(label == 'diff'), .id = 'model'
+) %>% 
+  select(estimate, std.error, conf.low, conf.high)
+
+model_list = list(fit_1=fit_1, fit_2=fit_2, fit_3=fit_3) 
+
+model_list %>% 
+  map_df(AIC)
+
+model_list %>% map_df(function(x) length(coef(x)))
+```
+
+
+
 ```{r measurement_invariance}
-HS.model4 <- ' 
+hs_model_4 <- ' 
   visual  =~ x1 + x2 + x3
   textual =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
-
 '
 
 semTools::measurementInvariance(
-  model = HS.model4, 
+  model = hs_model_4, 
   data = HolzingerSwineford1939, 
   group = "school"
 )
+
+# wow, frome one line to this. this is an awful choice for an alternative
+test.seq <- c("thresholds","loadings","intercepts","means","residuals")
+meq.list <- list()
+for (i in 0:length(test.seq)) {
+  if (i == 0L) {
+    meq.label <- "configural"
+    group.equal <- ""
+    # long.equal <- ""
+  } else {
+    meq.label <- test.seq[i]
+    group.equal <- test.seq[1:i]
+    # long.equal <- test.seq[1:i]
+  }
+  meq.list[[meq.label]] <- semTools::measEq.syntax(
+    configural.model = model_baseline,
+    data = HolzingerSwineford1939,
+    ID.fac = "auto.fix.first",
+    group = "school",
+    group.equal = group.equal,
+    # longFacNames = longFacNames,
+    long.equal = long.equal,
+    return.fit = TRUE
+  )
+}
+
+# and of course, this is still a borked function
+semTools::compareFit(meq.list)
 ```
 
 
