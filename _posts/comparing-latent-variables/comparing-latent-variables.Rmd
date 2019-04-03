@@ -66,9 +66,9 @@ library(tidyverse)
 library(lavaan)
 
 hs_model <- ' 
-  visual  =~ x1 + x2 + x3
-  verbal  =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
 '
 
 model_baseline <- cfa(
@@ -89,9 +89,9 @@ To get around this we could try and fix some parameters, thereby freeing the int
 
 ```{r hs_model_1}
 hs_model_1 <- ' 
-  visual  =~ x1 + x2 + x3
-  verbal  =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
   
   
   # intercepts: in order to have an identified model, you would have to fix the
@@ -121,9 +121,9 @@ However, this would would be identical to comparing the intercepts on whichever 
 
 ```{r hs_model_2}
 hs_model_2 <- ' 
-  visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
   
   
 
@@ -146,13 +146,14 @@ coef_2 = broom::tidy(fit_2) %>%
 coef_2
 ```
 
+The following approach is not the same model, but would also provide the same result. In this case, each observed variable is affected by the school grouping, and the path coefficient for `x1` is the same value as before.
 
 
 ```{r hs_model_3}
 hs_model_3 <- ' 
-  visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
   
   x1 ~ diff*school 
   x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school
@@ -183,12 +184,73 @@ model_list %>%
 model_list %>% map_df(function(x) length(coef(x)))
 ```
 
+Typically people would address such a theoretical question without a multigroup approach, simply regressing the visual factor on school.
+
+```{r hs_model_4a}
+# standard cfa with school predicting visual
+hs_model_4a <- ' 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+  
+  visual ~ a*school
+'
+
+fit_4a = sem(hs_model_4a, data=HolzingerSwineford1939, meanstructure=T)
+summary(fit_4a)
+
+
+model_list = mget(ls(pattern = '^fit'))
+
+
+model_list %>% 
+  map_df(AIC)
+model_list %>% map_df(function(x) length(coef(x)))
+```
+
+But again, we can recover the multigroup effect by regressing the other observed variables on school.
+
+```{r hs_model_4b}
+
+hs_model_4b <- ' 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+  
+  visual ~ diff*school
+  
+  x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school
+'
+
+fit_4b = sem(hs_model_4b, data=HolzingerSwineford1939, meanstructure=T)
+
+model_list = mget(ls(pattern = '^fit'))
+
+coef_4 = broom::tidy(fit_4b)
+
+model_list %>% 
+  map_df(AIC)
+model_list %>% map_df(function(x) length(coef(x)))
+
+bind_rows(
+  coef_1 %>% filter(label == 'diff'), 
+  coef_2 %>% filter(label == 'diff'), 
+  coef_3 %>% filter(label == 'diff'),
+  coef_4 %>% filter(label == 'diff'), 
+  .id = 'model'
+) %>% 
+  select(estimate, std.error, conf.low, conf.high)
+
+```
+
+
+
 
 
 ```{r measurement_invariance}
 hs_model_4 <- ' 
   visual  =~ x1 + x2 + x3
-  textual =~ x4 + x5 + x6
+  verbal =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
 '
 
@@ -199,7 +261,7 @@ semTools::measurementInvariance(
 )
 
 # wow, frome one line to this. this is an awful choice for an alternative
-test.seq <- c("thresholds","loadings","intercepts","means","residuals")
+test.seq <- c("loadings","intercepts","means","residuals")
 meq.list <- list()
 for (i in 0:length(test.seq)) {
   if (i == 0L) {
@@ -218,31 +280,153 @@ for (i in 0:length(test.seq)) {
     group = "school",
     group.equal = group.equal,
     # longFacNames = longFacNames,
-    long.equal = long.equal,
+    # long.equal = long.equal,
     return.fit = TRUE
   )
 }
 
 # and of course, this is still a borked function
 semTools::compareFit(meq.list)
+
+
+# means_only
+test.seq <- c("means")
+meq.list <- list()
+for (i in 0:length(test.seq)) {
+  if (i == 0L) {
+    meq.label <- "configural"
+    group.equal <- ""
+    # long.equal <- ""
+  } else {
+    meq.label <- test.seq[i]
+    group.equal <- test.seq[1:i]
+    # long.equal <- test.seq[1:i]
+  }
+  meq.list[[meq.label]] <- semTools::measEq.syntax(
+    configural.model = model_baseline,
+    data = HolzingerSwineford1939,
+    ID.fac = "auto.fix.first",
+    group = "school",
+    group.equal = group.equal,
+    # longFacNames = longFacNames,
+    # long.equal = long.equal,
+    return.fit = TRUE
+  )
+}
+
+semTools::compareFit(meq.list)
 ```
+
+```{r hs_model_test}
+hs_model_test <- ' 
+  # make loadings equal across groups
+  
+  visual =~ c(1, 1)*x1 + c(v_x2, v_x2)*x2 + c(v_x3, v_x3)*x3
+  verbal =~ c(1, 1)*x4 + c(v_x5, v_x5)*x5 + c(v_x6, v_x6)*x6
+  speed  =~ c(1, 1)*x7 + c(v_x8, v_x8)*x8 + c(v_x9, v_x9)*x9 
+  
+  # make intercepts equal across groups
+  
+  x1 ~ c(0, 0) * 1
+  x2 ~ c(int_x2, int_x2) * 1
+  x3 ~ c(int_x3, int_x3) * 1
+  x4 ~ c(0, 0) * 1
+  x5 ~ c(int_x5, int_x5) * 1
+  x6 ~ c(int_x6, int_x6) * 1
+  x7 ~ c(0, 0) * 1
+  x8 ~ c(int_x8, int_x8) * 1
+  x9 ~ c(int_x9, int_x9) * 1
+  
+  # make covariances equal across groups
+  
+  # visual ~~ c(cov_vv, cov_vv) * verbal + c(cov_visp, cov_visp) * speed
+  # verbal ~~ c(cov_vesp, cov_vesp) * speed
+  
+  # make variances equal
+  
+  # visual ~~ c(vvar, vvar) * visual
+  # verbal ~~ c(tvar, tvar) * verbal
+  # speed  ~~ c(svar, svar) * speed
+  
+  # x1 ~~ c(x1var, x1var) * x1
+  # x2 ~~ c(x2var, x2var) * x2
+  # x3 ~~ c(x3var, x3var) * x3
+  # x4 ~~ c(x4var, x4var) * x4
+  # x5 ~~ c(x5var, x5var) * x5
+  # x6 ~~ c(x6var, x6var) * x6
+  # x7 ~~ c(x7var, x7var) * x7
+  # x8 ~~ c(x8var, x8var) * x8
+  # x9 ~~ c(x9var, x9var) * x9
+  
+  
+  visual ~ c(vis_int_p, vis_int_gw)*1
+  verbal ~ c(verb_int_p, verb_int_gw)*1
+  speed  ~ c(speed_int_p, speed_int_gw)*1
+  
+  
+   
+  # comparisons
+   diff := vis_int_p - vis_int_gw
+'
+
+fit_test  = sem(hs_model_test, 
+                data=HolzingerSwineford1939, 
+                group = 'school',
+                meanstructure=T)
+
+summary(fit_test)
+
+lavaanPlot::lavaanPlot(model = fit_test, coefs=T, covs=T)
+```
+
 
 
 ```{r}
 HS.model4 <- ' 
-  visual  =~ x2 + a*x1 + x3
-  textual =~ x4 + x5 + x6
-  speed   =~ x7 + x8 + x9 
+  visual =~ x2 + a*x1 + x3    # estimate x1 loading vs. scaling by it
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
 
   visual ~ b*school
-  # textual ~ school
+  # verbal ~ school
   # speed ~ school
   
-  visual ~~ 0*textual + 0*speed
-  speed  ~~ 0*textual
+  # visual ~~ 0*verbal + 0*speed
+  speed  ~~ verbal
   
-  diff := a*b
+  diff := a*b    # "indirect" difference on x1
 '
-summary(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T), std=T)
+
+# same as fit_4a
+summary(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T))
+broom::tidy(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T)) %>% filter(label=='diff') %>% pull(estimate)
+coef(fit_4a)['a']
 ```
 
+Sum/Factor score
+
+```{r}
+hs_model_6 <- ' 
+  visual =~ x1 + l1*x2 + l1*x3
+  verbal =~ x4 + l2*x5 + l2*x6
+  speed  =~ x7 + l3*x8 + l3*x9 
+  
+  x1 ~~ a*x1
+  x2 ~~ a*x2
+  x3 ~~ a*x3
+  x4 ~~ a*x4
+  x5 ~~ a*x5
+  x6 ~~ a*x6
+  x7 ~~ a*x7
+  x8 ~~ a*x8
+  x9 ~~ a*x9
+  
+'
+
+scores = lavPredict(cfa(hs_model_6, data = HolzingerSwineford1939, meanstructure=T))
+ttest = lm(scores[,'visual'] ~ HolzingerSwineford1939$school)
+coef(ttest)
+
+ttest = lm(rowSums(HolzingerSwineford1939 %>% select(x1:x3)) ~ HolzingerSwineford1939$school)
+coef(ttest)  # compare to std estimate
+```
