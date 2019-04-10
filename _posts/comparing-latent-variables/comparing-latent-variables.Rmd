@@ -42,15 +42,15 @@ kable_df <- function(..., digits=3) {
 
 ## Introduction
 
-In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, and this post provides a demo using lavaan.  
+In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, and this post provides a demo using lavaan.  
 
-My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
+My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder to refer back to.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
 
 ## Multiple group analysis
 
-A common way to assess group differences is via multiple group analysis, which amounts to doing separate structural equation models of some kind across the groups.  We will use a classic data set to demonstrate the approach. From the help file
+A common way to assess group differences is via multiple group analysis, which amounts to doing separate structural equation models of some kind across the groups.  We will use a classic data set to demonstrate the approach. From the help file:
 
->The classic Holzinger and Swineford (1939) dataset consists of mental ability test scores of seventh- and eighth-grade children from two different schools (Pasteur and Grant-White). In the original dataset (available in the MBESS package), there are scores for 26 tests. However, a smaller subset with 9 variables is more widely used in the literature 
+> The classic Holzinger and Swineford (1939) dataset consists of mental ability test scores of seventh- and eighth-grade children from two different schools (Pasteur and Grant-White). In the original dataset (available in the MBESS package), there are scores for 26 tests. However, a smaller subset with 9 variables is more widely used in the literature...
 
 ```{r data}
 library(lavaan)
@@ -65,26 +65,28 @@ With lavaan, we specify the model for three factor (or latent variables).  After
 library(tidyverse)
 library(lavaan)
 
-hs_model <- ' 
+hs_model_baseline <- ' 
   visual =~ x1 + x2 + x3
   verbal =~ x4 + x5 + x6
   speed  =~ x7 + x8 + x9 
 '
 
-model_baseline <- cfa(
-  hs_model, 
+fit_baseline <- cfa(
+  hs_model_baseline, 
   data = HolzingerSwineford1939, 
   group = "school"
 )
 
-summary(model_baseline)  
+summary(fit_baseline)  
 ```
 
 So we're left with visual inspection to note whether there are general differences among the groups. This is all well and good, but perhaps we want a more statistical approach.  Say our question specifically concerns a mean difference between schools on the visual latent variable.  How do we go about it?
 
-Note that the intercepts for the latent variables are zero.  They have to be for the model to be identified, much in the same way that at least one factor loading (the first by default) has to be fixed to one.  We only have so much information to estimate so many paramters.
+Note that the intercepts for the latent variables are zero.  They have to be for the model to be identified, much in the same way that at least one factor loading (the first by default) has to be fixed to one.  We only have so much information to estimate so many parameters.
 
-To get around this we could try and fix some parameters, thereby freeing the intercepts to be estimated.  For example, if instead we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable.
+## Latent variable intercepts
+
+To get around this limitation, we could try and fix some parameters, thereby freeing the intercepts to be estimated.  For example, if instead we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable. In the following we'll do this for the visuo-spatial ability construct.
 
 
 ```{r hs_model_1}
@@ -102,7 +104,7 @@ hs_model_1 <- '
   visual ~  c(int_p, int_gw)*1    
    
   # comparisons
-   diff := int_p - int_gw
+  diff := int_p - int_gw
 '
 
 fit_1 <- cfa(hs_model_1, 
@@ -114,10 +116,12 @@ summary(fit_1, std=T)
 coef_1 = broom::tidy(fit_1) %>% 
   filter(label != '')
 
-coef_1
+coef_1 %>% kable_df()
 ```
 
-However, this would would be identical to comparing the intercepts on whichever observed variable you previously fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of 
+The above shows the schools not to be much different from one another on the visual-spatial ability latent variable.  But compare this result to the intercepts for `x1` in our baseline model.  This model would would be identical to comparing the intercepts on whichever observed variable you previously fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of the observed variable.
+
+To make this more explicit, we'll label the `x1` intercepts in our baseline model and look at their difference.
 
 ```{r hs_model_2}
 hs_model_2 <- ' 
@@ -125,8 +129,6 @@ hs_model_2 <- '
   verbal =~ x4 + x5 + x6
   speed  =~ x7 + x8 + x9 
   
-  
-
   x1 ~ c(a, b)*1   
    
   # comparisons
@@ -143,10 +145,15 @@ summary(fit_2, std=T)
 coef_2 = broom::tidy(fit_2) %>% 
   filter(label != '')
 
-coef_2
+coef_2 %>% kable_df()
 ```
 
-The following approach is not the same model, but would also provide the same result. In this case, each observed variable is affected by the school grouping, and the path coefficient for `x1` is the same value as before.
+Same difference.
+
+
+## Observed variable group differences
+
+The following approach is not the same model, but would also provide the same result. In this case, each observed variable is affected by the school grouping, and the path coefficient for `x1` is the same difference in means as before.
 
 
 ```{r hs_model_3}
@@ -168,7 +175,9 @@ summary(fit_3, std=T)
 coef_3 = broom::tidy(fit_3)
 ```
 
-```{r compare_123}
+A comparison of all three shows the same results, but that the third model has fewer parameters, as the loadings and latent variable variances are not changing across groups.
+
+```{r compare_123_data, echo=FALSE}
 bind_rows(
   coef_1 %>% filter(label == 'diff'), 
   coef_2 %>% filter(label == 'diff'), 
@@ -176,15 +185,26 @@ bind_rows(
 ) %>% 
   select(estimate, std.error, conf.low, conf.high)
 
-model_list = list(fit_1=fit_1, fit_2=fit_2, fit_3=fit_3) 
-
-model_list %>% 
-  map_df(AIC)
-
-model_list %>% map_df(function(x) length(coef(x)))
+model_list = list(fit_1=fit_1, fit_2=fit_2, fit_3=fit_3)
 ```
 
-Typically people would address such a theoretical question without a multigroup approach, simply regressing the visual factor on school.
+
+```{r compare_123_Npar, echo=FALSE}
+model_list %>% 
+  map_df(function(x) length(coef(x))) %>% 
+  kable_df(caption = 'Model N parameters')
+```
+
+
+```{r compare_123_AIC, echo=FALSE}
+model_list %>% 
+  map_df(AIC) %>% 
+  kable_df(caption = 'Model AIC')
+```
+
+## Structural model
+
+In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor.  We can do that here.
 
 ```{r hs_model_4a}
 # standard cfa with school predicting visual
@@ -193,25 +213,28 @@ hs_model_4a <- '
   verbal =~ x4 + x5 + x6
   speed  =~ x7 + x8 + x9 
   
-  visual ~ a*school
+  visual ~ diff*school
+  
+  visual ~~ speed + verbal  # lavaan will not estimate this by default
 '
 
 fit_4a = sem(hs_model_4a, data=HolzingerSwineford1939, meanstructure=T)
 summary(fit_4a)
+```
 
+At first blush, it would seem we are not getting the same result. Our difference is notably larger and significant.
 
+```{r compare_1234a, echo=FALSE}
 model_list = mget(ls(pattern = '^fit'))
-
 
 model_list %>% 
   map_df(AIC)
 model_list %>% map_df(function(x) length(coef(x)))
 ```
 
-But again, we can recover the multigroup effect by regressing the other observed variables on school.
+But as before, we can recover the multigroup results by regressing the other observed variables on school as well.
 
 ```{r hs_model_4b}
-
 hs_model_4b <- ' 
   visual =~ x1 + x2 + x3
   verbal =~ x4 + x5 + x6
@@ -223,10 +246,12 @@ hs_model_4b <- '
 '
 
 fit_4b = sem(hs_model_4b, data=HolzingerSwineford1939, meanstructure=T)
+```
 
+```{r compare_1234b, echo=FALSE}
 model_list = mget(ls(pattern = '^fit'))
 
-coef_4 = broom::tidy(fit_4b)
+coef_4b = broom::tidy(fit_4b)
 
 model_list %>% 
   map_df(AIC)
@@ -236,21 +261,99 @@ bind_rows(
   coef_1 %>% filter(label == 'diff'), 
   coef_2 %>% filter(label == 'diff'), 
   coef_3 %>% filter(label == 'diff'),
-  coef_4 %>% filter(label == 'diff'), 
+  coef_4b %>% filter(label == 'diff'), 
   .id = 'model'
 ) %>% 
-  select(estimate, std.error, conf.low, conf.high)
+  mutate(model = c(1:3, '4b')) %>% 
+  select(model, estimate, std.error, conf.low, conf.high)
+```
 
+Going back to the first structural model `hs_model_4a`, it might be interesting to some to see that it the group difference *still* regards a difference on the `x1` observed variable.  We can see this more clearly if we set the x1 loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la mediation) to estimate the group difference.
+
+```{r hs_model_4c}
+hs_model_4c <- ' 
+  visual =~ x2 + a*x1 + x3    # estimate x1 loading vs. scaling by it
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+
+  visual ~ b*school
+  
+  visual ~~ verbal + speed
+  
+  diff := a*b    # "indirect" effect of school on x1
+'
+
+# same as fit_4a
+fit_4c = cfa(hs_model_4c, data = HolzingerSwineford1939, meanstructure=T)
+coef_4c = broom::tidy(fit_4c) %>% filter(label=='diff') 
+coef_4a = broom::tidy(fit_4a) %>% filter(label=='diff') 
+
+bind_rows(coef_4a, coef_4c) %>% 
+  mutate(model = c('4a', '4c')) %>% 
+  select(model, label:conf.high)
+```
+
+And what is this value of `r coef_4c$estimate`?
+
+## Sum/Factor score
+
+```{r sum_score}
+hs_model_5 <- ' 
+  visual =~ x1 + l1*x2 + l1*x3
+  verbal =~ x4 + l2*x5 + l2*x6
+  speed  =~ x7 + l3*x8 + l3*x9 
+  
+  # x1 ~~ a*x1
+  # x2 ~~ a*x2
+  # x3 ~~ a*x3
+  # x4 ~~ a*x4
+  # x5 ~~ a*x5
+  # x6 ~~ a*x6
+  # x7 ~~ a*x7
+  # x8 ~~ a*x8
+  # x9 ~~ a*x9
+'
+
+
+fit_5 = cfa(hs_model_5, data = HolzingerSwineford1939, meanstructure=T)
+
+
+HolzingerSwineford1939 = HolzingerSwineford1939 %>% 
+  mutate(visual = lavPredict(fit_5)[,'visual'],
+         verbal = lavPredict(fit_5)[,'verbal'],
+         speed  = lavPredict(fit_5)[,'speed'])
+ttest1 = lm(visual ~ school, data = HolzingerSwineford1939)
+coef(ttest1)  # same as x1 diffs
+
+hs_model_fsr <- ' 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+  
+  visual ~ school
+'
+
+# fsr function now hidden and evidently broken? even naive method doesn't work;
+# tried all methods for scores and approach
+# ttest1b = lavaan:::fsr(hs_model_fsr,
+#                        data = HolzingerSwineford1939)
+# coef(ttest1b)
+
+
+ttest2 = lm(rowSums(HolzingerSwineford1939 %>% select(x1:x3)) ~ HolzingerSwineford1939$school)
+coef(ttest2)  # same as structural diffs
 ```
 
 
+What should be apparent at this point is that the multigroup approach is an interaction of everything with the grouping variable.  Honestly I think this is rarely desirable theoretically, or at least we almost never do this in other modeling contexts.
 
 
+## Measurement invariance
 
 ```{r measurement_invariance}
 hs_model_4 <- ' 
   visual  =~ x1 + x2 + x3
-  verbal =~ x4 + x5 + x6
+  verbal  =~ x4 + x5 + x6
   speed   =~ x7 + x8 + x9 
 '
 
@@ -260,7 +363,7 @@ semTools::measurementInvariance(
   group = "school"
 )
 
-# wow, frome one line to this. this is an awful choice for an alternative
+# wow, from one line to this. this is an awful choice for an alternative
 test.seq <- c("loadings","intercepts","means","residuals")
 meq.list <- list()
 for (i in 0:length(test.seq)) {
@@ -274,7 +377,7 @@ for (i in 0:length(test.seq)) {
     # long.equal <- test.seq[1:i]
   }
   meq.list[[meq.label]] <- semTools::measEq.syntax(
-    configural.model = model_baseline,
+    configural.model = hs_model_baseline,
     data = HolzingerSwineford1939,
     ID.fac = "auto.fix.first",
     group = "school",
@@ -303,7 +406,7 @@ for (i in 0:length(test.seq)) {
     # long.equal <- test.seq[1:i]
   }
   meq.list[[meq.label]] <- semTools::measEq.syntax(
-    configural.model = model_baseline,
+    configural.model = hs_model_baseline,
     data = HolzingerSwineford1939,
     ID.fac = "auto.fix.first",
     group = "school",
@@ -379,54 +482,31 @@ summary(fit_test)
 lavaanPlot::lavaanPlot(model = fit_test, coefs=T, covs=T)
 ```
 
-
-
-```{r}
-HS.model4 <- ' 
-  visual =~ x2 + a*x1 + x3    # estimate x1 loading vs. scaling by it
+```{r hs_model_4d, echo=FALSE}
+hs_model_4d <- ' 
+  visual =~ x1 + x2 + x3    # estimate x1 loading vs. scaling by it
   verbal =~ x4 + x5 + x6
   speed  =~ x7 + x8 + x9 
 
-  visual ~ b*school
-  # verbal ~ school
-  # speed ~ school
+  visual ~ diff*school
   
-  # visual ~~ 0*verbal + 0*speed
-  speed  ~~ verbal
-  
-  diff := a*b    # "indirect" difference on x1
-'
-
-# same as fit_4a
-summary(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T))
-broom::tidy(cfa(HS.model4, data = HolzingerSwineford1939, meanstructure=T)) %>% filter(label=='diff') %>% pull(estimate)
-coef(fit_4a)['a']
-```
-
-Sum/Factor score
-
-```{r}
-hs_model_6 <- ' 
-  visual =~ x1 + l1*x2 + l1*x3
-  verbal =~ x4 + l2*x5 + l2*x6
-  speed  =~ x7 + l3*x8 + l3*x9 
-  
-  x1 ~~ a*x1
-  x2 ~~ a*x2
-  x3 ~~ a*x3
-  x4 ~~ a*x4
-  x5 ~~ a*x5
-  x6 ~~ a*x6
-  x7 ~~ a*x7
-  x8 ~~ a*x8
-  x9 ~~ a*x9
+  verbal + speed ~ school
   
 '
 
-scores = lavPredict(cfa(hs_model_6, data = HolzingerSwineford1939, meanstructure=T))
-ttest = lm(scores[,'visual'] ~ HolzingerSwineford1939$school)
-coef(ttest)
+fit_4d = cfa(hs_model_4d, data = HolzingerSwineford1939, meanstructure=T)
+summary(fit_4d)
 
-ttest = lm(rowSums(HolzingerSwineford1939 %>% select(x1:x3)) ~ HolzingerSwineford1939$school)
-coef(ttest)  # compare to std estimate
+coef_4d = broom::tidy(fit_4d) %>% filter(label=='diff')
+
+bind_rows(
+  coef_1 %>% filter(label == 'diff'), 
+  coef_2 %>% filter(label == 'diff'), 
+  coef_3 %>% filter(label == 'diff'),
+  coef_4b %>% filter(label == 'diff'), 
+  coef_4d %>% filter(label == 'diff'), 
+  .id = 'model'
+) %>% 
+  mutate(model = c(1:3, '4b', '4d')) %>% 
+  select(model, estimate, std.error, conf.low, conf.high)
 ```
