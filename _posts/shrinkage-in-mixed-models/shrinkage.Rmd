@@ -1,0 +1,228 @@
+---
+title: "Comparing means with lavaan"
+description: |
+  Comparing means and intercepts of latent variables
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../test.css
+draft: true
+tags: [R, factor analysis, growth curve, structural equation modeling, SEM, intercepts, means]
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=FALSE,
+  fig.align='center', 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+```
+
+### Data
+
+
+```{r}
+create_data <- function(  
+  obs_per_cluster = 10,
+  n_cluster = 250,
+  intercept = 1,
+  beta = .5,
+  sigma = 1,
+  sd_int = .5,
+  sd_slope = .25,
+  cor = 0,
+  unbalanced = FALSE,
+  seed = 888) 
+  {
+  set.seed(seed)
+
+  cluster = rep(1:n_cluster, each = obs_per_cluster)
+  N = n_cluster * obs_per_cluster
+  x = rnorm(N)
+
+  varmat = matrix(c(sd_int^2, cor, cor, sd_slope^2), 2, 2)
+  
+  re = mvtnorm::rmvnorm(n_cluster, sigma = varmat)
+  colnames(re) = c('Intercept', 'x')
+  
+  y = (intercept + re[cluster, 'Intercept']) + (beta + re[cluster, 'x'])*x + rnorm(N, sd = sigma)
+  
+  df = tibble(
+    y,
+    x,
+    cluster
+  )
+  
+  if (unbalanced) {
+    df = sample_frac(df, unbalanced)
+  }
+  
+  df
+}
+
+
+
+create_plot_data <- function(model, data = df) 
+  {
+  # bind re + lm by group results
+  plot_data_re_lm = 
+    bind_rows(
+      coef(mod)$cluster %>% 
+        rownames_to_column(var = 'cluster') %>% 
+        mutate(model = 'mixed'),
+      map_df(lmList(y ~ x|cluster, data), 
+             function(x) as.data.frame(t(coef(x))), 
+             .id = 'cluster') %>% 
+        mutate(model = 'lm')
+  ) %>% 
+    rename(Intercept = `(Intercept)`)
+  
+  # fixed effect estimates
+  fe_data =  fixef(mod) %>% 
+    t() %>%  
+    data.frame() %>% 
+    rename(Intercept = X.Intercept.) %>% 
+    mutate(cluster=1,
+           model = 'lm')
+  
+  list(coefficients = plot_data_re_lm, 
+       fixed_effects = fe_data)
+}
+
+plot_fun <- function(plot_data, 
+                     pt_size = 1, 
+                     fe_size = 6, 
+                     line_alpha = .1,
+                     animate = T,
+                     zoom = T) {
+  library(gganimate)
+  
+  if (!is.numeric(pt_size)) {
+    pt_size = plot_data$coefficients[[pt_size]]
+  } else {
+    pt_size = pt_size
+  }
+  
+  # points closer to FE should be more transparent
+  transparency = plot_data$coefficients %>% 
+    filter(model == 'lm') %>% 
+    select(Intercept, x) %>% 
+    apply(., 1, function(r) r - plot_data$fixed_effects %>% select(Intercept, x)) %>% 
+    do.call(rbind, .) %>% 
+    scale() %>% 
+    abs() %>% 
+    rowMeans() 
+  # %>% sapply(function(x) 1/x)
+  transparency[is.na(transparency)] = 0   # if unbalanced, might not have slope if n_obs = 1
+  plot_data$coefficients$transparency = scales::rescale(rep(transparency, 2), to=c(0, 1))
+  
+  plot_data$coefficients %>% 
+    ggplot(aes(x = Intercept, y = x, group = cluster)) +
+    geom_point(aes(color=model, alpha = transparency), 
+               size = pt_size) +
+    geom_point(size = fe_size, data = plot_data$fixed_effects) +
+    geom_path(color = 'black',
+              alpha = line_alpha,
+              arrow = arrow(length = unit(.01, "npc"), ends='first')
+              ) +
+    {
+      if (animate) {
+        transition_reveal(as.integer(factor(model)), keep_last = T) }  
+    } +
+    { 
+      if (zoom) {
+        coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3, plot_data$fixed_effects[1, 'Intercept'] + 3), 
+                        ylim = c(plot_data$fixed_effects[1, 'x'] - 3, plot_data$fixed_effects[1, 'x'] + 3))}
+    }  +
+    guides(alpha = 'none') +
+    theme_trueMinimal() 
+  
+}
+```
+
+### Run the model
+
+```{r}
+df = create_data()
+
+library(lme4)
+mod = lmer(y ~ x + (x|cluster), df)
+summary(mod, cor=F)
+```
+
+### Create data for plotting
+
+```{r}
+plot_data = create_plot_data(model = mod)
+```
+
+
+### visualize
+
+```{r echo=FALSE}
+plot_fun(plot_data = plot_data)
+
+```
+
+
+### More subject level variance
+
+```{r echo = F}
+df = create_data(sd_int = 2, sd_slope = 1)
+mod = lmer(y ~ x + (x|cluster), df)
+plot_data = create_plot_data(model = mod)
+plot_fun(plot_data = plot_data)
+```
+
+
+### Fewer observations per cluster
+
+```{r echo = F}
+df = create_data(obs_per_cluster = 3)
+mod = lmer(y ~ x + (x|cluster), df)
+plot_data = create_plot_data(model = mod)
+plot_fun(plot_data = plot_data)
+```
+
+### More observations per cluster
+
+```{r}
+df = create_data(obs_per_cluster = 50)
+mod = lmer(y ~ x + (x|cluster), df)
+plot_data = create_plot_data(model = mod)
+plot_fun(plot_data = plot_data)
+```
+
+
+### Unbalanced
+
+```{r}
+df = create_data(unbalanced = .5, seed = 12)
+mod = lmer(y ~ x + (x|cluster), df)
+plot_data = create_plot_data(model = mod)
+clus_counts = df %>% count(cluster) %>% pull(n)
+plot_data$coefficients = plot_data$coefficients %>% 
+  mutate(n_clus = rep(clus_counts, 2))
+plot_fun(plot_data = plot_data, pt_size = 'n_clus', pt_alpha = .25)
+```
