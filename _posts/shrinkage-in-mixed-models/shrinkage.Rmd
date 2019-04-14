@@ -115,7 +115,8 @@ plot_fun <- function(plot_data,
                      fe_size = 6, 
                      line_alpha = .1,
                      animate = T,
-                     zoom = T) {
+                     zoom = T,
+                     ...) {
   library(gganimate)
   
   if (!is.numeric(pt_size)) {
@@ -137,11 +138,12 @@ plot_fun <- function(plot_data,
   transparency[is.na(transparency)] = 0   # if unbalanced, might not have slope if n_obs = 1
   plot_data$coefficients$transparency = scales::rescale(rep(transparency, 2), to=c(0, 1))
   
-  plot_data$coefficients %>% 
+  p = plot_data$coefficients %>% 
     ggplot(aes(x = Intercept, y = x, group = cluster)) +
     geom_point(aes(color=model, alpha = transparency), 
                size = pt_size) +
-    geom_point(size = fe_size, data = plot_data$fixed_effects) +
+    geom_point(size = fe_size - 2, alpha = .5, data = plot_data$fixed_effects) +
+    geom_point(size = fe_size, alpha = .25, data = plot_data$fixed_effects) +
     geom_path(color = 'black',
               alpha = line_alpha,
               arrow = arrow(length = unit(.01, "npc"), ends='first')
@@ -157,6 +159,8 @@ plot_fun <- function(plot_data,
     }  +
     guides(alpha = 'none') +
     theme_trueMinimal() 
+  
+  animate(p, ...)
   
 }
 ```
@@ -193,6 +197,16 @@ df = create_data(sd_int = 2, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data)
+```
+
+### More slope variances
+
+```{r}
+df = create_data(sd_int = .25, sd_slope = 1)
+mod = lmer(y ~ x + (x|cluster), df)
+plot_data = create_plot_data(model = mod)
+plot_fun(plot_data = plot_data, nframes = 150, end_pause = 75)
+
 ```
 
 
