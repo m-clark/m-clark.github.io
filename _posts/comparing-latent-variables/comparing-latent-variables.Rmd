@@ -42,9 +42,9 @@ kable_df <- function(..., digits=3) {
 
 ## Introduction
 
-In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, and this post provides a demo using lavaan.  
+In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, such as anxiety or verbal ability, and this post provides a demo using lavaan.  
 
-My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder to refer back to.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
+My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder for the syntax to refer back to.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
 
 ## Multiple group analysis
 
@@ -57,9 +57,9 @@ library(lavaan)
 data(HolzingerSwineford1939)
 ```
 
-The basic model is a factor analysis with three latent variables, with items for visual-spatial ability (`x1-x3`), verbal comprehension (`x4-x6`), and so-called speed tests (`x7-x9`), e.g. for addition and counting, which might be thought of general cognitive processing.
+The basic model is a factor analysis with three latent variables, with items for visual-spatial ability (`x1-x3`), verbal comprehension (`x4-x6`), and so-called 'speed' tests (`x7-x9`), e.g. for addition and counting, which might be thought of general cognitive processing.
 
-With lavaan, we specify the model for three factor (or latent variables).  After that, a simple group argument will allow the multigroup analysis.
+With lavaan, we specify the model for three factor (or latent variables).  After that, a simple group argument will allow the multigroup analysis, providing the factor analysis for both school groups.
 
 ```{r standard_multigroup}
 library(tidyverse)
@@ -85,6 +85,18 @@ So we're left with visual inspection to note whether there are general differenc
 Note that the intercepts for the latent variables are zero.  They have to be for the model to be identified, much in the same way that at least one factor loading (the first by default) has to be fixed to one.  We only have so much information to estimate so many parameters.
 
 ## Latent variable intercepts
+
+```{r baseline_2, eval=FALSE, echo=TRUE}
+fit_baseline_2 <- cfa(
+  hs_model_baseline, 
+  data = HolzingerSwineford1939, 
+  group = "school",
+  group.equal = c('loadings', 'intercepts')
+)
+
+summary(fit_baseline_2) 
+```
+
 
 To get around this limitation, we could try and fix some parameters, thereby freeing the intercepts to be estimated.  For example, if instead we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable. In the following we'll do this for the visuo-spatial ability construct.
 
@@ -295,6 +307,107 @@ bind_rows(coef_4a, coef_4c) %>%
 
 And what is this value of `r coef_4c$estimate`?
 
+
+
+
+
+The following is equivalent to the result one would get from `group.equal = c('loadings', 'intercepts')`.  The first group would have latent variable means at zero, while the second group would be allowed to vary.  This is more or less what is desired. 
+
+```{r hs_model_test}
+hs_model_test <- ' 
+  # make loadings equal across groups
+  
+  visual =~ c(1, 1)*x1 + c(v_x2, v_x2)*x2 + c(v_x3, v_x3)*x3
+  verbal =~ c(1, 1)*x4 + c(v_x5, v_x5)*x5 + c(v_x6, v_x6)*x6
+  speed  =~ c(1, 1)*x7 + c(v_x8, v_x8)*x8 + c(v_x9, v_x9)*x9 
+  
+  # make intercepts equal across groups
+  
+  x1 ~ c(0, 0) * 1
+  x2 ~ c(int_x2, int_x2) * 1
+  x3 ~ c(int_x3, int_x3) * 1
+  x4 ~ c(0, 0) * 1
+  x5 ~ c(int_x5, int_x5) * 1
+  x6 ~ c(int_x6, int_x6) * 1
+  x7 ~ c(0, 0) * 1
+  x8 ~ c(int_x8, int_x8) * 1
+  x9 ~ c(int_x9, int_x9) * 1
+  
+  # make covariances equal across groups
+  
+  # visual ~~ c(cov_vv, cov_vv) * verbal + c(cov_visp, cov_visp) * speed
+  # verbal ~~ c(cov_vesp, cov_vesp) * speed
+  
+  # make variances equal
+  
+  # visual ~~ c(vvar, vvar) * visual
+  # verbal ~~ c(tvar, tvar) * verbal
+  # speed  ~~ c(svar, svar) * speed
+  
+  # x1 ~~ c(x1var, x1var) * x1
+  # x2 ~~ c(x2var, x2var) * x2
+  # x3 ~~ c(x3var, x3var) * x3
+  # x4 ~~ c(x4var, x4var) * x4
+  # x5 ~~ c(x5var, x5var) * x5
+  # x6 ~~ c(x6var, x6var) * x6
+  # x7 ~~ c(x7var, x7var) * x7
+  # x8 ~~ c(x8var, x8var) * x8
+  # x9 ~~ c(x9var, x9var) * x9
+  
+  
+  visual ~ c(vis_int_p, vis_int_gw)*1
+  verbal ~ c(verb_int_p, verb_int_gw)*1
+  speed  ~ c(speed_int_p, speed_int_gw)*1
+  
+  
+   
+  # comparisons
+   diff := vis_int_p - vis_int_gw
+'
+
+fit_test  = sem(hs_model_test, 
+                data=HolzingerSwineford1939, 
+                group = 'school',
+                meanstructure=T)
+
+summary(fit_test)
+
+lavaanPlot::lavaanPlot(model = fit_test, coefs=T, covs=T)
+```
+
+
+The more simple and obvious way to do it.
+
+```{r hs_model_4d, echo=FALSE}
+hs_model_4d <- ' 
+  visual =~ x1 + x2 + x3    # estimate x1 loading vs. scaling by it
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+
+  visual ~ diff*school
+  
+  verbal + speed ~ school
+  
+'
+
+fit_4d = cfa(hs_model_4d, data = HolzingerSwineford1939, meanstructure=T)
+summary(fit_4d)
+
+coef_4d = broom::tidy(fit_4d) %>% filter(label=='diff')
+
+bind_rows(
+  coef_1 %>% filter(label == 'diff'), 
+  coef_2 %>% filter(label == 'diff'), 
+  coef_3 %>% filter(label == 'diff'),
+  coef_4b %>% filter(label == 'diff'), 
+  coef_4d %>% filter(label == 'diff'), 
+  .id = 'model'
+) %>% 
+  mutate(model = c(1:3, '4b', '4d')) %>% 
+  select(model, estimate, std.error, conf.low, conf.high)
+```
+
+
 ## Sum/Factor score
 
 ```{r sum_score}
@@ -428,95 +541,4 @@ for (i in 0:length(test.seq)) {
 }
 
 semTools::compareFit(meq.list)
-```
-
-```{r hs_model_test}
-hs_model_test <- ' 
-  # make loadings equal across groups
-  
-  visual =~ c(1, 1)*x1 + c(v_x2, v_x2)*x2 + c(v_x3, v_x3)*x3
-  verbal =~ c(1, 1)*x4 + c(v_x5, v_x5)*x5 + c(v_x6, v_x6)*x6
-  speed  =~ c(1, 1)*x7 + c(v_x8, v_x8)*x8 + c(v_x9, v_x9)*x9 
-  
-  # make intercepts equal across groups
-  
-  x1 ~ c(0, 0) * 1
-  x2 ~ c(int_x2, int_x2) * 1
-  x3 ~ c(int_x3, int_x3) * 1
-  x4 ~ c(0, 0) * 1
-  x5 ~ c(int_x5, int_x5) * 1
-  x6 ~ c(int_x6, int_x6) * 1
-  x7 ~ c(0, 0) * 1
-  x8 ~ c(int_x8, int_x8) * 1
-  x9 ~ c(int_x9, int_x9) * 1
-  
-  # make covariances equal across groups
-  
-  # visual ~~ c(cov_vv, cov_vv) * verbal + c(cov_visp, cov_visp) * speed
-  # verbal ~~ c(cov_vesp, cov_vesp) * speed
-  
-  # make variances equal
-  
-  # visual ~~ c(vvar, vvar) * visual
-  # verbal ~~ c(tvar, tvar) * verbal
-  # speed  ~~ c(svar, svar) * speed
-  
-  # x1 ~~ c(x1var, x1var) * x1
-  # x2 ~~ c(x2var, x2var) * x2
-  # x3 ~~ c(x3var, x3var) * x3
-  # x4 ~~ c(x4var, x4var) * x4
-  # x5 ~~ c(x5var, x5var) * x5
-  # x6 ~~ c(x6var, x6var) * x6
-  # x7 ~~ c(x7var, x7var) * x7
-  # x8 ~~ c(x8var, x8var) * x8
-  # x9 ~~ c(x9var, x9var) * x9
-  
-  
-  visual ~ c(vis_int_p, vis_int_gw)*1
-  verbal ~ c(verb_int_p, verb_int_gw)*1
-  speed  ~ c(speed_int_p, speed_int_gw)*1
-  
-  
-   
-  # comparisons
-   diff := vis_int_p - vis_int_gw
-'
-
-fit_test  = sem(hs_model_test, 
-                data=HolzingerSwineford1939, 
-                group = 'school',
-                meanstructure=T)
-
-summary(fit_test)
-
-lavaanPlot::lavaanPlot(model = fit_test, coefs=T, covs=T)
-```
-
-```{r hs_model_4d, echo=FALSE}
-hs_model_4d <- ' 
-  visual =~ x1 + x2 + x3    # estimate x1 loading vs. scaling by it
-  verbal =~ x4 + x5 + x6
-  speed  =~ x7 + x8 + x9 
-
-  visual ~ diff*school
-  
-  verbal + speed ~ school
-  
-'
-
-fit_4d = cfa(hs_model_4d, data = HolzingerSwineford1939, meanstructure=T)
-summary(fit_4d)
-
-coef_4d = broom::tidy(fit_4d) %>% filter(label=='diff')
-
-bind_rows(
-  coef_1 %>% filter(label == 'diff'), 
-  coef_2 %>% filter(label == 'diff'), 
-  coef_3 %>% filter(label == 'diff'),
-  coef_4b %>% filter(label == 'diff'), 
-  coef_4d %>% filter(label == 'diff'), 
-  .id = 'model'
-) %>% 
-  mutate(model = c(1:3, '4b', '4d')) %>% 
-  select(model, estimate, std.error, conf.low, conf.high)
 ```

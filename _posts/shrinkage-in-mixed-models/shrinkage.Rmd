@@ -1,7 +1,7 @@
 ---
-title: "Comparing means with lavaan"
+title: "Shrinkage in Mixed Effects Models"
 description: |
-  Comparing means and intercepts of latent variables
+  A demo of random effects.
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
@@ -13,13 +13,13 @@ output:
     toc: true
     css: ../../test.css
 draft: true
-tags: [R, factor analysis, growth curve, structural equation modeling, SEM, intercepts, means]
+tags: [R, random effects, mixed models, shrinkage, partial-pooling, multilevel models, hierarchical linear models, fixed effects, population average]
 ---
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo=T, 
+  echo = T, 
+  eval = F,
   message = F, 
   warning = F, 
   comment = NA,
@@ -39,20 +39,54 @@ kable_df <- function(..., digits=3) {
 }
 ```
 
+## Introduction
+
+The following is a demonstration of <span class="emph">shrinkage</span>, sometimes called <span class="emph">partial-pooling</span>, of mixed effects models.   As a starting point, one can see the section of my document on mixed models [here](), and the document in general for an introduction to mixed models.  Part of the inspiration of this document comes from some of the visuals seen [here]().
+
+It is often the case that we have data such that observations are clustered in some way (e.g. repeated observations for units over time, students within schools, etc.).  In mixed models we obtain cluster specific effects in addition to the for standard coefficients of our regression model.  
+
+In other circumstances, we could ignore the clustering, and run a basic model.  Unfortunately this assumes that all observations behave in the same way, which would often be an untenable assumption.  Another approach would be to run separate models for each cluster.  However, aside from being problematic due to potentially small cluster sizes, this ignores the fact that clusters are not isolated and have some commonality.
+
+Mixed models provide an alternative where we have cluster specific effects, but 'borrow strength' from the population-average (i.e. fixed) effects.  This borrowing is more apparent for what would otherwise be more extreme clusters, and those that have less data.
+
+## Analysis
+
+For the following we run a basic mixed model with a random intercepts and slopes for a single predictor variable. There are a number of ways  to write such models, and the following does so for a single cluster $c$. $y$ is a function of the single predictor $x$, and otherwise we have a basic linear regression model.  The random effects for a given cluster are added to each fixed effect (intercept $b_0$ and the effect of $x$, $b_1$). The random effects are multivariate normally distributed with some covarince.  The per observation noise $\sigma$ is assumed constant across observations.
+
+$$\mu = (b_0 +b_{0c})+ (b_1+b_{1c)}*x$$
+$$b_{0c}, b_{1c} \sim \mathcal{N}(0, \Sigma)$$
+$$y \sim \mathcal{N}(\mu, \sigma^2)$$
+
+Such models are highly flexible and have many extensions, but this simple model is enough for our purposes.
+
+
 ### Data
 
+Default settings for data creation are as follows:
 
-```{r}
+- `obs_per_cluster` (observations per cluster)= 10
+- `n_cluster` (number of clusters)= 100
+- `intercept` = 1
+- `beta` (coefficient for x) = .5
+- `sigma` (observation level standard deviation) = 1
+- `sd_int` (standard deviation for intercept random effect)= .5
+- `sd_slope` (standard deviation for x random effect)= .25
+- `cor` (correlation of random effect) = 0
+- `balanced` (fraction of overall sample size) = 1
+
+`X` is a standardized variable with mean zero and standard deviation of 1. Unless a fraction is provided for `balanced`, the N is equal to `n_cluster` * `obs_per_cluster`.
+
+```{r create_data}
 create_data <- function(  
   obs_per_cluster = 10,
-  n_cluster = 250,
+  n_cluster = 100,
   intercept = 1,
   beta = .5,
   sigma = 1,
   sd_int = .5,
   sd_slope = .25,
   cor = 0,
-  unbalanced = FALSE,
+  balanced = TRUE,
   seed = 888) 
   {
   set.seed(seed)
@@ -74,15 +108,16 @@ create_data <- function(
     cluster
   )
   
-  if (unbalanced) {
-    df = sample_frac(df, unbalanced)
+  if (!balanced) {
+    df = sample_frac(df, balanced)
   }
   
   df
 }
+```
 
 
-
+```{r create_plot_data, echo=FALSE}
 create_plot_data <- function(model, data = df) 
   {
   # bind re + lm by group results
@@ -109,14 +144,21 @@ create_plot_data <- function(model, data = df)
   list(coefficients = plot_data_re_lm, 
        fixed_effects = fe_data)
 }
+```
 
-plot_fun <- function(plot_data, 
-                     pt_size = 1, 
-                     fe_size = 6, 
-                     line_alpha = .1,
-                     animate = T,
-                     zoom = T,
-                     ...) {
+
+```{r plot_fun, echo=FALSE}
+plot_fun <- function(
+  plot_data, 
+  pt_size = 1, 
+  fe_size = 6, 
+  line_alpha = .1,
+  animate = T,
+  zoom = T,
+  int_multiplier = .5,
+  slope_multiplier = .25,
+  ...) 
+  {
   library(gganimate)
   
   if (!is.numeric(pt_size)) {
@@ -154,8 +196,8 @@ plot_fun <- function(plot_data,
     } +
     { 
       if (zoom) {
-        coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3, plot_data$fixed_effects[1, 'Intercept'] + 3), 
-                        ylim = c(plot_data$fixed_effects[1, 'x'] - 3, plot_data$fixed_effects[1, 'x'] + 3))}
+        coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3*int_multiplier, plot_data$fixed_effects[1, 'Intercept'] + 3*int_multiplier), 
+                        ylim = c(plot_data$fixed_effects[1, 'x'] - 3*slope_multiplier, plot_data$fixed_effects[1, 'x'] + 3*slope_multiplier))}
     }  +
     guides(alpha = 'none') +
     theme_trueMinimal() 
@@ -165,43 +207,51 @@ plot_fun <- function(plot_data,
 }
 ```
 
-### Run the model
+## Run the model
 
-```{r}
+We will use lme4 to run the analysis.  We can see that the model recovers the parameters fairly well.
+
+```{r run_baseline_model}
 df = create_data()
 
 library(lme4)
 mod = lmer(y ~ x + (x|cluster), df)
-summary(mod, cor=F)
+summary(mod, cor=F) 
 ```
 
-### Create data for plotting
 
-```{r}
+
+
+## Visualize baseline model
+
+Now it is time to visualize the results.  We will use gganimate to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the points is toward the mixed model results for the same cluster-specific effects.
+
+```{r vis_baseline_model, echo=FALSE}
 plot_data = create_plot_data(model = mod)
+plot_fun(plot_data = plot_data, zoom = T, end_pause = 20)
 ```
 
+We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects.
+In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new data- we just assume an 'average' cluster effect, i.e. a random effect of 0.
 
-### visualize
+Now we'll look at what happens under different data circumstances.  The following plots take steps to make them more comparable across the different settings.  As such, some points will be 'off-screen', but they are all attempting to convey the same sort of image.
 
-```{r echo=FALSE}
-plot_fun(plot_data = plot_data)
+## More subject level variance
 
-```
+What happens when we add more subject level variance?  The mixed model will show relatively less shrinkage, opting for the clusters to speak for themselves.
 
-
-### More subject level variance
-
-```{r echo = F}
-df = create_data(sd_int = 2, sd_slope = 1)
+```{r add_subject_var, echo = 1}
+df = create_data(sd_int = 1, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data)
 ```
 
-### More slope variances
+## More slope variances
 
-```{r}
+If we add more slope variance relative to the intercept variance, this more  or less changes the orientation of the plot, but the general result is as the original.
+
+```{r add_slope_var, echo=1}
 df = create_data(sd_int = .25, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
@@ -210,7 +260,7 @@ plot_fun(plot_data = plot_data, nframes = 150, end_pause = 75)
 ```
 
 
-### Fewer observations per cluster
+## Fewer observations per cluster
 
 ```{r echo = F}
 df = create_data(obs_per_cluster = 3)
@@ -219,19 +269,19 @@ plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data)
 ```
 
-### More observations per cluster
+## More observations per cluster
 
-```{r}
-df = create_data(obs_per_cluster = 50)
+```{r more_observations}
+df = create_data(obs_per_cluster = 100)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data)
 ```
 
 
-### Unbalanced
+## Unbalanced
 
-```{r}
+```{r unbalanced}
 df = create_data(unbalanced = .5, seed = 12)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
@@ -240,3 +290,6 @@ plot_data$coefficients = plot_data$coefficients %>%
   mutate(n_clus = rep(clus_counts, 2))
 plot_fun(plot_data = plot_data, pt_size = 'n_clus', pt_alpha = .25)
 ```
+
+
+## Summary
