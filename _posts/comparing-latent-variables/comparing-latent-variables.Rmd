@@ -123,9 +123,9 @@ hs_model_1 <- '
 '
 
 fit_1 <- cfa(hs_model_1, 
-           data = HolzingerSwineford1939, 
-           group = "school",
-           meanstructure = T)
+             data = HolzingerSwineford1939, 
+             group = "school",
+             meanstructure = T)
 summary(fit_1, header=F, nd=2)
 ```
 
@@ -431,34 +431,61 @@ bind_rows(
 
 ## Sum/Factor score
 
-```{r sum_score}
+What would happen if we look at the structural/regression model with the estimated latent variable scores[^fsr]?  How about we go even simpler with not even running an SEM and simply using sum scores?  Let's see what results. 
+
+We'll start with the estimated factor scores. In our model, we'll control for the verbal and speed constructs also.
+
+
+```{r lv_score_1}
 hs_model_5 <- ' 
-  visual =~ x1 + l1*x2 + l1*x3
-  verbal =~ x4 + l2*x5 + l2*x6
-  speed  =~ x7 + l3*x8 + l3*x9 
-  
-  # x1 ~~ a*x1
-  # x2 ~~ a*x2
-  # x3 ~~ a*x3
-  # x4 ~~ a*x4
-  # x5 ~~ a*x5
-  # x6 ~~ a*x6
-  # x7 ~~ a*x7
-  # x8 ~~ a*x8
-  # x9 ~~ a*x9
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
 '
 
-
 fit_5 = cfa(hs_model_5, data = HolzingerSwineford1939, meanstructure=T)
-
 
 HolzingerSwineford1939 = HolzingerSwineford1939 %>% 
   mutate(visual = lavPredict(fit_5)[,'visual'],
          verbal = lavPredict(fit_5)[,'verbal'],
          speed  = lavPredict(fit_5)[,'speed'])
-ttest1 = lm(visual ~ school, data = HolzingerSwineford1939)
-coef(ttest1)  # same as x1 diffs
 
+lm_1 = lm(visual ~ school + verbal + speed, data = HolzingerSwineford1939)
+coef(lm_1)  
+```
+
+The estimated coefficient is pretty close to that estimated by the SEM.  Interestingly, if we fix the loadings to be constant, we recover the initial multigroup estimates.
+
+```{r lv_score_2}
+hs_model_5b <- ' 
+  visual =~ x1 + l1*x2 + l1*x3
+  verbal =~ x4 + l2*x5 + l2*x6
+  speed  =~ x7 + l3*x8 + l3*x9 
+'
+
+fit_5b = cfa(hs_model_5b, data = HolzingerSwineford1939, meanstructure=T)
+
+HolzingerSwineford1939 = HolzingerSwineford1939 %>% 
+  mutate(visual = lavPredict(fit_5b)[,'visual'],
+         verbal = lavPredict(fit_5b)[,'verbal'],
+         speed  = lavPredict(fit_5b)[,'speed'])
+lm_2 = lm(visual ~ school, data = HolzingerSwineford1939)
+coef(lm_2)  # same as x1 diffs
+
+lm_3 = lm(x1 ~ school, data = HolzingerSwineford1939)
+coef(lm_3)
+```
+
+```{r lm_misc, eval=FALSE, echo=FALSE}
+lm_2 = lm(resid(lm(visual ~ verbal + speed, data = HolzingerSwineford1939)) ~ school, data = HolzingerSwineford1939)
+coef(lm_2)  
+
+lm_3 = lm(visual ~ school + verbal + speed, data = HolzingerSwineford1939)
+coef(lm_3)  
+```
+
+
+```{r fsr, eval=FALSE, echo=FALSE}
 hs_model_fsr <- ' 
   visual =~ x1 + x2 + x3
   verbal =~ x4 + x5 + x6
@@ -473,11 +500,13 @@ hs_model_fsr <- '
 #                        data = HolzingerSwineford1939)
 # coef(ttest1b)
 
-
-ttest2 = lm(rowSums(HolzingerSwineford1939 %>% select(x1:x3)) ~ HolzingerSwineford1939$school)
-coef(ttest2)  # same as structural diffs
 ```
 
+Now lets do a sum score. It may not be obvious, but a sum score can be seen as assuming a latent variable model where
+```{r sum_score}
+lm_sum = lm(rowSums(HolzingerSwineford1939 %>% select(x1:x3)) ~ HolzingerSwineford1939$school)
+coef(ttest2)  # same as structural diffs
+```
 
 What should be apparent at this point is that the multigroup approach is an interaction of everything with the grouping variable.  Honestly I think this is rarely desirable theoretically, or at least we rarely do this in other modeling contexts.
 
@@ -563,3 +592,6 @@ for (i in 0:length(test.seq)) {
 
 semTools::compareFit(meq.list)
 ```
+
+
+[^fsr]: Note that lavaan allows one to take this two step approach while estimating proper standard errors given the measurement error associated with the latent variable scores.  The function is <span class="func">fsr</span>, but as of this writing, it is undergoing development, has been hidden from the user, and was not working.
