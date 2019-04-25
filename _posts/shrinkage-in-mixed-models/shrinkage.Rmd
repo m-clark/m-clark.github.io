@@ -51,10 +51,10 @@ Mixed models provide an alternative where we have cluster specific effects, but 
 
 ## Analysis
 
-For the following we run a basic mixed model with a random intercepts and slopes for a single predictor variable. There are a number of ways  to write such models, and the following does so for a single cluster $c$. $y$ is a function of the single predictor $x$, and otherwise we have a basic linear regression model.  The random effects for a given cluster are added to each fixed effect (intercept $b_0$ and the effect of $x$, $b_1$). The random effects are multivariate normally distributed with some covarince.  The per observation noise $\sigma$ is assumed constant across observations.
+For the following we run a basic mixed model with a random intercepts and slopes for a single predictor variable. There are a number of ways  to write such models, and the following does so for a single cluster $c$ and observation $i$. $y$ is a function of the single predictor $x$, and otherwise we have a basic linear regression model.  The random effects for a given cluster are added to each fixed effect (intercept $b_0$ and the effect of $x$, $b_1$). The random effects are multivariate normally distributed with some covariance.  The per observation noise $\sigma$ is assumed constant across observations.
 
-$$\mu = (b_0 +b_{0c})+ (b_1+b_{1c)}*x$$
-$$b_{0c}, b_{1c} \sim \mathcal{N}(0, \Sigma)$$
+$$\mu_{ic} = (b_0 + \mathrm{re}_{0})+ (b_1+\mathrm{re}_{1})*x_{ic}$$
+$$\mathrm{re}_{0}, \mathrm{re}_{1} \sim \mathcal{N}(0, \Sigma)$$
 $$y \sim \mathcal{N}(\mu, \sigma^2)$$
 
 Such models are highly flexible and have many extensions, but this simple model is enough for our purposes.
@@ -74,7 +74,7 @@ Default settings for data creation are as follows:
 - `cor` (correlation of random effect) = 0
 - `balanced` (fraction of overall sample size) = 1
 
-`X` is a standardized variable with mean zero and standard deviation of 1. Unless a fraction is provided for `balanced`, the N is equal to `n_cluster` * `obs_per_cluster`.
+`X` is a standardized variable with mean zero and standard deviation of 1. Unless a fraction is provided for `balanced`, the N is equal to `n_cluster` * `obs_per_cluster`. The following is the function that will be used to create the data, which follows the model depiction above.
 
 ```{r create_data}
 create_data <- function(  
@@ -87,8 +87,9 @@ create_data <- function(
   sd_slope = .25,
   cor = 0,
   balanced = TRUE,
-  seed = 888) 
-  {
+  seed = 888
+  ) {
+  
   set.seed(seed)
 
   cluster = rep(1:n_cluster, each = obs_per_cluster)
@@ -108,8 +109,8 @@ create_data <- function(
     cluster
   )
   
-  if (!balanced) {
-    df = sample_frac(df, balanced)
+  if (balanced < 0 | balanced > 1) {
+    stop('Balanced should be a proportion to sample.')
   }
   
   df
@@ -224,15 +225,14 @@ summary(mod, cor=F)
 
 ## Visualize baseline model
 
-Now it is time to visualize the results.  We will use gganimate to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the points is toward the mixed model results for the same cluster-specific effects.
+Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the points is toward the mixed model results for the same cluster-specific effects.
 
 ```{r vis_baseline_model, echo=FALSE}
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, zoom = T, end_pause = 20)
+plot_fun(plot_data = plot_data, end_pause = 20)
 ```
 
-We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects.
-In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new data- we just assume an 'average' cluster effect, i.e. a random effect of 0.
+We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
 
 Now we'll look at what happens under different data circumstances.  The following plots take steps to make them more comparable across the different settings.  As such, some points will be 'off-screen', but they are all attempting to convey the same sort of image.
 
@@ -244,51 +244,56 @@ What happens when we add more subject level variance?  The mixed model will show
 df = create_data(sd_int = 1, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data)
+plot_fun(plot_data = plot_data, end_pause = 20)
 ```
 
-## More slope variances
+## More slope variance
 
-If we add more slope variance relative to the intercept variance, this more  or less changes the orientation of the plot, but the general result is as the original.
+If we add more slope variance relative to the intercept variance, this more  or less changes the orientation of the plot.  
 
 ```{r add_slope_var, echo=1}
 df = create_data(sd_int = .25, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, nframes = 150, end_pause = 75)
-
+plot_fun(plot_data = plot_data, end_pause = 20)
 ```
 
 
 ## Fewer observations per cluster
 
-```{r echo = F}
+If we have fewer observations within each cluster, more shrinkage is applied. We have relatively less knowledge about the groups, so prefer to lean toward the population average.
+
+```{r fewer_observations, echo = 1}
 df = create_data(obs_per_cluster = 3)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data)
+plot_fun(plot_data = plot_data, end_pause = 20)
 ```
 
 ## More observations per cluster
 
-```{r more_observations}
+The opposite case is seen with more observations.  We also see that he estimates do not so easily fly to extreme values to begin with.  With enough observations per cluster, you likely will see little to no shrinkage.
+
+```{r more_observations, echo = 1}
 df = create_data(obs_per_cluster = 100)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data)
+plot_fun(plot_data = plot_data, end_pause = 20)
 ```
 
 
 ## Unbalanced
 
-```{r unbalanced}
-df = create_data(unbalanced = .5, seed = 12)
+With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, and those with fewer observations the opposite.
+
+```{r unbalanced, echo = 1}
+df = create_data(balanced = .5, seed = 12)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 clus_counts = df %>% count(cluster) %>% pull(n)
 plot_data$coefficients = plot_data$coefficients %>% 
   mutate(n_clus = rep(clus_counts, 2))
-plot_fun(plot_data = plot_data, pt_size = 'n_clus', pt_alpha = .25)
+plot_fun(plot_data = plot_data, pt_size = 'n_clus', end_pause = 20)
 ```
 
 
