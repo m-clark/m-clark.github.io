@@ -25,8 +25,8 @@
   
   
   <!--  https://schema.org/Article -->
-  <meta property="article:published" itemprop="datePublished" content="2019-04-25"/>
-  <meta property="article:created" itemprop="dateCreated" content="2019-04-25"/>
+  <meta property="article:published" itemprop="datePublished" content="2019-05-01"/>
+  <meta property="article:created" itemprop="dateCreated" content="2019-05-01"/>
   <meta name="article:author" content="Michael Clark"/>
   
   <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
@@ -44,7 +44,7 @@
   <!--radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","tags"]}},"value":[{"type":"character","attributes":{},"value":["Shrinkage in Mixed Effects Models"]},{"type":"character","attributes":{},"value":["A demo of random effects.\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["April 25, 2019"]},{"type":"character","attributes":{},"value":["../../img/198R.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../test.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["R","random effects","mixed models","shrinkage","partial-pooling","multilevel models","hierarchical linear models","fixed effects","population average"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","tags"]}},"value":[{"type":"character","attributes":{},"value":["Shrinkage in Mixed Effects Models"]},{"type":"character","attributes":{},"value":["A demo of random effects.\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["May 01, 2019"]},{"type":"character","attributes":{},"value":["../../img/198R.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../test.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["R","random effects","mixed models","shrinkage","partial-pooling","multilevel models","hierarchical linear models","fixed effects","population average"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   
@@ -934,7 +934,7 @@
   <!--radix_placeholder_site_in_header-->
   <!--/radix_placeholder_site_in_header-->
 
-  <link rel="stylesheet" href="..\..\test.css" type="text/css"/>
+  <link rel="stylesheet" href="../../test.css" type="text/css"/>
 
 </head>
 
@@ -943,7 +943,7 @@
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Shrinkage in Mixed Effects Models","description":"A demo of random effects.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2019-04-25T00:00:00.000-04:00","citationText":"Clark, 2019"}
+{"title":"Shrinkage in Mixed Effects Models","description":"A demo of random effects.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2019-05-01T00:00:00.000-04:00","citationText":"Clark, 2019"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -960,7 +960,7 @@
 <div class="d-byline">
   Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
   
-<br/>April 25, 2019
+<br/>May 01, 2019
 </div>
 
 <div class="d-article">
@@ -974,7 +974,7 @@
 <li><a href="#run-the-model">Run the model</a></li>
 <li><a href="#visualize-baseline-model">Visualize baseline model</a></li>
 <li><a href="#more-subject-level-variance">More subject level variance</a></li>
-<li><a href="#more-slope-variances">More slope variances</a></li>
+<li><a href="#more-slope-variance">More slope variance</a></li>
 <li><a href="#fewer-observations-per-cluster">Fewer observations per cluster</a></li>
 <li><a href="#more-observations-per-cluster">More observations per cluster</a></li>
 <li><a href="#unbalanced">Unbalanced</a></li>
@@ -1039,8 +1039,10 @@ create_data &lt;- function(
     cluster
   )
   
-  if (!balanced) {
-    df = sample_frac(df, balanced)
+  if (balanced &lt; 0 | balanced &gt; 1) {
+    stop(&#39;Balanced should be a proportion to sample.&#39;)
+  } else {
+    df = df %&gt;% sample_frac(balanced)
   }
   
   df
@@ -1063,11 +1065,11 @@ mod = lmer(y ~ x + (x|cluster), df)
 summary(mod, cor=F) </code></pre>
 </div>
 <h2 id="visualize-baseline-model">Visualize baseline model</h2>
-<p>Now it is time to visualize the results. We will use gganimate to bring the shrinkage into focus. We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach. The movement of the points is toward the mixed model results for the same cluster-specific effects.</p>
+<p>Now it is time to visualize the results. We will use <span class="pack">gganimate</span> to bring the shrinkage into focus. We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach. The movement of the points is toward the mixed model results for the same cluster-specific effects.</p>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
-<p>We see more clearly what the mixed model does. The general result is that cluster-specific effects are shrunk back toward the population-average effects. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new data- we just assume an ‘average’ cluster effect, i.e. a random effect of 0.</p>
+<p>We see more clearly what the mixed model does. The general result is that cluster-specific effects are shrunk back toward the population-average effects. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an ‘average’ cluster effect, i.e. a random effect of 0.</p>
 <p>Now we’ll look at what happens under different data circumstances. The following plots take steps to make them more comparable across the different settings. As such, some points will be ‘off-screen’, but they are all attempting to convey the same sort of image.</p>
 <h2 id="more-subject-level-variance">More subject level variance</h2>
 <p>What happens when we add more subject level variance? The mixed model will show relatively less shrinkage, opting for the clusters to speak for themselves.</p>
@@ -1075,34 +1077,29 @@ summary(mod, cor=F) </code></pre>
 <pre class="r"><code>
 df = create_data(sd_int = 1, sd_slope = 1)</code></pre>
 </div>
-<h2 id="more-slope-variances">More slope variances</h2>
-<p>If we add more slope variance relative to the intercept variance, this more or less changes the orientation of the plot, but the general result is as the original.</p>
+<h2 id="more-slope-variance">More slope variance</h2>
+<p>If we add more slope variance relative to the intercept variance, this more or less changes the orientation of the plot.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 df = create_data(sd_int = .25, sd_slope = 1)</code></pre>
 </div>
 <h2 id="fewer-observations-per-cluster">Fewer observations per cluster</h2>
+<p>If we have fewer observations within each cluster, more shrinkage is applied. We have relatively less knowledge about the groups, so prefer to lean toward the population average.</p>
 <div class="layout-chunk" data-layout="l-body">
-
+<pre class="r"><code>
+df = create_data(obs_per_cluster = 3)</code></pre>
 </div>
 <h2 id="more-observations-per-cluster">More observations per cluster</h2>
+<p>The opposite case is seen with more observations. We also see that the estimates do not so easily fly to extreme values to begin with. With enough observations per cluster, you likely will see little to no shrinkage.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
-df = create_data(obs_per_cluster = 100)
-mod = lmer(y ~ x + (x|cluster), df)
-plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data)</code></pre>
+df = create_data(obs_per_cluster = 100)</code></pre>
 </div>
 <h2 id="unbalanced">Unbalanced</h2>
+<p>With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, and those with fewer observations the opposite.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
-df = create_data(unbalanced = .5, seed = 12)
-mod = lmer(y ~ x + (x|cluster), df)
-plot_data = create_plot_data(model = mod)
-clus_counts = df %&gt;% count(cluster) %&gt;% pull(n)
-plot_data$coefficients = plot_data$coefficients %&gt;% 
-  mutate(n_clus = rep(clus_counts, 2))
-plot_fun(plot_data = plot_data, pt_size = &#39;n_clus&#39;, pt_alpha = .25)</code></pre>
+df = create_data(balanced = .5, seed = 12)</code></pre>
 </div>
 <h2 id="summary">Summary</h2>
 <!--radix_placeholder_article_footer-->

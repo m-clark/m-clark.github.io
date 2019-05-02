@@ -19,7 +19,7 @@ tags: [R, random effects, mixed models, shrinkage, partial-pooling, multilevel m
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = T, 
-  eval = F,
+  eval = T,
   message = F, 
   warning = F, 
   comment = NA,
@@ -111,6 +111,8 @@ create_data <- function(
   
   if (balanced < 0 | balanced > 1) {
     stop('Balanced should be a proportion to sample.')
+  } else {
+    df = df %>% sample_frac(balanced)
   }
   
   df
@@ -284,7 +286,7 @@ plot_fun(plot_data = plot_data, end_pause = 20)
 
 ## Unbalanced
 
-With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, and those with fewer observations the opposite.
+With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, and those with fewer observations the opposite.  
 
 ```{r unbalanced, echo = 1}
 df = create_data(balanced = .5, seed = 12)
@@ -293,7 +295,11 @@ plot_data = create_plot_data(model = mod)
 clus_counts = df %>% count(cluster) %>% pull(n)
 plot_data$coefficients = plot_data$coefficients %>% 
   mutate(n_clus = rep(clus_counts, 2))
-plot_fun(plot_data = plot_data, pt_size = 'n_clus', end_pause = 20)
+plot_fun(plot_data = plot_data, pt_size = 'n_clus', end_pause = 40)
+
+cor(plot_data$coefficients %>% filter(model == 'mixed') %>% select(Intercept, x)-
+    plot_data$coefficients %>% filter(model == 'lm') %>% select(Intercept, x),
+    plot_data$coefficients %>% filter(model == 'lm') %>% select(n_clus))
 ```
 
 
