@@ -13,13 +13,13 @@ output:
     toc: true
     css: ../../test.css
 draft: true
-tags: [R, random effects, mixed models, shrinkage, partial-pooling, multilevel models, hierarchical linear models, fixed effects, population average]
+tags: [R, random effects, mixed models, multilevel models, hierarchical linear models, shrinkage, partial-pooling, borrowing strength, fixed effects, population average]
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = T, 
-  eval = T,
+  eval = F,
   message = F, 
   warning = F, 
   comment = NA,
@@ -76,7 +76,7 @@ Default settings for data creation are as follows:
 
 `X` is a standardized variable with mean zero and standard deviation of 1. Unless a fraction is provided for `balanced`, the N is equal to `n_cluster` * `obs_per_cluster`. The following is the function that will be used to create the data, which follows the model depiction above.
 
-```{r create_data}
+```{r create_data, eval=TRUE}
 create_data <- function(  
   obs_per_cluster = 10,
   n_cluster = 100,
@@ -120,7 +120,7 @@ create_data <- function(
 ```
 
 
-```{r create_plot_data, echo=FALSE}
+```{r create_plot_data, echo=FALSE, eval=TRUE}
 create_plot_data <- function(model, data = df) 
   {
   # bind re + lm by group results
@@ -150,7 +150,9 @@ create_plot_data <- function(model, data = df)
 ```
 
 
-```{r plot_fun, echo=FALSE}
+```{r plot_fun, echo=FALSE, eval=TRUE}
+# right now, this will not work when rendering with knitr, as the 'along' is not
+# an axis.  It works fine in general, so not sure what to do.
 plot_fun <- function(
   plot_data, 
   pt_size = 1, 
@@ -195,11 +197,11 @@ plot_fun <- function(
               ) +
     {
       if (animate) {
-        transition_reveal(as.integer(factor(model)), keep_last = T) }  
+        transition_reveal(as.integer(factor(model)), keep_last = T) }
     } +
-    { 
+    {
       if (zoom) {
-        coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3*int_multiplier, plot_data$fixed_effects[1, 'Intercept'] + 3*int_multiplier), 
+        coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3*int_multiplier, plot_data$fixed_effects[1, 'Intercept'] + 3*int_multiplier),
                         ylim = c(plot_data$fixed_effects[1, 'x'] - 3*slope_multiplier, plot_data$fixed_effects[1, 'x'] + 3*slope_multiplier))}
     }  +
     guides(alpha = 'none') +
@@ -214,7 +216,7 @@ plot_fun <- function(
 
 We will use lme4 to run the analysis.  We can see that the model recovers the parameters fairly well.
 
-```{r run_baseline_model}
+```{r run_baseline_model, eval=TRUE}
 df = create_data()
 
 library(lme4)
@@ -229,12 +231,17 @@ summary(mod, cor=F)
 
 Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the points is toward the mixed model results for the same cluster-specific effects.
 
-```{r vis_baseline_model, echo=FALSE}
+```{r vis_baseline_model, echo=FALSE, fig.asp=4/3, eval=F}
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, end_pause = 20)
+p = plot_fun(plot_data = plot_data, end_pause = 20)
+print(p)
+anim_save('img/shrinkage/baseline.gif', options = list(fig.asp=4/3))
 ```
 
-We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
+<!-- Relative to post folder -->
+<img src="../../img/shrinkage/baseline.gif" style="display:block; margin: 0 auto;">
+
+We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects, as the imposed normal distribution for the random effects makes extreme values less likely. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
 
 Now we'll look at what happens under different data circumstances.  The following plots take steps to make them more comparable across the different settings.  As such, some points will be 'off-screen', but they are all attempting to convey the same sort of image.
 
@@ -247,7 +254,11 @@ df = create_data(sd_int = 1, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data, end_pause = 20)
+anim_save('img/shrinkage/add_subject_level_variance.gif')
 ```
+
+<img src="../../img/shrinkage/add_subject_level_variance.gif" style="display:block; margin: 0 auto;">
+
 
 ## More slope variance
 
@@ -258,8 +269,10 @@ df = create_data(sd_int = .25, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data, end_pause = 20)
+anim_save('img/shrinkage/more_slope_var.gif')
 ```
 
+<img src="../../img/shrinkage/more_slope_var.gif" style="display:block; margin: 0 auto;">
 
 ## Fewer observations per cluster
 
@@ -270,7 +283,11 @@ df = create_data(obs_per_cluster = 3)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data, end_pause = 20)
+anim_save('img/shrinkage/fewer_obs.gif')
 ```
+
+<img src="../../img/shrinkage/fewer_obs.gif" style="display:block; margin: 0 auto;">
+
 
 ## More observations per cluster
 
@@ -281,8 +298,10 @@ df = create_data(obs_per_cluster = 100)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
 plot_fun(plot_data = plot_data, end_pause = 20)
+anim_save('img/shrinkage/more_obs.gif')
 ```
 
+<img src="../../img/shrinkage/more_obs.gif" style="display:block; margin: 0 auto;">
 
 ## Unbalanced
 
@@ -300,7 +319,14 @@ plot_fun(plot_data = plot_data, pt_size = 'n_clus', end_pause = 40)
 cor(plot_data$coefficients %>% filter(model == 'mixed') %>% select(Intercept, x)-
     plot_data$coefficients %>% filter(model == 'lm') %>% select(Intercept, x),
     plot_data$coefficients %>% filter(model == 'lm') %>% select(n_clus))
+anim_save('img/shrinkage/unbalanced.gif')
 ```
 
+<img src="../../img/shrinkage/unbalanced.gif" style="display:block; margin: 0 auto;">
 
 ## Summary
+
+
+## Other demos
+
+[Ben Bolker, author <span class="pack">lme4</span> on stackexchange](https://stats.stackexchange.com/questions/142810/estimates-of-random-effects-in-binomial-model-lme4)
