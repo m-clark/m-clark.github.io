@@ -1,17 +1,17 @@
 ---
 title: "Shrinkage in Mixed Effects Models"
 description: |
-  A demo of random effects.
+  A demonstration of random effects.
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
+date: '`r Sys.Date()`'
 preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
     toc: true
-    css: ../../test.css
+    css: ../../css/main.css
 draft: true
 tags: [R, random effects, mixed models, multilevel models, hierarchical linear models, shrinkage, partial-pooling, borrowing strength, fixed effects, population average]
 ---
@@ -27,9 +27,17 @@ knitr::opts_chunk$set(
   cache.rebuild=F, 
   cache=FALSE,
   fig.align='center', 
+  fig.asp=1,
   dev = 'svg', 
   dev.args=list(bg = 'transparent')
 )
+
+options(gganimate.dev_args = list(
+  width = 600, 
+  height = 450#, 
+  # bg = 'transparent'   # this will just mess up traces unfortunately
+  )
+) 
 
 library(tidyverse); library(broom); library(kableExtra); library(visibly)
 
@@ -128,11 +136,11 @@ create_plot_data <- function(model, data = df)
     bind_rows(
       coef(mod)$cluster %>% 
         rownames_to_column(var = 'cluster') %>% 
-        mutate(model = 'mixed'),
+        mutate(Model = 'mixed'),
       map_df(lmList(y ~ x|cluster, data), 
              function(x) as.data.frame(t(coef(x))), 
              .id = 'cluster') %>% 
-        mutate(model = 'lm')
+        mutate(Model = 'by-cluster')
   ) %>% 
     rename(Intercept = `(Intercept)`)
   
@@ -142,7 +150,7 @@ create_plot_data <- function(model, data = df)
     data.frame() %>% 
     rename(Intercept = X.Intercept.) %>% 
     mutate(cluster=1,
-           model = 'lm')
+           Model = 'by-cluster')
   
   list(coefficients = plot_data_re_lm, 
        fixed_effects = fe_data)
@@ -174,20 +182,21 @@ plot_fun <- function(
   
   # points closer to FE should be more transparent
   transparency = plot_data$coefficients %>% 
-    filter(model == 'lm') %>% 
+    filter(Model == 'by-cluster') %>% 
     select(Intercept, x) %>% 
     apply(., 1, function(r) r - plot_data$fixed_effects %>% select(Intercept, x)) %>% 
     do.call(rbind, .) %>% 
     scale() %>% 
     abs() %>% 
     rowMeans() 
-  # %>% sapply(function(x) 1/x)
+  
   transparency[is.na(transparency)] = 0   # if unbalanced, might not have slope if n_obs = 1
+  
   plot_data$coefficients$transparency = scales::rescale(rep(transparency, 2), to=c(0, 1))
   
   p = plot_data$coefficients %>% 
     ggplot(aes(x = Intercept, y = x, group = cluster)) +
-    geom_point(aes(color=model, alpha = transparency), 
+    geom_point(aes(color=Model, alpha = transparency), 
                size = pt_size) +
     geom_point(size = fe_size - 2, alpha = .5, data = plot_data$fixed_effects) +
     geom_point(size = fe_size, alpha = .25, data = plot_data$fixed_effects) +
@@ -197,24 +206,27 @@ plot_fun <- function(
               ) +
     {
       if (animate) {
-        transition_reveal(as.integer(factor(model)), keep_last = T) }
+        transition_reveal(as.integer(factor(Model)), keep_last = T) }
     } +
     {
+      # attempt to zoom based on sd input
       if (zoom) {
         coord_cartesian(xlim = c(plot_data$fixed_effects[1, 'Intercept'] - 3*int_multiplier, plot_data$fixed_effects[1, 'Intercept'] + 3*int_multiplier),
                         ylim = c(plot_data$fixed_effects[1, 'x'] - 3*slope_multiplier, plot_data$fixed_effects[1, 'x'] + 3*slope_multiplier))}
     }  +
+    scico::scale_color_scico_d(begin = .5, end = .75, direction = -1) + 
     guides(alpha = 'none') +
     theme_trueMinimal() 
   
-  animate(p, ...)
+  if (animate) animate(p, ...)  # see bg note above, transparency will screw up plot
+  else p
   
 }
 ```
 
 ## Run the model
 
-We will use lme4 to run the analysis.  We can see that the model recovers the parameters fairly well.
+We will use <span class="pack">lme4</span> to run the analysis.  We can see that the model recovers the parameters fairly well, even with the default 1000 observations.
 
 ```{r run_baseline_model, eval=TRUE}
 df = create_data()
@@ -229,25 +241,30 @@ summary(mod, cor=F)
 
 ## Visualize baseline model
 
-Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the points is toward the mixed model results for the same cluster-specific effects.
+Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with estimates as would be obtained by a fixed effects, or regression-by-cluster approach.  The movement of the those cluster-specific estimates is toward the mixed model estimates.  On the x axis is the estimate for the intercept random effects, on the y axis are the estimated random effects for the slope of the `x` covariate.
 
-```{r vis_baseline_model, echo=FALSE, fig.asp=4/3, eval=F}
+```{r vis_baseline_model, echo=FALSE, eval=F}
 plot_data = create_plot_data(model = mod)
 p = plot_fun(plot_data = plot_data, end_pause = 20)
-print(p)
-anim_save('img/shrinkage/baseline.gif', options = list(fig.asp=4/3))
+p
+anim_save('img/shrinkage/baseline.gif')
 ```
 
 <!-- Relative to post folder -->
-<img src="../../img/shrinkage/baseline.gif" style="display:block; margin: 0 auto;">
 
-We see more clearly what the mixed model does.  The general result  is that cluster-specific effects are shrunk back toward the population-average effects, as the imposed normal distribution for the random effects makes extreme values less likely. In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
+```{r baseline_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/baseline.gif')
+```
+
+
+
+We see more clearly what the mixed model does.  The general result  is that cluster-specific effects (lighter color) are shrunk back toward the population-average effects (the 'black hole'), as the imposed normal distribution for the random effects makes extreme values less likely. Likewise, those more extreme cluster-specific effects, some of which are not displayed as they are so far from the population average, will generally have the most shrinkage imposed.  In terms of prediction, it is akin to introducing bias while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
 
 Now we'll look at what happens under different data circumstances.  The following plots take steps to make them more comparable across the different settings.  As such, some points will be 'off-screen', but they are all attempting to convey the same sort of image.
 
 ## More subject level variance
 
-What happens when we add more subject level variance?  The mixed model will show relatively less shrinkage, opting for the clusters to speak for themselves.
+What happens when we add more subject level variance?  The mixed model will show relatively less shrinkage, as what were previously less probably outcomes are now more probable, and thus opting for the clusters to speak for themselves.
 
 ```{r add_subject_var, echo = 1}
 df = create_data(sd_int = 1, sd_slope = 1)
@@ -262,7 +279,7 @@ anim_save('img/shrinkage/add_subject_level_variance.gif')
 
 ## More slope variance
 
-If we add more slope variance relative to the intercept variance, this more  or less changes the orientation of the plot.  
+If we add more slope variance relative to the intercept variance, this more  or less changes the orientation of the plot.  However, one point to keep in mind is that the slope variance is naturally on a very different scale than the intercept variance, usually many times smaller. This can make the model more difficult to estimate.  As such, scaling the covariate (e.g. to mean 0 and standard deviation of 1) is typically recommended, and at least in the linear model case, scaling the target variable can help as well. 
 
 ```{r add_slope_var, echo=1}
 df = create_data(sd_int = .25, sd_slope = 1)
@@ -276,7 +293,7 @@ anim_save('img/shrinkage/more_slope_var.gif')
 
 ## Fewer observations per cluster
 
-If we have fewer observations within each cluster, more shrinkage is applied. We have relatively less knowledge about the groups, so prefer to lean toward the population average.
+If we have fewer observations within each cluster, the more likely extreme values will present in the by-cluster approach, and thus more shrinkage is applied using a mixed model. We have relatively less knowledge about the groups, so we would prefer to lean toward the population average.
 
 ```{r fewer_observations, echo = 1}
 df = create_data(obs_per_cluster = 3)
@@ -291,7 +308,7 @@ anim_save('img/shrinkage/fewer_obs.gif')
 
 ## More observations per cluster
 
-The opposite case is seen with more observations.  We also see that the estimates do not so easily fly to extreme values to begin with.  With enough observations per cluster, you likely will see little to no shrinkage.
+The opposite case is seen with more observations.  We see that the estimates do not so easily fly to extreme values to begin with.  With enough observations per cluster, you likely will see little shrinkage except with the more extreme cases.
 
 ```{r more_observations, echo = 1}
 df = create_data(obs_per_cluster = 100)
@@ -305,7 +322,7 @@ anim_save('img/shrinkage/more_obs.gif')
 
 ## Unbalanced
 
-With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, and those with fewer observations the opposite.  
+With unbalanced data, we see the combination of having more vs. fewer observations per group. Those clusters with more observations will generally exhibit less shrinkage, as they will likely be estimated to have extreme values, and those with fewer observations the opposite.  
 
 ```{r unbalanced, echo = 1}
 df = create_data(balanced = .5, seed = 12)
@@ -330,3 +347,5 @@ anim_save('img/shrinkage/unbalanced.gif')
 ## Other demos
 
 [Ben Bolker, author <span class="pack">lme4</span> on stackexchange](https://stats.stackexchange.com/questions/142810/estimates-of-random-effects-in-binomial-model-lme4)
+
+[Tristan Mahr, Plotting partial pooling in mixed-effects models](https://www.tjmahr.com/plotting-partial-pooling-in-mixed-effects-models/)
