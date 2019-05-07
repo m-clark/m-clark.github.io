@@ -1,0 +1,224 @@
+---
+title: "Empirical Bayes"
+description: |
+  A Belated Follow-up
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../test.css
+draft: true
+tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=FALSE,
+  fig.align='center', 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = function(x, digits = 3) arm::fround(x, digits = digits)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(Lahman)
+
+career <- Batting %>%
+  filter(AB > 0) %>%
+  anti_join(Pitching, by = "playerID") %>%
+  group_by(playerID) %>%
+  summarize(H = sum(H), AB = sum(AB)) %>%
+  mutate(average = H / AB)
+
+# use names along with the player IDs
+career <- Master %>%
+  tbl_df() %>%
+  select(playerID, nameFirst, nameLast) %>%
+  unite(name, nameFirst, nameLast, sep = " ") %>%
+  inner_join(career, by = "playerID") 
+
+career_filtered <- career %>%
+  filter(AB >= 500)
+
+m <- MASS::fitdistr(career_filtered$average, 
+                    dbeta,
+                    start = list(shape1 = 1, shape2 = 10))
+
+alpha0 <- m$estimate[1]
+beta0 <- m$estimate[2]
+career_eb <- career %>%
+  mutate(eb_estimate = (H + alpha0) / (AB + alpha0 + beta0))
+
+career_eb
+
+
+stan_model = "
+data {
+  int N;
+  vector[N] H;
+  vector[N] AB;
+}
+{}
+
+"
+
+library(brms)
+test1 = brm(H|trials(AB) ~ 1 + (1|playerID), 
+           data = career_eb,
+           family = binomial,
+           seed = 1234,
+           iter = 1000,
+           cores = 4)
+
+# summary(test)
+# fixef(test)
+# plogis(fixef(test)[1])
+# pp_check(test)
+
+
+test2 = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                    data = career_eb,
+                    family = binomial)
+
+# library(mgcv)
+# library(gamm4)
+# test3 = gamm4(cbind(H, AB-H) ~ 1, 
+#               data = career_eb %>% mutate(playerID = factor(playerID)),  # will error non-sensically
+#               random = ~ (1|playerID),
+#               # nthreads = 10,
+#               family = binomial,
+#               method = 'REML')
+# test3 = gamm4(cbind(H, AB-H) ~ s(playerID, bs='re'), 
+#               data = career_eb %>% mutate(playerID = factor(playerID)),  # will error non-sensically
+#               # random = ~ (1|playerID),
+#               # nthreads = 10,
+#               family = binomial,
+#               method = 'REML')
+
+test3 = brm(H|trials(AB) ~ 1 + (1|playerID), 
+            data = career_eb %>% filter(AB >= 500),
+            family = binomial,
+            iter = 1000,
+            seed = 1234,
+            cores = 4)
+
+test4 = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                    data = career_eb %>% filter(AB >= 500),
+                    family = binomial)
+test4 = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID) + (1|), 
+                    data = career_eb %>% filter(AB >= 500),
+                    family = binomial)
+
+  
+career_other = career_eb %>% 
+  mutate(
+    bayes_estimate = fitted(test1)[,1] / AB,
+    glmer_estimate = fitted(test2),
+  )
+
+career_other_filtered = career_filtered %>% 
+  mutate(
+    bayes_filtered_estimate = fitted(test3)[,1] / AB,
+    glmer_filtered_estimate = fitted(test4),
+  ) %>% 
+  select(playerID, contains('filter'))
+
+career_all = left_join(career_other, 
+                       career_other_filtered)
+
+career_all
+
+career_all %>% 
+  top_n(10, eb_estimate)
+
+career_all %>% 
+  top_n(10, bayes_estimate)
+
+career_all %>% 
+  top_n(-10, eb_estimate)
+
+career_all %>% 
+  top_n(-10, bayes_estimate)
+
+career_all %>% 
+  filter(average == 1)
+
+career_all %>% 
+  filter(average == 0)
+
+library(ggplot2)
+career_all %>% 
+  ggplot(aes(x = average, y = bayes_estimate)) +
+  geom_hline(yintercept = mean(career_filtered$average), 
+             color = '#ff5500',
+             alpha = .5) +
+  geom_hline(yintercept = mean(career_eb$average), 
+             color = '#5500ff',
+             alpha = .5) +
+  geom_abline(color = '#00aaff', alpha = .5) +
+  geom_point(alpha=.005) +
+  theme_bw()
+  # visibly::theme_trueMinimal()
+
+career_all %>% 
+  select(playerID, contains('estimate')) %>% 
+  gather(key = type, value = estimate, -playerID, -eb_estimate) %>% 
+  mutate(type = fct_inorder(type)) %>%   # to defy ggplot
+  drop_na() %>%                          # to get rid of warning
+  ggplot(aes(x = eb_estimate, y = estimate)) +
+  # geom_smooth(color = '#ff5500', se = F, size = .5, method = 'loess') +
+  geom_point(color = '#00aaff', alpha=.005, size = .5) +
+  facet_wrap(~type, ncol = 2) + 
+  theme_minimal()
+
+career_all %>% 
+  select(contains('estimate')) %>% 
+  gather(key = type, value = estimate) %>% 
+  mutate(type = fct_inorder(type)) %>%   # to defy ggplot
+  drop_na() %>%                          # to get rid of warning
+  ggplot() +
+  geom_density(aes(x = estimate, color = type)) +
+  labs(y = '') +
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+
+
+  
+career_all %>% 
+  select(contains('estimate')) %>% 
+  cor(use='pair') %>% 
+  round(2)
+  
+  
+make_stancode(H|trials(AB) ~ 1 + (1|playerID), 
+                  data = career,
+                  family = binomial)
+
+career_eb %>% pivot_longer
+              
+
+```
+
