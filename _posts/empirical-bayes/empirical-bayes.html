@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+  <meta name="generator" content="distill" />
+
+  <style type="text/css">
+  /* Hide doc at startup (prevent jankiness while JS renders/transforms) */
+  body {
+    visibility: hidden;
+  }
+  </style>
+
+ <!--radix_placeholder_import_source-->
+ <!--/radix_placeholder_import_source-->
+
+  <!--radix_placeholder_meta_tags-->
+  <title>Empirical Bayes</title>
+  
+  <meta property="description" itemprop="description" content="A Belated Follow-up"/>
+  
+  
+  <!--  https://schema.org/Article -->
+  <meta property="article:published" itemprop="datePublished" content="2019-05-08"/>
+  <meta property="article:created" itemprop="dateCreated" content="2019-05-08"/>
+  <meta name="article:author" content="Michael Clark"/>
+  
+  <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
+  <meta property="og:title" content="Empirical Bayes"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:description" content="A Belated Follow-up"/>
+  <meta property="og:locale" content="en_US"/>
+  
+  <!--  https://dev.twitter.com/cards/types/summary -->
+  <meta property="twitter:card" content="summary"/>
+  <meta property="twitter:title" content="Empirical Bayes"/>
+  <meta property="twitter:description" content="A Belated Follow-up"/>
+  
+  <!--/radix_placeholder_meta_tags-->
+  <!--radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-rmarkdown-metadata">
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","tags"]}},"value":[{"type":"character","attributes":{},"value":["Empirical Bayes"]},{"type":"character","attributes":{},"value":["A Belated Follow-up\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["May 08, 2019"]},{"type":"character","attributes":{},"value":["../../img/198R.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../test.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["bayesian","empirical bayes","shrinkage","random effects","mixed models"]}]}
+  </script>
+  <!--/radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-resource-manifest">
+  {"type":"character","attributes":{},"value":["empirical-bayes_files/bowser-1.9.3/bowser.min.js","empirical-bayes_files/distill-2.2.21/template.v2.js","empirical-bayes_files/figure-html5/bayes_inspect-1.svg","empirical-bayes_files/figure-html5/density_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot-2.svg","empirical-bayes_files/figure-html5/robinson_plot_original-1.svg","empirical-bayes_files/figure-html5/robinson_plot_original, ec-1.svg","empirical-bayes_files/jquery-1.11.3/jquery.min.js","empirical-bayes_files/webcomponents-2.0.0/webcomponents.js"]}
+  </script>
+  <!--radix_placeholder_navigation_in_header-->
+  <!--/radix_placeholder_navigation_in_header-->
+  <!--radix_placeholder_distill-->
+  
+  <style type="text/css">
+  
+  body {
+    background-color: white;
+  }
+  
+  .pandoc-table {
+    width: 100%;
+  }
+  
+  .pandoc-table>caption {
+    margin-bottom: 10px;
+  }
+  
+  .pandoc-table th:not([align]) {
+    text-align: left;
+  }
+  
+  .pagedtable-footer {
+    font-size: 15px;
+  }
+  
+  .html-widget {
+    margin-bottom: 2.0em;
+  }
+  
+  .l-screen-inset {
+    padding-right: 16px;
+  }
+  
+  .l-screen .caption {
+    margin-left: 10px;
+  }
+  
+  .shaded {
+    background: rgb(247, 247, 247);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .html-widget {
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .shaded-content {
+    background: white;
+  }
+  
+  .text-output {
+    margin-top: 0;
+    line-height: 1.5em;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  d-article {
+    padding-bottom: 30px;
+  }
+  
+  d-appendix {
+    padding-top: 30px;
+  }
+  
+  d-article>p>img {
+    width: 100%;
+  }
+  
+  d-article iframe {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 2.0em;
+    width: 100%;
+  }
+  
+  figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  /* CSS for table of contents */
+  
+  .d-toc {
+    color: rgba(0,0,0,0.8);
+    font-size: 0.8em;
+    line-height: 1em;
+  }
+  
+  .d-toc-header {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 1.3em;
+  }
+  
+  .d-toc a {
+    border-bottom: none;
+  }
+  
+  .d-toc ul {
+    padding-left: 0;
+  }
+  
+  .d-toc li>ul {
+    padding-top: 0.8em;
+    padding-left: 16px;
+    margin-bottom: 0.6em;
+  }
+  
+  .d-toc ul,
+  .d-toc li {
+    list-style-type: none;
+  }
+  
+  .d-toc li {
+    margin-bottom: 0.9em;
+  }
+  
+  .d-toc-separator {
+    margin-top: 20px;
+    margin-bottom: 2em;
+  }
+  
+  .d-article-with-toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  
+  
+  /* Tweak code blocks (note that this CSS is repeated above in an injection
+     into the d-code shadow dom) */
+  
+  d-code {
+    overflow-x: auto !important;
+  }
+  
+  pre.d-code code.d-code {
+    padding-left: 10px;
+    font-size: 12px;
+    border-left: 2px solid rgba(0,0,0,0.1);
+  }
+  
+  pre.text-output {
+  
+    font-size: 12px;
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  @media(min-width: 768px) {
+  
+  d-code {
+    overflow-x: visible !important;
+  }
+  
+  pre.d-code code.d-code  {
+      padding-left: 18px;
+      font-size: 14px;
+  }
+  pre.text-output {
+    font-size: 14px;
+  }
+  }
+  
+  /* Figure */
+  
+  .figure {
+    position: relative;
+    margin-bottom: 2.5em;
+    margin-top: 1.5em;
+  }
+  
+  .figure img {
+    width: 100%;
+  }
+  
+  .figure .caption {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.5em;
+  }
+  
+  .figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  .figure .caption a {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .figure .caption b,
+  .figure .caption strong, {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 1.0);
+  }
+  
+  
+  
+  /* Tweak 1000px media break to show more text */
+  
+  @media(min-width: 1000px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 50px [text-start kicker-end] 65px 65px 65px 65px 65px 65px 65px 65px [text-end gutter-start] 65px [middle-end] 65px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 16px;
+    }
+  
+    .grid {
+      grid-column-gap: 16px;
+    }
+  
+    d-article {
+      font-size: 1.06rem;
+      line-height: 1.7em;
+    }
+    figure .caption, .figure .caption, figure figcaption {
+      font-size: 13px;
+    }
+  }
+  
+  @media(min-width: 1180px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 60px [middle-start] 60px [text-start kicker-end] 60px 60px 60px 60px 60px 60px 60px 60px [text-end gutter-start] 60px [middle-end] 60px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 32px;
+    }
+  
+    .grid {
+      grid-column-gap: 32px;
+    }
+  }
+  
+  
+  /* Get the citation styles for the appendix (not auto-injected on render since
+     we do our own rendering of the citation appendix) */
+  
+  d-appendix .citation-appendix,
+  .d-appendix .citation-appendix {
+    font-size: 11px;
+    line-height: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    padding-left: 18px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px 18px;
+    border-radius: 3px;
+    color: rgba(150, 150, 150, 1);
+    overflow: hidden;
+    margin-top: -12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  
+  /* Social footer */
+  
+  .social_footer {
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.67);
+  }
+  
+  .disqus-comments {
+    margin-right: 30px;
+  }
+  
+  .disqus-comment-count {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  
+  #disqus_thread {
+    margin-top: 30px;
+  }
+  
+  .article-sharing a {
+    border-bottom: none;
+    margin-right: 8px;
+  }
+  
+  .article-sharing a:hover {
+    border-bottom: none;
+  }
+  
+  .sidebar-section.subscribe {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .subscribe p {
+    margin-bottom: 0.5em;
+  }
+  
+  
+  .article-footer .subscribe {
+    font-size: 15px;
+    margin-top: 45px;
+  }
+  
+  
+  /* Improve display for browsers without grid (IE/Edge <= 15) */
+  
+  .downlevel {
+    line-height: 1.6em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+  }
+  
+  .downlevel .d-title {
+    padding-top: 6rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .downlevel .d-title h1 {
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 1.1em;
+    margin: 0 0 0.5rem;
+  }
+  
+  .downlevel .d-title p {
+    font-weight: 300;
+    font-size: 1.2rem;
+    line-height: 1.55em;
+    margin-top: 0;
+  }
+  
+  .downlevel .d-byline {
+    padding-top: 0.8em;
+    padding-bottom: 0.8em;
+    font-size: 0.8rem;
+    line-height: 1.8em;
+  }
+  
+  .downlevel .section-separator {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .downlevel .d-article {
+    font-size: 1.06rem;
+    line-height: 1.7em;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  
+  
+  .downlevel .d-appendix {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+    font-size: 0.8em;
+    line-height: 1.7em;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.5);
+    padding-top: 40px;
+    padding-bottom: 48px;
+  }
+  
+  .downlevel .footnotes ol {
+    padding-left: 13px;
+  }
+  
+  .downlevel .base-grid,
+  .downlevel .distill-header,
+  .downlevel .d-title,
+  .downlevel .d-abstract,
+  .downlevel .d-article,
+  .downlevel .d-appendix,
+  .downlevel .distill-appendix,
+  .downlevel .d-byline,
+  .downlevel .d-footnote-list,
+  .downlevel .d-citation-list,
+  .downlevel .distill-footer,
+  .downlevel .appendix-bottom,
+  .downlevel .posts-container {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  
+  @media(min-width: 768px) {
+    .downlevel .base-grid,
+    .downlevel .distill-header,
+    .downlevel .d-title,
+    .downlevel .d-abstract,
+    .downlevel .d-article,
+    .downlevel .d-appendix,
+    .downlevel .distill-appendix,
+    .downlevel .d-byline,
+    .downlevel .d-footnote-list,
+    .downlevel .d-citation-list,
+    .downlevel .distill-footer,
+    .downlevel .appendix-bottom,
+    .downlevel .posts-container {
+    padding-left: 150px;
+    padding-right: 150px;
+    max-width: 900px;
+  }
+  }
+  
+  .downlevel pre code {
+    display: block;
+    border-left: 2px solid rgba(0, 0, 0, .1);
+    padding: 0 0 0 20px;
+    font-size: 14px;
+  }
+  
+  .downlevel code, .downlevel pre {
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  </style>
+  
+  <script type="application/javascript">
+  
+  function is_downlevel_browser() {
+    if (bowser.isUnsupportedBrowser({ msie: "12", msedge: "16"},
+                                   window.navigator.userAgent)) {
+      return true;
+    } else {
+      return window.load_distill_framework === undefined;
+    }
+  }
+  
+  // show body when load is complete
+  function on_load_complete() {
+  
+    // set body to visible
+    document.body.style.visibility = 'visible';
+  
+    // force redraw for leaflet widgets
+    if (window.HTMLWidgets) {
+      var maps = window.HTMLWidgets.findAll(".leaflet");
+      $.each(maps, function(i, el) {
+        var map = this.getMap();
+        map.invalidateSize();
+        map.eachLayer(function(layer) {
+          if (layer instanceof L.TileLayer)
+            layer.redraw();
+        });
+      });
+    }
+  
+    // trigger 'shown' so htmlwidgets resize
+    $('d-article').trigger('shown');
+  }
+  
+  function init_distill() {
+  
+    init_common();
+  
+    // create front matter
+    var front_matter = $('<d-front-matter></d-front-matter>');
+    $('#distill-front-matter').wrap(front_matter);
+  
+    // create d-title
+    $('.d-title').changeElementType('d-title');
+  
+    // create d-byline
+    var byline = $('<d-byline></d-byline>');
+    $('.d-byline').replaceWith(byline);
+  
+    // create d-article
+    var article = $('<d-article></d-article>');
+    $('.d-article').wrap(article).children().unwrap();
+  
+    // move posts container into article
+    $('.posts-container').appendTo($('d-article'));
+  
+    // create d-appendix
+    $('.d-appendix').changeElementType('d-appendix');
+  
+    // create d-bibliography
+    var bibliography = $('<d-bibliography></d-bibliography>');
+    $('#distill-bibliography').wrap(bibliography);
+  
+    // flag indicating that we have appendix items
+    var appendix = $('.appendix-bottom').children('h3').length > 0;
+  
+    // replace citations with <d-cite>
+    $('.citation').each(function(i, val) {
+      appendix = true;
+      var cites = $(this).attr('data-cites').split(" ");
+      var dt_cite = $('<d-cite></d-cite>');
+      dt_cite.attr('key', cites.join());
+      $(this).replaceWith(dt_cite);
+    });
+    // remove refs
+    $('#refs').remove();
+  
+    // replace footnotes with <d-footnote>
+    $('.footnote-ref').each(function(i, val) {
+      appendix = true;
+      var href = $(this).attr('href');
+      var id = href.replace('#', '');
+      var fn = $('#' + id);
+      var fn_p = $('#' + id + '>p');
+      fn_p.find('.footnote-back').remove();
+      var text = fn_p.html();
+      var dtfn = $('<d-footnote></d-footnote>');
+      dtfn.html(text);
+      $(this).replaceWith(dtfn);
+    });
+    // remove footnotes
+    $('.footnotes').remove();
+  
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      var id = $(this).attr('id');
+      $('.d-toc a[href="#' + id + '"]').parent().remove();
+      appendix = true;
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('d-appendix'));
+    });
+  
+    // show d-appendix if we have appendix content
+    $("d-appendix").css('display', appendix ? 'grid' : 'none');
+  
+    // replace code blocks with d-code
+    $('pre>code').each(function(i, val) {
+      var code = $(this);
+      var pre = code.parent();
+      var clz = "";
+      var language = pre.attr('class');
+      if (language) {
+        // map unknown languages to "clike" (without this they just dissapear)
+        if ($.inArray(language, ["bash", "clike", "css", "go", "html",
+                                 "javascript", "js", "julia", "lua", "markdown",
+                                 "markup", "mathml", "python", "svg", "xml"]) == -1)
+          language = "clike";
+        language = ' language="' + language + '"';
+        var dt_code = $('<d-code block' + language + clz + '></d-code>');
+        dt_code.text(code.text());
+        pre.replaceWith(dt_code);
+      } else {
+        code.addClass('text-output').unwrap().changeElementType('pre');
+      }
+    });
+  
+    // localize layout chunks to just output
+    $('.layout-chunk').each(function(i, val) {
+  
+      // capture layout
+      var layout = $(this).attr('data-layout');
+  
+      // apply layout to markdown level block elements
+      var elements = $(this).children().not('d-code, pre.text-output, script');
+      elements.each(function(i, el) {
+        var layout_div = $('<div class="' + layout + '"></div>');
+        if (layout_div.hasClass('shaded')) {
+          var shaded_content = $('<div class="shaded-content"></div>');
+          $(this).wrap(shaded_content);
+          $(this).parent().wrap(layout_div);
+        } else {
+          $(this).wrap(layout_div);
+        }
+      });
+  
+  
+      // unwrap the layout-chunk div
+      $(this).children().unwrap();
+    });
+  
+    // load distill framework
+    load_distill_framework();
+  
+    // wait for window.distillRunlevel == 4 to do post processing
+    function distill_post_process() {
+  
+      if (!window.distillRunlevel || window.distillRunlevel < 4)
+        return;
+  
+      // hide author/affiliations entirely if we have no authors
+      var front_matter = JSON.parse($("#distill-front-matter").html());
+      var have_authors = front_matter.authors && front_matter.authors.length > 0;
+      if (!have_authors)
+        $('d-byline').addClass('hidden');
+  
+      // table of contents
+      if (have_authors) // adjust border if we are in authors
+        $('.d-toc').parent().addClass('d-article-with-toc');
+  
+      // strip links that point to #
+      $('.authors-affiliations').find('a[href="#"]').removeAttr('href');
+  
+      // hide elements of author/affiliations grid that have no value
+      function hide_byline_column(caption) {
+        $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'hidden');
+      }
+  
+      // affiliations
+      var have_affiliations = false;
+      for (var i = 0; i<front_matter.authors.length; ++i) {
+        var author = front_matter.authors[i];
+        if (author.affiliation !== "&nbsp;") {
+          have_affiliations = true;
+          break;
+        }
+      }
+      if (!have_affiliations)
+        $('d-byline').find('h3:contains("Affiliations")').css('visibility', 'hidden');
+  
+      // published date
+      if (!front_matter.publishedDate)
+        hide_byline_column("Published");
+  
+      // document object identifier
+      var doi = $('d-byline').find('h3:contains("DOI")');
+      var doi_p = doi.next().empty();
+      if (!front_matter.doi) {
+        // if we have a citation and valid citationText then link to that
+        if ($('#citation').length > 0 && front_matter.citationText) {
+          doi.html('Citation');
+          $('<a href="#citation"></a>')
+            .text(front_matter.citationText)
+            .appendTo(doi_p);
+        } else {
+          hide_byline_column("DOI");
+        }
+      } else {
+        $('<a></a>')
+           .attr('href', "https://doi.org/" + front_matter.doi)
+           .html(front_matter.doi)
+           .appendTo(doi_p);
+      }
+  
+       // change plural form of authors/affiliations
+      if (front_matter.authors.length === 1) {
+        var grid = $('.authors-affiliations');
+        grid.children('h3:contains("Authors")').text('Author');
+        grid.children('h3:contains("Affiliations")').text('Affiliation');
+      }
+  
+      // inject pre code styles (can't do this with a global stylesheet b/c a shadow root is used)
+      $('d-code').each(function(i, val) {
+        var style = document.createElement('style');
+        style.innerHTML = 'pre code { padding-left: 10px; font-size: 12px; border-left: 2px solid rgba(0,0,0,0.1); } ' +
+                          '@media(min-width: 768px) { pre code { padding-left: 18px; font-size: 14px; } }';
+        if (this.shadowRoot)
+          this.shadowRoot.appendChild(style);
+      });
+  
+      // move appendix-bottom entries to the bottom
+      $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
+      $('.appendix-bottom').remove();
+  
+      // clear polling timer
+      clearInterval(tid);
+  
+      // show body now that everything is ready
+      on_load_complete();
+    }
+  
+    var tid = setInterval(distill_post_process, 50);
+    distill_post_process();
+  
+  }
+  
+  function init_downlevel() {
+  
+    init_common();
+  
+     // insert hr after d-title
+    $('.d-title').after($('<hr class="section-separator"/>'));
+  
+    // check if we have authors
+    var front_matter = JSON.parse($("#distill-front-matter").html());
+    var have_authors = front_matter.authors && front_matter.authors.length > 0;
+  
+    // manage byline/border
+    if (!have_authors)
+      $('.d-byline').remove();
+    $('.d-byline').after($('<hr class="section-separator"/>'));
+    $('.d-byline a').remove();
+  
+    // remove toc
+    $('.d-toc-header').remove();
+    $('.d-toc').remove();
+    $('.d-toc-separator').remove();
+  
+    // move appendix elements
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('.d-appendix'));
+    });
+  
+  
+    // inject headers into references and footnotes
+    var refs_header = $('<h3></h3>');
+    refs_header.text('References');
+    $('#refs').prepend(refs_header);
+  
+    var footnotes_header = $('<h3></h3');
+    footnotes_header.text('Footnotes');
+    $('.footnotes').children('hr').first().replaceWith(footnotes_header);
+  
+    // move appendix-bottom entries to the bottom
+    $('.appendix-bottom').appendTo('.d-appendix').children().unwrap();
+    $('.appendix-bottom').remove();
+  
+    // remove appendix if it's empty
+    if ($('.d-appendix').children().length === 0)
+      $('.d-appendix').remove();
+  
+    // prepend separator above appendix
+    $('.d-appendix').before($('<hr class="section-separator" style="clear: both"/>'));
+  
+    // trim code
+    $('pre>code').each(function(i, val) {
+      $(this).html($.trim($(this).html()));
+    });
+  
+    // move posts-container right before article
+    $('.posts-container').insertBefore($('.d-article'));
+  
+    $('body').addClass('downlevel');
+  
+    on_load_complete();
+  }
+  
+  
+  function init_common() {
+  
+    // jquery plugin to change element types
+    (function($) {
+      $.fn.changeElementType = function(newType) {
+        var attrs = {};
+  
+        $.each(this[0].attributes, function(idx, attr) {
+          attrs[attr.nodeName] = attr.nodeValue;
+        });
+  
+        this.replaceWith(function() {
+          return $("<" + newType + "/>", attrs).append($(this).contents());
+        });
+      };
+    })(jQuery);
+  
+    // prevent underline for linked images
+    $('a > img').parent().css({'border-bottom' : 'none'});
+  
+    // mark non-body figures created by knitr chunks as 100% width
+    $('.layout-chunk').each(function(i, val) {
+      var figures = $(this).find('img, .html-widget');
+      if ($(this).attr('data-layout') !== "l-body") {
+        figures.css('width', '100%');
+      } else {
+        figures.css('max-width', '100%');
+        figures.filter("[width]").each(function(i, val) {
+          var fig = $(this);
+          fig.css('width', fig.attr('width') + 'px');
+        });
+  
+      }
+    });
+  
+    // auto-append index.html to post-preview links in file: protocol
+    // and in rstudio ide preview
+    $('.post-preview').each(function(i, val) {
+      if (window.location.protocol === "file:")
+        $(this).attr('href', $(this).attr('href') + "index.html");
+    });
+  
+    // get rid of index.html references in header
+    if (window.location.protocol !== "file:") {
+      $('.distill-site-header a[href]').each(function(i,val) {
+        $(this).attr('href', $(this).attr('href').replace("index.html", "./"));
+      });
+    }
+  
+    // add class to pandoc style tables
+    $('tr.header').parent('thead').parent('table').addClass('pandoc-table');
+    $('.kable-table').children('table').addClass('pandoc-table');
+  
+    // add figcaption style to table captions
+    $('caption').parent('table').addClass("figcaption");
+  
+    // initialize posts list
+    if (window.init_posts_list)
+      window.init_posts_list();
+  
+    // implmement disqus comment link
+    $('.disqus-comment-count').click(function() {
+      window.headroom_prevent_pin = true;
+      $('#disqus_thread').toggleClass('hidden');
+      if (!$('#disqus_thread').hasClass('hidden')) {
+        var offset = $(this).offset();
+        $(window).resize();
+        $('html, body').animate({
+          scrollTop: offset.top - 35
+        });
+      }
+    });
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    if (is_downlevel_browser())
+      init_downlevel();
+    else
+      window.addEventListener('WebComponentsReady', init_distill);
+  });
+  
+  </script>
+  
+  <!--/radix_placeholder_distill-->
+  <script src="empirical-bayes_files/jquery-1.11.3/jquery.min.js"></script>
+  <script src="empirical-bayes_files/bowser-1.9.3/bowser.min.js"></script>
+  <script src="empirical-bayes_files/webcomponents-2.0.0/webcomponents.js"></script>
+  <script src="empirical-bayes_files/distill-2.2.21/template.v2.js"></script>
+  <!--radix_placeholder_site_in_header-->
+  <!--/radix_placeholder_site_in_header-->
+
+  <link rel="stylesheet" href="..\..\test.css" type="text/css"/>
+
+</head>
+
+<body>
+
+<!--radix_placeholder_front_matter-->
+
+<script id="distill-front-matter" type="text/json">
+{"title":"Empirical Bayes","description":"A Belated Follow-up","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2019-05-08T00:00:00.000-04:00","citationText":"Clark, 2019"}
+</script>
+
+<!--/radix_placeholder_front_matter-->
+<!--radix_placeholder_navigation_before_body-->
+<!--/radix_placeholder_navigation_before_body-->
+<!--radix_placeholder_site_before_body-->
+<!--/radix_placeholder_site_before_body-->
+
+<div class="d-title">
+<h1>Empirical Bayes</h1>
+<p>A Belated Follow-up</p>
+</div>
+
+<div class="d-byline">
+  Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
+  
+<br/>May 08, 2019
+</div>
+
+<div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#data-setup">Data Setup</a></li>
+<li><a href="#models">Models</a></li>
+<li><a href="#full-bayes">Full Bayes</a></li>
+<li><a href="#full-mixed">Full Mixed</a></li>
+<li><a href="#filtered-models">Filtered models</a></li>
+<li><a href="#prediction-comparison">Prediction comparison</a><ul>
+<li><a href="#top-and-bottom-predictions">Top and bottom predictions</a></li>
+<li><a href="#extreme-predictions">Extreme predictions</a></li>
+</ul></li>
+<li><a href="#visualize-effects">Visualize effects</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<h2 id="introduction">Introduction</h2>
+<p>A couple of folks I work with independently came across an article by Data Camp’s David Robinson <a href="http://varianceexplained.org/r/empirical_bayes_baseball/">demonstrating <span class="emph">empirical bayes</span></a>. It provides a nice simple example of how to create a prior from the observed data, allowing it to induce shrinkage in estimates, in this case career batting averages. This would better allow one to compare someone that had only a relatively few at-bats to those that had longer careers.</p>
+<p>It is a very simple and straightforward demo, and admits that it doesn’t account for many other things that could be brought into the model, but that’s also why it’s effective at demonstrating the technique. However, shrinkage of parameter estimates can be accomplished in other ways, so I thought I’d compare it to two of my preferred ways to do so - a fully Bayesian approach and a random effects/mixed-model approach.</p>
+<p>I demonstrate shrinkage in mixed models in more detail <a href="https://m-clark.github.io/mixed-models-with-R/">here</a> and <a href="">here</a>, and I’m not going to explain Bayesian analysis in general, <a href="https://m-clark.github.io/bayesian-basics/">but see my doc on it</a>. This post is just for a quick comparison of techniques.</p>
+<h2 id="data-setup">Data Setup</h2>
+<p>We’ll start as we always do, with the data. The following just duplicates David’s article code. Nothing new here.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(dplyr)
+library(tidyr)
+library(Lahman)
+
+career &lt;- Batting %&gt;%
+  filter(AB &gt; 0) %&gt;%
+  anti_join(Pitching, by = &quot;playerID&quot;) %&gt;%
+  group_by(playerID) %&gt;%
+  summarize(H = sum(H), AB = sum(AB)) %&gt;%
+  mutate(average = H / AB)
+
+# use names along with the player IDs
+career &lt;- Master %&gt;%
+  tbl_df() %&gt;%
+  select(playerID, nameFirst, nameLast) %&gt;%
+  unite(name, nameFirst, nameLast, sep = &quot; &quot;) %&gt;%
+  inner_join(career, by = &quot;playerID&quot;) 
+
+career_filtered &lt;- career %&gt;%
+  filter(AB &gt;= 500)
+
+m &lt;- MASS::fitdistr(career_filtered$average, 
+                    dbeta,
+                    start = list(shape1 = 1, shape2 = 10))
+
+alpha0 &lt;- m$estimate[1]
+beta0 &lt;- m$estimate[2]
+
+career_eb &lt;- career %&gt;%
+  mutate(eb_estimate = (H + alpha0) / (AB + alpha0 + beta0))
+
+career_eb</code></pre>
+<pre><code>
+# A tibble: 9,509 x 6
+   playerID  name                  H    AB average eb_estimate
+   &lt;chr&gt;     &lt;chr&gt;             &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;
+ 1 aaronha01 Hank Aaron         3771 12364  0.305        0.304
+ 2 aaronto01 Tommie Aaron        216   944  0.229        0.236
+ 3 abadan01  Andy Abad             2    21  0.0952       0.248
+ 4 abadijo01 John Abadie          11    49  0.224        0.254
+ 5 abbated01 Ed Abbaticchio      772  3044  0.254        0.254
+ 6 abbotfr01 Fred Abbott         107   513  0.209        0.227
+ 7 abbotje01 Jeff Abbott         157   596  0.263        0.262
+ 8 abbotku01 Kurt Abbott         523  2044  0.256        0.256
+ 9 abbotod01 Ody Abbott           13    70  0.186        0.245
+10 abercda01 Frank Abercrombie     0     4  0            0.256
+# ... with 9,499 more rows</code></pre>
+</div>
+<h2 id="models">Models</h2>
+<p>As mentioned, I will compare the empirical bayes results to those of a couple of approaches. They are:</p>
+<ul>
+<li>Bayesian mixed model on full data (using <span class="pack">brms</span>)</li>
+<li>standard mixed model on full data (using <span class="pack">lme4</span>)</li>
+<li>Bayesian mixed model on filtered data (at bats greater than 500)</li>
+<li>standard mixed model on filtered data</li>
+</ul>
+<p>The advantages to these are that using a fully Bayesian approach allows us to not approximate the Bayesian and just do it. The standard mixed model essentially does the same thing with a penalized regression approach which also approximates the Bayesian, but doesn’t require any double dipping of the data to get at a prior. In both cases, we can accomplish the desired model with just a standard R modeling approach.</p>
+<p>The model is a standard binomial model for counts. In base R <span class="func">glm</span>, we would do something like the following.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+glm(cbind(H, AB-H) ~ ..., data = career_eb, family = binomial)</code></pre>
+</div>
+<p>The model is actually for the count of successes out of the total, which R has always oddly done in <span class="func">glm</span> as <code>cbind(success, not success)</code> rather than the more intuitive route (my opinion). The brms package will make it more obvious, but glmer uses this same glm approach. The key difference for both is that we add a per-observation random effect for <code>playerID</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p>
+<h2 id="full-bayes">Full Bayes</h2>
+<p>We’ll start with the full Bayesian approach using brms. This model will struggle a bit<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, and takes a while to run, as it’s estimating 9510 parameters. But in the end we get what we want.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+# in case anyone wants to use rstanarm I show it here
+# library(rstanarm)
+# bayes_full = stan_glmer(cbind(H, AB-H) ~ 1 + (1|playerID),
+#                         data = career_eb,
+#                         family = binomial)
+
+library(brms)
+bayes_full = brm(H|trials(AB) ~ 1 + (1|playerID), 
+                 data = career_eb,
+                 family = binomial,
+                 seed = 1234,
+                 iter = 1000,
+                 cores = 4)</code></pre>
+</div>
+<p>We can see right off the bat that approach estimates the data fairly well. Again, the binomial model is for counts, but if we wanted proportions, we could just divide this result by the AB (at bats) column.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+pp_check(bayes_full)</code></pre>
+<p><img src="empirical-bayes_files/figure-html5/bayes_inspect-1.svg" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<h2 id="full-mixed">Full Mixed</h2>
+<p>The lme4 model takes the glm approach. Very straightforward, and fast, as it doesn’t actually estimate the random effects, but instead <em>predicts</em> them. The predictions are in fact akin to empirical bayes estimates.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+glmer_full = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                         data = career_eb,
+                         family = binomial)</code></pre>
+</div>
+<h2 id="filtered-models">Filtered models</h2>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+bayes_filtered = brm(H|trials(AB) ~ 1 + (1|playerID), 
+                     data = career_eb %&gt;% filter(AB &gt;= 500),
+                     family = binomial,
+                     iter = 1000,
+                     seed = 1234,
+                     cores = 4)
+
+glmer_filtered = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                             data = career_eb %&gt;% filter(AB &gt;= 500),
+                             family = binomial)</code></pre>
+</div>
+<h2 id="prediction-comparison">Prediction comparison</h2>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+career_other = career_eb %&gt;% 
+  mutate(
+    bayes_estimate = fitted(bayes_full)[,1] / AB,
+    glmer_estimate = fitted(glmer_full),
+  )
+
+career_other_filtered = career_filtered %&gt;% 
+  mutate(
+    bayes_filtered_estimate = fitted(bayes_filtered)[,1] / AB,
+    glmer_filtered_estimate = fitted(glmer_filtered),
+  ) %&gt;% 
+  select(playerID, contains(&#39;filter&#39;))
+
+career_all = left_join(career_other, 
+                       career_other_filtered)
+
+career_all</code></pre>
+<pre><code>
+# A tibble: 9,509 x 10
+   playerID  name          H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_e~ glmer_filtered_e~
+   &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;             &lt;dbl&gt;             &lt;dbl&gt;
+ 1 aaronha01 Hank Aar~  3771 12364  0.305        0.304          0.304          0.304             0.304             0.304
+ 2 aaronto01 Tommie A~   216   944  0.229        0.236          0.234          0.234             0.238             0.238
+ 3 abadan01  Andy Abad     2    21  0.0952       0.248          0.242          0.240            NA                NA    
+ 4 abadijo01 John Aba~    11    49  0.224        0.254          0.247          0.247            NA                NA    
+ 5 abbated01 Ed Abbat~   772  3044  0.254        0.254          0.253          0.253             0.254             0.254
+ 6 abbotfr01 Fred Abb~   107   513  0.209        0.227          0.225          0.224             0.232             0.231
+ 7 abbotje01 Jeff Abb~   157   596  0.263        0.262          0.260          0.259             0.262             0.262
+ 8 abbotku01 Kurt Abb~   523  2044  0.256        0.256          0.256          0.255             0.257             0.257
+ 9 abbotod01 Ody Abbo~    13    70  0.186        0.245          0.239          0.238            NA                NA    
+10 abercda01 Frank Ab~     0     4  0            0.256          0.248          0.247            NA                NA    
+# ... with 9,499 more rows</code></pre>
+</div>
+<h3 id="top-and-bottom-predictions">Top and bottom predictions</h3>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+top_10_eb = career_all %&gt;% 
+  top_n(10, eb_estimate) %&gt;% 
+  select(playerID, eb_estimate)
+
+top_10_bayes = career_all %&gt;% 
+  top_n(10, bayes_estimate) %&gt;% 
+  select(playerID, bayes_estimate)
+
+top_10_mixed = career_all %&gt;% 
+  top_n(10, glmer_estimate) %&gt;% 
+  select(playerID, glmer_estimate)
+
+bind_cols(top_10_eb, top_10_bayes, top_10_mixed)</code></pre>
+<pre><code>
+# A tibble: 10 x 6
+   playerID  eb_estimate playerID1 bayes_estimate playerID2 glmer_estimate
+   &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
+ 1 delahed01       0.342 delahed01          0.342 delahed01          0.343
+ 2 gehrilo01       0.337 gehrilo01          0.337 gehrilo01          0.337
+ 3 gwynnto01       0.336 gwynnto01          0.336 gwynnto01          0.336
+ 4 hamilbi01       0.340 hamilbi01          0.340 hamilbi01          0.340
+ 5 heilmha01       0.338 heilmha01          0.339 heilmha01          0.338
+ 6 hornsro01       0.355 hornsro01          0.355 hornsro01          0.355
+ 7 jacksjo01       0.350 jacksjo01          0.350 jacksjo01          0.350
+ 8 keelewi01       0.338 keelewi01          0.338 keelewi01          0.338
+ 9 lajoina01       0.336 lajoina01          0.336 lajoina01          0.336
+10 terrybi01       0.337 terrybi01          0.337 terrybi01          0.337</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+bottom_10_eb = career_all %&gt;% 
+  top_n(-10, eb_estimate) %&gt;% 
+  select(playerID, eb_estimate)
+
+bottom_10_bayes = career_all %&gt;% 
+  top_n(-10, bayes_estimate) %&gt;% 
+  select(playerID, bayes_estimate)
+
+bottom_10_mixed = career_all %&gt;% 
+  top_n(-10, bayes_estimate) %&gt;% 
+  select(playerID, glmer_estimate)
+
+bind_cols(bottom_10_eb, bottom_10_bayes, bottom_10_mixed)</code></pre>
+<pre><code>
+# A tibble: 10 x 6
+   playerID  eb_estimate playerID1 bayes_estimate playerID2 glmer_estimate
+   &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
+ 1 armbrch01       0.200 armbrch01          0.199 armbrch01          0.198
+ 2 bakerge01       0.196 bakerge01          0.195 bakerge01          0.195
+ 3 bergebi01       0.179 bergebi01          0.179 bergebi01          0.179
+ 4 eastehe01       0.197 eastehe01          0.196 eastehe01          0.196
+ 5 gladmbu01       0.197 gladmbu01          0.196 gladmbu01          0.195
+ 6 humphjo01       0.196 humphjo01          0.194 humphjo01          0.194
+ 7 oylerra01       0.191 oylerra01          0.191 oylerra01          0.191
+ 8 ryanmi02        0.202 ryanmi02           0.201 ryanmi02           0.201
+ 9 traffbi01       0.201 traffbi01          0.200 traffbi01          0.200
+10 vukovjo01       0.196 vukovjo01          0.195 vukovjo01          0.194</code></pre>
+</div>
+<h3 id="extreme-predictions">Extreme predictions</h3>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+career_all %&gt;% 
+  filter(average == 1) %&gt;% 
+  arrange(desc(AB))</code></pre>
+<pre><code>
+# A tibble: 24 x 10
+   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es~ glmer_filtered_e~
+   &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;              &lt;dbl&gt;             &lt;dbl&gt;
+ 1 paciojo01 John Pa~     3     3       1       0.266          0.259          0.258                 NA                NA
+ 2 birasst01 Steve B~     2     2       1       0.264          0.257          0.255                 NA                NA
+ 3 hopkimi01 Mike Ho~     2     2       1       0.264          0.256          0.255                 NA                NA
+ 4 banisje01 Jeff Ba~     1     1       1       0.261          0.253          0.253                 NA                NA
+ 5 bassdo01  Doc Bass     1     1       1       0.261          0.254          0.253                 NA                NA
+ 6 burnscb01 C. B. B~     1     1       1       0.261          0.253          0.253                 NA                NA
+ 7 gallaja01 Jackie ~     1     1       1       0.261          0.254          0.253                 NA                NA
+ 8 gleasro01 Roy Gle~     1     1       1       0.261          0.255          0.253                 NA                NA
+ 9 kuczest01 Steve K~     1     1       1       0.261          0.254          0.253                 NA                NA
+10 liddeda01 Dave Li~     1     1       1       0.261          0.254          0.253                 NA                NA
+# ... with 14 more rows</code></pre>
+<pre class="r"><code>
+career_all %&gt;% 
+  filter(average == 0) %&gt;% 
+  arrange(desc(AB))</code></pre>
+<pre><code>
+# A tibble: 626 x 10
+   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es~ glmer_filtered_e~
+   &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;              &lt;dbl&gt;             &lt;dbl&gt;
+ 1 littlla01 Larry L~     0    23       0       0.241          0.234          0.233                 NA                NA
+ 2 pottemi01 Mike Po~     0    23       0       0.241          0.235          0.233                 NA                NA
+ 3 kennejo01 John Ke~     0    19       0       0.244          0.236          0.236                 NA                NA
+ 4 redmoha01 Harry R~     0    19       0       0.244          0.237          0.236                 NA                NA
+ 5 wrighcy01 Cy Wrig~     0    18       0       0.244          0.238          0.237                 NA                NA
+ 6 condera01 Ramon C~     0    16       0       0.246          0.239          0.238                 NA                NA
+ 7 creelgu01 Gus Cre~     0    15       0       0.247          0.240          0.239                 NA                NA
+ 8 gulanmi01 Mike Gu~     0    15       0       0.247          0.239          0.239                 NA                NA
+ 9 lerchdu01 Dutch L~     0    15       0       0.247          0.239          0.239                 NA                NA
+10 luebbro01 Roy Lue~     0    15       0       0.247          0.240          0.239                 NA                NA
+# ... with 616 more rows</code></pre>
+</div>
+<h2 id="visualize-effects">Visualize effects</h2>
+<p>The following reproduces David’s plots. I start with his <a href="http://varianceexplained.org/figs/2015-10-01-empirical_bayes_baseball/unnamed-chunk-11-1.png">original image</a>, altered only to be consistent with my visualization choices, and his explanation:</p>
+<blockquote>
+<p>The horizontal dashed red line marks <span class="math inline">\(y=\alpha_0/alpha_0+beta_0=0.259\)</span> - that’s what we would guess someone’s batting average was if we had no evidence at all. Notice that points above that line tend to move down towards it, while points below it move up. The diagonal red line marks <span class="math inline">\(x=y\)</span>. Points that lie close to it are the ones that didn’t get shrunk at all by empirical Bayes. Notice that they’re the ones with the highest number of at-bats (the brightest blue): they have enough evidence that we’re willing to believe the naive batting average estimate.</p>
+</blockquote>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="empirical-bayes_files/figure-html5/robinson_plot_original-1.svg" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<p>Here is the same plot against the full bayes estimates. The original lines are kept, but I add lines representing the average of the whole data, and the intercept from the Bayesian analysis (which is essentially the same as with the mixed model).</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="empirical-bayes_files/figure-html5/robinson_plot-1.svg" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+career_all %&gt;% 
+  select(contains(&#39;estimate&#39;)) %&gt;% 
+  gather(key = type, value = estimate) %&gt;% 
+  mutate(type = fct_inorder(type)) %&gt;%   # to defy ggplot
+  drop_na() %&gt;%                          # to get rid of warning
+  ggplot() +
+  geom_density(aes(x = estimate, color = type)) +
+  labs(y = &#39;&#39;) +
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())</code></pre>
+<p><img src="empirical-bayes_files/figure-html5/density_plot-1.svg" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(ggplot2)
+averages = data.frame(
+  average = c(&#39;filtered/eb&#39;, &#39;full data&#39;, &#39;bayes&#39;),
+  avg = c(mean(career_filtered$average),
+          mean(career_eb$average),
+          plogis(fixef(bayes_full)[1]))
+)
+
+library(ggnewscale)
+
+career_all %&gt;% 
+  ggplot(aes(x = average, y = bayes_estimate)) +
+  geom_hline(aes(yintercept = avg, color = average),
+             data = averages) +
+  scico::scale_color_scico_d(direction = -1, begin=.25, end=.75) +
+  new_scale_color() +
+  geom_abline(color = &#39;#00aaff&#39;, alpha = .25) +
+  geom_point(aes(fill=AB, size=AB), color = &#39;gray50&#39;, pch=21, alpha=.1) +
+  labs(y = &#39;Full Bayes&#39;, x=&#39;Batting Average&#39;) +
+  scico::scale_color_scico(direction = -1) + 
+  scale_x_continuous(breaks = seq(0, 1, by=.1)) +
+  scale_y_continuous(breaks = seq(.20, .35, by=.025)) +
+  visibly::theme_trueMinimal() +
+  rob_plot_theme</code></pre>
+<p><img src="empirical-bayes_files/figure-html5/robinson_plot-1.svg" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>
+# career_all %&gt;% 
+#   select(playerID, contains(&#39;estimate&#39;)) %&gt;% 
+#   gather(key = type, value = estimate, -playerID, -eb_estimate) %&gt;% 
+#   mutate(type = fct_inorder(type)) %&gt;%   # to defy ggplot
+#   drop_na() %&gt;%                          # to get rid of warning
+#   ggplot(aes(x = eb_estimate, y = estimate)) +
+#   # geom_smooth(color = &#39;#ff5500&#39;, se = F, size = .5, method = &#39;loess&#39;) +
+#   geom_point(color = &#39;#00aaff&#39;, alpha=.005, size = .5) +
+#   facet_wrap(~type, ncol = 2) + 
+#   theme_minimal()</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+career_all %&gt;% 
+  select(contains(&#39;estimate&#39;)) %&gt;% 
+  cor(use=&#39;pair&#39;) %&gt;% 
+  round(2)
+  
+  
+make_stancode(H|trials(AB) ~ 1 + (1|playerID), 
+                  data = career,
+                  family = binomial)
+
+career_eb %&gt;% pivot_longer</code></pre>
+</div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This is possible for mixed models for counts like binomial and poisson (and other distributions) where we don’t estimate the residual variance. This allows us to deal with overdispersion in this model via the random effect variance. See the <a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#fitting-models-with-overdispersion">GLMM FAQ</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>One chain always struggled a bit with the brms defaults, but diagnostics were okay.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+<!--radix_placeholder_article_footer-->
+<!--/radix_placeholder_article_footer-->
+</div>
+
+<div class="d-appendix">
+</div>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!--radix_placeholder_site_after_body-->
+<!--/radix_placeholder_site_after_body-->
+<!--radix_placeholder_appendices-->
+<div class="appendix-bottom"></div>
+<!--/radix_placeholder_appendices-->
+<!--radix_placeholder_navigation_after_body-->
+<!--/radix_placeholder_navigation_after_body-->
+
+</body>
+
+</html>
