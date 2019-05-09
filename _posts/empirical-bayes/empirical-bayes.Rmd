@@ -26,6 +26,7 @@ knitr::opts_chunk$set(
   cache.rebuild=F, 
   cache=T,
   fig.align='center', 
+  fig.asp = .7,
   dev = 'svg', 
   dev.args=list(bg = 'transparent')
 )
@@ -137,7 +138,7 @@ pp_check(bayes_full)
 
 ## Full Mixed
 
-The lme4 model takes the glm approach.  Very straightforward, and fast, as it doesn't actually estimate the random effects, but instead *predicts* them.  The predictions are in fact akin to empirical bayes estimates.
+The lme4 model takes the glm approach as far as syntax goes `cbind(successes, non-successes)`.  Very straightforward, and fast, as it doesn't actually estimate the random effects, but instead *predicts* them[^ebblups].  The predictions are in fact akin to empirical bayes estimates.
 
 ```{r glmer_full}
 glmer_full = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
@@ -356,3 +357,5 @@ career_eb %>% pivot_longer
 [^perobs]: This is possible for mixed models for counts like binomial and poisson (and other distributions) where we don't estimate the residual variance.  This allows us to deal with overdispersion in this model via the random effect variance.  See the [GLMM FAQ](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#fitting-models-with-overdispersion).
 
 [^problem_chain]: One chain always struggled a bit with the brms defaults, but diagnostics were okay.
+
+[^ebblups]: See [Bates' comment]().

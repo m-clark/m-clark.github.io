@@ -49,7 +49,7 @@
   <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"character","attributes":{},"value":["empirical-bayes_files/bowser-1.9.3/bowser.min.js","empirical-bayes_files/distill-2.2.21/template.v2.js","empirical-bayes_files/figure-html5/bayes_inspect-1.svg","empirical-bayes_files/figure-html5/density_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot-2.svg","empirical-bayes_files/figure-html5/robinson_plot_original-1.svg","empirical-bayes_files/figure-html5/robinson_plot_original, ec-1.svg","empirical-bayes_files/jquery-1.11.3/jquery.min.js","empirical-bayes_files/webcomponents-2.0.0/webcomponents.js"]}
+  {"type":"character","attributes":{},"value":["empirical-bayes_files/bowser-1.9.3/bowser.min.js","empirical-bayes_files/distill-2.2.21/template.v2.js","empirical-bayes_files/figure-html5/bayes_inspect-1.svg","empirical-bayes_files/figure-html5/density_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot_original-1.svg","empirical-bayes_files/figure-html5/robinson_plot_original, ec-1.svg","empirical-bayes_files/figure-html5/robinson_plot-1.svg","empirical-bayes_files/figure-html5/robinson_plot-2.svg","empirical-bayes_files/jquery-1.11.3/jquery.min.js","empirical-bayes_files/webcomponents-2.0.0/webcomponents.js"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
   <!--/radix_placeholder_navigation_in_header-->
@@ -934,7 +934,7 @@
   <!--radix_placeholder_site_in_header-->
   <!--/radix_placeholder_site_in_header-->
 
-  <link rel="stylesheet" href="..\..\test.css" type="text/css"/>
+  <link rel="stylesheet" href="../../test.css" type="text/css"/>
 
 </head>
 
@@ -1022,7 +1022,7 @@ career_eb &lt;- career %&gt;%
 
 career_eb</code></pre>
 <pre><code>
-# A tibble: 9,509 x 6
+# A tibble: 9,670 x 6
    playerID  name                  H    AB average eb_estimate
    &lt;chr&gt;     &lt;chr&gt;             &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;
  1 aaronha01 Hank Aaron         3771 12364  0.305        0.304
@@ -1034,8 +1034,8 @@ career_eb</code></pre>
  7 abbotje01 Jeff Abbott         157   596  0.263        0.262
  8 abbotku01 Kurt Abbott         523  2044  0.256        0.256
  9 abbotod01 Ody Abbott           13    70  0.186        0.245
-10 abercda01 Frank Abercrombie     0     4  0            0.256
-# ... with 9,499 more rows</code></pre>
+10 abercda01 Frank Abercrombie     0     4  0            0.255
+# … with 9,660 more rows</code></pre>
 </div>
 <h2 id="models">Models</h2>
 <p>As mentioned, I will compare the empirical bayes results to those of a couple of approaches. They are:</p>
@@ -1053,7 +1053,7 @@ glm(cbind(H, AB-H) ~ ..., data = career_eb, family = binomial)</code></pre>
 </div>
 <p>The model is actually for the count of successes out of the total, which R has always oddly done in <span class="func">glm</span> as <code>cbind(success, not success)</code> rather than the more intuitive route (my opinion). The brms package will make it more obvious, but glmer uses this same glm approach. The key difference for both is that we add a per-observation random effect for <code>playerID</code><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p>
 <h2 id="full-bayes">Full Bayes</h2>
-<p>We’ll start with the full Bayesian approach using brms. This model will struggle a bit<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, and takes a while to run, as it’s estimating 9510 parameters. But in the end we get what we want.</p>
+<p>We’ll start with the full Bayesian approach using brms. This model will struggle a bit<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, and takes a while to run, as it’s estimating 9671 parameters. But in the end we get what we want.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 # in case anyone wants to use rstanarm I show it here
@@ -1077,7 +1077,7 @@ pp_check(bayes_full)</code></pre>
 <p><img src="empirical-bayes_files/figure-html5/bayes_inspect-1.svg" width="624" style="display: block; margin: auto;" /></p>
 </div>
 <h2 id="full-mixed">Full Mixed</h2>
-<p>The lme4 model takes the glm approach. Very straightforward, and fast, as it doesn’t actually estimate the random effects, but instead <em>predicts</em> them. The predictions are in fact akin to empirical bayes estimates.</p>
+<p>The lme4 model takes the glm approach as far as syntax goes <code>cbind(successes, non-successes)</code>. Very straightforward, and fast, as it doesn’t actually estimate the random effects, but instead <em>predicts</em> them<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>. The predictions are in fact akin to empirical bayes estimates.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 glmer_full = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
@@ -1119,20 +1119,20 @@ career_all = left_join(career_other,
 
 career_all</code></pre>
 <pre><code>
-# A tibble: 9,509 x 10
-   playerID  name          H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_e~ glmer_filtered_e~
+# A tibble: 9,670 x 10
+   playerID  name          H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_e… glmer_filtered_e…
    &lt;chr&gt;     &lt;chr&gt;     &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;             &lt;dbl&gt;             &lt;dbl&gt;
- 1 aaronha01 Hank Aar~  3771 12364  0.305        0.304          0.304          0.304             0.304             0.304
- 2 aaronto01 Tommie A~   216   944  0.229        0.236          0.234          0.234             0.238             0.238
- 3 abadan01  Andy Abad     2    21  0.0952       0.248          0.242          0.240            NA                NA    
- 4 abadijo01 John Aba~    11    49  0.224        0.254          0.247          0.247            NA                NA    
- 5 abbated01 Ed Abbat~   772  3044  0.254        0.254          0.253          0.253             0.254             0.254
- 6 abbotfr01 Fred Abb~   107   513  0.209        0.227          0.225          0.224             0.232             0.231
- 7 abbotje01 Jeff Abb~   157   596  0.263        0.262          0.260          0.259             0.262             0.262
- 8 abbotku01 Kurt Abb~   523  2044  0.256        0.256          0.256          0.255             0.257             0.257
- 9 abbotod01 Ody Abbo~    13    70  0.186        0.245          0.239          0.238            NA                NA    
-10 abercda01 Frank Ab~     0     4  0            0.256          0.248          0.247            NA                NA    
-# ... with 9,499 more rows</code></pre>
+ 1 aaronha01 Hank Aar…  3771 12364  0.305        0.304          0.304          0.304             0.304             0.304
+ 2 aaronto01 Tommie A…   216   944  0.229        0.236          0.234          0.234             0.238             0.238
+ 3 abadan01  Andy Abad     2    21  0.0952       0.248          0.241          0.240            NA                NA    
+ 4 abadijo01 John Aba…    11    49  0.224        0.254          0.247          0.247            NA                NA    
+ 5 abbated01 Ed Abbat…   772  3044  0.254        0.254          0.253          0.253             0.254             0.254
+ 6 abbotfr01 Fred Abb…   107   513  0.209        0.227          0.225          0.224             0.231             0.231
+ 7 abbotje01 Jeff Abb…   157   596  0.263        0.262          0.258          0.259             0.262             0.262
+ 8 abbotku01 Kurt Abb…   523  2044  0.256        0.256          0.255          0.255             0.257             0.257
+ 9 abbotod01 Ody Abbo…    13    70  0.186        0.245          0.239          0.238            NA                NA    
+10 abercda01 Frank Ab…     0     4  0            0.255          0.248          0.247            NA                NA    
+# … with 9,660 more rows</code></pre>
 </div>
 <h3 id="top-and-bottom-predictions">Top and bottom predictions</h3>
 <div class="layout-chunk" data-layout="l-body">
@@ -1154,11 +1154,11 @@ bind_cols(top_10_eb, top_10_bayes, top_10_mixed)</code></pre>
 # A tibble: 10 x 6
    playerID  eb_estimate playerID1 bayes_estimate playerID2 glmer_estimate
    &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
- 1 delahed01       0.342 delahed01          0.342 delahed01          0.343
+ 1 delahed01       0.342 delahed01          0.342 delahed01          0.342
  2 gehrilo01       0.337 gehrilo01          0.337 gehrilo01          0.337
  3 gwynnto01       0.336 gwynnto01          0.336 gwynnto01          0.336
- 4 hamilbi01       0.340 hamilbi01          0.340 hamilbi01          0.340
- 5 heilmha01       0.338 heilmha01          0.339 heilmha01          0.338
+ 4 hamilbi01       0.340 hamilbi01          0.341 hamilbi01          0.340
+ 5 heilmha01       0.338 heilmha01          0.338 heilmha01          0.338
  6 hornsro01       0.355 hornsro01          0.355 hornsro01          0.355
  7 jacksjo01       0.350 jacksjo01          0.350 jacksjo01          0.350
  8 keelewi01       0.338 keelewi01          0.338 keelewi01          0.338
@@ -1184,16 +1184,16 @@ bind_cols(bottom_10_eb, bottom_10_bayes, bottom_10_mixed)</code></pre>
 # A tibble: 10 x 6
    playerID  eb_estimate playerID1 bayes_estimate playerID2 glmer_estimate
    &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt; &lt;chr&gt;              &lt;dbl&gt;
- 1 armbrch01       0.200 armbrch01          0.199 armbrch01          0.198
+ 1 armbrch01       0.200 armbrch01          0.198 armbrch01          0.198
  2 bakerge01       0.196 bakerge01          0.195 bakerge01          0.195
- 3 bergebi01       0.179 bergebi01          0.179 bergebi01          0.179
+ 3 bergebi01       0.179 bergebi01          0.178 bergebi01          0.178
  4 eastehe01       0.197 eastehe01          0.196 eastehe01          0.196
  5 gladmbu01       0.197 gladmbu01          0.196 gladmbu01          0.195
  6 humphjo01       0.196 humphjo01          0.194 humphjo01          0.194
- 7 oylerra01       0.191 oylerra01          0.191 oylerra01          0.191
+ 7 oylerra01       0.191 oylerra01          0.191 oylerra01          0.190
  8 ryanmi02        0.202 ryanmi02           0.201 ryanmi02           0.201
  9 traffbi01       0.201 traffbi01          0.200 traffbi01          0.200
-10 vukovjo01       0.196 vukovjo01          0.195 vukovjo01          0.194</code></pre>
+10 vukovjo01       0.196 vukovjo01          0.194 vukovjo01          0.194</code></pre>
 </div>
 <h3 id="extreme-predictions">Extreme predictions</h3>
 <div class="layout-chunk" data-layout="l-body">
@@ -1203,38 +1203,38 @@ career_all %&gt;%
   arrange(desc(AB))</code></pre>
 <pre><code>
 # A tibble: 24 x 10
-   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es~ glmer_filtered_e~
+   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es… glmer_filtered_e…
    &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;              &lt;dbl&gt;             &lt;dbl&gt;
- 1 paciojo01 John Pa~     3     3       1       0.266          0.259          0.258                 NA                NA
- 2 birasst01 Steve B~     2     2       1       0.264          0.257          0.255                 NA                NA
- 3 hopkimi01 Mike Ho~     2     2       1       0.264          0.256          0.255                 NA                NA
- 4 banisje01 Jeff Ba~     1     1       1       0.261          0.253          0.253                 NA                NA
- 5 bassdo01  Doc Bass     1     1       1       0.261          0.254          0.253                 NA                NA
- 6 burnscb01 C. B. B~     1     1       1       0.261          0.253          0.253                 NA                NA
- 7 gallaja01 Jackie ~     1     1       1       0.261          0.254          0.253                 NA                NA
- 8 gleasro01 Roy Gle~     1     1       1       0.261          0.255          0.253                 NA                NA
- 9 kuczest01 Steve K~     1     1       1       0.261          0.254          0.253                 NA                NA
-10 liddeda01 Dave Li~     1     1       1       0.261          0.254          0.253                 NA                NA
-# ... with 14 more rows</code></pre>
+ 1 paciojo01 John Pa…     3     3       1       0.266          0.257          0.257                 NA                NA
+ 2 birasst01 Steve B…     2     2       1       0.263          0.257          0.255                 NA                NA
+ 3 hopkimi01 Mike Ho…     2     2       1       0.263          0.256          0.255                 NA                NA
+ 4 banisje01 Jeff Ba…     1     1       1       0.261          0.253          0.252                 NA                NA
+ 5 bassdo01  Doc Bass     1     1       1       0.261          0.253          0.252                 NA                NA
+ 6 burnscb01 C. B. B…     1     1       1       0.261          0.254          0.252                 NA                NA
+ 7 gallaja01 Jackie …     1     1       1       0.261          0.254          0.252                 NA                NA
+ 8 gleasro01 Roy Gle…     1     1       1       0.261          0.253          0.252                 NA                NA
+ 9 kuczest01 Steve K…     1     1       1       0.261          0.254          0.252                 NA                NA
+10 liddeda01 Dave Li…     1     1       1       0.261          0.253          0.252                 NA                NA
+# … with 14 more rows</code></pre>
 <pre class="r"><code>
 career_all %&gt;% 
   filter(average == 0) %&gt;% 
   arrange(desc(AB))</code></pre>
 <pre><code>
-# A tibble: 626 x 10
-   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es~ glmer_filtered_e~
+# A tibble: 630 x 10
+   playerID  name         H    AB average eb_estimate bayes_estimate glmer_estimate bayes_filtered_es… glmer_filtered_e…
    &lt;chr&gt;     &lt;chr&gt;    &lt;int&gt; &lt;int&gt;   &lt;dbl&gt;       &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;              &lt;dbl&gt;             &lt;dbl&gt;
- 1 littlla01 Larry L~     0    23       0       0.241          0.234          0.233                 NA                NA
- 2 pottemi01 Mike Po~     0    23       0       0.241          0.235          0.233                 NA                NA
- 3 kennejo01 John Ke~     0    19       0       0.244          0.236          0.236                 NA                NA
- 4 redmoha01 Harry R~     0    19       0       0.244          0.237          0.236                 NA                NA
- 5 wrighcy01 Cy Wrig~     0    18       0       0.244          0.238          0.237                 NA                NA
- 6 condera01 Ramon C~     0    16       0       0.246          0.239          0.238                 NA                NA
- 7 creelgu01 Gus Cre~     0    15       0       0.247          0.240          0.239                 NA                NA
- 8 gulanmi01 Mike Gu~     0    15       0       0.247          0.239          0.239                 NA                NA
- 9 lerchdu01 Dutch L~     0    15       0       0.247          0.239          0.239                 NA                NA
-10 luebbro01 Roy Lue~     0    15       0       0.247          0.240          0.239                 NA                NA
-# ... with 616 more rows</code></pre>
+ 1 littlla01 Larry L…     0    23       0       0.241          0.233          0.233                 NA                NA
+ 2 pottemi01 Mike Po…     0    23       0       0.241          0.234          0.233                 NA                NA
+ 3 zeihehe01 Henry Z…     0    21       0       0.242          0.234          0.234                 NA                NA
+ 4 kennejo01 John Ke…     0    19       0       0.244          0.236          0.236                 NA                NA
+ 5 redmoha01 Harry R…     0    19       0       0.244          0.236          0.236                 NA                NA
+ 6 wrighcy01 Cy Wrig…     0    18       0       0.244          0.237          0.236                 NA                NA
+ 7 condera01 Ramon C…     0    16       0       0.246          0.238          0.238                 NA                NA
+ 8 creelgu01 Gus Cre…     0    15       0       0.247          0.239          0.238                 NA                NA
+ 9 gulanmi01 Mike Gu…     0    15       0       0.247          0.239          0.238                 NA                NA
+10 lerchdu01 Dutch L…     0    15       0       0.247          0.239          0.238                 NA                NA
+# … with 620 more rows</code></pre>
 </div>
 <h2 id="visualize-effects">Visualize effects</h2>
 <p>The following reproduces David’s plots. I start with his <a href="http://varianceexplained.org/figs/2015-10-01-empirical_bayes_baseball/unnamed-chunk-11-1.png">original image</a>, altered only to be consistent with my visualization choices, and his explanation:</p>
@@ -1284,7 +1284,7 @@ career_all %&gt;%
   geom_abline(color = &#39;#00aaff&#39;, alpha = .25) +
   geom_point(aes(fill=AB, size=AB), color = &#39;gray50&#39;, pch=21, alpha=.1) +
   labs(y = &#39;Full Bayes&#39;, x=&#39;Batting Average&#39;) +
-  scico::scale_color_scico(direction = -1) + 
+  scico::scale_fill_scico(direction = 1) + 
   scale_x_continuous(breaks = seq(0, 1, by=.1)) +
   scale_y_continuous(breaks = seq(.20, .35, by=.025)) +
   visibly::theme_trueMinimal() +
@@ -1321,6 +1321,7 @@ career_eb %&gt;% pivot_longer</code></pre>
 <ol>
 <li id="fn1"><p>This is possible for mixed models for counts like binomial and poisson (and other distributions) where we don’t estimate the residual variance. This allows us to deal with overdispersion in this model via the random effect variance. See the <a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#fitting-models-with-overdispersion">GLMM FAQ</a>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
 <li id="fn2"><p>One chain always struggled a bit with the brms defaults, but diagnostics were okay.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>See <a href="">Bates’ comment</a>.<a href="#fnref3" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
 <!--radix_placeholder_article_footer-->
