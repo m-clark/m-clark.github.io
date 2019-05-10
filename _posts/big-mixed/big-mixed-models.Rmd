@@ -1,0 +1,213 @@
+---
+title: "Big Mixed Models"
+description: |
+  Explorations of a fast penalized regression approach with bam in mgcv
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../test.css
+draft: true
+tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=T,
+  fig.align='center', 
+  fig.asp = .7,
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = function(x, digits = 3) arm::fround(x, digits = digits)
+```
+
+## Introduction
+
+
+## Basic Model Example
+
+
+```{r basic_model}
+library(lme4); library(mgcv)
+mixed_model = lmer(Reaction ~ Days + (1|Subject) + (0+Days|Subject), 
+                   data=sleepstudy)
+ga_model = gam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+               data=sleepstudy, method = 'REML')
+```
+
+### Summary comparison
+
+```{r basic_model_summary}
+summary(mixed_model)
+summary(ga_model)
+
+lmer_vcov = VarCorr(mixed_model) %>% data.frame()
+gam_vcov = gam.vcomp(ga_model)
+```
+
+### The bam approach 
+
+Standard bam using fREML.
+
+```{r basic_model_bam}
+ba_model = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+               data=sleepstudy)
+bam_vcov = gam.vcomp(ba_model)
+```
+
+With discrete option.  There isn't really anything to discretize with so little data, so the result is the same. This is just to demonstrate the point.
+
+```{r basic_model_bam_discrete}
+ba_model_d = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+               data=sleepstudy,
+               discrete = T)
+bam_vcov_d = gam.vcomp(ba_model_d)
+```
+
+### Fixed effects comparison
+
+```{r compare_fixef}
+tibble(
+  mixed = fixef(mixed_model),
+  gam = coef(ga_model)[1:2],
+  bam = coef(ba_model)[1:2],
+  bam_d = coef(ba_model_d)[1:2]
+  ) %>% 
+  kable_df()
+```
+
+Note there are options for the gam model for se, including a bayesian one.  See `?gamObject`.  Displayed are `Vp`.
+
+- **Ve**: frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI's as smooths are usually biased.
+
+- **Vp**: estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.
+
+- **Vc**: Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.
+
+```{r compare_fixef_se}
+tibble(
+  mixed = summary(mixed_model)$coefficients[,'Std. Error'],
+  gam = sqrt(diag(ga_model$Vp[1:2, 1:2])),
+  bam = sqrt(diag(ba_model$Vp[1:2, 1:2])),
+  bam_d = sqrt(diag(ba_model_d$Vp[1:2, 1:2]))
+  ) %>% 
+  kable_df()
+```
+
+### Variance components comparison
+
+Reported are sd for subject level random effects for intercept, `Days` coefficient, and residual.
+
+```{r compare_vc}
+tibble(
+  mixed = lmer_vcov$sd,
+  gam = gam_vcov[,'std.dev'],
+  bam = bam_vcov[,'std.dev'],
+  bam_d = bam_vcov_d[,'std.dev']
+  ) %>% 
+  kable_df()
+```
+
+
+Interval estimates for the above.  Using profile likelihood for mixed model.
+
+
+```{r compare_vc_int, echo=FALSE}
+mixed_vc_int = confint(mixed_model)
+mixed_vc_int = mixed_vc_int %>% 
+  data.frame() %>% 
+  filter(str_detect(rownames(.), 'sig')) %>% 
+  mutate(sd = c('Intercept', 'Days', 'Residual')) %>% 
+  rename(lower = X2.5.., upper = X97.5..) %>% 
+  select(sd, everything())
+
+gam_vc_int = gam_vcov[,c('lower', 'upper')] %>% 
+  data.frame() %>% 
+  mutate(sd = c('Intercept', 'Days', 'Residual')) %>% 
+  select(sd, everything())
+bam_vc_int = bam_vcov[,c('lower', 'upper')] %>% 
+  data.frame() %>% 
+  mutate(sd = c('Intercept', 'Days', 'Residual')) %>% 
+  select(sd, everything())
+bam_d_vc_int = bam_vcov_d[,c('lower', 'upper')] %>% 
+  data.frame() %>% 
+  mutate(sd = c('Intercept', 'Days', 'Residual')) %>% 
+  select(sd, everything())
+
+```
+
+```{r compare_vc_int_table, echo=FALSE}
+list(mixed = mixed_vc_int,
+     gam = gam_vc_int,
+     bam = bam_vc_int,
+     bam_d = bam_d_vc_int) %>% 
+  bind_rows(.id = 'Model') %>% 
+  kable_df() %>% 
+  collapse_rows(valign = 'top')
+```
+
+
+### Estimated random effects
+
+
+```{r re}
+mixed_re = ranef(mixed_model)[[1]] %>% 
+  rename(mixed_int = `(Intercept)`, mixed_days = Days)
+
+gam_re = coef(ga_model)[-(1:2)] %>% 
+  matrix(ncol = 2) %>% 
+  data.frame() %>% 
+  rename(gam_int = X1, gam_days = X2)
+
+bam_re = coef(ba_model)[-(1:2)] %>% 
+  matrix(ncol = 2) %>% 
+  data.frame() %>% 
+  rename(bam_int = X1, bam_days = X2)
+
+bam_d_re = coef(ba_model_d)[-(1:2)] %>% 
+  matrix(ncol = 2) %>% 
+  data.frame() %>% 
+  rename(bam_d_int = X1, bam_d_days = X2)
+
+all_re = bind_cols(mget(ls(pattern = '_re')))
+```
+
+Random effects for the intercept.
+
+```{r re_int, echo=FALSE}
+all_re %>% 
+  select(contains('int')) %>% 
+  kable_df(digits = 5)
+```
+
+Random effects for the Days effect.
+
+```{r re_days, echo=FALSE}
+all_re %>% 
+  select(contains('days')) %>% 
+  kable_df(digits = 5)
+```
+
+
+
+
