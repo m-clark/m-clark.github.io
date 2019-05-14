@@ -11,7 +11,7 @@ output:
   distill::distill_article:
     self_contained: false
     toc: true
-    css: [../../styles.css, ../../css/test2.css]
+    css: [../../styles.css]
 draft: true
 tags: [R, random effects, mixed models, multilevel models, hierarchical linear models, shrinkage, partial pooling, borrowing strength, fixed effects, population average]
 ---
@@ -53,17 +53,17 @@ kable_df <- function(..., digits=3) {
 
 The following is a demonstration of <span class="emph">shrinkage</span>, sometimes called <span class="emph">partial-pooling</span>, as it occurs in <span class="emph">mixed effects models</span>.   For some background, one can see the section of my document on mixed models [here](https://m-clark.github.io/mixed-models-with-R/random_slopes.html#comparison-to-many-regressions), and the document in general for an introduction to mixed models.  Part of the inspiration of this document comes from some of the visuals seen [here](https://www.tjmahr.com/plotting-partial-pooling-in-mixed-effects-models/).
 
-It is often the case that we have data such that observations are clustered in some way (e.g. repeated observations for units over time, students within schools, etc.).  In mixed models we obtain cluster specific effects in addition to those for standard coefficients of our regression model. The former are called <span class="emph">random effects</span>, while the latter are typically referred to as <span class="emph">fixed effects</span> or <span class="emph">population-average</span> effects.
+It is often the case that we have data such that observations are clustered in some way (e.g. repeated observations for units over time, students within schools, etc.).  In mixed models, we obtain cluster-specific effects in addition to those for standard coefficients of our regression model. The former are called <span class="emph">random effects</span>, while the latter are typically referred to as <span class="emph">fixed effects</span> or <span class="emph">population-average</span> effects.
 
-In other circumstances, we could ignore the clustering, and run a basic regression model.  Unfortunately this assumes that all observations behave in the same way, which would often be an untenable assumption.  Another approach would be to run separate models for each cluster.  However, aside from being problematic due to potentially small cluster sizes, this ignores the fact that clusters are not isolated and potentially have some commonality.
+In other circumstances, we could ignore the clustering, and run a basic regression model.  Unfortunately this assumes that all observations behave in the same way, i.e. that there are no cluster-specific effects, which would often be an untenable assumption.  Another approach would be to run separate models for each cluster.  However, aside from being problematic due to potentially small cluster sizes in common data settings, this ignores the fact that clusters are not isolated and potentially have some commonality.
 
 Mixed models provide an alternative where we have cluster specific effects, but 'borrow strength' from the population-average effects.  In general, this borrowing is more apparent for what would otherwise be more extreme clusters, and those that have less data.  The following will demonstrate how shrinkage arises in different data situations. 
 
 ## Analysis
 
-For the following we run a basic mixed model with a random intercept and random slopes for a single predictor variable. There are a number of ways  to write such models, and the following does so for a single cluster $c$ and observation $i$. $y$ is a function of the lone covariate $x$, and otherwise we have a basic linear regression model.  In this formulation, the random effects for a given cluster are added to each fixed effect (intercept $b_0$ and the effect of $x$, $b_1$). The random effects are multivariate normally distributed with some covariance.  The per observation noise $\sigma$ is assumed constant across observations.
+For the following we run a basic mixed model with a random intercept and random slopes for a single predictor variable. There are a number of ways  to write such models, and the following does so for a single cluster $c$ and observation $i$. $y$ is a function of the lone covariate $x$, and otherwise we have a basic linear regression model.  In this formulation, the random effects for a given cluster ($re_{*c}$) are added to each fixed effect (intercept $b_0$ and the effect of $x$, $b_1$). The random effects are multivariate normally distributed with some covariance.  The per observation noise $\sigma$ is assumed constant across observations.
 
-$$\mu_{ic} = (b_0 + \mathrm{re}_{0})+ (b_1+\mathrm{re}_{1})*x_{ic}$$
+$$\mu_{ic} = (b_0 + \mathrm{re}_{0c})+ (b_1+\mathrm{re}_{1c})*x_{ic}$$
 $$\mathrm{re}_{0}, \mathrm{re}_{1} \sim \mathcal{N}(0, \Sigma)$$
 $$y \sim \mathcal{N}(\mu, \sigma^2)$$
 
@@ -130,7 +130,7 @@ create_data <- function(
 }
 ```
 
-The plotting functions can be found on [GitHub]() for those interested, but won't be shown here.  
+The plotting functions can be found on [GitHub]() for those interested, but won't be shown here[^plotfun].  
 
 ```{r create_plot_data, echo=FALSE, eval=TRUE}
 create_plot_data <- function(model, data = df) 
@@ -247,9 +247,9 @@ plot_fun <- function(
 }
 ```
 
-## Run the model
+## Run the baseline model
 
-We will use <span class="pack">lme4</span> to run the analysis.  We can see that the model recovers the parameters fairly well, even with the default 1000 observations.
+We will use <span class="pack">lme4</span> to run the analysis.  We can see that the model recovers the parameters fairly well, even with the default of only 1000 observations.
 
 ```{r run_baseline_model, eval=TRUE}
 df = create_data()
@@ -264,7 +264,7 @@ summary(mod, cor=F)
 
 ## Visualize baseline model
 
-Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with the estimates that would be obtained by a fixed effects, or 'regression-by-cluster' approach.  The movement shown will be of those cluster-specific estimates toward the mixed model estimates.  On the x axis is the estimate for the intercept random effects, on the y axis are the estimated random effects for the slope of the `x` covariate.  The plots for this and others are zoomed in based on the random effect variance inputs for this first model, which attempts to make the plots more consistent and comparable across the different settings.  As such, the most extreme points often will not be shown at their starting point.
+Now it is time to visualize the results.  We will use <span class="pack">gganimate</span> to bring the shrinkage into focus.  We start with the estimates that would be obtained by a fixed effects, or 'regression-by-cluster' approach.  The movement shown will be of those (default 100) cluster-specific estimates toward the mixed model estimates.  On the x axis is the estimate for the intercepts, on the y axis are the estimated slopes of the `x` covariate.  The plots for this and other settings are zoomed in based on the random effect variance inputs for this baseline model, in an attempt to make the plots more consistent and comparable across the different settings.  As such, the most extreme points often will not be shown at their starting point.
 
 ```{r vis_baseline_model, echo=FALSE, eval=F}
 plot_data = create_plot_data(model = mod)
@@ -318,7 +318,7 @@ anim_save('img/shrinkage/more_slope_var.gif')
 
 ## Fewer observations per cluster
 
-If we have fewer observations within each cluster, the more likely extreme values will present in the by-cluster approach, and thus more shrinkage is applied using a mixed model. We have relatively less knowledge about the groups, so we would prefer to lean toward the population average. In the most extreme case of only one observation per cluster, we simply have the standard regression model and its associated fixed effects.
+If we have fewer observations within each cluster, the more likely extreme values will present in the by-cluster approach, and thus more shrinkage is applied when using a mixed model. In this setting, we have relatively less knowledge about the groups, so we would prefer to lean our cluster estimates toward the population average. In the most extreme case of having only one or two observations per cluster, we could only estimate the fixed effects as the cluster-specific effects[^singletons].
 
 ```{r fewer_observations, echo = 1}
 df = create_data(obs_per_cluster = 3)
@@ -377,7 +377,7 @@ anim_save('img/shrinkage/unbalanced.gif')
 
 ## Summary
 
-Mixed models incorporate some amount of shrinkage for cluster-specific effects.  Data specifics will determine the relative amount of 'strength borrowed', but in general, such models provide a good way for the data to speak for itself when it should and reflect an 'average' when there is little information.  An additional benefit is that thinking about models in this way can be seen as a precursor to Bayesian approaches, which can allow for even more flexibility via priors, and more control over how shrinkage is added to the model.
+Mixed models incorporate some amount of shrinkage for cluster-specific effects.  Data nuances will determine the relative amount of 'strength borrowed', but in general, such models provide a good way for the data to speak for itself when it should, and reflect an 'average' when there is little information.  An additional benefit is that thinking about models in this way can be seen as a precursor to Bayesian approaches, which can allow for even more flexibility via priors, and more control over how shrinkage is added to the model.
 
 ## Other demos
 
@@ -387,6 +387,11 @@ Mixed models incorporate some amount of shrinkage for cluster-specific effects. 
 
 [Discussion on cluster size](https://stats.stackexchange.com/questions/388937/minimum-sample-size-per-cluster-in-a-random-effect-model)
 
-[^hownormalworks]: Think of a normal distribution with standard deviation of 1- almost all of the likely fall between 3 and -3. The probability of values beyond that would be less than .001.  If the standard deviation is 3, the probability of a value beyond $\pm$ 3 is ~ .32, i.e. very likely.
+[^hownormalworks]: Think of a normal distribution with standard deviation of 1- almost all of the probability is for values falling between 3 and -3. The probability of values beyond that would be less than .001.  On the other hand, if the standard deviation is 3, the probability of a value beyond $\pm$ 3 is ~ .32, i.e. very likely.
 
-[^slopescale]: For example, if you had income in dollars as a target and education level (in years) as a covariate, the intercept would be on the scale of income (roughly somewhere between 0 - max income, i.e. a range of potentially millions, while the effect of one year of education might only have a range of 0 to a few thousand.
+[^slopescale]: For example, if you had income in dollars as a target and education level (in years) as a covariate, the intercept would be on the scale of income, roughly somewhere between 0 - max income (i.e. a range of potentially millions), while the effect of one year of education might only have a range of 0 to a few thousand.
+
+[^plotfun]: They are a bit messy, as I'm sort of tricking gganimate to do this sort of plot while supplying numerous options for myself for testing and eventual use.
+
+
+[^singletons]: In order to have a random effects model you'd need at least two observations per cluster, though this would only allow you to estimate random intercepts.  Note that with unbalanced data, it is fine to have singletons or only very few observations.  Singletons can only contribute to the intercept estimate however.
