@@ -167,7 +167,7 @@ create_plot_data <- function(model, data = df)
 # an axis.  It works fine in general, so not sure what to do.
 plot_fun <- function(
   plot_data, 
-  pt_size = 1, 
+  pt_size = 1.5, 
   fe_size = 6, 
   line_alpha = .1,
   animate = T,
@@ -232,6 +232,7 @@ plot_fun <- function(
                         ylim = c(plot_data$fixed_effects[1, 'x'] - 3*slope_multiplier, 
                                  plot_data$fixed_effects[1, 'x'] + 3*slope_multiplier))}
     }  +
+    labs(y = 'Slope for x') +
     scico::scale_color_scico_d(begin = .5, end = .75, direction = -1) + 
     scale_size_continuous(range = c(.5, 4)) +
     guides(alpha = 'none', size = 'none') +
@@ -239,7 +240,8 @@ plot_fun <- function(
     # transparency ignored by animate; so make same as bg
     theme(panel.background = element_rect(fill = "#fffff8", color = NA),  
           plot.background = element_rect(fill = "#fffff8", color = NA),
-          axis.title.y = element_text(angle = 0))
+          axis.title.y = element_text(angle = 0, size = 12),
+          axis.title.x = element_text(size = 12))
   
   if (animate) animate(p, ...)  # see bg note above, transparency will screw up plot
   else p
@@ -361,9 +363,15 @@ anim_save('img/shrinkage/preview.gif', width=8)
 
 ```{r vis_baseline_model, echo=FALSE, eval=F}
 plot_data = create_plot_data(model = mod)
-p = plot_fun(plot_data = plot_data, end_pause = 20)
-p
+plot_fun(plot_data = plot_data, 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
+
 anim_save('img/shrinkage/baseline.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/baseline_static.svg')
 ```
 
 <!-- Relative to post folder -->
@@ -372,26 +380,40 @@ anim_save('img/shrinkage/baseline.gif')
 knitr::include_graphics('../../img/shrinkage/baseline.gif')
 ```
 
+<aside><img src="../../img/shrinkage/baseline_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
+
+
 
 
 We see more clearly what the mixed model does.  The general result  is that cluster-specific effects (lighter color) are shrunk back toward the population-average effects (the 'black hole'), as the imposed normal distribution for the random effects makes the extreme values less probable. Likewise, those more extreme cluster-specific effects, some of which are not displayed as they are so far from the population average, will generally have the most shrinkage imposed.  In terms of prediction, it is akin to introducing bias for the cluster specific effects while lowering variance for prediction of new data, and allows us to make predictions on new categories we have not previously seen - we just assume an 'average' cluster effect, i.e. a random effect of 0.
+
+
 
 Now we'll look at what happens under different data circumstances.
 
 ## More subject level variance
 
-What happens when we add more subject level variance?  The mixed model will show relatively less shrinkage, as what were previously less probable outcomes are now more probable[^hownormalworks], and thus opting for the clusters to speak for themselves.
+What happens when we add more subject level variance relative to the residual variance?  The mixed model will show relatively less shrinkage, and what were previously less probable outcomes are now more probable[^hownormalworks], and thus opting for the clusters to speak for themselves.
 
 ```{r add_subject_var, echo = 1}
 df = create_data(sd_int = 1, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, end_pause = 20)
+plot_fun(plot_data = plot_data, 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
 anim_save('img/shrinkage/add_subject_level_variance.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/add_subject_level_variance_static.svg')
 ```
 
-<img src="../../img/shrinkage/add_subject_level_variance.gif" style="display:block; margin: 0 auto;">
+```{r subject_level_var_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/add_subject_level_variance.gif')
+```
 
+<aside><img src="../../img/shrinkage/add_subject_level_variance_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
 
 ## More slope variance
 
@@ -403,11 +425,23 @@ One point to keep in mind is that the slope variance is naturally on a very diff
 df = create_data(sd_int = .25, sd_slope = 1)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, end_pause = 20)
+plot_fun(plot_data = plot_data, 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
 anim_save('img/shrinkage/more_slope_var.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/more_slope_var_static.svg')
 ```
 
-<img src="../../img/shrinkage/more_slope_var.gif" style="display:block; margin: 0 auto;">
+
+```{r slope_level_var_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/more_slope_var.gif')
+```
+
+<aside><img src="../../img/shrinkage/more_slope_var_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
+
 
 ## Fewer observations per cluster
 
@@ -417,11 +451,24 @@ If we have fewer observations within each cluster, the more likely extreme value
 df = create_data(obs_per_cluster = 3)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, end_pause = 20)
+plot_fun(plot_data = plot_data, 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
 anim_save('img/shrinkage/fewer_obs.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/fewer_obs_static.svg')
 ```
 
-<img src="../../img/shrinkage/fewer_obs.gif" style="display:block; margin: 0 auto;">
+<!-- Relative to post folder -->
+
+```{r fewer_observations_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/fewer_obs.gif')
+```
+
+<aside><img src="../../img/shrinkage/fewer_obs_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
+
 
 
 ## More observations per cluster
@@ -432,11 +479,22 @@ The opposite case is seen with more observations.  We see that the estimates do 
 df = create_data(obs_per_cluster = 100)
 mod = lmer(y ~ x + (x|cluster), df)
 plot_data = create_plot_data(model = mod)
-plot_fun(plot_data = plot_data, end_pause = 20)
+plot_fun(plot_data = plot_data, 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
 anim_save('img/shrinkage/more_obs.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/more_obs_static.svg')
 ```
 
-<img src="../../img/shrinkage/more_obs.gif" style="display:block; margin: 0 auto;">
+```{r more_observations_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/more_obs.gif')
+```
+
+<aside><img src="../../img/shrinkage/more_obs_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
+
 
 ## Unbalanced
 
@@ -454,7 +512,10 @@ clus_counts = df %>% count(cluster) %>% pull(n)
 plot_data$coefficients = plot_data$coefficients %>% 
   mutate(n_clus = rep(clus_counts, 2))
 
-plot_fun(plot_data = plot_data, pt_size = 'n_clus', end_pause = 40)
+plot_fun(plot_data = plot_data, pt_size = 'n_clus', 
+         end_pause = 60, 
+         duration = 12, 
+         nframes = 120)
 
 re = plot_data$coefficients %>% filter(Model == 'mixed') %>% select(Intercept, x)
 fe = plot_data$coefficients %>% filter(Model == 'by-cluster') %>% select(Intercept, x)
@@ -464,9 +525,17 @@ shrink = abs(fe) - abs(re)
 # cor(shrink, clus_counts, use = 'pair')
 
 anim_save('img/shrinkage/unbalanced.gif')
+
+plot_fun(plot_data = plot_data, animate = F)
+ggsave('img/shrinkage/unbalanced_static.svg')
 ```
 
-<img src="../../img/shrinkage/unbalanced.gif" style="display:block; margin: 0 auto;">
+```{r unbalanced_gif, echo=F, eval=T, dev.args=list(bg = 'transparent'), cache=FALSE}
+knitr::include_graphics('../../img/shrinkage/unbalanced.gif')
+```
+
+<aside><img src="../../img/shrinkage/unbalanced_static.svg" style="display:block; margin: 0 auto; width: 250%"></aside>
+
 
 ## Summary
 
