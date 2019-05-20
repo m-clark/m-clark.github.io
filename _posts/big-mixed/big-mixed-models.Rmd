@@ -200,6 +200,7 @@ all_re %>%
   kable_df(digits = 5)
 ```
 
+
 Random effects for the Days effect.
 
 ```{r re_days, echo=FALSE}
@@ -208,6 +209,45 @@ all_re %>%
   kable_df(digits = 5)
 ```
 
+Standard errors
+
+```{r re_int_se, echo=FALSE}
+gam_summary = summary(ga_model)
+bam_summary = summary(ba_model)
+bam_d_summary = summary(ba_model_d)
+
+mixed_re_se = unique(round(data.frame(ranef(mixed_model))$condsd, 2))
+gam_re_se = unique(round(gam_summary$se[-(1:2)], 2))
+bam_re_se  = unique(round(bam_summary$se[-(1:2)], 2))
+bam_d_re_se = unique(round(bam_d_summary$se[-(1:2)], 2))
+
+rbind(mixed_re_se,
+      gam_re_se,
+      bam_re_se,
+      bam_d_re_se) %>% 
+  data.frame() %>% 
+  rename(Intercepts = X1, Days = X2)
+
+
+```
+
+```{r bayes, echo=FALSE, eval=FALSE}
+library(rstanarm)
+bayes = stan_lmer(Reaction ~ Days + (1|Subject) + (0+Days|Subject), 
+                  data=sleepstudy,
+                  cores = 4)
+
+ranef_summary = summary(bayes) %>% 
+  data.frame() %>% 
+  rownames_to_column('parameter') %>% 
+  filter(str_detect(parameter, '^b')) %>% 
+  select(parameter, mean, sd) %>% 
+  mutate(re = str_extract(parameter, pattern = 'Intercept|Days'))
+ranef_summary %>% 
+  group_by(re) %>% 
+  summarise(sd = mean(sd))
+  
+```
 
 
 

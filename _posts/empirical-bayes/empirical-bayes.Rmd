@@ -170,15 +170,104 @@ pp %>%
 
 ## Full Bayes II
 
-```{r eval=FALSE}
+```{r eval=FALSE, echo = F}
+beta_binomial2 <- custom_family(
+  "beta_binomial2", 
+  dpars = c("mu", "phi"),
+  links = c("logit", "log"), 
+  lb = c(NA, 0),
+  type = "int", 
+  vars = "trials[n]"
+)
+
+
+stan_funs <- "
+  real beta_binomial2_lpmf(int y, real mu, real phi, int T) {
+    return beta_binomial_lpmf(y | T, mu * phi, (1 - mu) * phi);
+  }
+  int beta_binomial2_rng(real mu, real phi, int T) {
+    return beta_binomial_rng(T, mu * phi, (1 - mu) * phi);
+  }
+"
+
+
+stanvars <- stanvar(scode = stan_funs, block = "functions") +
+  stanvar(as.integer(career_eb$AB), name = "trials")
+
+fit2 <- brm(
+  H ~ 1, 
+  data = career_eb, 
+  family = beta_binomial2, 
+  stanvars = stanvars,
+  seed = 1234,
+  iter = 1000,
+  cores = 4
+)
+
+summary(fit2)
+
+expose_functions(fit2, vectorize = TRUE)
+
+predict_beta_binomial2 <- function(i, draws, ...) {
+  mu <- draws$dpars$mu[, i]
+  phi <- draws$dpars$phi
+  N <- draws$data$trials[i]
+  beta_binomial2_rng(mu, phi, N)
+}
+
+fitted_beta_binomial2 <- function(draws) {
+  mu <- draws$dpars$mu
+  trials <- draws$data$trials
+  trials <- matrix(trials, nrow = nrow(mu), ncol = ncol(mu), byrow = TRUE)
+  mu * trials
+}
+
+pp_check(fit2)
+unique(fitted(fit2, summary = T)[,1])
+unique(fitted(fit2, summary = T)[,1]/career_eb$AB)
+hist(career_eb$AB*.250736)
+
+
+prior_summary(fit2)
+
+
 model_code = "
+data {
+  int N;
+  int H [N];
+  int AB [N];
+
+}
+parameters {
+  real<lower=0> alpha;
+  real<lower=0> beta;
+}
+
+model {
+  H ~ beta_binomial(AB, alpha, beta);
+}
+
+generated quantities {
+  # vector[N] avg;
+  # int pred [N];
+  # 
+  # pred = beta_binomial_rng(AB, alpha, beta);
+  # 
+  # for (n in 1:N) avg[n] = 1.0*pred[n] / AB[n];
+}
 "
 
 library(rstan)
-bayes_beta_binomial = stan(
+data_list = list(H = career_eb$H, AB = career_eb$AB, N = nrow(career_eb))
+bayes_beta_binomial = stan(model_code = model_code,
+                           data = data_list,
                            seed = 1234,
                            iter = 1000,
                            cores = 4)
+
+print(bayes_beta_binomial, digits=3)
+dr_1 = c(78.661, 224.875)
+dr_1 = c(75, 222)
 ```
 
 
