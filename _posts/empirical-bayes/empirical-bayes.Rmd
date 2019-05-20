@@ -61,7 +61,7 @@ library(Lahman)
 
 career <- Batting %>%
   filter(AB > 0) %>%
-  anti_join(Pitching, by = "playerID") %>%
+  anti_join(Pitching, by = "playerID") %>%  # This removes Babe Ruth!
   group_by(playerID) %>%
   summarize(H = sum(H), AB = sum(AB)) %>%
   mutate(average = H / AB)
@@ -93,6 +93,7 @@ career_eb %>%
   DT::datatable(rownames = F, options = list(dom = 'ftp', scrollX = T))
 ```
 
+Just to refresh, we can see how the EB estimates are able to guess something more meaningful for someone with just a few at-bats than say, a 0 batting average.  Even for Ody Abbot there, we would guess something closer to the overall average than their .186 average after 70 plate appearances.
 
 ## Models
 
@@ -102,11 +103,12 @@ As mentioned, I will compare the empirical bayes results to those of a couple of
 - standard mixed model on full data (using <span class="pack">lme4</span>)
 - Bayesian mixed model on filtered data (at bats greater than 500)
 - standard mixed model on filtered data
+- Bayesian model with prior specified on the mean
 
 
 The advantages to these are that using a fully Bayesian approach allows us to not approximate the Bayesian and just do it. The standard mixed model essentially provides shrinkage with a penalized regression approach which also approximates the Bayesian, but doesn't require any double dipping of the data to get at a prior, or any additional steps aside from running the model.  In both cases, we can accomplish the desired model with just a standard R modeling approach.
 
-In this case the model is a standard binomial model for counts.  In base R <span class="func">glm</span>, we would do something like the following.
+In this case, the model is a standard binomial model for counts.  In base R <span class="func">glm</span>, we would do something like the following.
 
 ```{r glm_binomial, eval=FALSE}
 glm(cbind(H, AB-H) ~ ..., data = career_eb, family = binomial)
@@ -165,6 +167,22 @@ pp %>%
   theme(axis.text.y = element_blank(),
         axis.title.y = element_blank())
 ```
+
+## Full Bayes II
+
+```{r eval=FALSE}
+model_code = "
+"
+
+library(rstan)
+bayes_beta_binomial = stan(
+                           seed = 1234,
+                           iter = 1000,
+                           cores = 4)
+```
+
+
+
 
 
 ## Full Mixed
