@@ -48,7 +48,10 @@ A couple of folks I work with in different capacities independently came across 
 
 It is a simple and straightforward demo, and admits that it doesn't account for many other things that could be brought into the model, but that's also why it's effective at demonstrating the technique.  However, shrinkage of parameter estimates can be accomplished in other ways, so I thought I'd compare it to two of my preferred ways to do so - a fully Bayesian approach and a random effects/mixed-model approach.  
 
-I demonstrate shrinkage in mixed models in more detail [here](http://m-clark.github.io/posts/2019-05-14-shrinkage-in-mixed-models/) and [here](https://m-clark.github.io/mixed-models-with-R/), and I'm not going to explain Bayesian analysis in general, [but see my doc on it](https://m-clark.github.io/bayesian-basics/).  This post is just to provide a quick  comparison of techniques.
+I demonstrate shrinkage in mixed models in more detail [here](http://m-clark.github.io/posts/2019-05-14-shrinkage-in-mixed-models/) and [here](https://m-clark.github.io/mixed-models-with-R/), and I'm not going to explain Bayesian analysis in general, [but see my doc on it](https://m-clark.github.io/bayesian-basics/).  This post is just to provide a quick  comparison of techniques. 
+
+<aside> I later learned the Bayesian model's depicted here are essentially the same as in the  example for one of the [Stan vignettes](https://mc-stan.org/rstanarm/articles/pooling.html).
+</aside>
 
 ## Data Setup
 
@@ -239,8 +242,8 @@ data {
 
 }
 parameters {
-  real<lower=0> alpha;
-  real<lower=0> beta;
+  real alpha;  // setting lower = 0 provides serious estimation problems, without, just warnings
+  real beta;
 }
 
 model {
@@ -248,12 +251,12 @@ model {
 }
 
 generated quantities {
-  # vector[N] avg;
-  # int pred [N];
-  # 
-  # pred = beta_binomial_rng(AB, alpha, beta);
-  # 
-  # for (n in 1:N) avg[n] = 1.0*pred[n] / AB[n];
+  vector[N] avg;
+  int pred [N];
+
+  pred = beta_binomial_rng(AB, alpha, beta);
+
+  for (n in 1:N) avg[n] = 1.0*pred[n] / AB[n];
 }
 "
 
