@@ -1,0 +1,663 @@
+---
+title: "Empirical Bayes"
+description: |
+  Revisiting an old post
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/priorLikePosterior.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: false
+tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models, R, brms, lme4]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=T,
+  fig.align='center', 
+  fig.asp = .7,
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = function(x, digits = 3) arm::fround(x, digits = digits)
+
+```
+
+## Introduction
+
+A couple of folks I work with in different capacities independently came across [an article](http://varianceexplained.org/r/empirical_bayes_baseball/) by Data Camp's [David Robinson](http://varianceexplained.org)[^drblog] demonstrating <span class="emph">empirical bayes</span>.  It provides a nice and simple example of how to create a prior from the observed data, allowing it to induce shrinkage in estimates, in that case, career batting averages of Major League Baseball players.  This would better allow one to compare someone that had only a relatively few at-bats to those that had longer careers.
+
+It is a simple and straightforward demo, and admits that it doesn't account for many other things that could be brought into the model, but that's also why it's effective at demonstrating the technique.  However, shrinkage of parameter estimates can be accomplished in other ways, so I thought I'd compare it to two of my preferred ways to do so - a fully Bayesian approach and a random effects/mixed-model approach.  
+
+I demonstrate shrinkage in mixed models in more detail [here](http://m-clark.github.io/posts/2019-05-14-shrinkage-in-mixed-models/) and [here](https://m-clark.github.io/mixed-models-with-R/), and I'm not going to explain Bayesian analysis in general, [but feel free to see my doc on it](https://m-clark.github.io/bayesian-basics/).  This post is just to provide a quick  comparison of techniques. 
+
+## Data Setup
+
+We'll start as we typically do, with the data. The following just duplicates David's code from the article.  Nothing new here.  If you want the details, [please read it](http://varianceexplained.org/r/empirical_bayes_baseball/).
+
+```{r data_setup}
+library(dplyr)
+library(tidyr)
+library(Lahman)
+
+career <- Batting %>%
+  filter(AB > 0) %>%
+  anti_join(Pitching, by = "playerID") %>%  # This removes Babe Ruth!
+  group_by(playerID) %>%
+  summarize(H = sum(H), AB = sum(AB)) %>%
+  mutate(average = H / AB)
+
+# use names along with the player IDs
+career <- Master %>%
+  tbl_df() %>%
+  select(playerID, nameFirst, nameLast) %>%
+  unite(name, nameFirst, nameLast, sep = " ") %>%
+  inner_join(career, by = "playerID") 
+
+career_filtered <- career %>%
+  filter(AB >= 500)
+```
+
+With data in place, we can get the empirical bayes estimates.  Again, this is just the original code.  As a reminder, we assume a <span class="emph">beta distribution</span> for batting average, and the mean of the filtered data is `r rnd(mean(career_filtered$average))`. This finds the corresponding $\alpha$ and $\beta$ values for the beta distribution using <span class="pack">MASS</span>.
+
+<aside>The beta distribution can be reparameterized as having a mean and variance:
+$$\mu = \frac{\alpha}{\alpha + \beta}$$
+$$\sigma^2 = \frac{\alpha\beta}{(\alpha + \beta)^2(\alpha + \beta + 1)}$$
+</aside>
+
+```{r eb_estimates}
+m <- MASS::fitdistr(career_filtered$average, 
+                    dbeta,
+                    start = list(shape1 = 1, shape2 = 10))
+
+alpha0 <- m$estimate[1]
+beta0 <- m$estimate[2]
+
+career_eb <- career %>%
+  mutate(eb_estimate = (H + alpha0) / (AB + alpha0 + beta0))
+```
+
+
+<br>
+
+We use the estimated parameters as input for the beta prior. Let's examine what we've got.
+
+<br>
+
+```{r show_data, echo=FALSE}
+career_eb %>% 
+  mutate_if(is.numeric, round, digits = 3) %>% 
+  DT::datatable(rownames = F, options = list(dom = 'ftp', scrollX = T))
+```
+
+Just to refresh, we can see how the EB estimates are able to guess something more meaningful for someone with just a few at-bats than say, a 0 batting average.  Even for Ody Abbot there, we would guess something closer to the overall average than their .186 average after 70 plate appearances. With Frank Abercrombie, who had no hits in a measly 4 at bats, with so little information, we'd give him the benefit of the doubt of being average.
+
+<aside>From Wikipedia: 
+
+>Francis Patterson Abercrombie (January 2, 1851 – November 11, 1939) was an American professional baseball player who played in the National Association for one game as a shortstop in 1871. Born in Fort Towson, Oklahoma, then part of Indian Territory, he played for the Troy Haymakers. He died at age 88 in Philadelphia, Pennsylvania. 
+
+Pretty sure that does not qualify for Wikipedia's notability standards, but oh well.
+</aside>
+
+## Models
+
+As mentioned, I will compare the empirical bayes results to those of a couple of other approaches.  They are:
+
+- Bayesian mixed model on full data (using <span class="pack">brms</span>)
+- Standard mixed model on full data (using <span class="pack">lme4</span>)
+- Bayesian mixed model on filtered data (at bats greater than 500)
+- Standard mixed model on filtered data
+
+
+The advantages to these are that using a fully Bayesian approach allows us to not approximate the Bayesian and just do it. In the other case, the standard mixed model provides shrinkage with a penalized regression approach which also approximates the Bayesian, but doesn't require any double dipping of the data to get at a prior, or any additional steps aside from running the model.  
+
+In both cases, we can accomplish the desired result with just a standard R modeling approach.  In particular, the model is a standard binomial model for counts.  With base R <span class="func">glm</span>, we would do something like the following:
+
+```{r glm_binomial, eval=FALSE}
+glm(cbind(H, AB-H) ~ ..., data = career_eb, family = binomial)
+```
+
+The model is actually for the count of successes out of the total, which R has always oddly done in <span class="func">glm</span> as `cbind(# successes, # failures)` rather than the more intuitive route (my opinion).  The <span class="pack">brms</span> package will make it more obvious, but <span class="func">glmer</span> uses the <span class="func">glm</span> approach.  The key difference for both models relative to the standard binomial is that we add a per-observation <span class="emph">random effect</span> for `playerID`[^perobs].
+
+
+## Bayesian Model
+
+We'll start with the full Bayesian approach using <span class="pack">brms</span>.  This model will struggle a bit[^problem_chain], and takes a while to run, as it's estimating `r nrow(career_eb) + 2` parameters.  But in the end we get what we want.
+
+<aside> I later learned the Bayesian model's depicted here are essentially the same as in the  example for one of the [Stan vignettes](https://mc-stan.org/rstanarm/articles/pooling.html).
+</aside>
+
+```{r bayes_full}
+# in case anyone wants to use rstanarm I show it here
+# library(rstanarm)
+# bayes_full = stan_glmer(cbind(H, AB-H) ~ 1 + (1|playerID),
+#                         data = career_eb,
+#                         family = binomial)
+
+library(brms)
+bayes_full = brm(H|trials(AB) ~ 1 + (1|playerID), 
+                 data = career_eb,
+                 family = binomial,
+                 seed = 1234,
+                 iter = 1000,
+                 thin = 4,
+                 cores = 4)
+```
+
+```{r save_bayes_model, echo=FALSE, eval=FALSE}
+save(bayes_full, file='_posts/empirical-bayes/data/bayes_full.RData')
+```
+
+
+With the posterior predictive check we can see right off the bat[^pun] that this approach estimates the data well. Our posterior predictive distribution for the number of hits is hardly distinguishable from the observed data. 
+
+```{r bayes_inspect, echo = FALSE}
+pp = pp_check(bayes_full)$data %>% 
+  arrange(rep_id) %>% 
+  rename(H = value)
+
+pp %>% 
+  ggplot(aes(x = H)) +
+  geom_density(
+    size = 1,
+    color = 'gray50',
+    data = pp %>% filter(is_y)) +
+  geom_density(
+    aes(group = rep_label),
+    color = alpha('#ff5500', .25),
+    size = .25, 
+    data = pp %>% filter(!is_y)) + 
+  theme_clean() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank())
+```
+
+Again, the binomial model is for counts (out of some total), in this case, the number of hits. But if we wanted proportions, which in this case are the batting averages, we could just divide this result by the AB (at bats) column.  Here we can see a little more nuance, especially that the model shies away from the lower values more, but this would still be a good fit by any standards.
+
+```{r bayes_inspect_average, echo=FALSE}
+pp = pp_check(bayes_full)$data
+
+pp = pp %>% 
+  arrange(rep_id) %>% 
+  mutate(avg = value/career_eb$AB) 
+
+pp %>% 
+  ggplot(aes(x = avg)) +
+  geom_density(
+    size = 1,
+    color = 'gray50',
+    data = pp %>% filter(is_y)) +
+  geom_density(
+    aes(group = rep_label),
+    color = alpha('#ff5500', .25),
+    size = .25, 
+    data = pp %>% filter(!is_y)) + 
+  scale_x_continuous(labels=rnd) +
+  theme_clean() + 
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank())
+```
+
+
+
+
+
+
+## Mixed Model
+
+The <span class="pack">lme4</span> model takes the glm approach as far as syntax goes `cbind(successes, non-successes)`.  Very straightforward, and fast, as it doesn't actually estimate the random effects, but instead *predicts* them.  The predicted random effects are in fact akin to empirical bayes estimates[^ebblups].
+
+```{r glmer_full}
+glmer_full = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                         data = career_eb,
+                         family = binomial)
+```
+
+
+```{r save_mixed_model, echo=FALSE, eval=F}
+save(glmer_full, 'data/mixed_full.RData')
+```
+
+## Filtered Data Models
+
+Since David's original 'prior' was based only on observations for those who had at least 500+ at bats (essentially a full season), the following re-runs the previous models just for the filtered data set, to see how those comparisons turn out.
+
+
+```{r filtered_models}
+bayes_filtered = brm(H|trials(AB) ~ 1 + (1|playerID), 
+                     data = career_eb %>% filter(AB >= 500),
+                     family = binomial,
+                     iter = 1000,
+                     seed = 1234,
+                     thin = 4,
+                     cores = 4)
+
+glmer_filtered = lme4::glmer(cbind(H, AB-H) ~ 1 + (1|playerID), 
+                             data = career_eb %>% filter(AB >= 500),
+                             family = binomial)
+```
+
+
+
+## Prediction Comparisons
+
+Now we're ready to make some comparisons. We'll combine the fits from the models to the original data set.
+
+```{r add_predictions}
+career_other = career_eb %>% 
+  mutate(
+    bayes_estimate = fitted(bayes_full)[,1] / AB,
+    glmer_estimate = fitted(glmer_full),
+  )
+
+career_other_filtered = career_filtered %>% 
+  mutate(
+    bayes_filtered_estimate = fitted(bayes_filtered)[,1] / AB,
+    glmer_filtered_estimate = fitted(glmer_filtered),
+  ) %>% 
+  select(playerID, contains('filter'))
+
+career_all = left_join(career_other, 
+                       career_other_filtered)
+
+```
+
+```{r career_all_predictions, echo=FALSE}
+career_all %>% 
+  mutate_if(is.numeric, round, digits=3) %>% 
+  DT::datatable(rownames = F, options = list(dom = 'ftp', scrollX = T))
+```
+
+We can see that the fully Bayesian and standard mixed models are essentially giving us the same values.  We start to see slight differences with the EB estimates, especially for those with fewer at-bats.  When there is less data, the EB estimates appear to pull more sharply toward the prior.
+
+### Top and bottom predictions
+
+If we just look at the top 10, we would not come to any different conclusions (only full data models shown).
+
+```{r compare_top_predictions}
+top_10_eb = career_all %>% 
+  top_n(10, eb_estimate) %>% 
+  select(playerID, eb_estimate)
+
+top_10_bayes = career_all %>% 
+  top_n(10, bayes_estimate) %>% 
+  select(playerID, bayes_estimate)
+
+top_10_mixed = career_all %>% 
+  top_n(10, glmer_estimate) %>% 
+  select(playerID, glmer_estimate)
+```
+
+```{r compare_top_predictions_table, echo=FALSE}
+left_join(top_10_eb, top_10_bayes) %>% 
+  left_join(top_10_mixed) %>% 
+  kable_df()
+```
+
+
+Same for the bottom 10, although we see a little more wavering on the fitted values, as some of these are the ones who have relatively fewer at bats, and would see more shrinkage as a result.
+
+```{r compare_bot_predictions}
+bottom_10_eb = career_all %>% 
+  top_n(-10, eb_estimate) %>% 
+  select(playerID, eb_estimate)
+
+bottom_10_bayes = career_all %>% 
+  top_n(-10, bayes_estimate) %>% 
+  select(playerID, bayes_estimate)
+
+bottom_10_mixed = career_all %>% 
+  top_n(-10, glmer_estimate) %>% 
+  select(playerID, glmer_estimate)
+```
+
+```{r compare_bot_predictions_table, echo=FALSE}
+left_join(bottom_10_eb, bottom_10_bayes) %>% 
+  left_join(bottom_10_mixed) %>% 
+  kable_df()
+```
+
+### Extreme predictions
+
+Now let's look at some more extreme predictions.  Those who averaged 0 or 1 for their lifetime batting average.  Note that none of these will have very many plate appearances, and will show the greatest shrinkage.  As a reminder, the filtered models did not include any of these individuals, and so are not shown.
+
+<br>
+
+```{r DTBS, results='hide', echo=FALSE, cache=FALSE}
+# some bizarre issue causes DT to only display the complete data set regardless of filtering etc., so creating another dt to 'fix' it. Unbelievable.
+DT::datatable(mtcars)
+```
+
+
+```{r other-comparisons-1avg, echo=FALSE, cache=FALSE, eval=T}
+career_all %>% 
+  filter(average == 1) %>%
+  arrange(desc(AB)) %>% 
+  mutate_if(is.numeric, round, digits=3) %>% 
+  select(-contains('filtered')) %>% 
+  DT::datatable(
+    rownames = F,
+    options = list(dom = 'tp', scrollX = T),
+    caption = 'Batting 1.000'
+  )
+```
+
+<br>
+
+```{r other_comparisons_0avg, echo=FALSE, cache=FALSE}
+career_all %>% 
+  filter(average == 0) %>% 
+  arrange(desc(AB)) %>% 
+  mutate_if(is.numeric, round, digits=3) %>% 
+  select(-contains('filtered')) %>% 
+  DT::datatable(
+    rownames = F, 
+    options = list(dom = 'tp', scrollX = T),
+    caption = 'Batting 0.000'
+  )
+```
+
+
+
+
+## Visualizing the Results
+
+The following reproduces David's plots.  I start with his [original image](http://varianceexplained.org/figs/2015-10-01-empirical_bayes_baseball/unnamed-chunk-11-1.png), altered only to be consistent with my visualization choices that use different color choices, add transparency, and allow size to reflect the number of at bats. Here is his explanation:
+
+>The horizontal dashed red line marks $y=\alpha_0/\alpha_0+\beta_0=0.259$
+- that’s what we would guess someone’s batting average was if we had no evidence at all. Notice that points above that line tend to move down towards it, while points below it move up.
+The diagonal red line marks $x=y$. Points that lie close to it are the ones that didn't get shrunk at all by empirical Bayes. Notice that they’re the ones with the highest number of at-bats (the brightest blue): they have enough evidence that we’re willing to believe the naive batting average estimate.
+
+```{r robinson_plot_original, echo=FALSE}
+rob_plot_theme =   
+  theme(
+    axis.title.y = element_text(angle = 0, size=8),
+    axis.title.x = element_text(angle = 0, size=8),
+    axis.text = element_text(size = 6),
+    legend.key.size = unit(10, 'points'),
+    legend.text =  element_text(size=8),
+    legend.title =  element_text(size=8)
+)
+
+career_all %>% 
+  ggplot(aes(x = average, y = eb_estimate)) +
+  geom_hline(yintercept = mean(career_filtered$average), 
+             color = '#ff5500',
+             alpha = .5,
+             size = 1) +
+  geom_abline(color = '#00aaff', 
+              alpha = .5,
+              size = 1) +
+  geom_point(aes(fill=AB, size=AB), color = 'gray50', pch=21, alpha=.1) +
+  labs(y = 'EB Estimate', x='Batting Average') +
+  scico::scale_fill_scico(direction = 1) + 
+  scale_size_continuous(breaks = c(500, 2500, 5000, 10000), range = c(.5, 4)) +
+  scale_x_continuous(breaks = seq(0, 1, by=.1), labels = rnd) +
+  scale_y_continuous(breaks = seq(.20, .35, by=.025)) +
+  guides(color='none', 
+         fill = 'none', 
+         alpha = 'none', 
+         size = guide_legend(override.aes = list(alpha = 1))) +
+  visibly::theme_clean() +
+  rob_plot_theme
+```
+
+Again, this is the same plot, but the size (along with color), which represents the number of at-bats, shows more clearly how observations don't exhibit as much shrinkage when there is enough information.
+
+
+Here is the same plot against the full bayes estimates.  The original lines are kept, but I add lines representing the average of the whole data, and the intercept from the Bayesian analysis (which is essentially the same as with the mixed model).  In this case, estimates are pulled toward the estimated model mean.
+
+```{r robinson_plot, echo=FALSE}
+library(ggplot2)
+averages = data.frame(
+  average = c('filtered/eb', 'full data', 'bayes'),
+  avg = c(mean(career_filtered$average),
+          mean(career_eb$average),
+          plogis(fixef(bayes_full)[1]))
+)
+
+library(ggnewscale)
+
+career_all %>%
+  ggplot(aes(x = average, y = bayes_estimate)) +
+  geom_hline(aes(yintercept = avg, color = average),
+             data = averages %>%
+               mutate(average = fct_inorder(factor(average))),
+             size = .5,
+             show.legend = F) +
+  geom_text(aes(x = 1, y = c(avg[1]+.01, avg[2:3]-.0025), color = average, label=average),
+            hjust = .75,
+            vjust = 1,
+            size = 3,
+            data = averages,
+            show.legend = F) +
+  scico::scale_color_scico_d(direction = -1, begin=.25, end=.75) +
+  new_scale_color() +
+  geom_abline(color = '#00aaff', alpha = .25, size = 1) +
+  geom_point(aes(fill=AB, size=AB), color = 'gray50', pch=21, alpha=.1) +
+  guides(size = F) +
+  labs(y = 'Full Bayes', x='Batting Average') +
+  scico::scale_fill_scico(direction = 1) +
+  scale_size_continuous(breaks = c(500, 2500, 5000, 10000), range = c(.5, 4)) +
+  scale_x_continuous(breaks = seq(0, 1, by=.1), labels = rnd) +
+  scale_y_continuous(breaks = seq(.20, .35, by=.025)) +
+  guides(color='none', 
+         fill = 'none', 
+         alpha = 'none', 
+         size = guide_legend(override.aes = list(alpha = 1))) +
+  visibly::theme_clean() +
+  rob_plot_theme
+
+
+# career_all %>% 
+#   select(playerID, contains('estimate')) %>% 
+#   gather(key = type, value = estimate, -playerID, -eb_estimate) %>% 
+#   mutate(type = fct_inorder(type)) %>%   # to defy ggplot
+#   drop_na() %>%                          # to get rid of warning
+#   ggplot(aes(x = eb_estimate, y = estimate)) +
+#   # geom_smooth(color = '#ff5500', se = F, size = .5, method = 'loess') +
+#   geom_point(color = '#00aaff', alpha=.005, size = .5) +
+#   facet_wrap(~type, ncol = 2) + 
+#   theme_minimal()
+
+```
+
+<br>
+
+We can also look at the density plots for more perspective.  The full data models for the Bayesian and mixed models are basically coming to the same conclusions.  The filtered data estimates center on the filtered data mean batting average as expected, but the mixed and Bayesian models show more variability in the estimates, as they are not based on the full data.  As the EB prior is based on the filtered data, the distribution of values is similar to the others, but shifted to the filtered data mean. Thus it is coming to slightly different conclusions about the expected batting averages in general[^ebfull].
+
+<br>
+
+```{r density_plot, echo=FALSE, eval=T}
+# add eb based on all
+# c_avg = career$average
+# c_avg[career$average == 0] = .00000000001
+# c_avg[career$average == 1] = .99999999999
+# m <- MASS::fitdistr(c_avg,
+#                     dbeta,
+#                     start = list(shape1 = 1, shape2 = 10))
+# 
+# alpha0 <- m$estimate[1]
+# beta0 <- m$estimate[2]
+# 
+# career_all <- career_all %>%
+#   mutate(eb_estimate_all = (H + alpha0) / (AB + alpha0 + beta0))
+
+career_all %>% 
+  select(contains('estimate')) %>% 
+  gather(key = type, value = estimate) %>% 
+  mutate(type = fct_inorder(type)) %>%   # to defy ggplot
+  drop_na() %>%                          # to get rid of warning
+  ggplot() +
+  # geom_density(aes(x = average), alpha=.25, data = career) +
+  geom_density(aes(x = estimate, color = type, fill = type), alpha=.25) +
+  guides(fill = 'none') +
+  labs(y = '') +
+  scale_x_continuous(labels = rnd) +
+  theme_clean() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank())
+```
+
+
+```{r misc, eval=FALSE, echo=FALSE}
+career_all %>% 
+  select(contains('estimate')) %>% 
+  cor(use='pair') %>% 
+  round(2)
+  
+  
+make_stancode(H|trials(AB) ~ 1 + (1|playerID), 
+                  data = career,
+                  family = binomial)
+
+career_eb %>% pivot_longer
+```
+
+## Summary
+
+Here we have enhanced the original empirical bayes story with the addition of full bayes estimates and those from a standard mixed model.  In terms of approximating Bayesian results, the empirical bayes are similar, but shifted due to the choice of prior.  On the practical side, the mixed model would be easier to run and appears to more closely approximate the full bayes approach.  In your own situation, any of these might be viable.
+
+
+
+## Addendum
+
+### Beta-binomial
+
+David mentioned the beta-binomial distribution in his post.  In this case, the prior for the probability of the binomial is assumed to be beta distributed. The [brms vignette](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html) shows an example of how to use this distribution, and the following reproduces it for our data.  You will likely need more iterations and possibly other fiddling to obtain convergence.
+
+```{r beta_binomial, eval=FALSE}
+beta_binomial2 <- custom_family(
+  "beta_binomial2", 
+  dpars = c("mu", "phi"),
+  links = c("logit", "log"), 
+  lb = c(NA, 0),
+  type = "int", 
+  vars = "trials[n]"
+)
+
+
+stan_funs <- "
+  real beta_binomial2_lpmf(int y, real mu, real phi, int T) {
+    return beta_binomial_lpmf(y | T, mu * phi, (1 - mu) * phi);
+  }
+  int beta_binomial2_rng(real mu, real phi, int T) {
+    return beta_binomial_rng(T, mu * phi, (1 - mu) * phi);
+  }
+"
+
+
+stanvars <- stanvar(scode = stan_funs, block = "functions") +
+  stanvar(as.integer(career_eb$AB), name = "trials")
+
+fit2 <- brm(
+  H ~ (1|playerID), 
+  data = career_eb, 
+  family = beta_binomial2, 
+  stanvars = stanvars,
+  seed = 1234,
+  iter = 1000,
+  cores = 4
+)
+
+summary(fit2)
+
+expose_functions(fit2, vectorize = TRUE)
+
+predict_beta_binomial2 <- function(i, draws, ...) {
+  mu <- draws$dpars$mu[, i]
+  phi <- draws$dpars$phi
+  N <- draws$data$trials[i]
+  beta_binomial2_rng(mu, phi, N)
+}
+
+fitted_beta_binomial2 <- function(draws) {
+  mu <- draws$dpars$mu
+  trials <- draws$data$trials
+  trials <- matrix(trials, nrow = nrow(mu), ncol = ncol(mu), byrow = TRUE)
+  mu * trials
+}
+
+pp_check(fit2)
+fitted(fit2, summary = T)[,1]
+fitted(fit2, summary = T)[,1]/career_eb$AB
+prior_summary(fit2)
+
+
+
+## Using stan for just an intercept only model to get the parameter estimates
+# takes about a minute per chain
+
+model_code = "
+data {
+  int N;
+  int H [N];
+  int AB [N];
+
+}
+
+parameters {
+  real alpha;  // setting lower = 0 provides serious estimation problems, without, just warnings
+  real beta;
+}
+
+model {
+  H ~ beta_binomial(AB, alpha, beta);
+}
+
+generated quantities {
+  vector[N] avg;
+  int pred [N];
+
+  pred = beta_binomial_rng(AB, alpha, beta);
+
+  for (n in 1:N) avg[n] = 1.0*pred[n] / AB[n];
+}
+"
+
+library(rstan)
+data_list = list(H = career_eb$H, AB = career_eb$AB, N = nrow(career_eb))
+
+bayes_beta_binomial = stan(model_code = model_code,
+                           data  = data_list,
+                           seed  = 1234,
+                           iter  = 1000,
+                           cores = 4)
+
+print(bayes_beta_binomial, digits = 3)
+# dr_bin = c(78.661, 224.875)           # beta estimates from DR post
+# dr_betabin = c(75, 222)               # beta binomial estimates from DR pots
+# stan_betabin = c(74.784, 223.451)     # stan estimates from above ~ .251 avg
+```
+
+
+[^drblog]: David is actually responsible for me starting to do blog posts this year as a supplement to my more involved documents and workshops.  At his talk at the RStudio conference, he laid out the benefits of blogging and in general doing anything to share one's work with the greater community, and it made sense to me to use this as a less formal outlet.
+
+[^perobs]: This is possible for mixed models for counts like binomial and poisson (and other distributions) where we don't estimate the residual variance, as it is determined by the nature of the distribution's mean-variance relationship.  In this case, it allows us to deal with overdispersion in this model via the random effect variance.  See the [GLMM FAQ](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#fitting-models-with-overdispersion).
+
+[^problem_chain]: One chain always struggled with the <span class="pack">brms</span> defaults, but diagnostics were okay.
+
+[^ebblups]: See [Bates' comment](https://stat.ethz.ch/pipermail/r-sig-mixed-models/2009q4/002984.html).
+
+[^pun]: Not sorry!
+
+[^ebfull]: I actually redid the empirical bayes based on the full data. One issue was that fitting the beta required nudging the 0s and 1s, because the beta distribution doesn't include 0 and 1.  In the end, the resulting estimates mostly followed the original data.  It had a very large and long tail for values less than .200, and on the the other end, estimated some batting averages over .500.
