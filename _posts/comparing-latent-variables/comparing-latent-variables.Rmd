@@ -11,7 +11,7 @@ output:
   distill::distill_article:
     self_contained: false
     toc: true
-    css: ../../test.css
+    css: ../../styles.css
 draft: true
 tags: [R, factor analysis, growth curve, structural equation modeling, SEM, intercepts, means]
 ---
@@ -44,7 +44,7 @@ rnd = function(x, digits = 3) arm::fround(x, digits = digits)
 
 ## Introduction
 
-In some cases we are interested in looking at group differences in latent variables.  For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. There are a variety of ways in to assess group differences across latent structure, such as anxiety or verbal ability, and this post provides a demo using lavaan.  
+In some cases we are interested in looking at group differences with regard to <span class="emph"> latent variables</span>.  For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. We cannot measure many constructs directly, but can get reliable measures of them indirectly, e.g. by asking a series of questions, or otherwise observing multiple instances of activity thought to be related to some construct. There are a variety of ways in to assess group differences across latent structure, such as anxiety or verbal ability, and this post provides a demo using lavaan.  
 
 My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder for the syntax to refer back to.  As a starting point though, you can find some demonstration on the [lavaan website](https://lavaan.ugent.be).  For more on factor analysis, structural equation modeling, and more, see [my document](https://m-clark.github.io/sem/).
 
@@ -140,7 +140,7 @@ coef_1 %>% kable_df()
 ```
 
 
-The above shows the schools not to be much different from one another on the visual-spatial ability latent variable.  But compare this result to the intercepts for `x1` in our baseline model.  This model would would be identical to comparing the intercepts on whichever observed variable you previously fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of the observed variable.
+The above shows the schools not to be much different from one another on the visual-spatial ability latent variable.  But compare this result to the intercepts for `x1` in our baseline model.  This model would would be identical to comparing the intercepts on whichever observed variable you had fixed to zero.  Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of the observed variable.
 
 To make this more explicit, we'll label the `x1` intercepts in our baseline model and look at their difference.  I won't show the model out put and simply focus on the parameter table instead.
 
@@ -248,14 +248,17 @@ fit_4a = sem(hs_model_4a, data=HolzingerSwineford1939, meanstructure=T)
 summary(fit_4a)
 ```
 
-At first blush, it would seem we are not getting the same result, as the mean difference is now estimated to be `r rnd(fit_4a@ParTable$est[fit_4a@ParTable$label=='diff'])`. Our difference is notably larger and significant.  We can also see that tghe fit is different based on AIC and the number of parameters.
+At first blush, it would seem we are not getting the same result, as the mean difference is now estimated to be `r rnd(fit_4a@ParTable$est[fit_4a@ParTable$label=='diff'])`. Our difference is notably larger and significant.  We can also see that the fit is different based on AIC and the number of parameters estimated.
 
 ```{r compare_1234a, echo=FALSE}
 model_list = mget(ls(pattern = '^fit'))
 
 model_list %>% 
-  map_df(AIC)
-model_list %>% map_df(function(x) length(coef(x)))
+  map_df(AIC) %>% 
+  kable_df()
+model_list %>% 
+  map_df(function(x) length(coef(x))) %>% 
+  kable_df()
 ```
 
 However, we can recover the previous multigroup results by regressing the other observed variables on school as well.
@@ -294,10 +297,11 @@ bind_rows(
   .id = 'model'
 ) %>% 
   mutate(model = c(1:3, '4b')) %>% 
-  select(model, estimate, std.error, conf.low, conf.high)
+  select(model, estimate, std.error, conf.low, conf.high) %>% 
+  kable_df()
 ```
 
-Going back to the first structural model `hs_model_4a`, it might be interesting to some to see that it the group difference *still* regards a difference on the observed `x1` observed variable.  We can see this more clearly if we set the `x1` loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la [mediation]()) to estimate the group difference.
+Going back to the first structural model `hs_model_4a`, it might be interesting to some to see that the group difference *still* regards a difference on the observed `x1` observed variable.  We can see this more clearly if we set the `x1` loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la [mediation]()) to estimate the group difference.
 
 ```{r hs_model_4c}
 hs_model_4c <- ' 
@@ -330,7 +334,7 @@ And what is this value of `r rnd(coef_4c$estimate)`?  We see it as the group dif
 
 ## More structural models
 
-The following is equivalent to the result one would get from `group.equal = c('loadings', 'intercepts')`, but to make things more clear, I show the explicity syntax.  The first group would have latent variable means at zero, while the second group would be allowed to vary.  This is more or less what is desired if we want to know a group difference on the latent structure. The first group mean is arbitrarily set to zero, so the estimated intercept for the second group tells us the relative difference.
+The following is equivalent to the result one would get from `group.equal = c('loadings', 'intercepts')`, but to make things more clear, I show the explicit syntax.  The first group would have latent variable means at zero, while the second group would be allowed to vary.  This is more or less what is desired if we want to know a group difference on the latent structure. The first group mean is arbitrarily set to zero, so the estimated intercept for the second group tells us the relative difference, much like when we are dummy coding with standard regression models.
 
 ```{r hs_model_4d}
 hs_model_4d <- ' 
@@ -435,7 +439,7 @@ bind_rows(
 Note that the primary differences can be summarized as follows:
 
 - 1:3 and 4b: These models are focusing on observed variable differences, specifically on X1.
-- 4a and 4c: These models are latent variable differences on the visual factor, but do not control for indirect (or *backdoor*) effect school has on visual *through* speed and verbal.  In that light, we might consider this the *total effect* of school on the visual factor.  Had we regressed the verbal and speed factors on school also, thereby decomposing the total effect into those different paths, we'd get the same result for the school difference on the visual factor.
+- 4a and 4c: These models are latent variable differences on the visual factor, but do not control for indirect (or *backdoor*) effect school has on visual *through* speed and verbal.  In that light, we might consider this the *total effect* of school on the visual factor.  Had we regressed the verbal and speed factors on school also, thereby decomposing the total effect into those different paths, we'd get the same result for the school difference on the visual factor as we do in 4d and e
 - 4d and 4e:  This is generally what we want.  A simple group difference on a latent variable(s) with other parameters assumed (relatively) equal across groups.
 
 ## Sum/Factor score
@@ -532,7 +536,7 @@ That coefficient representing the group difference looks familiar- it's the same
 
 ## Summary of differences
 
-What should be apparent at this point is that the multigroup approach is an interaction of everything with the grouping variable.  Honestly I think this is rarely desirable theoretically, or at least we rarely do this in other modeling contexts.  Furthermore, group sizes may be prohibitively small given the number of parameters that need to be estimated.  In general, we may be interested in a specific group difference on some latent variable, possibly controlling for other effects in some fashion, and it is far simpler to specify such a model, and it is a notably simpler model as well.
+We can summarize our results as follows.  We can see the multigroup approach as an interaction of everything with the grouping variable, .  Honestly I think this is rarely desirable theoretically, or at least we rarely do this in other modeling contexts.  Furthermore, group sizes may be prohibitively small given the number of parameters that need to be estimated.  In general, we may be interested in a specific group difference on some latent variable, possibly controlling for other effects in some fashion, and it is far simpler to specify such a model, and it is a notably simpler model as well.
 
 
 ## Measurement invariance
