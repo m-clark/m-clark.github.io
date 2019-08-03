@@ -11,7 +11,7 @@ output:
   distill::distill_article:
     self_contained: false
     toc: true
-    css: ../../test.css
+    css: ../../styles.css
 draft: true
 tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
 ---
@@ -43,6 +43,53 @@ rnd = function(x, digits = 3) arm::fround(x, digits = digits)
 
 ## Introduction
 
+With mixed models, it is easy to run into data that is larger in size than some more typical data scenarios.  Consider a cross-sectional data set with 200 individuals.  This is fairly small data.  Now, if we observe them each five times as in a longitudinal setting, we suddenly have 1000 observations.  There may be only 100 plus countries in the world, but if we survey 100s or 1000s in many of them, we suddenly have a notable data set size, and still would potentially like to model a country-level random effect.
+
+
+## R Packages for Mixed Models
+
+While many tools abound to conduct mixed models for larger data sizes, their limitations can be found pretty quickly.  R's lme4 is a standard, but powerful mixed model tool.   More to the point, it is very computationally effecient, such  that it can handle very large sample sizes.  For linear mixed models this can include hundreds of thousands  of observations with possibly multiple random effects, still running on a basic laptop.  For standard linear mixed models, it's still largely the tool of choice, and its approach has even been copied/ported into other statistical tools.
+
+So, for even a million observations and a single random effect, lme4 could possibly run a model in a few seconds.
+
+```{r simple_mixed}
+set.seed(1234)
+N = 1e6
+ng = 1000
+
+x = rnorm(N)
+g = rep(1:ng, e = N/ng)
+b = rbinom(ng, size = 1, prob=.5)
+b = rep(b, e = N/ng)
+
+sd_g = .5
+sigma = 1
+
+y = 0 + .5*x + .25*b + rnorm(ng, sd = sd_g)[g] + rnorm(N, sd = sigma)
+y_bin = y > median(y)
+
+
+d = tibble(x, b, y, y_bin, g)
+head(d)
+
+library(lme4)
+system.time({
+  mixed_big = lmer(y ~ x + b + (1|g))
+})
+
+summary(mixed_big)
+```
+
+This is great. But the problem comes as soon as you move to the generalized mixed model, e.g. having a binary outcome, or multiple random effects, unbalanced data, or you want a tool that does other things while still dealing with large data.  The following is the more or less the same model, but for a binary outcome.
+
+```{r simple_big_mixed_binary}
+system.time({
+  mixed_big_glmm = glmer(y_bin ~ x + b + (1|g), 
+                         family = binomial)
+})
+```
+
+For starters, you shouldn't be worried about models taking a few minutes to run, or even a couple hours. Once you have your model/s squared away, there is no need to repeatedly run them.  But in this case we had a greater than 10 fold increase in time for very standard data scenario.  It's good to have options when you need them.
 
 ## Basic Model Example
 
@@ -51,7 +98,7 @@ rnd = function(x, digits = 3) arm::fround(x, digits = digits)
 library(lme4); library(mgcv)
 mixed_model = lmer(Reaction ~ Days + (1|Subject) + (0+Days|Subject), 
                    data=sleepstudy)
-ga_model = gam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+ga_model = gam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'),
                data=sleepstudy, method = 'REML')
 ```
 
@@ -86,7 +133,7 @@ bam_vcov_d = gam.vcomp(ba_model_d)
 
 ### Fixed effects comparison
 
-```{r compare_fixef}
+```{r compare_fixef, echo=FALSE}
 tibble(
   mixed = fixef(mixed_model),
   gam = coef(ga_model)[1:2],
@@ -98,13 +145,13 @@ tibble(
 
 Note there are options for the gam model for se, including a bayesian one.  See `?gamObject`.  Displayed are `Vp`.
 
-- **Ve**: frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI's as smooths are usually biased.
+- **Ve** : frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI's as smooths are usually biased.
 
-- **Vp**: estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.
+- **Vp** : estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.
 
-- **Vc**: Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.
+- **Vc** : Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.
 
-```{r compare_fixef_se}
+```{r compare_fixef_se, echo=FALSE}
 tibble(
   mixed = summary(mixed_model)$coefficients[,'Std. Error'],
   gam = sqrt(diag(ga_model$Vp[1:2, 1:2])),
@@ -118,7 +165,7 @@ tibble(
 
 Reported are sd for subject level random effects for intercept, `Days` coefficient, and residual.
 
-```{r compare_vc}
+```{r compare_vc, echo=FALSE}
 tibble(
   mixed = lmer_vcov$sd,
   gam = gam_vcov[,'std.dev'],
