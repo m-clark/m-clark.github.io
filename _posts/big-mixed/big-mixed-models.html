@@ -1000,19 +1000,21 @@ sd_g = .5
 sigma = 1
 
 y = 0 + .5*x + .25*b + rnorm(ng, sd = sd_g)[g] + rnorm(N, sd = sigma)
+y_bin = y &gt; median(y)
 
-d = tibble(x, b, y, g)
+
+d = tibble(x, b, y, y_bin, g)
 head(d)</code></pre>
 <pre><code>
-# A tibble: 6 x 4
-       x     b      y     g
-   &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt; &lt;int&gt;
-1 -1.21      0 -1.69      1
-2  0.277     0 -0.156     1
-3  1.08      0  0.834     1
-4 -2.35      0 -2.32      1
-5  0.429     0 -0.554     1
-6  0.506     0  1.05      1</code></pre>
+# A tibble: 6 x 5
+       x     b      y y_bin     g
+   &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt; &lt;lgl&gt; &lt;int&gt;
+1 -1.21      0 -1.69  FALSE     1
+2  0.277     0 -0.156 FALSE     1
+3  1.08      0  0.834 TRUE      1
+4 -2.35      0 -2.32  FALSE     1
+5  0.429     0 -0.554 FALSE     1
+6  0.506     0  1.05  TRUE      1</code></pre>
 <pre class="r"><code>
 library(lme4)
 system.time({
@@ -1020,7 +1022,7 @@ system.time({
 })</code></pre>
 <pre><code>
    user  system elapsed 
-  7.438   0.603   8.389 </code></pre>
+  7.122   0.508   7.766 </code></pre>
 <pre class="r"><code>
 summary(mixed_big)</code></pre>
 <pre><code>
@@ -1050,6 +1052,18 @@ Correlation of Fixed Effects:
 x  0.000       
 b -0.712  0.000</code></pre>
 </div>
+<p>This is great. But the problem comes as soon as you move to the generalized mixed model, e.g. having a binary outcome, or multiple random effects, unbalanced data, or you want a tool that does other things while still dealing with large data. The following is the more or less the same model, but for a binary outcome.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+system.time({
+  mixed_big_glmm = glmer(y_bin ~ x + b + (1|g), 
+                         family = binomial)
+})</code></pre>
+<pre><code>
+   user  system elapsed 
+106.115  12.294 119.621 </code></pre>
+</div>
+<p>For starters, you shouldn’t be worried about models taking a few minutes to run, or even a couple hours. Once you have your model/s squared away, there is no need to repeatedly run them. But in this case we had a greater than 10 fold increase in time for very standard data scenario. It’s good to have options when you need them.</p>
 <h2 id="basic-model-example">Basic Model Example</h2>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
