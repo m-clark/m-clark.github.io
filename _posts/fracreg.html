@@ -982,7 +982,7 @@
 <p>It is often the case you might have data that primarily falls between zero and one. For example, these may be percentages for which you don’t know the total count, grades from 0-100 that can be transformed as such, and similar. If they are counts/proportions where you knew the denominator, or a binary outcome, you would be able to just use standard logistic regression with the binomial distribution. Additionally, if all the data lies between zero and one, <span class="emph" style="">beta regression</span> is a natural choice for which to model such functions. However, beta regression can only deal with values between zero and one, so if you have zeros or ones, what can one do?</p>
 <p>Some suggest adding a fudge factor to the zeros or ones to put them on the (0,1) interval. However, such hacks are unnecessary these days. Furthermore, you already have tools that model this sort of target variable.</p>
 <h2 id="stata-example">Stata example</h2>
-<p>It might seem strange to start with an example using Stata. But if you look this sort of thing up, you’ll almost certainly come across the Stata example using the <span class="func" style="">fracreg</span> command. The following specifies a fractional regression with logit link.</p>
+<p>It might seem strange to start with an example using Stata. But if you look this sort of thing up, you’ll almost certainly come across the Stata example using the <span class="func" style="">fracreg</span> command. The following specifies a fractional regression with logit link. It is based on the example used in the <a href="https://www.stata.com/manuals/rfracreg.pdf">documentation</a> for the command.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
 use http://www.stata-press.com/data/r14/401k
@@ -1239,48 +1239,231 @@ sole
 <pre class="r"><code>
 model_quasi = glm(prate ~ mrate + ltotemp + age + sole, d, family = quasibinomial)
 
-summary(model_quasi)</code></pre>
-<pre><code>
-Call:
-glm(formula = prate ~ mrate + ltotemp + age + sole, family = quasibinomial, 
-    data = d)
+# summary(model_quasi)</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+2.392
+</td>
+<td style="text-align:right;">
+0.105
+</td>
+<td style="text-align:right;">
+22.684
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mrate
+</td>
+<td style="text-align:right;">
+1.158
+</td>
+<td style="text-align:right;">
+0.068
+</td>
+<td style="text-align:right;">
+17.006
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ltotemp
+</td>
+<td style="text-align:right;">
+-0.207
+</td>
+<td style="text-align:right;">
+0.013
+</td>
+<td style="text-align:right;">
+-15.402
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+age
+</td>
+<td style="text-align:right;">
+0.035
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+12.244
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sole
+</td>
+<td style="text-align:right;">
+0.166
+</td>
+<td style="text-align:right;">
+0.048
+</td>
+<td style="text-align:right;">
+3.431
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>We can get robust standard errors for the quasilikelihood approach as well, but they were already pretty close.</p>
+<div class="layout-chunk" data-layout="l-body">
 
-Deviance Residuals: 
-    Min       1Q   Median       3Q      Max  
--1.8985  -0.2294   0.1641   0.4300   1.1422  
-
-Coefficients:
-             Estimate Std. Error t value Pr(&gt;|t|)    
-(Intercept)  2.391717   0.105437  22.684  &lt; 2e-16 ***
-mrate        1.157832   0.068085  17.006  &lt; 2e-16 ***
-ltotemp     -0.207243   0.013456 -15.402  &lt; 2e-16 ***
-age          0.034579   0.002824  12.244  &lt; 2e-16 ***
-sole         0.165576   0.048266   3.431 0.000608 ***
----
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-
-(Dispersion parameter for quasibinomial family taken to be 0.2150769)
-
-    Null deviance: 1097.09  on 4074  degrees of freedom
-Residual deviance:  884.05  on 4070  degrees of freedom
-AIC: NA
-
-Number of Fisher Scoring iterations: 5</code></pre>
 <pre class="r"><code>
-se_glm_robust_quasi = coeftest(model_quasi, vcov = vcovHC(model_quasi, type=&quot;HC&quot;))
-
-se_glm_robust_quasi</code></pre>
-<pre><code>
-z test of coefficients:
-
-             Estimate Std. Error  z value  Pr(&gt;|z|)    
-(Intercept)  2.391717   0.106116  22.5387 &lt; 2.2e-16 ***
-mrate        1.157832   0.074914  15.4554 &lt; 2.2e-16 ***
-ltotemp     -0.207243   0.014145 -14.6513 &lt; 2.2e-16 ***
-age          0.034579   0.002760  12.5284 &lt; 2.2e-16 ***
-sole         0.165576   0.050638   3.2698  0.001076 ** 
----
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+se_glm_robust_quasi = coeftest(model_quasi, vcov = vcovHC(model_quasi, type=&quot;HC&quot;))</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+2.392
+</td>
+<td style="text-align:right;">
+0.106
+</td>
+<td style="text-align:right;">
+22.539
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+mrate
+</td>
+<td style="text-align:right;">
+1.158
+</td>
+<td style="text-align:right;">
+0.075
+</td>
+<td style="text-align:right;">
+15.455
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ltotemp
+</td>
+<td style="text-align:right;">
+-0.207
+</td>
+<td style="text-align:right;">
+0.014
+</td>
+<td style="text-align:right;">
+-14.651
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+age
+</td>
+<td style="text-align:right;">
+0.035
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+12.528
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+sole
+</td>
+<td style="text-align:right;">
+0.166
+</td>
+<td style="text-align:right;">
+0.051
+</td>
+<td style="text-align:right;">
+3.270
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+</tr>
+</tbody>
+</table>
 </div>
 <h2 id="mixed-model-with-per-observation-random-effect">Mixed model with per-observation random effect</h2>
 <p>Try glmer with the observation level RE. All failed to converge. Not shown.</p>

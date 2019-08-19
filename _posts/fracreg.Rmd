@@ -46,7 +46,7 @@ Some suggest adding a fudge factor to the zeros or ones to put them on the (0,1)
 
 ## Stata example
 
-It might seem strange to start with an example using Stata.  But if you look this sort of thing up, you'll almost certainly come across the Stata example using the <span class="func" style = "">fracreg</span> command.  The following specifies a fractional regression with logit link.
+It might seem strange to start with an example using Stata.  But if you look this sort of thing up, you'll almost certainly come across the Stata example using the <span class="func" style = "">fracreg</span> command.  The following specifies a fractional regression with logit link. It is based on the example used in the [documentation](https://www.stata.com/manuals/rfracreg.pdf) for the command.
 
 ```{stata stata, engine.path="C:/Program Files/Stata16/StataSE-64.exe", eval=F}
 use http://www.stata-press.com/data/r14/401k
@@ -97,20 +97,32 @@ tidy(se_glm_robust) %>%
 
 ## Quasibinomial
 
-We could also use the <span class="emph" style = "">quasibinomial</span> family.  [Quasi-likelihoods](https://en.wikipedia.org/wiki/Quasi-likelihood) are similar to standard likelihood functions. but are technically do not relate to any particular probability distribution. Using this family would  provides the same result as previous, but without the warning.
+We could also use the <span class="emph" style = "">quasibinomial</span> family.  [Quasi-likelihoods](https://en.wikipedia.org/wiki/Quasi-likelihood) are similar to standard likelihood functions, but are technically do not relate to any particular probability distribution. Using this family would  provides the same result as previous, but without the warning.
 
 ```{r quasi}
 model_quasi = glm(prate ~ mrate + ltotemp + age + sole, d, family = quasibinomial)
 
-summary(model_quasi)
+# summary(model_quasi)
+```
 
+```{r quasi-summary, echo=FALSE}
+tidy(model_quasi) %>% 
+  kable_df()
+```
+
+We can get robust standard errors for the quasilikelihood approach as well, but they were already pretty close.
+
+```{r robust-se-quasi-print, echo=1}
 se_glm_robust_quasi = coeftest(model_quasi, vcov = vcovHC(model_quasi, type="HC"))
 
-se_glm_robust_quasi
+tidy(se_glm_robust_quasi) %>% 
+  kable_df()
 ```
 
 ## Mixed model with per-observation random effect
 
+
+It turns out that we can also used a [mixed model](https://m-clark.github.io/mixed-models-with-R/) approach.  For some distributions, such as binomial and poisson where the variance is directly tied to the mean function and does not have to be estimated, we can insert a per-observation random effect.
 Try glmer with the observation level RE.  All failed to converge. Not shown.
 
 ```{r lme4, eval=1}
