@@ -1,0 +1,314 @@
+---
+title: "Fractional Regression"
+description: |
+  A quick primer regarding data between zero and one, including zero and one
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: <i class="fab fa-percent fa-5x"></i>   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: false
+tags: [fractional regression, beta regression, logistic regression, zero inflated, one inflated, percentage, fraction, stata, fracreg]
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  message = FALSE, 
+  warning = FALSE, 
+  comment = NA,
+  R.options = list(width = 120),
+  cache.rebuild = FALSE,
+  cache = TRUE, 
+  fig.align='center', 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+```
+
+## Introduction
+
+It is often the case you might have data that primarily falls between zero and one.  For example, these may be percentages for which you don't know the total count, grades from 0-100 that can be transformed as such, and similar. If they are counts/proportions where you knew the denominator, or a binary outcome, you would be able to just use standard logistic regression with the binomial distribution.  Additionally, if all the data lies between zero and one, <span class="emph" style = "">beta regression</span> is a natural choice for which to model such functions.  However, beta regression can only deal with values between zero and one, so if you have zeros or ones, what can one do?
+
+Some suggest adding a fudge factor to the zeros or ones to put them on the (0, 1) interval. However, such hacks are unnecessary these days.  Furthermore, you already have tools that model this sort of target variable, and this post will demonstrate some of them.
+
+
+## Stata example
+
+It might seem strange to start with an example using Stata.  But if you look this sort of thing up, you'll almost certainly come across the [Stata example](https://www.stata.com/features/overview/fractional-outcome-models/) using the <span class="func" style = "">fracreg</span> command.  For comparison we'll use the data in the corresponding [documentation](https://www.stata.com/manuals/rfracreg.pdf).  The data regards the expected participation rate in 401(k) plans for a cross-section of firms. They define participation rate (`prate`) as the fraction of eligible employees in a firm that participate in a 401(k) plan.  This is modeled by the matching rate of employee 401(k) contributions (`mrate`), the natural log of the total number of employees (`ltotemp`), the age of the plan (`age`), and whether the 401(k) plan is the only retirement plan offered by the employer (`sole`).  Here we do not use quadratic effects, though we do use an additive modeling approach later that could be used instead.
+
+The following specifies a fractional regression with logit link. Probit and heteroscedastic probit are also available.
+
+```{stata stata, engine.path="C:/Program Files/Stata16/StataSE-64.exe", eval=file.exists("C:/Program Files/Stata16/StataSE-64.exe")}
+use http://www.stata-press.com/data/r14/401k
+
+fracreg logit prate mrate c.ltotemp c.age i.sole
+```
+
+This is one of the few tools that is readily available to model such outcomes, but as we're about to see, you definitely don't need Stata once you know what's going on.
+
+## R GLM
+
+It turns out that the underlying likelihood for fractional regression in Stata is the same as the standard binomial likelihood we would use for binary or count/proportional outcomes.  In the following, $y$ is our target variable, $X\beta$ is the linear predictor, and $g(.)$ is the link function, for example, the logit.
+
+$$\mathcal{L} \sim y(\ln{g(X\beta)}) + (1-y)(1-\ln{g(X\beta)})$$
+
+As such, we can just use <span class="func" style = "">glm</span> like we would for count/binary outcomes. It will warn you that the outcome isn't integer as it expects, but in this case we can just ignore the warning.
+
+```{r glm, warning=TRUE}
+d = haven::read_dta('data/401k.dta')
+
+model_glm = glm(
+  prate ~ mrate + ltotemp + age + sole,
+  data = d,
+  family = binomial
+)
+
+# summary(model_glm)
+```
+
+```{r glm-summary, echo=FALSE}
+tidy(model_glm) %>% 
+  kable_df()
+```
+
+
+```{r glm-se, echo=FALSE}
+se_baseline_glm = summary(model_glm)$coefficients
+```
+
+So the model runs fine, and the coefficients are the same as the Stata example.  The standard errors are not, but we can fix that.
+
+
+## Robust standard errors
+
+By default, Stata does robust standard errors. We can use the <span class="pack" style = "">sandwich</span> package to get them in R.  The <span class="pack" style = "">lmtest</span> package provides a nice summary table.
+
+```{r robust-se}
+library(lmtest)
+library(sandwich)
+
+se_glm_robust = coeftest(model_glm, vcov = vcovHC(model_glm, type="HC"))
+```
+
+```{r robust-se-print, echo=FALSE}
+tidy(se_glm_robust) %>% 
+  kable_df()
+```
+
+So now we have the same result via base R and Stata.
+
+
+## Quasibinomial
+
+We could also use the <span class="emph" style = "">quasibinomial</span> family.  [Quasi-likelihoods](https://en.wikipedia.org/wiki/Quasi-likelihood) are similar to standard likelihood functions, but technically do not relate to any particular probability distribution[^fracregquasi]. Using this family would  provide the same result as the previous glm, but without the warning.
+
+<aside>From the R help file for `?family`: The quasibinomial and quasipoisson families differ from the binomial and poisson families only in that the dispersion parameter is not fixed at one, so they can model over-dispersion.</aside>
+
+```{r quasi}
+model_quasi = glm(
+  prate ~ mrate + ltotemp + age + sole,
+  data = d,
+  family = quasibinomial
+)
+
+# summary(model_quasi)
+```
+
+```{r quasi-summary, echo=FALSE}
+tidy(model_quasi) %>% 
+  kable_df()
+```
+
+We can get robust standard errors for the quasi-likelihood approach as well, but they were already pretty close.
+
+```{r robust-se-quasi-print, echo=1}
+se_glm_robust_quasi = coeftest(model_quasi, vcov = vcovHC(model_quasi, type="HC"))
+
+tidy(se_glm_robust_quasi) %>% 
+  kable_df()
+```
+
+## Mixed model with per-observation random effect
+
+
+It turns out that we can also use a [mixed model](https://m-clark.github.io/mixed-models-with-R/) approach.  For some distributions, such as binomial and poisson where the variance is directly tied to the mean function and does not have to be estimated, we can insert a per-observation random effect.  This extra source of variance can account for overdispersion, similar to what the scale parameter estimate does for the quasibinomial.  I attempted to do so using <span class="pack" style = "">lme4's</span> <span class="func" style = "">glmer</span> with the observation level RE.  While I've had success with such models in the past, all failed to converge for this example with default optimization settings across multiple optimizers. As such, the results are not shown.
+
+```{r lme4, eval=1}
+d$id = 1:nrow(d)
+
+model_glmm = lme4::glmer(
+  prate ~ mrate + ltotemp + age + sole + (1 | id),
+  data = d,
+  family = binomial
+)
+
+summary(model_glmm, cor=F)
+
+test_models = lme4::allFit(model_glmm)
+
+summary(test_models)
+```
+
+<br>
+
+We have options though.  The <span class="pack" style = "">glmmTMB</span> package was able to estimate the model.
+
+<br>
+
+```{r glmmTMB}
+library(glmmTMB)
+
+model_glmm = glmmTMB(
+  prate ~ mrate + ltotemp + age + sole + (1 | id),
+  data = d,
+  family = binomial,
+  REML = TRUE
+)
+
+# summary(model_glmm)
+```
+
+```{r glmm-summary, echo=FALSE}
+broom.mixed::tidy(model_glmm, effects = 'fixed') %>% 
+  select(-effect, -component) %>% 
+  kable_df()
+```
+
+We can maybe guess why <span class="func" style = "">glmer</span> was struggling.  The extra variance is estimated by <span class="func" style = "">glmmTMB</span> to be basically zero.
+
+```{r glmm-se, echo=FALSE}
+se_glmm_std = as.data.frame(summary(model_glmm)$coefficients$cond)
+```
+
+
+Lately, I've been using <span class="pack" style = "">mgcv</span> to do most of my mixed models, so we can try a GAM instead.  The following is equivalent to the glm-quasibinomial approach before.
+
+```{r mgcv}
+library(mgcv)
+
+model_gam_std = gam(
+  prate ~ mrate + ltotemp + age + sole, 
+  data = d, 
+  family = quasibinomial
+)
+
+# summary(model_gam_std)
+```
+
+```{r mgcv-summary, echo=FALSE}
+tidy(model_gam_std, parametric = TRUE) %>% 
+  kable_df()
+```
+
+```{r mgcv-se, echo=FALSE}
+se_gam_std = tidy(model_gam_std, parametric = TRUE)
+colnames(se_gam_std)[2:3] = c('Estimate', "Std. Error")
+
+# not sure it's handling gam correctly?
+# se_gam_std = coeftest(model_gam_std, vcov = vcovHC(model_gam_std, type="HC"))
+```
+
+
+The following adds the per observation random effect as with the mixed model.  Unlike with <span class="pack" style = "">lme4</span> or <span class="pack" style = "">glmmTMB</span>, You can technically use the `quasi` family here as well, but I will follow Bates' thinking and avoid doing so[^Bates].  I will also calculate the robust standard errors.
+
+```{r mgcv-re}
+model_gam_re = gam(
+  prate ~ mrate + ltotemp + age + sole + s(id, bs = 're'),
+  data = d,
+  family = binomial,
+  method = 'REML'
+)
+
+# summary(model_gam_re)
+```
+
+```{r mgcv-re-summary, echo=FALSE}
+tidy(model_gam_re, parametric = TRUE) %>% 
+  kable_df()
+```
+
+```{r mgcv-re-se, echo=FALSE}
+se_gam_re_robust = coeftest(model_gam_re, vcov = vcovHC(model_gam_re, type="HC"))
+```
+
+```{r mgcv2, echo=FALSE, eval=FALSE}
+model_gam_re_quasi = gam(
+  prate ~ mrate + ltotemp + age + sole + s(id, bs = 're'),
+  d,
+  family = quasibinomial,
+  method = 'REML'
+)
+
+summary(model_gam_re_quasi)
+
+se_gam_re_quasi = coeftest(model_gam_re_quasi, vcov = vcovHC(model_gam_re_quasi, type="HC"))
+```
+
+
+## Summarized results
+
+The following tables show the results of the models.  The first table regards the estimated coefficients, the second the standard errors.  There are no differences for the coefficients.  For standard errors, some approaches are definitely working better than others.
+
+```{r robust-se-summary, echo=FALSE, cache=FALSE}
+se_stata = matrix(
+  c(c(-2.391717, 1.157832, -.2072429, .0345786, .1655762),
+    c(.1061292, .0749231, .0141468, .0027604, .0506445)
+  ), ncol = 2
+)
+
+colnames(se_stata) = c('Estimate', 'Std. Error')
+
+robust = mget(ls(pattern = '^se\\_'))
+names(robust) = str_remove(names(robust), '^se_')
+
+
+robust %>% 
+  map_df(function(x) data.frame(x[,'Estimate', drop=F]), .id = 'model') %>% 
+  tidyext::spread2(model, value = `Estimate`) %>% 
+  slice(-6) %>%   # remove se for smooth
+  select(baseline_glm, stata, glm_robust, glm_robust_quasi, everything()) %>%
+  kable_df(digits = 4, caption = 'Coefficients')
+
+robust %>% 
+  map_df(function(x) data.frame(x[,'Std. Error', drop=F]), .id = 'model') %>% 
+  tidyext::spread2(model, value = `Std..Error`) %>% 
+  slice(-6) %>%   # remove se for smooth
+  select(baseline_glm, stata, glm_robust, glm_robust_quasi, everything()) %>% 
+  kable_df(digits = 4, caption = 'Standard Errors')
+```
+
+## Conclusion
+
+Fractional data occurs from time to time.  While Stata has a specific function for such outcomes[^frm], and has done a lot to promote a means to handle them, practically any statistical tool could do so.  In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools as well.
+
+
+
+
+## References
+
+[Stata demo](https://www.stata.com/features/overview/fractional-outcome-models/)
+
+[Stata reference on fracreg command](https://www.stata.com/manuals/rfracreg.pdf)
+
+Papke & Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates.  (https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1)
+
+McCullagh P. and Nelder, J. A. (1989) Generalized Linear Models. London: Chapman and Hall.
+
+[^fracregquasi]: This is in fact what <span class="func" style = "">fracreg</span> in Stata is doing.
+
+[^Bates]: From [Doug Bates](lme4.r-forge.r-project.org/slides/2011-03-16-Amsterdam/5GLMM.pdf):  In many application areas using 'pseudo' distribution families, such as quasibinomial and quasipoisson, is a popular and well-accepted technique for accommodating variability that is apparently larger than would be expected from a binomial or a Poisson distribution. This amounts to adding an extra parameter, like σ, the common scale parameter in a LMM, to the distribution of the response. It is possible to form an estimate of such a quantity during the IRLS algorithm but it is an artificial construct. There is no probability distribution with such a parameter. I find it difficult to define maximum likelihood estimates without a probability model. It is not clear how this 'distribution which is not a distribution' could be incorporated into a GLMM. This, of course, does not stop people from doing it but I don’t know what the estimates from such a model would mean. 
+
+[^frm]: There is a [frm package](https://cran.r-project.org/package=frm) for fractional regression, but I don't recommended it.  It doesn't use data frames, requires inputs that separate variables from the data matrix, and doesn't appear to be actively developed, among other things.
