@@ -6,7 +6,7 @@ author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
-preview: <i class="fab fa-percent fa-5x"></i>   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: <i class="fas fa-percent fa-5x" style = 'color:#ff5500'></i>
 output:
   distill::distill_article:
     self_contained: false
@@ -31,7 +31,12 @@ knitr::opts_chunk$set(
   dev.args=list(bg = 'transparent')
 )
 
-library(tidyverse); library(broom); library(kableExtra); library(visibly)
+library(tidyverse)
+library(tidyext)
+library(broom)
+library(kableExtra)
+library(visibly)
+
 kable_df <- function(..., digits=3) {
   kable(..., digits=digits) %>% 
     kable_styling(full_width = F)
@@ -47,7 +52,34 @@ Some suggest adding a fudge factor to the zeros or ones to put them on the (0, 1
 
 ## Stata example
 
-It might seem strange to start with an example using Stata.  But if you look this sort of thing up, you'll almost certainly come across the [Stata example](https://www.stata.com/features/overview/fractional-outcome-models/) using the <span class="func" style = "">fracreg</span> command.  For comparison we'll use the data in the corresponding [documentation](https://www.stata.com/manuals/rfracreg.pdf).  The data regards the expected participation rate in 401(k) plans for a cross-section of firms. They define participation rate (`prate`) as the fraction of eligible employees in a firm that participate in a 401(k) plan.  This is modeled by the matching rate of employee 401(k) contributions (`mrate`), the natural log of the total number of employees (`ltotemp`), the age of the plan (`age`), and whether the 401(k) plan is the only retirement plan offered by the employer (`sole`).  Here we do not use quadratic effects, though we do use an additive modeling approach later that could be used instead.
+It might seem strange to start with an example using Stata.  But if you look this sort of thing up, you'll almost certainly come across the [Stata example](https://www.stata.com/features/overview/fractional-outcome-models/) using the <span class="func" style = "">fracreg</span> command.  For comparison we'll use the data in the corresponding [documentation](https://www.stata.com/manuals/rfracreg.pdf).  The data regards the expected participation rate in 401(k) plans for a cross-section of firms. They define participation rate (`prate`) as the fraction of eligible employees in a firm that participate in a 401(k) plan.  This is modeled by the matching rate of employee 401(k) contributions (`mrate`), the natural log of the total number of employees (`ltotemp`), the age of the plan (`age`), and whether the 401(k) plan is the only retirement plan offered by the employer (`sole`).  Here we do not use quadratic effects for `ltotemp` and `age` as in the Stata documentation, though we do use an additive modeling approach later that could be used instead[^gamvsquad].
+
+```{r initial-import, echo=FALSE}
+d = haven::read_dta('data/401k.dta')
+```
+
+
+The following shows the distribution of the target variable.  There are no zeroes in the participation rate, however the amount of ones is `r rnd(100*mean(d$prate==1), 1)`%.
+
+<br>
+
+```{r prate-vis, echo=FALSE, out.width='50%'}
+d %>% 
+  ggplot() +
+  geom_density(
+    aes(prate), 
+    color = '#ff5500',
+    fill = '#ff550080'
+  ) +
+  labs(y = '', title = 'Distribution of Participation Rate') +
+  theme_clean() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    title = element_text(size = 12)
+  )
+```
+
 
 The following specifies a fractional regression with logit link. Probit and heteroscedastic probit are also available.
 
@@ -57,7 +89,7 @@ use http://www.stata-press.com/data/r14/401k
 fracreg logit prate mrate c.ltotemp c.age i.sole
 ```
 
-This is one of the few tools that is readily available to model such outcomes, but as we're about to see, you definitely don't need Stata once you know what's going on.
+Perhaps not surprisingly, all of the covariates are statistically notable.  With the logistic link, the coefficients can be exponentiated to provide odds ratios[^orstata].  This is one of the few tools that is readily available to model such outcomes, but as we're about to see, you definitely don't need Stata once you know what's going on.
 
 ## R GLM
 
@@ -277,14 +309,14 @@ names(robust) = str_remove(names(robust), '^se_')
 
 robust %>% 
   map_df(function(x) data.frame(x[,'Estimate', drop=F]), .id = 'model') %>% 
-  tidyext::spread2(model, value = `Estimate`) %>% 
+  spread2(model, value = `Estimate`) %>% 
   slice(-6) %>%   # remove se for smooth
   select(baseline_glm, stata, glm_robust, glm_robust_quasi, everything()) %>%
   kable_df(digits = 4, caption = 'Coefficients')
 
 robust %>% 
   map_df(function(x) data.frame(x[,'Std. Error', drop=F]), .id = 'model') %>% 
-  tidyext::spread2(model, value = `Std..Error`) %>% 
+  spread2(model, value = `Std..Error`) %>% 
   slice(-6) %>%   # remove se for smooth
   select(baseline_glm, stata, glm_robust, glm_robust_quasi, everything()) %>% 
   kable_df(digits = 4, caption = 'Standard Errors')
@@ -295,6 +327,11 @@ robust %>%
 Fractional data occurs from time to time.  While Stata has a specific function for such outcomes[^frm], and has done a lot to promote a means to handle them, practically any statistical tool could do so.  In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools as well.
 
 
+##### Related models
+
+- Binomial logistic for binary and count/proportional data ($x$ successes out of $n$ trials)
+- Beta regression for (0, 1) (see the [betareg package](https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf))
+- Zero/One-inflated binomial or  beta regression for cases including a relatively high amount of zeros and ones (see [brms](https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf), [VGAM](https://www.stat.auckland.ac.nz/~yee/VGAM/), [gamlss](https://www.gamlss.com/) packages)
 
 
 ## References
@@ -306,6 +343,13 @@ Fractional data occurs from time to time.  While Stata has a specific function f
 Papke & Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates.  (https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1)
 
 McCullagh P. and Nelder, J. A. (1989) Generalized Linear Models. London: Chapman and Hall.
+
+
+
+
+[^orstata]: In Stata you can just add the option `, or` to the end of the model line.
+
+[^gamvsquad]: I actually played with this a bit.  The quadratic would be okay for `age`, but log firm size has a little more going on and `mrate` should also be allowed to wiggle.  There would also be some interesting smooth interactions.  In short, a [generalized additive model](https://m-clark.github.io/generalized-additive-models/) is pretty much always a better option than trying to guess polynomials.
 
 [^fracregquasi]: This is in fact what <span class="func" style = "">fracreg</span> in Stata is doing.
 
