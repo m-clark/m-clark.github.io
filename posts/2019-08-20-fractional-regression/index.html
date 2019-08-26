@@ -59,7 +59,7 @@
   <!--radix_placeholder_rmarkdown_metadata-->
 
 <script type="text/json" id="radix-rmarkdown-metadata">
-{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creative_commons","title","description","author","date","preview","output","draft","tags","citation_url","canonical_url"]}},"value":[{"type":"character","attributes":{},"value":["CC BY-SA"]},{"type":"character","attributes":{},"value":["Fractional Regression"]},{"type":"character","attributes":{},"value":["A quick primer regarding data between zero and one, including zero and one"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["August 26, 2019"]},{"type":"character","attributes":{},"value":["<i class=\"fas fa-percent fa-5x\" style = 'color:#ff5500'><\/i>"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["fractional regression","beta regression","logistic regression","zero inflated","one inflated","percentage","fraction","stata","fracreg"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/2019-08-20-fractional-regression/"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/2019-08-20-fractional-regression/"]}]}
+{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creative_commons","title","description","author","date","preview","output","draft","tags","categories","citation_url","canonical_url"]}},"value":[{"type":"character","attributes":{},"value":["CC BY-SA"]},{"type":"character","attributes":{},"value":["Fractional Regression"]},{"type":"character","attributes":{},"value":["A quick primer regarding data between zero and one, including zero and one"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["August 26, 2019"]},{"type":"character","attributes":{},"value":["<i class=\"fas fa-percent fa-5x\" style = 'color:#ff5500'><\/i>"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["fractional regression","beta regression","logistic regression","zero inflated","one inflated","percentage","fraction","stata","fracreg"]},{"type":"character","attributes":{},"value":["regression","GLM","mixed models","fractional regression"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/2019-08-20-fractional-regression/"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/2019-08-20-fractional-regression/"]}]}
 </script>
 <!--/radix_placeholder_rmarkdown_metadata-->
   
@@ -1652,10 +1652,42 @@ ul li::before {
   /*margin-left: 0em;  Also needed for space (tweak if needed) */
 }
 
+
+
+/* main part on front page with description */
+
+/*
+
+.posts-with-sidebar .posts-list {
+  float: left;
+  width: 72%;
+}
+
+.posts-list {
+  margin-top: 60px;
+  margin-bottom: 24px;
+}f
+
+*/
+
+/* sidebar on front page with category listing */
+
+.posts-with-sidebar .posts-sidebar {
+  float: right;
+  width: 10%;    /* default 20, made narrow */
+  margin-top: 60px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+.posts-sidebar {
+  font-size: 16px;
+}
+
 </style>
 <!--/radix_placeholder_site_in_header-->
 
-  <link rel="stylesheet" href="../../styles.css" type="text/css"/>
+  <link rel="stylesheet" href="..\..\styles.css" type="text/css"/>
 
 </head>
 
@@ -1699,7 +1731,7 @@ ul li::before {
 
 <div class="d-title">
 <h1>Fractional Regression</h1>
-<p>A quick primer regarding data between zero and one, including zero and one</p>
+<p><p>A quick primer regarding data between zero and one, including zero and one</p></p>
 </div>
 
 <div class="d-byline">
@@ -1728,7 +1760,7 @@ ul li::before {
 <p>It is sometimes the case that you might have data that falls primarily between zero and one. For example, these may be proportions, grades from 0-100 that can be transformed as such, reported percentile values, and similar. If you had the raw counts where you also knew the denominator or total value that created the proportion, you would be able to just use standard <span class="emph" style="">logistic regression</span> with the <span class="emph" style="">binomial distribution</span>. Similarly, if you had a binary outcome (i.e. just zeros and ones), this is just a special case, so the same model would be applicable. Alternatively, if all the target variable values lie between zero and one, <span class="emph" style="">beta regression</span> is a natural choice for which to model such data. However, if the variable you wish to model has values between zero and one, and additionally, you also have zeros or ones, what can one do?</p>
 <p>Some suggest adding a ‘fudge factor’ to the zeros or ones to put all values on the (0, 1) interval, so that beta regression could still be employed. However, such hacks are unnecessary these days. Furthermore, you already have tools that are appropriate for this modeling situation, and this post will demonstrate some of them.</p>
 <h2 id="stata-example">Stata example</h2>
-<p>It might seem strange to start with an example using Stata<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, but if you look this sort of thing up, you’ll almost certainly come across the <a href="https://www.stata.com/features/overview/fractional-outcome-models/">Stata demonstration</a> using the <span class="func" style="">fracreg</span> command. For comparison we’ll use the data in the corresponding <a href="https://www.stata.com/manuals/rfracreg.pdf">documentation</a>. The data regards the expected participation rate in 401(k) plans for a cross-section of firms<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>. They define participation rate (<code>prate</code>) as the fraction of eligible employees in a firm that participate in a 401(k) plan. This is modeled by the matching rate of employee 401(k) contributions (<code>mrate</code>), the (natural) log of the total number of employees (<code>ltotemp</code>), the age of the plan (<code>age</code>), and whether the 401(k) plan is the only retirement plan offered by the employer (<code>sole</code>). Here we do not use quadratic effects for <code>ltotemp</code> and <code>age</code> as in the Stata documentation, though we do use an additive modeling approach later that could be used instead<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>.</p>
+<p>It might seem strange to start with an example using Stata<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, but if you look this sort of thing up, you’ll almost certainly come across the <a href="https://www.stata.com/features/overview/fractional-outcome-models/">Stata demonstration</a> using the <span class="func" style="">fracreg</span> command. For comparison we’ll use the data in the corresponding <a href="https://www.stata.com/manuals/rfracreg.pdf">documentation</a>. The data regards the expected participation rate in 401(k) plans for a cross-section of firms<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. They define participation rate (<code>prate</code>) as the fraction of eligible employees in a firm that participate in a 401(k) plan. This is modeled by the matching rate of employee 401(k) contributions (<code>mrate</code>), the (natural) log of the total number of employees (<code>ltotemp</code>), the age of the plan (<code>age</code>), and whether the 401(k) plan is the only retirement plan offered by the employer (<code>sole</code>). Here we do not use quadratic effects for <code>ltotemp</code> and <code>age</code> as in the Stata documentation, though we do use an additive modeling approach later that could be used instead<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
@@ -1743,8 +1775,36 @@ ul li::before {
 use http://www.stata-press.com/data/r14/401k
 
 fracreg logit prate mrate c.ltotemp c.age i.sole</code></pre>
+<pre><code>
+
+. use http://www.stata-press.com/data/r14/4. 
+. fracreg logit prate mrate c.ltotemp c.age i.sole
+
+Iteration 0:   log pseudolikelihood = -1985.1469  
+Iteration 1:   log pseudolikelihood = -1689.2659  
+Iteration 2:   log pseudolikelihood = -1681.1055  
+Iteration 3:   log pseudolikelihood = -1681.0263  
+Iteration 4:   log pseudolikelihood = -1681.0263  
+
+Fractional logistic regression                  Number of obs     =      4,075
+                                                Wald chi2(4)      =     685.26
+                                                Prob &gt; chi2       =     0.0000
+Log pseudolikelihood = -1681.0263               Pseudo R2         =     0.0596
+
+------------------------------------------------------------------------------
+             |               Robust
+       prate |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+       mrate |   1.157832   .0749231    15.45   0.000     1.010986    1.304679
+     ltotemp |  -.2072429   .0141468   -14.65   0.000      -.23497   -.1795157
+         age |   .0345786   .0027604    12.53   0.000     .0291684    .0399888
+             |
+        sole |
+  only plan  |   .1655762   .0506445     3.27   0.001     .0663147    .2648377
+       _cons |   2.391717   .1061292    22.54   0.000     2.183707    2.599726
+------------------------------------------------------------------------------</code></pre>
 </div>
-<p>Perhaps not surprisingly, all of the covariates are statistically notable. With the logistic link, the coefficients can be exponentiated to provide odds ratios<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>. Stata’s is one of the few tools that is specifically advertised to model such outcomes, but as we’re about to see, you definitely don’t need Stata once you know what’s going on.</p>
+<p>Perhaps not surprisingly, all of the covariates are statistically notable. With the logistic link, the coefficients can be exponentiated to provide odds ratios<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. Stata’s is one of the few tools that is specifically advertised to model such outcomes, but as we’re about to see, you definitely don’t need Stata once you know what’s going on.</p>
 <h2 id="r-glm">R GLM</h2>
 <p>It turns out that the underlying likelihood for fractional regression in Stata is the same as the standard binomial likelihood we would use for binary or count/proportional outcomes. In the following, <span class="math inline">\(y\)</span> is our target variable, <span class="math inline">\(X\beta\)</span> is the linear predictor, and <span class="math inline">\(g(.)\)</span> is the link function, for example, the logit.</p>
 <p><span class="math display">\[\mathcal{L} \sim y(\ln{g(X\beta)}) + (1-y)(1-\ln{g(X\beta)})\]</span></p>
@@ -1998,7 +2058,7 @@ sole
 </div>
 <p>So now we have the same result via a standard R generalized linear model and Stata.</p>
 <h2 id="quasibinomial">Quasibinomial</h2>
-<p>We could also use the <span class="emph" style="">quasibinomial</span> family. <a href="https://en.wikipedia.org/wiki/Quasi-likelihood">Quasi-likelihoods</a> are similar to standard likelihood functions, but technically do not relate to any particular probability distribution<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>. Using this family would provide the same result as the previous glm, but without the warning.</p>
+<p>We could also use the <span class="emph" style="">quasibinomial</span> family. <a href="https://en.wikipedia.org/wiki/Quasi-likelihood">Quasi-likelihoods</a> are similar to standard likelihood functions, but technically do not relate to any particular probability distribution<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>. Using this family would provide the same result as the previous glm, but without the warning.</p>
 <aside>
 From the R help file for <code>?family</code>: The quasibinomial and quasipoisson families differ from the binomial and poisson families only in that the dispersion parameter is not fixed at one, so they can model over-dispersion.
 </aside>
@@ -2510,7 +2570,7 @@ sole
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
-<p>The following adds the per observation random effect as with the mixed model. Unlike with <span class="pack" style="">lme4</span> or <span class="pack" style="">glmmTMB</span>, You can technically use the <code>quasi</code> family here as well, but I will follow Bates’ thinking and avoid doing so<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>. I will also calculate the robust standard errors.</p>
+<p>The following adds the per observation random effect as with the mixed model. Unlike with <span class="pack" style="">lme4</span> or <span class="pack" style="">glmmTMB</span>, You can technically use the <code>quasi</code> family here as well, but I will follow Bates’ thinking and avoid doing so<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a>. I will also calculate the robust standard errors.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 model_gam_re = gam(
@@ -2937,7 +2997,7 @@ glmm_std
 </table>
 </div>
 <h2 id="conclusion">Conclusion</h2>
-<p>Fractional data occurs from time to time. While Stata has a specific function for such outcomes<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a>, and has done a lot to promote a means to handle them, practically any statistical tool could do so. In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools as well.</p>
+<p>Fractional data occurs from time to time. While Stata has a specific function for such outcomes<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a>, and has done a lot to promote a means to handle them, practically any statistical tool could do so. In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools as well.</p>
 <h5 id="related-models">Related models</h5>
 <ul>
 <li>Binomial logistic for binary and count/proportional data (<span class="math inline">\(x\)</span> successes out of <span class="math inline">\(n\)</span> trials)</li>
@@ -2949,16 +3009,19 @@ glmm_std
 <p><a href="https://www.stata.com/manuals/rfracreg.pdf">Stata reference on fracreg command</a></p>
 <p>Papke &amp; Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates. (<a href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1" class="uri">https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1</a>)</p>
 <p>McCullagh P. and Nelder, J. A. (1989) Generalized Linear Models. London: Chapman and Hall.</p>
-<section class="footnotes">
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>Given that I’m an avid R user. But if that was not apparent, then using Stata is possibly no surprise at all! 😄<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>I added the original data, which has the raw values and many more observations, to my <a href="https://github.com/m-clark/noiris">noiris package</a>.<a href="#fnref2" class="footnote-back">↩</a></p></li>
-<li id="fn3"><p>I actually played with this a bit. The quadratic would be okay for <code>age</code>, but log firm size has a little more going on and <code>mrate</code> should also be allowed to wiggle. There would also be some interesting smooth interactions. In short, a <a href="https://m-clark.github.io/generalized-additive-models/">generalized additive model</a> is pretty much always a better option than trying to guess polynomials.<a href="#fnref3" class="footnote-back">↩</a></p></li>
-<li id="fn4"><p>In Stata you can just add the option <code>, or</code> to the end of the model line.<a href="#fnref4" class="footnote-back">↩</a></p></li>
-<li id="fn5"><p>This is in fact what <span class="func" style="">fracreg</span> in Stata is doing.<a href="#fnref5" class="footnote-back">↩</a></p></li>
-<li id="fn6"><p>From <a href="lme4.r-forge.r-project.org/slides/2011-03-16-Amsterdam/5GLMM.pdf">Doug Bates</a>: In many application areas using ‘pseudo’ distribution families, such as quasibinomial and quasipoisson, is a popular and well-accepted technique for accommodating variability that is apparently larger than would be expected from a binomial or a Poisson distribution. This amounts to adding an extra parameter, like σ, the common scale parameter in a LMM, to the distribution of the response. It is possible to form an estimate of such a quantity during the IRLS algorithm but it is an artificial construct. There is no probability distribution with such a parameter. I find it difficult to define maximum likelihood estimates without a probability model. It is not clear how this ‘distribution which is not a distribution’ could be incorporated into a GLMM. This, of course, does not stop people from doing it but I don’t know what the estimates from such a model would mean.<a href="#fnref6" class="footnote-back">↩</a></p></li>
-<li id="fn7"><p>There is a <a href="https://cran.r-project.org/package=frm">frm package</a> for fractional regression, but it may not be user friendly enough for many. It doesn’t use data frames, requires inputs that separate variables from the data matrix, and I’m not sure it’s still being actively developed, among other things.<a href="#fnref7" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Given that I’m an avid R user. But if that was not apparent, then using Stata is possibly no surprise at all! 😄<a href="#fnref1" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn2" role="doc-endnote"><p>I added the original data, which has the raw values and many more observations, to my <a href="https://github.com/m-clark/noiris">noiris package</a>.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn3" role="doc-endnote"><p>I actually played with this a bit. The quadratic would be okay for <code>age</code>, but log firm size has a little more going on and <code>mrate</code> should also be allowed to wiggle. There would also be some interesting smooth interactions. In short, a <a href="https://m-clark.github.io/generalized-additive-models/">generalized additive model</a> is pretty much always a better option than trying to guess polynomials.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn4" role="doc-endnote"><p>In Stata you can just add the option <code>, or</code> to the end of the model line.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn5" role="doc-endnote"><p>This is in fact what <span class="func" style="">fracreg</span> in Stata is doing.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn6" role="doc-endnote"><p>From <a href="lme4.r-forge.r-project.org/slides/2011-03-16-Amsterdam/5GLMM.pdf">Doug Bates</a>: In many application areas using ‘pseudo’ distribution families, such as quasibinomial and quasipoisson, is a popular and well-accepted technique for accommodating variability that is apparently larger than would be expected from a binomial or a Poisson distribution. This amounts to adding an extra parameter, like σ, the common scale parameter in a LMM, to the distribution of the response. It is possible to form an estimate of such a quantity during the IRLS algorithm but it is an artificial construct. There is no probability distribution with such a parameter. I find it difficult to define maximum likelihood estimates without a probability model. It is not clear how this ‘distribution which is not a distribution’ could be incorporated into a GLMM. This, of course, does not stop people from doing it but I don’t know what the estimates from such a model would mean.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn7" role="doc-endnote"><p>There is a <a href="https://cran.r-project.org/package=frm">frm package</a> for fractional regression, but it may not be user friendly enough for many. It doesn’t use data frames, requires inputs that separate variables from the data matrix, and I’m not sure it’s still being actively developed, among other things.<a href="#fnref7" class="footnote-back" role="doc-backlink">↩</a></p></li>
 </ol>
 </section>
 <!--radix_placeholder_article_footer-->
@@ -3019,7 +3082,7 @@ glmm_std
   <div>
 
 
-Michael Clark • 2019 •  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
+Michael Clark â€¢ 2019 â€¢  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
 </div>
 </div>
 <!--/radix_placeholder_navigation_after_body-->
