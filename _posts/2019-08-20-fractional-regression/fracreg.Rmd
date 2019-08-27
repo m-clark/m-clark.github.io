@@ -181,7 +181,9 @@ tidy(se_glm_robust_quasi) %>%
 ## Mixed model with per-observation random effect
 
 
-It turns out that we can also use a [mixed model](https://m-clark.github.io/mixed-models-with-R/) approach.  For some distributions, such as binomial and poisson where the variance is directly tied to the mean function, and so does not have to be estimated, we can insert a per-observation random effect.  This extra source of variance can account for overdispersion, similar to what the scale parameter estimate does for the quasibinomial.  I attempted to do so using the popular mixed model package <span class="pack" style = "">lme4</span> and its <span class="func" style = "">glmer</span> function, with an observation level random effect.  While I've had success with such models in the past, in this particular instance, all failed to converge with default optimization settings across multiple optimizers. As such, those results are not shown.
+It turns out that we can also use a [mixed model](https://m-clark.github.io/mixed-models-with-R/) approach.  For some distributions such as binomial and poisson, the variance is directly tied to the mean function, and so does not have to be estimated.  In these scenarios, we can insert a per-observation random effect and estimate the associated variance.  This extra source of variance can account for overdispersion, similar to what the scale parameter estimate does for the quasibinomial.  
+
+I initially attempted to do so using the popular mixed model package <span class="pack" style = "">lme4</span> and its <span class="func" style = "">glmer</span> function, with an observation level random effect.  While I've had success with such models in the past, in this particular instance, all failed to converge with default optimization settings across multiple optimizers. As such, those results are not shown.
 
 ```{r lme4, eval=1}
 d$id = 1:nrow(d)
@@ -259,7 +261,7 @@ colnames(se_gam_std)[2:3] = c('Estimate', "Std. Error")
 ```
 
 
-The following adds the per observation random effect as with the mixed model.  Unlike with <span class="pack" style = "">lme4</span> or <span class="pack" style = "">glmmTMB</span>, You can technically use the `quasi` family here as well, but I will follow Bates' thinking and avoid doing so[^Bates].  I will also calculate the robust standard errors.
+The following adds the per observation random effect as with the mixed model.  Unlike with <span class="pack" style = "">lme4</span> or <span class="pack" style = "">glmmTMB</span>, you can technically use the `quasi` family here as well, but I will follow Bates' thinking and avoid doing so[^Bates].  I will also calculate the robust standard errors.
 
 ```{r mgcv-re}
 model_gam_re = gam(
@@ -327,9 +329,25 @@ robust %>%
   kable_df(digits = 4, caption = 'Standard Errors')
 ```
 
+In addition, we can see what the <span class="pack" style = "">frm</span> package, which is specifically for fractional regression, would produce.  Unless you really need this tool for the more complicated scenarios it has some functionality for (e.g. panel data), this isn't as user friendly an approach as the others[^frm]. Like Stata's specialized command, it is equivalent to using the quasibinomial family with robust standard errors.
+
+```{r frm-demo}
+library(frm)
+
+x_mat = model.matrix(prate ~ mrate + ltotemp + age + sole, d)
+y = d$prate
+
+model_frm = frm(
+  y,
+  x_mat,
+  linkfrac = 'logit',
+  intercept = FALSE  # included in model matrix
+)
+```
+
 ## Conclusion
 
-Fractional data occurs from time to time.  While Stata has a specific function for such outcomes[^frm], and has done a lot to promote a means to handle them, practically any statistical tool could do so.  In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools as well.
+Fractional data occurs from time to time.  While Stata has a specific function for such outcomes, and has done a lot to promote a means to handle them, practically any statistical tool could do so.  In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools and approaches available as well.
 
 
 #### Related models
@@ -339,24 +357,6 @@ Fractional data occurs from time to time.  While Stata has a specific function f
 - Zero/One-inflated binomial or  beta regression for cases including a relatively high amount of zeros and ones (see [brms](https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf), [VGAM](https://www.stat.auckland.ac.nz/~yee/VGAM/), [gamlss](https://www.gamlss.com/) packages)
 
 
-#### Other
-
-
-<!-- <span class="pack" style = "">frm</span> package demo. Compare with the results above, specifically, the quasibinomial with robust standard errors.  This  -->
-
-<!-- ```{r frm-demo} -->
-<!-- library(frm) -->
-
-<!-- x_mat = model.matrix(prate ~ mrate + ltotemp + age + sole, d) -->
-<!-- y = d$prate -->
-
-<!-- model_frm = frm( -->
-<!--   y, -->
-<!--   x_mat, -->
-<!--   linkfrac = 'logit', -->
-<!--   intercept = FALSE  # included in model matrx -->
-<!-- ) -->
-<!-- ``` -->
 
 ## References
 
@@ -364,14 +364,19 @@ Fractional data occurs from time to time.  While Stata has a specific function f
 
 [Stata reference on fracreg command](https://www.stata.com/manuals/rfracreg.pdf)
 
-Papke & Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates.  (https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1)
-
 McCullagh P. and Nelder, J. A. (1989) Generalized Linear Models. London: Chapman and Hall.
 
-Ramalho, E., Ramalho, J. & Coelho, L. (2016). Exponential Regression of Fractional-Response Fixed-Effects Models with an Application to Firm Capital Structure. Journal of Econometric Methods. [link](https://www.degruyter.com/view/j/jem.2018.7.issue-1/jem-2015-0019/jem-2015-0019.xml)
+Papke & Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates.  (https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1)
 
+Ramalho, E., Ramalho, J. & Coelho, L. (2016) Exponential Regression of Fractional-Response Fixed-Effects Models with an Application to Firm Capital Structure. Journal of Econometric Methods. [link](https://www.degruyter.com/view/j/jem.2018.7.issue-1/jem-2015-0019/jem-2015-0019.xml)
 
 Ramalho, E., Ramalho, J. & Murteira, J. (2011) Alternative Estimating And Testing Empirical Strategies For Fractional Regression Models. [link](https://onlinelibrary.wiley.com/doi/full/10.1111/j.1467-6419.2009.00602.x)
+
+
+
+
+
+
 
 [^ruser]: Given that I'm an avid R user. But if that was not apparent, then using Stata is possibly no surprise at all! `r emo::ji('smile')`
 
@@ -385,7 +390,7 @@ Ramalho, E., Ramalho, J. & Murteira, J. (2011) Alternative Estimating And Testin
 
 [^Bates]: From [Doug Bates](lme4.r-forge.r-project.org/slides/2011-03-16-Amsterdam/5GLMM.pdf):  In many application areas using 'pseudo' distribution families, such as quasibinomial and quasipoisson, is a popular and well-accepted technique for accommodating variability that is apparently larger than would be expected from a binomial or a Poisson distribution. This amounts to adding an extra parameter, like σ, the common scale parameter in a LMM, to the distribution of the response. It is possible to form an estimate of such a quantity during the IRLS algorithm but it is an artificial construct. There is no probability distribution with such a parameter. I find it difficult to define maximum likelihood estimates without a probability model. It is not clear how this 'distribution which is not a distribution' could be incorporated into a GLMM. This, of course, does not stop people from doing it but I don’t know what the estimates from such a model would mean. 
 
-[^frm]: There is a [frm package](https://cran.r-project.org/package=frm) for fractional regression, but it may not be user friendly enough for many.  It doesn't use data frames, requires inputs that separate variables from the data matrix, lacks typical model methods, and I'm not sure it's still being actively developed, among other things.
+[^frm]: As mentioned, the [frm package](https://cran.r-project.org/package=frm) may not be user friendly enough for many.  It doesn't use data frames, requires inputs that separate variables from the data matrix, lacks typical model methods (e.g. <span class="func" style = "">coef</span>, <span class="func" style = "">predict</span>), and I'm not sure it's still being actively developed, among other things.
 
 
 
