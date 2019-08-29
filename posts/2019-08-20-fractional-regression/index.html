@@ -1376,7 +1376,21 @@ li a {
   border-bottom: none !important;
 }
 
-d-appendix a {
+d-appendix a, d-appendix a:hover {
+    color: #03b3ff !important;
+    background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
+    background-size: 0 100%;
+    background-repeat: no-repeat;
+    text-decoration: none;
+    -webkit-transition: background-size .4s ease;
+    -moz-transition: background-size .4s ease;
+    -ms-transition: background-size .4s ease;
+    -o-transition: background-size .4s ease;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;  
+}
+
+d-article aside a, d-article aside a:hover {
     color: #03b3ff !important;
     background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
     background-size: 0 100%;
@@ -1773,10 +1787,16 @@ ul li::before {
 </nav>
 <hr class="d-toc-separator"/>
 <h2 id="introduction">Introduction</h2>
-<p>It is sometimes the case that you might have data that falls primarily between zero and one. For example, these may be proportions, grades from 0-100 that can be transformed as such, reported percentile values, and similar. If you had the raw counts where you also knew the denominator or total value that created the proportion, you would be able to just use standard <span class="emph" style="">logistic regression</span> with the <span class="emph" style="">binomial distribution</span>. Similarly, if you had a binary outcome (i.e. just zeros and ones), this is just a special case, so the same model would be applicable. Alternatively, if all the target variable values lie between zero and one, <span class="emph" style="">beta regression</span> is a natural choice for which to model such data. However, if the variable you wish to model has values between zero and one, and additionally, you also have zeros or ones, what can one do?</p>
-<p>Some suggest adding a ‘fudge factor’ to the zeros or ones to put all values on the (0, 1) interval, so that beta regression could still be employed. However, such hacks are unnecessary these days. Furthermore, you already have tools that are appropriate for this modeling situation, and this post will demonstrate some of them.</p>
+<p>It is sometimes the case that you might have data that falls primarily between zero and one. For example, these may be proportions, grades from 0-100 that can be transformed as such, reported percentile values, and similar. If you had the raw counts where you also knew the denominator or total value that created the proportion, you would be able to just use standard <span class="emph" style="">logistic regression</span> with the <span class="emph" style="">binomial distribution</span>. Similarly, if you had a binary outcome (i.e. just zeros and ones), this is just a special case, so the same model would be applicable. Alternatively, if all the target variable values lie between zero and one, <span class="emph" style="">beta regression</span> is a natural choice for which to model such data. However, if the variable you wish to model has values between zero and one, and additionally, you also have zeros or ones, what should you do?</p>
+<p>Some suggest adding a ‘fudge factor’ to the zeros or ones to put all values on the (0, 1) interval, so that beta regression could still be employed. Others might implement zero/one-inflated beta regression if a larger percentage of the observations are at the boundaries. However, as we will see, you already have more standard tools that are appropriate for this modeling situation, and this post will demonstrate some of them.</p>
+<h4 id="related-models">Related models</h4>
+<ul>
+<li>Binomial logistic for binary and count/proportional data, i.e. <span class="math inline">\(x\)</span> successes out of <span class="math inline">\(n\)</span> trials (can use standard glm tools)</li>
+<li>Beta regression for (0, 1), i.e. only values <em>between</em> 0 and 1 (see <a href="https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf">betareg</a>, <a href="https://cran.r-project.org/web/packages/mgcv/">mgcv</a>, <a href="https://cran.r-project.org/web/packages/brms/">brms</a> packages)</li>
+<li>Zero/One-inflated binomial or beta regression for cases including a relatively high amount of zeros and ones (<a href="https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf">brms</a>, <a href="https://www.stat.auckland.ac.nz/~yee/VGAM/">VGAM</a>, <a href="https://www.gamlss.com/">gamlss</a>)</li>
+</ul>
 <h2 id="stata-example">Stata example</h2>
-<p>It might seem strange to start with an example using Stata<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, but if you look this sort of thing up, you’ll almost certainly come across the <a href="https://www.stata.com/features/overview/fractional-outcome-models/">Stata demonstration</a> using the <span class="func" style="">fracreg</span> command. For comparison we’ll use the data in the corresponding <a href="https://www.stata.com/manuals/rfracreg.pdf">documentation</a>. The data regards the expected participation rate in 401(k) plans for a cross-section of firms<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. They define participation rate (<code>prate</code>) as the fraction of eligible employees in a firm that participate in a 401(k) plan. This is modeled by the matching rate of employee 401(k) contributions (<code>mrate</code>), the (natural) log of the total number of employees (<code>ltotemp</code>), the age of the plan (<code>age</code>), and whether the 401(k) plan is the only retirement plan offered by the employer (<code>sole</code>). Here we do not use quadratic effects for <code>ltotemp</code> and <code>age</code> as in the Stata documentation, though we do use an additive modeling approach later that could be used instead<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
+<p>It might seem strange to start with an example using Stata<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, but if you look this sort of thing up, you’ll almost certainly come across the <a href="https://www.stata.com/features/overview/fractional-outcome-models/">Stata demonstration</a> using the <span class="func" style="">fracreg</span> command. For comparison we’ll use the data in the corresponding <a href="https://www.stata.com/manuals/rfracreg.pdf">documentation</a>. The data regards the expected participation rate in 401(k) plans for a cross-section of firms<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. They define participation rate (<code>prate</code>) as the fraction of eligible employees in a firm that participate in a 401(k) plan. This is modeled by the matching rate of employee 401(k) contributions (<code>mrate</code>), the (natural) log of the total number of employees (<code>ltotemp</code>), the age of the plan (<code>age</code>), and whether the 401(k) plan is the only retirement plan offered by the employer (<code>sole</code>). Here we do not use quadratic effects for <code>ltotemp</code> and <code>age</code> as in the Stata documentation, though we do use an additive modeling approach later that could be implemented for the same purpose instead<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
@@ -1820,7 +1840,10 @@ Log pseudolikelihood = -1681.0263               Pseudo R2         =     0.0596
        _cons |   2.391717   .1061292    22.54   0.000     2.183707    2.599726
 ------------------------------------------------------------------------------</code></pre>
 </div>
-<p>Perhaps not surprisingly, all of the covariates are statistically notable. With the logistic link, the coefficients can be exponentiated to provide odds ratios<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. Stata’s is one of the few tools that is specifically advertised to model such outcomes, but as we’re about to see, you definitely don’t need Stata once you know what’s going on.</p>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<p>Perhaps not surprisingly, all of the covariates are statistically notable. With the logistic link, the coefficients can be exponentiated to provide odds ratios<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. Stata’s is one of the few tools that is specifically advertised to model such outcomes, but as we’re about to see, you don’t need Stata’s command, or even a special package in R, once you know what’s going on.</p>
 <h2 id="r-glm">R GLM</h2>
 <p>It turns out that the underlying likelihood for fractional regression in Stata is the same as the standard binomial likelihood we would use for binary or count/proportional outcomes. In the following, <span class="math inline">\(y\)</span> is our target variable, <span class="math inline">\(X\beta\)</span> is the linear predictor, and <span class="math inline">\(g(.)\)</span> is the link function, for example, the logit.</p>
 <p><span class="math display">\[\mathcal{L} \sim y(\ln{g(X\beta)}) + (1-y)(1-\ln{g(X\beta)})\]</span></p>
@@ -2072,11 +2095,12 @@ sole
 </tbody>
 </table>
 </div>
-<p>So now we have the same result via a standard R generalized linear model and Stata.</p>
+<p>So now we have the same result via a standard R generalized linear model and Stata. Likewise, you could just use the glm command in Stata.</p>
 <h2 id="quasibinomial">Quasibinomial</h2>
 <p>We could also use the <span class="emph" style="">quasibinomial</span> family. <a href="https://en.wikipedia.org/wiki/Quasi-likelihood">Quasi-likelihoods</a> are similar to standard likelihood functions, but technically do not relate to any particular probability distribution<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>. Using this family would provide the same result as the previous glm, but without the warning.</p>
 <aside>
-From the R help file for <code>?family</code>: The quasibinomial and quasipoisson families differ from the binomial and poisson families only in that the dispersion parameter is not fixed at one, so they can model over-dispersion.
+<p>From the R help file for <code>?family</code>: The quasibinomial and quasipoisson families differ from the binomial and poisson families only in that the dispersion parameter is not fixed at one, so they can model over-dispersion.</p>
+Also, as noted in the StackExchange link in the <a href="#references">references</a>, while by default the variance estimate is ‘robust’, possibly leading to standard errors that are similar, the basic result is not the same as using the robust standard errors.
 </aside>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
@@ -2314,11 +2338,11 @@ sole
 </div>
 <h2 id="mixed-model-with-per-observation-random-effect">Mixed model with per-observation random effect</h2>
 <p>It turns out that we can also use a <a href="https://m-clark.github.io/mixed-models-with-R/">mixed model</a> approach. For some distributions such as binomial and poisson, the variance is directly tied to the mean function, and so does not have to be estimated. In these scenarios, we can insert a per-observation random effect and estimate the associated variance. This extra source of variance can account for overdispersion, similar to what the scale parameter estimate does for the quasibinomial.</p>
-<p>I initially attempted to do so using the popular mixed model package <span class="pack" style="">lme4</span> and its <span class="func" style="">glmer</span> function, with an observation level random effect. While I’ve had success with such models in the past, in this particular instance, all failed to converge with default optimization settings across multiple optimizers. As such, those results are not shown.</p>
+<p>I initially attempted to do so using the popular mixed model package <span class="pack" style="">lme4</span> and its <span class="func" style="">glmer</span> function, with an observation level random effect. While I’ve had success using this package with such models in the past, in this particular instance, all failed to converge with default optimization settings across multiple optimizers. As such, those results are not shown.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 d$id = 1:nrow(d)
-## 
+
 ## model_glmm = lme4::glmer(
 ##   prate ~ mrate + ltotemp + age + sole + (1 | id),
 ##   data = d,
@@ -3043,20 +3067,15 @@ Number of observations: 4075
 R-squared: 0.195 </code></pre>
 </div>
 <h2 id="conclusion">Conclusion</h2>
-<p>Fractional data occurs from time to time. While Stata has a specific function for such outcomes, and has done a lot to promote a means to handle them, practically any statistical tool could do so. In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off, but you have other tools and approaches available as well.</p>
-<h4 id="related-models">Related models</h4>
-<ul>
-<li>Binomial logistic for binary and count/proportional data (<span class="math inline">\(x\)</span> successes out of <span class="math inline">\(n\)</span> trials)</li>
-<li>Beta regression for (0, 1) (see the <a href="https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf">betareg package</a>)</li>
-<li>Zero/One-inflated binomial or beta regression for cases including a relatively high amount of zeros and ones (see <a href="https://cran.r-project.org/web/packages/brms/vignettes/brms_overview.pdf">brms</a>, <a href="https://www.stat.auckland.ac.nz/~yee/VGAM/">VGAM</a>, <a href="https://www.gamlss.com/">gamlss</a> packages)</li>
-</ul>
+<p>Fractional data occurs from time to time. While Stata and R have specific functionality for such outcomes, more commonly used statistical tools can be used, which might provide additional means of model exploration. In the demo above, a standard glm with robust errors would be fine, and the simplest to pull off. With that as a basis, other complexities could be incorporated in more or less a standard fashion.</p>
 <h2 id="references">References</h2>
 <p><a href="https://www.stata.com/features/overview/fractional-outcome-models/">Stata demo</a></p>
 <p><a href="https://www.stata.com/manuals/rfracreg.pdf">Stata reference on fracreg command</a></p>
 <p>McCullagh P. and Nelder, J. A. (1989) Generalized Linear Models. London: Chapman and Hall.</p>
-<p>Papke &amp; Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates. (<a href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1" class="uri">https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1</a>)</p>
+<p>Papke &amp; Wooldridge. (1996) Econometric Methods For Fractional Response Variables With An Application To 401 (K) Plan Participation Rates. <a href="https://onlinelibrary.wiley.com/doi/epdf/10.1002/%28SICI%291099-1255%28199611%2911%3A6%3C619%3A%3AAID-JAE418%3E3.0.CO%3B2-1">link</a></p>
 <p>Ramalho, E., Ramalho, J. &amp; Coelho, L. (2016) Exponential Regression of Fractional-Response Fixed-Effects Models with an Application to Firm Capital Structure. Journal of Econometric Methods. <a href="https://www.degruyter.com/view/j/jem.2018.7.issue-1/jem-2015-0019/jem-2015-0019.xml">link</a></p>
 <p>Ramalho, E., Ramalho, J. &amp; Murteira, J. (2011) Alternative Estimating And Testing Empirical Strategies For Fractional Regression Models. <a href="https://onlinelibrary.wiley.com/doi/full/10.1111/j.1467-6419.2009.00602.x">link</a></p>
+<p>StackExchange has some more useful discussion, e.g. more on standard error differences between the approaches <a href="https://stats.stackexchange.com/questions/89999/how-to-replicate-statas-robust-binomial-glm-for-proportion-data-in-r/205040">link</a></p>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
@@ -3127,7 +3146,7 @@ R-squared: 0.195 </code></pre>
   <div>
 
 
-Michael Clark • 2019 •  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
+Michael Clark â€¢ 2019 â€¢  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
 </div>
 </div>
 <!--/radix_placeholder_navigation_after_body-->
