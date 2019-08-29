@@ -13,10 +13,9 @@ output:
     toc: true
     css: ../../styles.css
 draft: true
-tags: []
+tags: [gausian process, GAM]
 categories:
   - regression
-  - gausian process
 ---
 
 ```{r setup, include=FALSE}
@@ -52,7 +51,7 @@ This is where I will continuously add notes/blurbs that may eventually find more
 
 ## Gaussian Processes, relationships
 
-I had this info on my whiteboard for a long time thinking I'd get back to it at some point, but never really did.  I had started this [one project](https://github.com/m-clark/connections), but abandoned when the package it relied on made fundamental, breaking changes without documentation. There I had 
+I had this info on my whiteboard for a long time thinking I'd get back to it at some point, but never really did.  A while back, I had started a [project](https://github.com/m-clark/connections) regarding the various connections among common modeling scenarios, but abandoned it when the package it relied on made fundamental, breaking changes without documentation or deprecation. There I had a [section on gaussian process](https://github.com/m-clark/connections/blob/master/gp.Rmd) and relations to typical time-series and GAM models.
 
 ```{r gp-diagrammer, echo=FALSE, eval=FALSE}
 library(DiagrammeR)
@@ -134,8 +133,9 @@ gp_edges %>% select(from, to, tooltip)
 
 
 
-### Connections to Gaussian processes
+### Covariance Functions
 
+Note that covariance functions are written identically in slightly different ways in different sources, and this is just one representation.  See the Rasmussen and Williams link for details, which the following adheres to.
 
 #### Exponential
 
@@ -151,12 +151,14 @@ $$k_{se} = exp(-\frac{r^2}{2l^2})$$
 
 #### Rational Quadratic
 
+A mixture of squared exponentials.
+
 $$k_{rq} = (1 + \frac{r^2}{2\alpha l^2})^{-\alpha}$$
 
 
 #### Matern class
 
-Note that covariance functions are written identically in slightly different ways in different sources, and this is just one representation.  See the Rasmussen and Williams link for details.
+
 
 $$h^2\frac{2^{1-\nu}}{\Gamma(\nu)}(2\sqrt{\nu}\frac{r}{l})\mathcal{B}_\nu(2\sqrt{\nu}\frac{r}{l})$$
 
@@ -175,17 +177,18 @@ $\mathcal{B}$ = modified Bessel function of the second kind
 
 
 
-#### Connections
+### Connections
 
 
-- AR(1) = GP with matern covariance and nu fixed to some 1/2 (i.e. $\nu+1/2 = p$)
+- AR(1) = GP with matern covariance and $\nu$ fixed to 1/2 (i.e. $\nu+1/2 = p$)
 - AR(p) = is a discretized Ornstein–Uhlenbeck,  GP with matern covariance and nu fixed to p - 1/2
 - GP with SE = matern with $\nu = \infty$
 - GP with RQ = a mixture of GP with SE, and if $\alpha = \infty$ = GP with SE
 - GP with Exponential = matern with $\nu = 1/2$
-- GP $\leadsto$ Thinplate, Duchon spline for a GAM
-- GP $\equiv$ posterior mean for RKHS
+- GP $\leadsto$ Thinplate, Duchon spline for a GAM, other splines
 - GP with linear kernel $\sigma_f + (x-c)(x'-c)$ = Bayesian linear regression
+- GP $\equiv$ posterior mean for RKHS
+- Other: SVM
 
 ### References
 
