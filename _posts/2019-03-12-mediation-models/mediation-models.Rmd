@@ -5,7 +5,7 @@ description: |
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date:  2019-03-12 # '`r format(Sys.Date(), "%B %d, %Y")`'
+date:  2019-03-12
 preview: ../../img/mediation_blog_img.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
@@ -67,9 +67,11 @@ code[class*="language-"], pre[class*="language-"] {
 }
 ```
 
+Updated `r format(Sys.Date(), "%B %d, %Y")`
+
+<br>
 
 ## Introduction
-
 
 In some situations we may consider the <span class="emph">indirect effect</span> of some variable on an outcome or result.  As an example, poor living conditions at home in childhood may decrease learning outcomes in school, which subsequently have a negative effect on later quality of life, for example, lifetime income earnings. In another case we might consider a single variable collected at multiple time points, such that there exists an effect of the variable at time 1 on time 2, and time 2 on time 3.  The basic idea is something like:
 
@@ -85,7 +87,7 @@ Mediation analysis is very popular in social science disciplines, though by no m
 DiagrammeR::grViz('scripts/mediation.gv')
 ```
 
-I should note a few things based on what I see in consulting across dozens of disciplines.  To begin, very few people who think they need a mediation model actually do.  For example, if you cannot think of your model in temporal or physical terms, such that $\mathrm{X}$ necessarily leads to the mediator, which then necessarily leads to the outcome, you likely do not need a mediation model.  If you could see the arrows going either direction, again, you don't need such a model.  Also, if when describing your model, everyone thinks you're talking about an interaction (a.k.a. <span class="emph">moderation</span>), you don't need this.  And finally, as one might suspect, if there is no **strong** correlation between key variables ($\mathrm{X}$) and mediator (path `a`), you don't need this, and if there is no **strong** correlation between mediator and the outcome(s) (path `b`), you don't need this.  Without such prerequisites, you will have a weak and probably more confusing model than you otherwise would have.
+I should note a few things based on what I see in consulting across dozens of disciplines.  To begin, it seems very few people who think they need a mediation model actually do.  For example, if you cannot think of your model in temporal or physical terms, such that $\mathrm{X}$ *necessarily* leads to the mediator, which then *necessarily* leads to the outcome, you likely do not need a mediation model.  If you could see the arrows going either direction, again, you probably don't need such a model.  Also, if when describing your model, everyone thinks you're talking about an interaction (a.k.a. <span class="emph">moderation</span>), you might not need this.  And finally, as one might suspect, if there is no **strong** correlation between key variables ($\mathrm{X}$) and mediator (path `a`), and if there is no **strong** correlation between mediator and the outcome(s) (path `b`), you probably don't need this.  While nothing will stop you from doing mediation analysis, without such prerequisites, you will almost certainly have a weak and probably more confusing model than you otherwise would have.
 
 
 In short, mediation works best when there are strongly implied causal connections among the variables.  Even then, such a model should be compared to simpler model of no mediation[^modcompare].  In any case, there are a few very easy ways to investigate such models in R, and that is the goal here, just to demonstrate how you can get started.
@@ -97,7 +99,7 @@ For demonstration of mediation models with the different packages, we will use t
 
 <span class="" style='font-size: 75%;'>Job Search Intervention Study (JOBS II). JOBS II is a randomized field experiment that investigates the efficacy of a job training intervention on unemployed workers. The program is designed to not only increase reemployment among the unemployed but also enhance the mental health of the job seekers. In the JOBS II field experiment, 1,801 unemployed workers received a pre-screening questionnaire and were then randomly assigned to treatment and control groups. Those in the treatment group participated in job-skills workshops. In the workshops, respondents learned job-search skills and coping strategies for dealing with setbacks in the job-search process. Those in the control condition received a booklet describing job-search tips. In follow-up interviews, the two key outcome variables were a continuous measure of depressive symptoms based on the Hopkins Symptom Checklist, and a binary variable, representing whether the respondent had become employed.</span>
 
-Here is a description of the variables in this demonstration.  There are others you might want to play around with.
+Here is a description of the variables in this demonstration.  There are others available you might also want to play around with.
 
 - <span class="objclass">econ_hard</span>: Level of economic hardship pre-treatment with values from 1 to 5.
 - <span class="objclass">sex</span>: Indicator variable for sex. 1 = female
@@ -145,7 +147,7 @@ We will start with the <span class="pack">mediation</span> package, as it basica
 
 > The average causal mediation effect (ACME) represents the expected difference in the potential outcome when the mediator took the value that would realize under the treatment condition as opposed to the control condition, while the treatment status itself is held constant.
 
-Note how this definition is focused on expected or predicted values conditional on the treatment value. This notion of <span class="emph">counterfactuals</span>, or what would the observation look like under the opposite setting, has a long history in modeling at this point. Think of it this way, if one is in the treatment group, they would have a specific value for the mediator, and, given that, they would then have a specific expected value for the outcome. However, we could posit the same observation as being in the control group as well, and assess the effect on the outcome through the mediator just the same.  This is how the <span class="pack">mediation</span> package is able to incorporate different models for the mediator vs. the outcome.  For example, the mediator could be binary, requiring a logistic regression model, while the outcome model might be a survival model.  
+Note how this definition is focused on expected or predicted values conditional on the treatment value. This notion of <span class="emph">counterfactuals</span>, or what would the observation look like under the opposite setting, has a long history in modeling at this point. Think of it this way, if one is in the treatment group, they would have a specific value for the mediator, and, given that, they would then have a specific expected value for the outcome. However, we could posit the same observation as being in the control group as well, and assess the effect on the outcome through the mediator just the same.  We can assess the <span class="emph" style = "">potential outcomes</span> while holding the treatment constant.  Thinking of outcome changes given the value of the mediator makes no assumption about the model type. This is how the <span class="pack">mediation</span> package is able to incorporate different models for the mediator vs. the outcome.  For example, the mediator could be binary, requiring a logistic regression model, while the outcome model might be a survival model.  
 
 <aside>As this document is a tools-based demo and not for depth, see the works of [Judea Pearl](http://bayes.cs.ucla.edu/jp_home.html) for more details.</aside> 
 
@@ -537,7 +539,7 @@ tibble(
 <!-- footnotes -->
 [^mysem]: I have a much more [detailed document on SEM](https://m-clark.github.io/sem/), including mediation analysis.
 
-[^mass]: <span class="pack">MASS</span> has been superseded by others for over a decade at this point, and it mostly just tends to muck up your tidyverse and other packages when it's loaded.  It's a fine package (and was great back in the day), but if you want to use it in a package, it would be good to not load it (or other packages) in the environment just to use a function or two.  I mostly just see it used for these days is <span class="func">mvrnorm</span> (multivariate normal distribution) and <span class="func">glm.nb</span>, but I would use other packages for those reasons that would provide additional benefits and not mask <span class="pack">dplyr</span> functions, which are among the most popular used in the R community. 
+[^mass]: <span class="pack">MASS</span> has been superseded by others for over a decade at this point, and it mostly just tends to muck up your <span class="pack" style = "">tidyverse</span> and other packages when it's loaded.  It's a fine package (and was great back in the day), but if you want to use it in a package, it would be good to not load it (or other packages) in the environment just to use a function or two.  I mostly just see it used for <span class="func">mvrnorm</span> (multivariate normal distribution) and <span class="func">glm.nb</span>, but there are other packages with that functionality that would provide additional benefits, and not mask <span class="pack">dplyr</span> functions, which are among the most popular used in the R community. 
 
 [^cfabrms]: [<span class="pack">brms</span> is working on it](https://github.com/paul-buerkner/brms/issues/304).
 
