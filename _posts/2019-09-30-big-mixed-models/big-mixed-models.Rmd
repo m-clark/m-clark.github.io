@@ -1,0 +1,590 @@
+---
+title: "Mixed Models for Big Data"
+description: |
+  Explorations of a fast penalized regression approach with bam in mgcv
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/gam_sim.png  
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: true
+bibliography: gam_references.bib
+nocite:  | 
+  @li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1
+tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=T,
+  fig.align='center', 
+  fig.asp = .7,
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse)
+library(tidyext)
+library(broom)
+library(kableExtra)
+library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+```
+
+## Introduction
+
+With mixed models, it is easy to run into data that is larger in size than some more typical data scenarios.  Consider a cross-sectional data set with 200 individuals.  This is fairly small data.  Now, if we observe them each five times, as in a longitudinal setting, we suddenly have 1000 observations.  There may be less than 200 countries in the world, but if we survey 100s or 1000s of people in many of them, we suddenly have a notable data set size, and still would potentially like to model a country-level random effect.  What are our options when dealing with possibly gigabytes of data?
+
+Background required:
+
+For the following you should have familiarity with [mixed models](https://m-clark.github.io/mixed-models-with-R/).  Knowledge of the lme4 package would be useful but isn't required. Likewise, knowledge of [generalized additive models](https://m-clark.github.io/generalized-additive-models/) and mgcv would be helpful, but I don't think it's required to follow the demonstration.
+
+
+## R Packages for Mixed Models with Large Data
+
+While many tools abound to conduct mixed models for larger data sizes, their limitations can be found pretty quickly.  R's lme4 is a standard, but powerful mixed model tool.   More to the point, it is very computationally efficient, such  that it can handle very large sample sizes for simpler mixed models.  For linear mixed models this can include hundreds of thousands of observations with possibly multiple random effects, still running on a basic laptop.  For such models, it's still largely the tool of choice, and its approach has even been copied/ported into other statistical packages.
+
+We'll first create some data to model.  This is just a simple random intercepts setting.
+
+```{r data-prep}
+set.seed(12358)
+N = 1e6
+n_groups = 1000
+g = rep(1:n_groups, e = N/n_groups)
+
+x = rnorm(N)                             # an observation level continuous variable
+b = rbinom(n_groups, size = 1, prob=.5)  # a cluster level categorical variable
+b = b[g]
+
+sd_g = .5     # standard deviation for the random effect
+sigma = 1     # standard deviation for the observation
+
+re0 = rnorm(n_groups, sd = sd_g)  # random effects
+re  = re0[g]
+
+lp = 0 + .5*x + .25*b + re        # linear predictor 
+
+y = rnorm(N, mean = lp, sd = sigma)               # create a continuous target variable
+y_bin = rbinom(N, size = 1, prob = plogis(lp))    # create a binary target variable
+
+d = tibble(x, b, y, y_bin, g = factor(g))
+```
+
+<br>
+
+Let's take a look at the data first.
+
+```{r show-data, echo=FALSE}
+kable_df(head_tail(d))
+```
+
+Now with the data in place, let's try lme4 to model the continuous outcome.
+
+
+```{r simple_mixed}
+library(lme4)
+
+system.time({
+  mixed_big = lmer(y ~ x + b + (1|g))
+})
+
+summary(mixed_big, cor = FALSE)
+```
+
+This is great! We just ran a mixed model for `r scales::comma(N)` observations and `r scales::comma(n_groups)` groups for our random effect in just a few seconds.
+
+But the problem comes as soon as you move to the generalized mixed model, e.g. having a binary outcome, or include additional complexity while still dealing with large data.  The following is essentially the same model, but for a binary outcome.
+
+```{r simple_big_mixed_binary}
+system.time({
+  mixed_big_glmm = glmer(y_bin ~ x + b + (1|g), family = binomial)
+})
+```
+
+To begin with, you shouldn't be worried about models taking a few minutes to run, or even a couple hours. Once you have your model(s) squared away, the testing of which can be done on a smaller sample of the data set, there is no need to repeatedly run it.  But in this case we had a greater than 15 fold increase in time for a very simple data scenario.  So it's good to have options when you need them. Let's turn to those.
+
+## Additive Models as Mixed Models
+
+Simon Wood's wonderful work on generalized additive models (GAM) and the mgcv package make it one of the better modeling tools in the R kingdom.  As his text[@wood_generalized_2017] and other work shows, additive models can be seen as random effects models, and he exploits this by providing numerous ways to include and explore random effects in the GAM approach.  One key difference between the GAM and a standard mixed model approach is that the random effects are estimated parameters of the model, not BLUPs, as with lme4. Those coefficients are penalized, pretty much in the same was as L2/ridge regression.  The 'fixed effects' are not penalized, and so that part is basically just a generalized linear model.  As we will see though, the results will be nearly the same between mgcv and lme4.
+
+
+
+The following demonstrates the link between the approaches by showing a model that includes a random intercept and slope. We will use the standard mgcv approach for specifying a smooth term, but alternatives are shown for those familiar with the package.
+
+<aside>If you just use <span class="func" style = "">coef</span> on the following gam objects, you will see that the random effects are lumped in with the other estimated coefficients.</aside>
+
+
+
+```{r basic_model}
+library(lme4)
+library(mgcv)
+
+mixed_model = lmer(
+  Reaction ~ Days + (1 | Subject) + (0 + Days | Subject),
+  data = sleepstudy
+)
+
+ga_model = gam(
+  Reaction ~  Days + s(Subject, bs = 're') + s(Days, Subject, bs = 're'),
+  data = sleepstudy,
+  method = 'REML'
+)
+
+# Using gamm and gamm4 for the same model
+# ga_model = gamm(
+#   Reaction ~  Days ,
+#   random = list(Subject = ~ 0 + Days),
+#   data = sleepstudy,
+#   method = 'REML'
+# )
+# 
+# ga_model = gamm4::gamm4(
+#   Reaction ~  Days,
+#   random =  ~ (Days||Subject),
+#   data = sleepstudy,
+#   REML = TRUE
+# )
+```
+
+
+
+Note that we use <span class="func" style = "">s</span> to denote a <span class="emph" style = "">smooth term</span> in the parlance of additive models, and the `bs = 're'` specifies that we want it as a random effect (as opposed to a spline or other basis function).  The second smooth term `s(Days, Subject, bs = 're')` denotes random coefficients for the `Days` covariate.  
+
+
+<aside> As shown, one could use the <span class="func" style = "">gamm</span> function for the <span class="pack" style = "">nlme</span> style, or Wood's <span class="pack" style = "">gamm4</span> package to use the lme4 syntax.  These alternate approaches allow for more flexibility in some ways, but will not be useful to us for big data.</aside>
+
+### Comparison of GAM to the Mixed Model
+
+Aside from the syntax, the underlying model between the two is the same, and the following shose that we obtain the same results for both lme4 and mgcv. 
+
+
+
+```{r basic_model_summary}
+summary(mixed_model, cor = FALSE)
+summary(ga_model)
+```
+
+I don't want to go into the details of the printout for mgcv, but it is worth noting that the parametric part is equivalent to the fixed effects portion of the lme4 output. Likewise the smooth terms output is related to the random effects, but we'll extract them in a manner more suited to typical mixed model output instead.  So let's compare the variance components, and get them ready for later comparison to bam results.  Note, I've been using mgcv a lot for mixed models lately, so I created a package called <span class="pack" style = "">gammit</span> to provide tidier output in general, and which is more similar to lme4.  I note the corresponding mgcv function where appropriate.
+
+<aside>The <span class="pack" style = "">gammit</span> package is available on [GitHub](https://github.com/m-clark/gammit).</aside>
+
+
+
+```{r initial-vc}
+library(gammit)
+
+# extract just the fixed effects for later.
+mixed_fe = fixef(mixed_model)
+gam_fe   = extract_fixed(ga_model)  # coefs with se and confidence interval
+
+# variance components
+lmer_vcov = data.frame(VarCorr(mixed_model))
+gam_vcov  = extract_vc(ga_model)    # cleaner gam.vcomp
+```
+
+```{r initial-vc-show, echo=FALSE}
+kable_df(lmer_vcov, caption = 'LME Result')
+kable_df(gam_vcov, caption = 'GAM Result')
+```
+
+
+
+<aside>The penalty parameter in the GAM model is inversely related to the variance estimate of the random effects.  See [this demo](https://m-clark.github.io/generalized-additive-models/appendix.html#a-comparison-to-mixed-models).</aside>
+
+### The bam approach 
+
+For large data, mgcv provides the bam function.  For this small data setting we don't really need it, but we can establish that we would get similar results using it without having to wait.  We will see the benefits when we apply bam to large data later.  None of our syntax changes, just the function.
+
+```{r basic_model_bam}
+ba_model = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+               data = sleepstudy)
+
+bam_fe   = extract_fixed(ba_model)
+bam_vcov = extract_vc(ba_model)
+```
+
+How does it work? The function uses a parallelized approach where possible, essentially working on subsets of the model matrices simultaneously. Details can be found in the references[@li_faster_2019][@wood_generalized_2015][@wood_generalized_2017-1], but basically mgcv parallelizes the parts that can be, and additionally provides an option to discretize the data to work with the minimal information necessary to produce viable estimates.  The following uses the discrete option.  As there isn't really anything to discretize with so little data, this is just to demonstrate the syntax. 
+
+```{r basic_model_bam_discrete}
+ba_d_model = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+                 data = sleepstudy,
+                 discrete = TRUE)
+
+bam_d_fe   = extract_fixed(ba_d_model)
+bam_d_vcov = extract_vc(ba_d_model)
+```
+
+### Fixed effects comparison
+
+We start by comparing the fixed effects of all models run thus far.  No surprises here, the results are the same.
+
+```{r compare-fixef, echo=FALSE}
+rbind(
+  mixed = mixed_fe,
+  gam   = gam_fe$Estimate,
+  bam   = bam_fe$Estimate,
+  bam_d = bam_d_fe$Estimate
+  ) %>% 
+  data.frame() %>% 
+  rownames_to_column('Model') %>% 
+  rename(Intercept = X.Intercept.) %>% 
+  kable_df(caption = 'Fixed Effects Estimates')
+```
+
+Let's examine the standard errors.  Note that there are options for the gam models for standard error estimation, including a Bayesian one.  For more details, see `?gamObject`, but I will offer the summary:
+
+##### Ve 
+frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI's as smooths are usually biased.
+
+##### Vp
+estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.
+
+##### Vc
+Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.
+
+
+ We will use the Bayesian estimates (`Vp`), but for this setting there are no appreciable differences.  I expand the digits to show they are in fact different to some decimal place.
+ 
+```{r compare-fixef-se, echo=FALSE}
+rbind(
+  mixed = summary(mixed_model)$coefficients[,'Std. Error'],
+  gam   = gam_fe$SE,
+  bam   = bam_fe$SE,
+  bam_d = bam_d_fe$SE
+  ) %>% 
+  data.frame() %>% 
+  rownames_to_column('Model') %>% 
+  rename(Intercept = X.Intercept.) %>% 
+  kable_df(caption = 'Fixed Effects Standard Errors', digits = 5)
+```
+
+### Variance components comparison
+
+Now we move to the variance component estimates. Reported are the standard deviations for subject level random effects for intercept, `Days` coefficient, and residual.
+
+```{r compare-vc, echo=FALSE}
+rbind(
+  mixed = lmer_vcov$sd,
+  gam   = gam_vcov[['std.dev']],
+  bam   = bam_vcov[['std.dev']],
+  bam_d = bam_d_vcov[['std.dev']]
+  ) %>% 
+  data.frame() %>% 
+  rename(Intercept = X1, Days = X2, Residual = X3) %>% 
+  kable_df(caption = 'Variance Components Estimates')
+```
+
+
+We can also look at their interval estimates.  We use the profile likelihood for the lme4 mixed model.  In this case we can see slightly wider and somewhat different boundary estimates.
+
+
+```{r compare-vc-int, echo=FALSE}
+mixed_vc_int = confint(mixed_model)
+mixed_vc_int = mixed_vc_int %>% 
+  data.frame() %>% 
+  filter(str_detect(rownames(.), 'sig')) %>% 
+  mutate(sd = c('Intercept', 'Days', 'scale')) %>% 
+  rename(
+    component = sd,
+    lower     = X2.5.., 
+    upper     = X97.5..
+    ) %>% 
+  select(component, everything()) 
+```
+
+```{r compare-vc-int-table, echo=FALSE}
+list(mixed = mixed_vc_int,
+     gam   = gam_vcov,
+     bam   = bam_vcov,
+     bam_d = bam_d_vcov) %>% 
+  bind_rows(.id = 'Model') %>% 
+  mutate(component = if_else(component=='scale', 'Residual', component)) %>% 
+  select(Model:upper) %>% 
+  kable_df(caption = 'Interval Estimates for Variance Components', digits = 4) %>% 
+  collapse_rows(valign = 'top')
+```
+
+
+### Estimated random effects
+
+Now let's look at the random effect estimates.
+
+```{r re, echo=1:5}
+mixed_re = ranef(mixed_model)[[1]] %>% 
+  rename(mixed_Subject = `(Intercept)`, `mixed_Days|Subject` = Days)
+
+gam_re_init   = extract_ranef(ga_model)
+bam_re_init   = extract_ranef(ba_model)
+bam_d_re_init = extract_ranef(ba_d_model)
+
+gam_re = gam_re_init %>% 
+  pivot_wider(
+    names_from = component, 
+    values_from = re, 
+    names_prefix = 'gam_',
+    -(se:upper)
+  ) %>% 
+  select(-group)
+
+bam_re = bam_re_init %>% 
+  pivot_wider(
+    names_from = component, 
+    values_from = re, 
+    names_prefix = 'bam_',
+    -(se:upper)
+  ) %>% 
+  select(-group)
+
+bam_d_re = bam_d_re_init %>% 
+  pivot_wider(
+    names_from = component, 
+    values_from = re, 
+    names_prefix = 'bam_d_',
+    -(se:upper)
+  ) %>% 
+  select(-group)
+
+all_re = bind_cols(mget(ls(pattern = '_re$')))
+```
+
+We'll start with the random effects for the intercept. To several decimal places, we start to see differences, so again we know they aren't doing exactly the same thing.
+
+```{r re-int, echo=FALSE}
+all_re %>% 
+  select(
+    `mixed_Subject`,
+    `gam_Subject`,
+    `bam_Subject`,
+    `bam_d_Subject`
+    ) %>% 
+  kable_df(digits = 5, caption = 'Estimated Random Effects')
+```
+
+
+Random effects for the Days coefficient.
+
+```{r re-days, echo=FALSE}
+all_re %>% 
+  select(
+    `mixed_Days|Subject`,
+    `gam_Days|Subject`,
+    `bam_Days|Subject`,
+    `bam_d_Days|Subject`
+    ) %>% 
+  kable_df(digits = 5, caption = 'Estimated Random Intercepts')
+```
+
+Standard errors for the random effects.  In the balanced design these are essentially constant across clusters. We can see that the Bayesian estimates from mgcv reflect greater uncertainty.
+
+<aside>The bam results may actually be slightly different for some clusters.</aside>
+
+<br>
+
+```{r re-int-se, echo=FALSE}
+list(
+  mixed = unique(data.frame(ranef(mixed_model))$condsd, 2),
+  gam   = unique(round(gam_re_init$se, 5)),
+  bam   = unique(round(bam_re_init$se, 5)),
+  bam_discrete = unique(round(bam_d_re_init$se, 5))
+) %>% 
+  bind_rows() %>% 
+  t() %>% 
+  data.frame() %>% 
+  rownames_to_column(var = 'Model') %>% 
+  rename(Intercepts = X1, Days = X2) %>% 
+  kable_df(caption = 'Standard Errors of the Random Coefficients')
+```
+
+### Comparisons to Bayesian Estimates
+
+As we have noted, one of the differences between lme4 and mgcv output is that the default uncertainty estimates for the GAM are Bayesian.  As such, it might be interesting to compare these to a fully Bayes approach.  We'll use <span class="pack" style = "">rstanarm</span>, which uses the <span class="pack" style = "">lme4</span> style syntax.
+
+```{r bayes}
+library(rstanarm)
+bayes = stan_lmer(Reaction ~ Days + (1|Subject) + (0+Days|Subject), 
+                  data=sleepstudy,
+                  cores = 4)
+
+bayes_fe = broom::tidy(bayes)
+bayes_vc = broom::tidy(bayes, 'hierarchical')
+bayes_re = broom::tidy(bayes, 'varying')
+```
+
+```{r bayes-compare, echo=FALSE}
+bind_rows(bayes_fe, bayes_vc) %>% 
+  kable_df(caption = 'Bayesian fixed effects and variance components')
+
+bayes_re %>% 
+  pivot_wider(names_from = term, values_from = estimate, -std.error) %>% 
+  kable_df(caption = 'Bayesian random effects')
+
+bayes_re %>% 
+  pivot_wider(names_from = term, values_from = std.error, -estimate)  %>% 
+  kable_df(caption = 'Random effect standard errors')
+
+avg_re_se_bayes = bayes_re %>% 
+  pivot_wider(names_from = term, values_from = std.error, -estimate) %>% 
+  mutate_if(is.numeric, mean) %>% 
+  distinct(`(Intercept)`, Days)
+
+avg_re_se_mgcv = gam_re_init %>% 
+  group_by(component) %>% 
+  summarise(se = mean(se)) 
+```
+
+We can see that the mgcv estimates for standard errors of the random effects are close to the average standard errors from the fully Bayesian approach. For the Bayesian result we have (`r rnd(avg_re_se_bayes[['(Intercept)']])` and `r rnd(avg_re_se_bayes$Days)` for Intercept and Days coefficient respectively, while for mgcv this is `r rnd(avg_re_se_mgcv$se[2])` and `r rnd(avg_re_se_mgcv$se[1])`.
+
+
+## Back to the initial problem
+
+
+So we've established that both default gam and bam output are providing what we want.  However, the reason for using mgcv for mixed models is the speed gain we'll get with big data.  So let's return to the binary outcome example that took over a minute for lme4 to run.
+
+```{r bam_big, cache.rebuild=FALSE}
+system.time({
+  bam_big <- bam(
+    y_bin ~ x + b + s(g, bs='re'), 
+    data = d,
+    nthreads = 8,
+    family = binomial
+  )
+})
+```
+
+That didn't actually improve our situation, and was much worse in time- more than 20 minutes!  Remember though, that the mgcv approach has to estimate all those random effect coefficients, while lme4 is dealing with a perfectly balanced data set with which to estimate a single variance component. In practice, with additional complexities bam would win out eventually[^bamwins].  
+
+However, even here we haven't used all our secret weapons.  Another option with bam works on a modified data set using binned values for continuous covariates[@wood_generalized_2015].  With large enough data, as is the case here, the estimated parameters might not be different at all, while the efficiency gains could be tremendous.  Let's add `discrete = TRUE` and see what happens.
+
+```{r bam_big_discrete, cache.rebuild=FALSE}
+system.time({
+  bam_big_d <- bam(
+    y_bin ~ x + b + s(g, bs='re'), 
+    data = d,
+    nthreads = 8,
+    family = binomial, 
+    discrete = TRUE
+  )
+})
+```
+
+**Wow!** That was as fast almost as lme4 with the linear mixed model! Let's check the results.  We'll start with the fixed effects.  I add some digits to the result so we can see the very slight differences.
+
+```{r mixed_big_glmm_fe_results, echo=FALSE}
+# don't want to rerun if possible, as confint will take forever for some methods
+# and/or variance components
+mixed_big_glmm_fe = summary(mixed_big_glmm)$coefficients %>% 
+  data.frame() %>% 
+  rownames_to_column(var = 'Term') %>% 
+  rename(SE = 'Std..Error') %>% 
+  mutate(Model = 'lme4')
+
+mixed_big_ci = confint(mixed_big_glmm, parm = 'beta_', method = 'Wald') 
+```
+
+```{r bam-fe-results, echo=FALSE}
+big_results = list(bam_big = bam_big, bam_big_d = bam_big_d)
+
+tibble(
+  Model = rep('True', 3),
+  Term  = c('(Intercept)', 'x', 'b'),
+  Estimate = c(0, .5, .25)
+) %>% 
+  bind_rows(
+    big_results %>% 
+      map(extract_fixed) %>% 
+      bind_rows(
+        .id = 'Model'
+      ) 
+  ) %>% 
+  bind_rows(
+    mixed_big_glmm_fe %>% 
+      select(-z.value, -Pr...z..) %>% 
+      mutate(LL = mixed_big_ci[,1], UL = mixed_big_ci[,2])
+  ) %>% 
+  kable_df(caption = 'Fixed Effects', digits = 8)
+```
+
+Now for the variance components.
+
+```{r big-vc-results, echo=FALSE}
+bind_rows(
+  true = tibble(std.dev = .5, variance = std.dev^2),
+  bam_big   = extract_vc(bam_big) %>% select(std.dev, variance),
+  bam_big_d = extract_vc(bam_big_d) %>% select(std.dev, variance),
+  lme4 = data.frame(VarCorr(mixed_big_glmm)) %>% 
+    select(sdcor, vcov) %>% 
+    rename(std.dev=sdcor, variance = vcov),
+  .id = 'Model'
+) %>% 
+  kable_df(caption = 'Variance Components', digits = 6)
+```
+
+The estimated random effects for the first 5 clusters.
+
+```{r, big-re-results, echo=FALSE}
+re_big = tibble(
+  true = re0[1:5],
+  bam_big   = extract_ranef(bam_big) %>% slice(1:5) %>% pull(re),
+  bam_big_d = extract_ranef(bam_big_d) %>% slice(1:5) %>% pull(re),
+  lme4 = ranef(mixed_big_glmm)[['g']][1:5, 1]
+) 
+
+re_big %>% 
+  rownames_to_column(var = 'cluster') %>% 
+  kable_df(digits = 7, caption = 'Estimated Random Effects')
+
+# cor(re_big)
+# ranef(mixed_big_glmm)[['g']] %>% rownames_to_column() %>% head_tail()
+```
+
+
+
+```{r glmmTMB, echo=FALSE, eval=FALSE}
+system.time({
+  mixed_big_tmb = glmmTMB::glmmTMB(y_bin ~ x + b + (1|g), family = binomial)
+})
+summary(mixed_big_tmb)
+```
+
+```{r glmm_big_bayes, echo=FALSE, eval=FALSE}
+system.time({
+  mixed_big_bayes = rstanarm::stan_glmer(y_bin ~ x + b + (1|g),
+                                         data = d,
+                                         cores = 4,
+                                         family = binomial)
+})
+summary(test)
+```
+
+
+## Limitations
+
+- No estimation of random effect correlations, e.g. slopes and intercepts
+- When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
+
+
+## Other options
+
+When looking into mixed models for big data, you typically won't find much.  I've seen some packages or offereings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module is available, [photonML](https://github.com/linkedin/photon-ml), provided by LinkedIn, but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the lme4 authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool.
+
+## Summary
+
+
+
+[^bamwins]: Even just adding an additional random effect would possibly be enough for this data example.
+[^mixrf]: See [REEMtree](https://cran.r-project.org/web/packages/REEMtree/), [mixRF](https://cran.r-project.org/web/packages/MixRF/) for example.
