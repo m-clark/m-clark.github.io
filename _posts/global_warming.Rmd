@@ -1,0 +1,42 @@
+```{r}
+library(tidyverse)
+
+temp = read_csv('https://data.giss.nasa.gov/gistemp/graphs_v4/graph_data/Global_Mean_Estimates_based_on_Land_and_Ocean_Data/graph.csv', skip = 1)
+temp = temp %>% 
+ rename(Temperature = No_Smoothing)
+
+library(mgcv)
+
+model = gam(Temperature ~ s(Year), data = temp)
+
+
+library(gratia)
+plot_dat = derivatives(model, term = 'Year', n = 1000) %>% 
+ rename(Year = data)
+
+
+plot_dat_peaks_valleys = plot_dat %>%
+ slice(quantmod::findPeaks(derivative)-1, 
+    quantmod::findValleys(derivative)-1) #
+
+library(ggrepel)
+library(visibly)
+
+plot_dat %>% 
+ ggplot(aes(Year, y = derivative)) +
+ geom_ribbon(aes(ymin=lower, ymax=upper), alpha = .2) +
+ geom_hline(yintercept = 0, color = 'gray92') +
+ geom_line(aes(), color = '#FF5500') +
+ geom_point(aes(), size = 2, data = plot_dat_peaks_valleys) +
+ geom_text_repel(
+  aes(label = round(Year)), 
+  size = 2,
+  alpha = .5,
+  data = plot_dat_peaks_valleys) +
+ labs(x = 'Year') +
+ theme_clean() +
+ theme(
+  legend.position = 'bottom',
+ )
+```
+
