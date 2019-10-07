@@ -468,7 +468,9 @@ system.time({
 
 That didn't actually improve our situation, and was much worse in time- more than 20 minutes!  Remember though, that the mgcv approach has to estimate all those random effect coefficients, while lme4 is dealing with a perfectly balanced data set with which to estimate a single variance component. In practice, with additional complexities bam would win out eventually[^bamwins].  
 
-However, even here we haven't used all our secret weapons.  Another option with bam works on a modified data set using binned values for continuous covariates[@wood_generalized_2015].  With large enough data, as is the case here, the estimated parameters might not be different at all, while the efficiency gains could be tremendous.  Let's add `discrete = TRUE` and see what happens.
+However, even here we haven't used all our secret weapons.  Another option with bam works on a modified data set using binned/rounded values for continuous covariates, and working with only the minimum data necessary to estimate the coefficients[@wood_generalized_2015]. With large enough data, as is the case here, the estimated parameters might not be different at all, while the efficiency gains could be tremendous.  Let's add `discrete = TRUE` and see what happens.
+
+<aside>We just need the distinct set of values after rounding.</aside>
 
 ```{r bam_big_discrete, cache.rebuild=FALSE}
 system.time({
@@ -534,7 +536,9 @@ bind_rows(
   kable_df(caption = 'Variance Components', digits = 6)
 ```
 
-The estimated random effects for the first 5 clusters.
+And finally, let's look at the estimated random effects for the first 5 clusters.
+
+<aside
 
 ```{r, big-re-results, echo=FALSE}
 re_big = tibble(
@@ -572,11 +576,18 @@ summary(test)
 ```
 
 
+
+So we're getting what we should,
+
 ## Limitations
 
+There are some limitations with using bam for mixed models
+
+- The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. slopes and intercepts
 - When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
 
+All in all, these are pretty minor, and the last one likely will be remedied in a future release.
 
 ## Other options
 
