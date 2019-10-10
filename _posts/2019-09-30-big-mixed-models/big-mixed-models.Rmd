@@ -538,7 +538,7 @@ bind_rows(
 
 And finally, let's look at the estimated random effects for the first 5 clusters.
 
-<aside
+<aside>Just a note, unless you have very many observations per cluster, you should not expect to get very close to the true values of the random effects except on average.  For example, if you just want to estimate a noisy mean, how many observations would you need to get reasonably close?</aside>
 
 ```{r, big-re-results, echo=FALSE}
 re_big = tibble(
@@ -577,12 +577,25 @@ summary(test)
 
 
 
-So we're getting what we should,
+So we're getting what we should in general.
 
-## Limitations
+## Strengths/Limitations
 
-There are some limitations with using bam for mixed models
+There are some limitations with using bam for mixed models.
 
+In general you'll need very large data for this to be preferable. If a standard linear mixed model, you probably won't need it unless:
+- You have complicated structure that begins to bog down lme4
+- You want to add smooth terms[^smoothlme4]
+- You have memory issues
+    
+For the generalized setting with binary, count, and other outcomes up to 100k observations:
+- lme4 will almost certainly start giving convergence warnings
+- glmmTMB is probably viable up to 100 k and one or two random effects
+- use mgcv for same reasons as above
+
+  
+Issues:
+    
 - The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. slopes and intercepts
 - When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
@@ -599,4 +612,7 @@ The take home point here is that you now have viable tools to run mixed models o
 
 
 [^bamwins]: Even just adding an additional random effect would possibly be enough for this data example.
+
 [^mixrf]: See [REEMtree](https://cran.r-project.org/web/packages/REEMtree/), [mixRF](https://cran.r-project.org/web/packages/MixRF/) for example.
+
+[^smoothlme4]: You could use construct the smooth with mgcv and add it to the model matrix for lme4.
