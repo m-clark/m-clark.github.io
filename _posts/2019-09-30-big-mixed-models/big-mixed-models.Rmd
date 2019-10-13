@@ -21,17 +21,17 @@ tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo=T, 
-  message = F, 
-  warning = F, 
+  echo = T,
+  message = F,
+  warning = F,
   comment = NA,
-  R.options=list(width=120), 
-  cache.rebuild=F, 
-  cache=T,
-  fig.align='center', 
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center', 
   fig.asp = .7,
-  dev = 'svg', 
-  dev.args=list(bg = 'transparent')
+  dev = 'svglite', 
+  dev.args = list(bg = 'transparent')
 )
 
 library(tidyverse)
@@ -579,29 +579,43 @@ summary(test)
 
 So we're getting what we should in general.
 
-## Strengths/Limitations
+## When to use bam
 
-### Timings
+The following are some guidelines for when bam might be prefereable.
 
+### Linear Mixed Models
 
-There are some limitations with using bam for mixed models.
-
-In general you'll need very large data for this to be preferable. If doing a standard linear mixed model, you probably won't need bam unless:
+In general you'll need very large data for bam to be preferable linear mixed model unless:
 
 - You have complicated structure that begins to bog down lme4
 - You want to add smooth terms[^smoothlme4]
 - You have memory issues
-    
+
+The following shows some timings for lme4, glmmTMB, and mgcv for the linear mixed model case under a variety of settings.  In some sense, this is not exactly a fair comparison as mgcv parallelizes computations while lme4 and glmmTMB do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the lme4 advantage holds until around 1 million observations.
+
+<aside>For lme4, I set at least one setting to possibly improve speed performance for both lme and glmm models.  In addition, for mgcv I only used 10 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a cluster computing environment would see even more speed gain by utilizing additional cores. For glmmTMB, settings were left at defaults, as I've not come across any specific recommendations. See @brooks_glmmtmb_2017 for more speed comparisons of glmmTMB, mgcv, lme4, and others.</aside>
+
+```{r lme-timings, echo=FALSE, background='transparent'}
+knitr::include_graphics("../../img/bam/lme_results.svg")
+```
+
+
+### Generalized Linear Mixed Models
+
+```{r gmm-timings, echo=FALSE, background='transparent'}
+knitr::include_graphics("../../img/bam/gmm_results.svg")
+```
+
 For the generalized setting with binary, count, and other outcomes up to 50-100k observations:
 
-- lme4, at least at the time of this writing, will almost certainly start giving convergence warnings
-- glmmTMB is probably viable up to 100 k and one or two random effects
+- lme4, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate
+- glmmTMB is probably viable up to 100k and one or two random effects
 - Use mgcv for same reasons as above
 
 Beyond that, I think bam will be a great choice.
 
   
-Issues:
+### Limitations
     
 - The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. slopes and intercepts
@@ -613,6 +627,10 @@ All in all, these are pretty minor, and the last one likely will be remedied in 
 
 When looking into mixed models for big data, you typically won't find much.  I've seen some packages or offereings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module is available, [photonML](https://github.com/linkedin/photon-ml), provided by LinkedIn, but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the lme4 authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool.
 
+Among proprietary options, SAS and Stata are the more commonly used tools.  SAS PROC HPMIXED essentially uses the lme4 approach, but can be faster for well-behaved data. Stata, while commonly used for mixed models, is generally slower than the lme4 even for standard settings and the smallest data settings noted here[^mccoach].
+
+<aside>SAS uses disk rather than RAM for processing, so may be preferred for low RAM devices.</aside>
+
 ## Summary
 
 The take home point here is that you now have viable tools to run mixed models on very large data.  This doesn't mean you won't have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times.  The alternative estimation procedures may even make otherwise problematic models more 
@@ -623,3 +641,9 @@ The take home point here is that you now have viable tools to run mixed models o
 [^mixrf]: See [REEMtree](https://cran.r-project.org/web/packages/REEMtree/), [mixRF](https://cran.r-project.org/web/packages/MixRF/) for example.
 
 [^smoothlme4]: You could use construct the smooth with mgcv and add it to the model matrix for lme4.
+
+
+http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/
+https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html
+
+[^mccoach]: See McCoach et al. (2018) [Does the Package Matter?](https://journals.sagepub.com/doi/abs/10.3102/1076998618776348).  They also look at HLM and Mplus. However, I haven't in years consulted with anyone across dozens of disciplines that was using it for mixed models. With Mplus, the verbosity of the syntax, plus additional data processing required, plus huge lack of post-processing of the model would negate any speed gain one might get from simply running the model. Couple this with the fact that campus-wide licenses are rare for either, neither could be recommended for mixed models.  Note also, that one setting of lmer probably would have negated almost all their convergence issues.
