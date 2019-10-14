@@ -50,7 +50,7 @@
   <!--radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","bibliography","nocite","tags"]}},"value":[{"type":"character","attributes":{},"value":["Mixed Models for Big Data"]},{"type":"character","attributes":{},"value":["Explorations of a fast penalized regression approach with bam in mgcv\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["October 13, 2019"]},{"type":"character","attributes":{},"value":["../../img/gam_sim.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["gam_references.bib"]},{"type":"character","attributes":{},"value":["@li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1\n"]},{"type":"character","attributes":{},"value":["bayesian","empirical bayes","shrinkage","random effects","mixed models"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","bibliography","nocite","tags"]}},"value":[{"type":"character","attributes":{},"value":["Mixed Models for Big Data"]},{"type":"character","attributes":{},"value":["Explorations of a fast penalized regression approach with bam in mgcv\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["October 13, 2019"]},{"type":"character","attributes":{},"value":["../../img/gam_sim.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["gam_references.bib"]},{"type":"character","attributes":{},"value":["@li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1\n"]},{"type":"character","attributes":{},"value":["random effects","mixed models","lme4","glmmTMB","mgcv","big data"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   
@@ -1385,7 +1385,7 @@ ga_model = gam(
 As shown, one could use the <span class="func" style="">gamm</span> function for the <span class="pack" style="">nlme</span> style, or Wood’s <span class="pack" style="">gamm4</span> package to use the lme4 syntax. These alternate approaches allow for more flexibility in some ways, but will not be useful to us for big data.
 </aside>
 <h3 id="comparison-of-gam-to-the-mixed-model">Comparison of GAM to the Mixed Model</h3>
-<p>Aside from the syntax, the underlying model between the two is the same, and the following shose that we obtain the same results for both lme4 and mgcv.</p>
+<p>Aside from the syntax, the underlying model between the two is the same, and the following shows that we obtain the same results for both lme4 and mgcv.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 summary(mixed_model, cor = FALSE)</code></pre>
@@ -1716,7 +1716,7 @@ bam_d
 <h5 id="ve">Ve</h5>
 <p>frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI’s as smooths are usually biased.</p>
 <h5 id="vp">Vp</h5>
-<p>estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.</p>
+<p>estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Particularly useful for creating credible/confidence intervals.</p>
 <h5 id="vc">Vc</h5>
 <p>Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.</p>
 <p>We will use the Bayesian estimates (<code>Vp</code>), but for this setting there are no appreciable differences. I expand the digits to show they are in fact different to some decimal place.</p>
@@ -3841,26 +3841,29 @@ lme4
 </div>
 <p>So we’re getting what we should in general.</p>
 <h2 id="when-to-use-bam">When to use bam</h2>
-<p>The following are some guidelines for when bam might be prefereable.</p>
+<p>The following are some guidelines for when bam might be preferable compared to other mixed modeling tools.</p>
 <h3 id="linear-mixed-models">Linear Mixed Models</h3>
-<p>In general you’ll need very large data for bam to be preferable linear mixed model unless:</p>
+<p>In general you’ll need very large data for bam to be preferred to lme4 for linear mixed models unless:</p>
 <ul>
 <li>You have complicated structure that begins to bog down lme4</li>
 <li>You want to add smooth terms<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a></li>
 <li>You have memory issues</li>
 </ul>
-<p>The following shows some timings for lme4, glmmTMB, and mgcv for the linear mixed model case under a variety of settings. In some sense, this is not exactly a fair comparison as mgcv parallelizes computations while lme4 and glmmTMB do not. However, this is also exactly the point of the demonstration - those who can, do. In general though, the lme4 advantage holds until around 1 million observations.</p>
+<p>The following shows some timings for lme4, glmmTMB, and mgcv for the linear mixed model case under a variety of settings. In some sense, this is not exactly a fair comparison as mgcv parallelizes computations while lme4 and glmmTMB do not. However, this is also exactly the point of the demonstration - those who can, do. In general though, the lme4 advantage holds until around 1 million observations. We can see that the main issue for bam is not so much the sample size, but the number of parameters to estimate.</p>
 <aside>
-For lme4, I set at least one setting to possibly improve speed performance for both lme and glmm models. In addition, for mgcv I only used 10 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a cluster computing environment would see even more speed gain by utilizing additional cores. For glmmTMB, settings were left at defaults, as I’ve not come across any specific recommendations. See <span class="citation" data-cites="brooks_glmmtmb_2017">Brooks et al. (<a href="#ref-brooks_glmmtmb_2017">2017</a>)</span> for more speed comparisons of glmmTMB, mgcv, lme4, and others.
+For lme4, I set at least one setting to possibly improve speed performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model. For mgcv I only used 10 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a cluster computing environment would see even more speed gain by utilizing additional cores. For glmmTMB, settings were left at defaults, as I’ve not come across any specific recommendations. See <span class="citation" data-cites="brooks_glmmtmb_2017">Brooks et al. (<a href="#ref-brooks_glmmtmb_2017">2017</a>)</span> for more speed comparisons of glmmTMB, mgcv, lme4, and others, as well as the <a href="https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf">glmmTMB vignette</a>.
 </aside>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="../../img/bam/lme_results.svg" style="display: block; margin: auto;" /></p>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
 </div>
 <h3 id="generalized-linear-mixed-models">Generalized Linear Mixed Models</h3>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="../../img/bam/gmm_results.svg" style="display: block; margin: auto;" /></p>
 </div>
-<p>For the generalized setting with binary, count, and other outcomes up to 50-100k observations:</p>
+<p>For the generalized setting with binary, count, and other outcomes:</p>
 <ul>
 <li>lme4, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate</li>
 <li>glmmTMB is probably viable up to 100k and one or two random effects</li>
@@ -3868,6 +3871,7 @@ For lme4, I set at least one setting to possibly improve speed performance for b
 </ul>
 <p>Beyond that, I think bam will be a great choice.</p>
 <h3 id="limitations">Limitations</h3>
+<p>To summarize the limitations of the mgcv approach, we can note the following:</p>
 <ul>
 <li>The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models</li>
 <li>No estimation of random effect correlations, e.g. slopes and intercepts</li>
@@ -3875,14 +3879,14 @@ For lme4, I set at least one setting to possibly improve speed performance for b
 </ul>
 <p>All in all, these are pretty minor, and the last one likely will be remedied in a future release.</p>
 <h2 id="other-options">Other options</h2>
-<p>When looking into mixed models for big data, you typically won’t find much. I’ve seen some packages or offereings for some machine learning approaches like random forests<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>, but this doesn’t address the issue of large data. A Spark module is available, <a href="https://github.com/linkedin/photon-ml">photonML</a>, provided by LinkedIn, but it’s not clear how easy it is to implement. Julia has recently made multithreading a viable option for any function. This is notable since Doug Bates, one of the lme4 authors, develops the <a href="https://github.com/dmbates/MixedModels.jl">MixedModels</a> module for Julia. Should multithreading functionality be added, it could be a very powerful tool.</p>
+<p>When looking into mixed models for big data, you typically won’t find much. I’ve seen some packages or offerings for some machine learning approaches like random forests<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>, but this doesn’t address the issue of large data. A Spark module is available, <a href="https://github.com/linkedin/photon-ml">photonML</a>, provided by LinkedIn, but it’s not clear how easy it is to implement. Julia has recently made multithreading a viable option for any function. This is notable since Doug Bates, one of the lme4 authors, develops the <a href="https://github.com/dmbates/MixedModels.jl">MixedModels</a> module for Julia. Should multithreading functionality be added, it could be a very powerful tool.</p>
 <p>Among proprietary options, SAS and Stata are the more commonly used tools. SAS PROC HPMIXED essentially uses the lme4 approach, but can be faster for well-behaved data. Stata, while commonly used for mixed models, is generally slower than the lme4 even for standard settings and the smallest data settings noted here<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
 <aside>
 SAS uses disk rather than RAM for processing, so may be preferred for low RAM devices.
 </aside>
 <h2 id="summary">Summary</h2>
 <p>The take home point here is that you now have viable tools to run mixed models on very large data. This doesn’t mean you won’t have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times. The alternative estimation procedures may even make otherwise problematic models more</p>
-<p><a href="http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/" class="uri">http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/</a> <a href="https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html" class="uri">https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html</a></p>
+<p><a href="http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/" class="uri">http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/</a> <a href="https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html" class="uri">https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html</a> <a href="https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf" class="uri">https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf</a></p>
 <div id="refs" class="references">
 <div id="ref-brooks_glmmtmb_2017">
 <p>Brooks, Mollie E., Kasper Kristensen, Koen J. van Benthem, Arni Magnusson, Casper W. Berg, Anders Nielsen, Hans J. Skaug, Martin Mächler, and Benjamin M. Bolker. 2017. “GlmmTMB Balances Speed and Flexibility Among Packages for Zero-Inflated Generalized Linear Mixed Modeling.” <em>The R Journal</em> 9 (2): 378–400. <a href="https://journal.r-project.org/archive/2017/RJ-2017-066">https://journal.r-project.org/archive/2017/RJ-2017-066</a>.</p>

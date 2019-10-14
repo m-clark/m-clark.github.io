@@ -16,7 +16,7 @@ draft: true
 bibliography: gam_references.bib
 nocite:  | 
   @li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1
-tags: [bayesian, empirical bayes, shrinkage, random effects, mixed models]
+tags: [random effects, mixed models, lme4, glmmTMB, mgcv, big data]
 ---
 
 ```{r setup, include=FALSE}
@@ -170,7 +170,7 @@ Note that we use <span class="func" style = "">s</span> to denote a <span class=
 
 ### Comparison of GAM to the Mixed Model
 
-Aside from the syntax, the underlying model between the two is the same, and the following shose that we obtain the same results for both lme4 and mgcv. 
+Aside from the syntax, the underlying model between the two is the same, and the following shows that we obtain the same results for both lme4 and mgcv. 
 
 
 
@@ -252,7 +252,7 @@ Let's examine the standard errors.  Note that there are options for the gam mode
 frequentist estimated covariance matrix for the parameter estimators. Particularly useful for testing whether terms are zero. Not so useful for CI's as smooths are usually biased.
 
 ##### Vp
-estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Paricularly useful for creating credible/confidence intervals.
+estimated covariance matrix for the parameters. This is a Bayesian posterior covariance matrix that results from adopting a particular Bayesian model of the smoothing process. Particularly useful for creating credible/confidence intervals.
 
 ##### Vc
 Under ML or REML smoothing parameter estimation it is possible to correct the covariance matrix Vp for smoothing parameter uncertainty. This is the corrected version.
@@ -581,22 +581,28 @@ So we're getting what we should in general.
 
 ## When to use bam
 
-The following are some guidelines for when bam might be prefereable.
+The following are some guidelines for when bam might be preferable compared to other mixed modeling tools.
 
 ### Linear Mixed Models
 
-In general you'll need very large data for bam to be preferable linear mixed model unless:
+In general you'll need very large data for bam to be preferred to lme4 for linear mixed models unless:
 
 - You have complicated structure that begins to bog down lme4
 - You want to add smooth terms[^smoothlme4]
 - You have memory issues
 
-The following shows some timings for lme4, glmmTMB, and mgcv for the linear mixed model case under a variety of settings.  In some sense, this is not exactly a fair comparison as mgcv parallelizes computations while lme4 and glmmTMB do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the lme4 advantage holds until around 1 million observations.
+The following shows some timings for lme4, glmmTMB, and mgcv for the linear mixed model case under a variety of settings.  In some sense, this is not exactly a fair comparison as mgcv parallelizes computations while lme4 and glmmTMB do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the lme4 advantage holds until around 1 million observations. We can see that the main issue for bam is not so much the sample size, but the number of parameters to estimate.
 
-<aside>For lme4, I set at least one setting to possibly improve speed performance for both lme and glmm models.  In addition, for mgcv I only used 10 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a cluster computing environment would see even more speed gain by utilizing additional cores. For glmmTMB, settings were left at defaults, as I've not come across any specific recommendations. See @brooks_glmmtmb_2017 for more speed comparisons of glmmTMB, mgcv, lme4, and others.</aside>
+<aside>For lme4, I set at least one setting to possibly improve speed performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model.  For mgcv I only used 10 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a cluster computing environment would see even more speed gain by utilizing additional cores. For glmmTMB, settings were left at defaults, as I've not come across any specific recommendations. See @brooks_glmmtmb_2017 for more speed comparisons of glmmTMB, mgcv, lme4, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
 
 ```{r lme-timings, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/lme_results.svg")
+```
+
+```{r lme-timings-data, echo=FALSE, eval=FALSE}
+# in case we add the grid searched
+load('_posts/2019-09-30-big-mixed-models/lme_results.RData')
+kable_df(lme_results_gathered)
 ```
 
 
@@ -606,7 +612,7 @@ knitr::include_graphics("../../img/bam/lme_results.svg")
 knitr::include_graphics("../../img/bam/gmm_results.svg")
 ```
 
-For the generalized setting with binary, count, and other outcomes up to 50-100k observations:
+For the generalized setting with binary, count, and other outcomes:
 
 - lme4, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate
 - glmmTMB is probably viable up to 100k and one or two random effects
@@ -616,6 +622,8 @@ Beyond that, I think bam will be a great choice.
 
   
 ### Limitations
+
+To summarize the limitations of the mgcv approach, we can note the following:
     
 - The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. slopes and intercepts
@@ -625,7 +633,7 @@ All in all, these are pretty minor, and the last one likely will be remedied in 
 
 ## Other options
 
-When looking into mixed models for big data, you typically won't find much.  I've seen some packages or offereings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module is available, [photonML](https://github.com/linkedin/photon-ml), provided by LinkedIn, but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the lme4 authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool.
+When looking into mixed models for big data, you typically won't find much.  I've seen some packages or offerings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module is available, [photonML](https://github.com/linkedin/photon-ml), provided by LinkedIn, but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the lme4 authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool.
 
 Among proprietary options, SAS and Stata are the more commonly used tools.  SAS PROC HPMIXED essentially uses the lme4 approach, but can be faster for well-behaved data. Stata, while commonly used for mixed models, is generally slower than the lme4 even for standard settings and the smallest data settings noted here[^mccoach].
 
@@ -645,5 +653,6 @@ The take home point here is that you now have viable tools to run mixed models o
 
 http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/
 https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html
+https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf
 
 [^mccoach]: See McCoach et al. (2018) [Does the Package Matter?](https://journals.sagepub.com/doi/abs/10.3102/1076998618776348).  They also look at HLM and Mplus. However, I haven't in years consulted with anyone across dozens of disciplines that was using it for mixed models. With Mplus, the verbosity of the syntax, plus additional data processing required, plus huge lack of post-processing of the model would negate any speed gain one might get from simply running the model. Couple this with the fact that campus-wide licenses are rare for either, neither could be recommended for mixed models.  Note also, that one setting of lmer probably would have negated almost all their convergence issues.

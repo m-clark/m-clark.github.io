@@ -16,7 +16,7 @@ lme_results_gathered %>%
   rename(method = test) %>% 
   ggplot(aes(N, elapsed_avg)) +
   geom_point(aes(color = method)) +
-  geom_line(aes(color = method, lty = balanced2)) +
+  geom_line(aes(color = method, lty = balanced2, alpha = method=='mgcv')) +
   facet_grid(cols = vars(re)) +
   labs(
     x = 'Sample Size',
@@ -24,6 +24,7 @@ lme_results_gathered %>%
     title = 'Linear mixed model',
     caption = 'Sample size in the unbalanced case is 75% of balanced case'
   ) +
+  scale_alpha_discrete(range = c(.25, 1)) +
   scale_x_continuous(
     breaks = round(unique(lme_results_gathered$N)),
     limits = c(range(lme_results_gathered$N)),
@@ -36,6 +37,7 @@ lme_results_gathered %>%
   ) +
   scico::scale_color_scico_d(name = 'Method', begin = .33, end = .66) + 
   scale_linetype(name = 'Balanced') + 
+  guides(alpha = 'none') +
   visibly::theme_clean() + 
   theme(
     axis.text.x = element_text(angle = -45, hjust = 0), 
