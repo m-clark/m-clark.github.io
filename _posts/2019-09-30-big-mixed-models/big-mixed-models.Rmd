@@ -1,7 +1,7 @@
 ---
 title: "Mixed Models for Big Data"
 description: |
-  Explorations of a fast penalized regression approach with bam in mgcv
+  Explorations of a fast penalized regression approach with mgcv
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
@@ -16,7 +16,7 @@ draft: true
 bibliography: gam_references.bib
 nocite:  | 
   @li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1
-tags: [random effects, mixed models, lme4, glmmTMB, mgcv, big data]
+tags: [mixed models, big data, generalized linear mixed models, additive models, random effects, lme4, glmmTMB, mgcv, lmer, glmer]
 ---
 
 ```{r setup, include=FALSE}
@@ -50,10 +50,10 @@ kable_df <- function(..., digits=3) {
 
 With mixed models, it is easy to run into data that is larger in size than some more typical data scenarios.  Consider a cross-sectional data set with 200 individuals.  This is fairly small data.  Now, if we observe them each five times, as in a longitudinal setting, we suddenly have 1000 observations.  There may be less than 200 countries in the world, but if we survey 100s or 1000s of people in many of them, we suddenly have a notable data set size, and still would potentially like to model a country-level random effect.  What are our options when dealing with possibly gigabytes of data?
 
-Background required:
+<aside>Background required:
 
 For the following you should have familiarity with [mixed models](https://m-clark.github.io/mixed-models-with-R/).  Knowledge of the <span class="pack" style = "">lme4</span> package would be useful but isn't required. Likewise, knowledge of [generalized additive models](https://m-clark.github.io/generalized-additive-models/) and <span class="pack" style = "">mgcv</span> would be helpful, but I don't think it's required to follow the demonstration.
-
+</aside>
 
 ## R Packages for Mixed Models with Large Data
 
@@ -591,7 +591,7 @@ In general you'll probably need very large data for <span class="func" style = "
 
 The following shows some timings for <span class="pack" style = "">lme4</span>, glmmTMB, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 1 million observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
 
-<aside>For <span class="pack" style = "">lme4</span>, I set at least one setting to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model.  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
+<aside>For <span class="pack" style = "">lme4</span>, I set at least one setting to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model (See tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/)).  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
 
 ```{r lme-timings, echo=FALSE, background='transparent'}
 # knitr::include_graphics("../../img/bam/lme_results.svg")
@@ -717,6 +717,8 @@ gmm_results_gathered %>%
 ```
 
 
+<aside>I have also done some timings on a local machine with as many as 10000 levels for one of the random effects, or 5 million observations for a binary outcome. Depending on the computational setup this could take 2-3 hours.</aside>
+
 ### Other options
 
 When looking into mixed models for big data, you typically won't find much in the way of options.  I've seen some packages or offerings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module provided by LinkedIn is available, [photonML](https://github.com/linkedin/photon-ml), but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the <span class="pack" style = "">lme4</span> authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool[^deepmixed].  
@@ -728,23 +730,23 @@ Among proprietary options, SAS and Stata are the more commonly used tools.  SAS 
 Here is a summary of other timings of various tools for mixed models.
 
 
-##### McCoach et al 2018
+##### McCoach et al. 2018
 
-The results from McCoach et al. [@mccoach2018][^mccoach]. Sample size fixed at 10000. In the first five cases, a true variance parameter was set to zero, a situation <span class="pack" style = "">lme4</span> handles well. 
+The results from McCoach et al.[@mccoach2018] with a standard linear mixed model. Sample size fixed at 10000. In the first five cases, a true variance parameter was set to zero, a situation <span class="pack" style = "">lme4</span> handles well[^mccoach]. 
 
 ```{r mccoach, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/mccoach.png")
 ```
 
-##### Brooks et al 2018 timing as a function of sample size
+##### Brooks et al. 2018 timing as a function of sample size
 
-Uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package.  Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.
+Brooks et al. uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package.  Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.
 
 ```{r brooksn, echo=FALSE, background='transparent', caption = 'Brooks et al 2018 timing as a function of sample size'}
 knitr::include_graphics("../../img/bam/brooks_n.png")
 ```
 
-##### Brooks et al 2018 timing as a function of number of levels
+##### Brooks et al. 2018 timing as a function of number of levels
 
 This data is simulated based on models from the previous, and adds increasing numbers of (balanced) levels to the random effect. This shows a similar effect on <span class="pack" style = "">mgcv</span> as the study here.
 
@@ -778,16 +780,15 @@ All in all, these are pretty minor, and the last one likely will be remedied in 
 The take home point here is that you now have viable tools to run mixed models on very large data.  This doesn't mean you won't have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times.  The alternative estimation procedures may even make otherwise problematic models more 
 
 
+## Supplemental
+
+I will set up a repo with the simulation code at some point and link it here.
+
 [^bamwins]: Even just adding an additional random effect would possibly be enough for this data example.
 
 [^mixrf]: See [REEMtree](https://cran.r-project.org/web/packages/REEMtree/), [mixRF](https://cran.r-project.org/web/packages/MixRF/) for example.
 
 [^smoothlme4]: You could use construct the smooth with <span class="pack" style = "">mgcv</span> and add it to the model matrix for <span class="pack" style = "">lme4</span>. 
-
-
-http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/
-https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html
-https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf
 
 [^mccoach]: See McCoach reference [@mccoach2018].  They also look at HLM and Mplus. However, I haven't in years consulted with anyone across dozens of disciplines that was using HLM for mixed models. With Mplus, the verbosity of the syntax, plus additional data processing required, plus huge lack of post-processing of the model would negate any speed gain one might get from simply running the model. Couple this with the fact that campus-wide licenses are rare for either, neither could be recommended for mixed models.  Note also, that one setting of <span class="func" style = "">lmer</span> probably would have negated almost all their convergence issues.
 
