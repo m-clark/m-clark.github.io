@@ -4,7 +4,7 @@ library(tidyverse)
 # lme plot ----------------------------------------------------------------
 
 
-load('_posts/2019-09-30-big-mixed-models/lme_results.RData')
+load('_posts/2019-09-30-big-mixed-models/lme_results_summary.RData')
 
 
 lme_results_gathered %>% 
@@ -59,7 +59,7 @@ ggsave('img/bam/lme_results.svg')
 # gmm plot ----------------------------------------------------------------
 
 
-load('_posts/2019-09-30-big-mixed-models/gmm_results.RData')
+load('_posts/2019-09-30-big-mixed-models/gmm_results_summary.RData')
 
 
 gmm_results_gathered %>% 
@@ -72,11 +72,11 @@ gmm_results_gathered %>%
   ggplot(aes(N, elapsed_avg)) +
   geom_point(aes(color = method)) +
   geom_line(aes(color = method, lty = balanced2)) +
-  facet_grid(cols = vars(re)) +
+  facet_grid(rows = vars(rare), cols = vars(re)) +
   labs(
     x = 'Sample Size',
     y = 'Elapsed time in\nseconds averaged\nover 5 runs',
-    title = 'Linear mixed model',
+    title = 'Generalized Linear Mixed Model (logistic)',
     caption = 'Sample size in the unbalanced case is 75% of balanced case'
   ) +
   scale_x_continuous(
