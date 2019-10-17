@@ -97,6 +97,7 @@ kable_df(head_tail(d))
 
 Now with the data in place, let's try <span class="pack" style = "">lme4</span> to model the continuous outcome.
 
+<aside>The time to focus on is `elapsed`, which is the number of seconds the function took to run.</aside>
 
 ```{r simple_mixed}
 library(lme4)
@@ -460,7 +461,7 @@ We can see that the <span class="pack" style = "">mgcv</span> estimates for stan
 ## Back to the initial problem
 
 
-So we've established that both default <span class="func" style = "">gam</span>) and <span class="func" style = "">bam</span> functions are providing what we want.  However, the reason for using <span class="pack" style = "">mgcv</span> for mixed models is the speed gain we'll get with big data.  So let's return to the binary outcome example that took over a minute for <span class="pack" style = "">lme4</span> to run.
+So we've established that both default <span class="func" style = "">gam</span> and <span class="func" style = "">bam</span> functions are providing what we want.  However, the reason we're here is to use demonstrate the speed gain we'll get with big data using <span class="pack" style = "">mgcv</span> for mixed models.  So let's return to the binary outcome example that took over a minute for <span class="pack" style = "">lme4</span> to run.
 
 ```{r bam_big, cache.rebuild=FALSE}
 system.time({
@@ -598,11 +599,11 @@ In general you'll probably need very large data for <span class="func" style = "
 - You want to add smooth terms[^smoothlme4]
 - You have memory issues
 
-The following shows some timings for <span class="pack" style = "">lme4</span>, glmmTMB, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 1 million observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
+The following shows some timings for <span class="pack" style = "">lme4</span>, glmmTMB, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 500k observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
 
 <aside>For <span class="pack" style = "">lme4</span>, I set at least one argument to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model (See tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/)).  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
 
-```{r lme-timings, echo=FALSE, background='transparent'}
+```{r lme-timings, echo=FALSE, background='transparent', cache.rebuild=FALSE}
 # knitr::include_graphics("../../img/bam/lme_results.svg")
 
 load('_posts/2019-09-30-big-mixed-models/lme_results_summary.RData')
@@ -670,9 +671,9 @@ For the generalized setting with binary, count, and other outcomes:
 
 - <span class="pack" style = "">lme4</span>, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate
 - <span class="pack" style = "">glmmTMB</span> is probably viable up to 100k and one or two random effects, but would be the slower option
-- Use <span class="pack" style = "">mgcv</span> for same reasons as above, but it potentially becomes an advantage with as few as 50k.
+- Use <span class="pack" style = "">mgcv</span> for same reasons as above, but it potentially becomes an advantage with as few as 100k.
 
-```{r gmm-timings, echo=FALSE, background='transparent', fig.asp=1}
+```{r gmm-timings, echo=FALSE, background='transparent', fig.asp=1, cache.rebuild=FALSE}
 # knitr::include_graphics("../../img/bam/gmm_results.svg")
 
 load('_posts/2019-09-30-big-mixed-models/gmm_results_summary.RData')
