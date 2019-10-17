@@ -50,6 +50,8 @@ kable_df <- function(..., digits=3) {
 
 With mixed models, it is easy to run into data that is larger in size than some more typical data scenarios.  Consider a cross-sectional data set with 200 individuals.  This is fairly small data.  Now, if we observe them each five times, as in a longitudinal setting, we suddenly have 1000 observations.  There may be less than 200 countries in the world, but if we survey 100s or 1000s of people in many of them, we suddenly have a notable data set size, and still would potentially like to model a country-level random effect.  What are our options when dealing with possibly gigabytes of data?
 
+This post will demonstrate an approach that can be used with potentially millions of data points, multiple random effects, and possibly other complexities. First we'll demonstrate how to get typical mixed model results using the approach used for generalized additive models. We'll compare the output of the GAM, lme4, and even fully Bayesian mixed models. Then we'll show some timings to compare the speed of the different approaches of common tools, and summarize some findings from other places. 
+
 <aside>Background required:
 
 For the following you should have familiarity with [mixed models](https://m-clark.github.io/mixed-models-with-R/).  Knowledge of the <span class="pack" style = "">lme4</span> package would be useful but isn't required. Likewise, knowledge of [generalized additive models](https://m-clark.github.io/generalized-additive-models/) and <span class="pack" style = "">mgcv</span> would be helpful, but I don't think it's required to follow the demonstration.
@@ -57,15 +59,15 @@ For the following you should have familiarity with [mixed models](https://m-clar
 
 ## R Packages for Mixed Models with Large Data
 
-While many tools abound to conduct mixed models for larger data sizes, their limitations can be found pretty quickly.  R's <span class="pack" style = "">lme4</span> is a standard, but powerful mixed model tool.   More to the point, it is very computationally efficient, such  that it can handle very large sample sizes for simpler mixed models.  For linear mixed models this can include hundreds of thousands of observations with possibly multiple random effects, still running on a basic laptop.  For such models, it's still largely the tool of choice, and its approach has even been copied/ported into other statistical packages.
+While many tools abound to conduct mixed models for larger data sizes, their limitations can be found pretty quickly.  R's <span class="pack" style = "">lme4</span> is a standard, but powerful mixed model tool.   More to the point, it is computationally efficient, such  that it can handle very large sample sizes for simpler mixed models.  For linear mixed models this can include hundreds of thousands of observations with possibly multiple random effects, still running on a basic laptop.  For such models, it's still largely the tool of choice, and its approach has even been copied/ported into other statistical packages.
 
 We'll first create some data to model.  This is just a simple random intercepts setting.
 
 ```{r data-prep}
 set.seed(12358)
-N = 1e6
-n_groups = 1000
-g = rep(1:n_groups, e = N/n_groups)
+N = 1e6                                  # total sample size
+n_groups = 1000                          # number of groups
+g = rep(1:n_groups, e = N/n_groups)      # the group identifier
 
 x = rnorm(N)                             # an observation level continuous variable
 b = rbinom(n_groups, size = 1, prob=.5)  # a cluster level categorical variable
@@ -108,7 +110,7 @@ summary(mixed_big, cor = FALSE)
 
 This is great! We just ran a mixed model for `r scales::comma(N)` observations and `r scales::comma(n_groups)` groups for our random effect in just a few seconds.
 
-But the problem comes as soon as you move to the generalized mixed model, e.g. having a binary outcome, or include additional complexity while still dealing with large data.  The following is essentially the same model, but for a binary outcome.
+But one problem comes as soon as you move to the generalized mixed model, e.g. having a binary outcome, or include additional complexity while still dealing with large data.  The following is essentially the same model, but for a binary outcome.
 
 ```{r simple_big_mixed_binary}
 system.time({
@@ -120,7 +122,7 @@ To begin with, you shouldn't be worried about models taking a few minutes to run
 
 ## Additive Models as Mixed Models
 
-Simon Wood's wonderful work on generalized additive models (GAM) and the <span class="pack" style = "">mgcv</span> package make it one of the better modeling tools in the R kingdom.  As his text[@wood_generalized_2017] and other work shows, additive models can be seen as random effects models, and he exploits this by providing numerous ways to include and explore random effects in the GAM approach.  One key difference between the GAM and a standard linear mixed model approach is that the random effects are estimated parameters of the model, not BLUPs, as with <span class="pack" style = "">lme4</span>.  Those coefficients are penalized, in a similar way as L2/ridge regression.  The 'fixed effects' are not penalized, and so that part is basically just a generalized linear model.  As we will see though, the results will be nearly the same between <span class="pack" style = "">mgcv</span> and <span class="pack" style = "">lme4</span>. 
+Simon Wood's wonderful work on generalized additive models (GAM) and the <span class="pack" style = "">mgcv</span> package make it one of the better modeling tools in the R kingdom.  As his text[@wood_generalized_2017] and other work shows, additive models constructed be posited in a similar way as mixed models, and he exploits this by providing numerous ways to include and explore random effects in the GAM approach.  One key difference between the GAM and a standard linear mixed model approach is the way parameters are estimated.  For the GAM, the random effects are estimated as are other fixed effect coefficients. Those random effects are penalized, in a similar way as L2/ridge regression.  The 'fixed effects' are not penalized, and so that part is basically just a generalized linear model.  As we will see though, the results will be nearly the same between <span class="pack" style = "">mgcv</span> and <span class="pack" style = "">lme4</span>. 
 
 The following demonstrates the link between the approaches by showing a model that includes a random intercept and slope. We will use the standard <span class="pack" style = "">mgcv</span> approach for specifying a smooth term, but alternatives are shown for those familiar with the package.
 
@@ -196,7 +198,7 @@ gam_vcov  = extract_vc(ga_model)    # cleaner gam.vcomp
 ```
 
 ```{r initial-vc-show, echo=FALSE}
-kable_df(lmer_vcov, caption = 'LME Result')
+kable_df(lmer_vcov %>% select(-var2), caption = 'LME Result')
 kable_df(gam_vcov, caption = 'GAM Result')
 ```
 
@@ -209,8 +211,10 @@ kable_df(gam_vcov, caption = 'GAM Result')
 For large data, <span class="pack" style = "">mgcv</span> provides the <span class="func" style = "">bam</span> function.  For this small data setting we don't really need it, but we can establish that we would get similar results using it without having to wait.  We will see the benefits when we apply <span class="func" style = "">bam</span> to large data later.  None of our syntax changes, just the function.
 
 ```{r basic_model_bam}
-ba_model = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
-               data = sleepstudy)
+ba_model = bam(
+  Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+  data = sleepstudy
+)
 
 bam_fe   = extract_fixed(ba_model)
 bam_vcov = extract_vc(ba_model)
@@ -219,9 +223,11 @@ bam_vcov = extract_vc(ba_model)
 How does it work? The function uses a parallelized approach where possible, essentially working on subsets of the model matrices simultaneously. Details can be found in the references[@li_faster_2019][@wood_generalized_2015][@wood_generalized_2017-1], but basically <span class="pack" style = "">mgcv</span> parallelizes the parts that can be, and additionally provides an option to discretize the data to work with the minimal information necessary to produce viable estimates.  The following uses the discrete option.  As there isn't really anything to discretize with so little data, this is just to demonstrate the syntax. 
 
 ```{r basic_model_bam_discrete}
-ba_d_model = bam(Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
-                 data = sleepstudy,
-                 discrete = TRUE)
+ba_d_model = bam(
+  Reaction ~  Days + s(Subject, bs='re') + s(Days, Subject, bs='re'), 
+  data = sleepstudy,
+  discrete = TRUE
+)
 
 bam_d_fe   = extract_fixed(ba_d_model)
 bam_d_vcov = extract_vc(ba_d_model)
@@ -237,7 +243,7 @@ rbind(
   gam   = gam_fe$Estimate,
   bam   = bam_fe$Estimate,
   bam_d = bam_d_fe$Estimate
-  ) %>% 
+) %>% 
   data.frame() %>% 
   rownames_to_column('Model') %>% 
   rename(Intercept = X.Intercept.) %>% 
@@ -288,7 +294,7 @@ rbind(
 ```
 
 
-We can also look at their interval estimates.  We use the profile likelihood for the <span class="pack" style = "">lme4</span> mixed model.  In this case we can see slightly wider and somewhat different boundary estimates.
+We can also look at their interval estimates.  We use the profile likelihood for the <span class="pack" style = "">lme4</span> mixed model.  In this case we can see slightly wider and somewhat different boundary estimates for the variance components, but not too dissimilar.
 
 
 ```{r compare-vc-int, echo=FALSE}
@@ -302,7 +308,7 @@ mixed_vc_int = mixed_vc_int %>%
     lower     = X2.5.., 
     upper     = X97.5..
     ) %>% 
-  select(component, everything()) 
+  select(component, everything())
 ```
 
 ```{r compare-vc-int-table, echo=FALSE}
@@ -312,7 +318,8 @@ list(mixed = mixed_vc_int,
      bam_d = bam_d_vcov) %>% 
   bind_rows(.id = 'Model') %>% 
   mutate(component = if_else(component=='scale', 'Residual', component)) %>% 
-  select(Model:upper) %>% 
+  select(Model:upper) %>%  
+  mutate(width = upper-lower) %>% 
   kable_df(caption = 'Interval Estimates for Variance Components', digits = 4) %>% 
   collapse_rows(valign = 'top')
 ```
@@ -360,7 +367,7 @@ bam_d_re = bam_d_re_init %>%
 all_re = bind_cols(mget(ls(pattern = '_re$')))
 ```
 
-We'll start with the random effects for the intercept. To several decimal places, we start to see differences, so again we know they aren't doing exactly the same thing.
+We'll start with the random effects for the intercept. To several decimal places, we start to see differences, so again we know they aren't doing exactly the same thing, but they are coming to the same conclusion.
 
 ```{r re-int, echo=FALSE}
 all_re %>% 
@@ -370,7 +377,7 @@ all_re %>%
     `bam_Subject`,
     `bam_d_Subject`
     ) %>% 
-  kable_df(digits = 5, caption = 'Estimated Random Effects')
+  kable_df(digits = 5, caption = 'Estimated Random Intercepts')
 ```
 
 
@@ -384,7 +391,7 @@ all_re %>%
     `bam_Days|Subject`,
     `bam_d_Days|Subject`
     ) %>% 
-  kable_df(digits = 5, caption = 'Estimated Random Intercepts')
+  kable_df(digits = 5, caption = 'Estimated Random Effects')
 ```
 
 Standard errors for the random effects.  In the balanced design these are essentially constant across clusters. We can see that the Bayesian estimates from <span class="pack" style = "">mgcv</span> reflect greater uncertainty.
@@ -412,10 +419,12 @@ list(
 
 As we have noted, one of the differences between <span class="pack" style = "">lme4</span> and <span class="pack" style = "">mgcv</span> output is that the default uncertainty estimates for the GAM are Bayesian.  As such, it might be interesting to compare these to a fully Bayes approach.  We'll use <span class="pack" style = "">rstanarm</span>, which uses the <span class="pack" style = "">lme4</span> style syntax.
 
+<aside>For those familiar with Bayesian models, the Stan group provides a vignette with information about the [priors in this model and comparisons to lme4 and gamm4](http://mc-stan.org/rstanarm/articles/glmer.html).</aside>
+
 ```{r bayes}
 library(rstanarm)
-bayes = stan_lmer(Reaction ~ Days + (1|Subject) + (0+Days|Subject), 
-                  data=sleepstudy,
+bayes = stan_lmer(Reaction ~ Days + (1|Subject) + (0 + Days|Subject), 
+                  data = sleepstudy,
                   cores = 4)
 
 bayes_fe = broom::tidy(bayes)
@@ -591,7 +600,7 @@ In general you'll probably need very large data for <span class="func" style = "
 
 The following shows some timings for <span class="pack" style = "">lme4</span>, glmmTMB, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 1 million observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
 
-<aside>For <span class="pack" style = "">lme4</span>, I set at least one setting to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model (See tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/)).  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
+<aside>For <span class="pack" style = "">lme4</span>, I set at least one argument to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model (See tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/)).  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
 
 ```{r lme-timings, echo=FALSE, background='transparent'}
 # knitr::include_graphics("../../img/bam/lme_results.svg")
@@ -633,7 +642,7 @@ lme_results_gathered %>%
   visibly::theme_clean() + 
   theme(
     axis.text.x = element_text(angle = -45, hjust = 0), 
-    axis.title.y = element_text(hjust = 0), 
+    axis.title.y = element_text(hjust = 0, size = 6), 
     panel.grid.major.y = element_line(colour = 'gray92'),
     panel.spacing = unit(3, "lines"),
     plot.title = element_text(size = 12),
@@ -642,7 +651,7 @@ lme_results_gathered %>%
     legend.key = ggplot2::element_rect(fill='transparent', colour = NA),
     legend.background = ggplot2::element_rect(fill='transparent', colour = NA),
     legend.text = element_text(size = 8),
-    legend.title = element_text(size = 10)
+    legend.title = element_text(size = 8)
   )
 ```
 
@@ -663,7 +672,7 @@ For the generalized setting with binary, count, and other outcomes:
 - <span class="pack" style = "">glmmTMB</span> is probably viable up to 100k and one or two random effects, but would be the slower option
 - Use <span class="pack" style = "">mgcv</span> for same reasons as above, but it potentially becomes an advantage with as few as 50k.
 
-```{r gmm-timings, echo=FALSE, background='transparent'}
+```{r gmm-timings, echo=FALSE, background='transparent', fig.asp=1}
 # knitr::include_graphics("../../img/bam/gmm_results.svg")
 
 load('_posts/2019-09-30-big-mixed-models/gmm_results_summary.RData')
@@ -703,7 +712,7 @@ gmm_results_gathered %>%
   visibly::theme_clean() + 
   theme(
     axis.text.x = element_text(angle = -45, hjust = 0), 
-    axis.title.y = element_text(hjust = 0), 
+    axis.title.y = element_text(hjust = 0, size = 6), 
     panel.grid.major.y = element_line(colour = 'gray92'),
     panel.spacing = unit(3, "lines"),
     plot.title = element_text(size = 12),
@@ -712,7 +721,7 @@ gmm_results_gathered %>%
     legend.key = ggplot2::element_rect(fill='transparent', colour = NA),
     legend.background = ggplot2::element_rect(fill='transparent', colour = NA),
     legend.text = element_text(size = 8),
-    legend.title = element_text(size = 10)
+    legend.title = element_text(size = 8)
   )
 ```
 
