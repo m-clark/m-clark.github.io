@@ -22,15 +22,15 @@ categories:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo=T, 
-  message = F, 
-  warning = F, 
+  message = F,
+  warning = F,
   comment = NA,
-  R.options=list(width=120), 
-  cache.rebuild=F, 
-  cache=FALSE,
-  fig.align='center', 
-  dev = 'svg', 
-  dev.args=list(bg = 'transparent')
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = FALSE,
+  fig.align = 'center',
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
 )
 
 library(tidyverse); library(broom); library(kableExtra); library(visibly)
@@ -167,9 +167,9 @@ model_outcome  <- lm(depress2 ~ treat + econ_hard + sex + age + job_seek, data =
 mediation_result <- mediate(
   model_mediator, 
   model_outcome, 
-  sims=500, 
-  treat="treat", 
-  mediator="job_seek"
+  sims = 500,
+  treat = "treat",
+  mediator = "job_seek"
 )
 
 detach(package:mediation)
@@ -287,11 +287,11 @@ Note also that the output shows the $R^2$ value for both models. In the case of 
 - Can handle multiple outcomes
 - Can use latent variables
 - Some multilevel support
-- Can do 'moderated' mediation and mediated moderation
+- Can do moderated mediation and mediated moderation (though not for latent variables)
 
 #### Limitations
 
-- Requires by-hand coding
+- Requires additional coding to estimate the indirect effect
 - Single random effects
 - While the models could incorporate binary or ordinal variables for the mediator/outcomes, there is no straightforward way to calculate the indirect effect in the manner of the <span class="pack">mediation</span> package.
 
@@ -334,28 +334,31 @@ Same results, different packaging, but possibly the easiest route yet as it only
 
 ### brms
 
-For our last demo we come to what I feel is the most powerful package, <span class="pack">brms</span>.  The name stands for Bayesian Regression Modeling with Stan, and Stan is a powerful probabilistic programming language for Bayesian analysis.  I won't go into details about Bayesian analysis, but feel free to see [my document](https://m-clark.github.io/bayesian-basics/) that does.
+For our next demo we come to what I feel is the most powerful package, <span class="pack">brms</span>.  The name stands for Bayesian Regression Modeling with Stan, and Stan is a powerful probabilistic programming language for Bayesian analysis.  I won't go into details about Bayesian analysis, but feel free to see [my document](https://m-clark.github.io/bayesian-basics/) that does.
 
-We generally do as we have before, specifying the mediator model and the outcome model.  <span class="pack">brms</span> doesn't do anything special for mediation analysis, but its <span class="func">hypothesis</span> function can allow us to test the product-of-paths approach.  Furthermore, the <span class="pack">sjstats</span> package will essentially provide the results in the same way the <span class="pack">mediation</span> package does for us, and for that matter, the <span class="pack">mediation</span> package is basically an attempt at a Bayesian solution using frequentist methods anyway.  If we did have different distributions for the outcome and mediator, we'd have an relatively easy time getting these average prediction values and their differences, as Bayesian approaches are always thinking about posterior predictive distributions.
+We generally do as we have before, specifying the mediator model and the outcome model.  <span class="pack">brms</span> doesn't do anything special for mediation analysis, but its <span class="func">hypothesis</span> function can allow us to test the product-of-paths approach.  Furthermore, the <span class="pack">sjstats</span> package will essentially provide the results in the same way the <span class="pack">mediation</span> package does for us, and for that matter, the <span class="pack">mediation</span> package is basically an attempt at a Bayesian solution using frequentist methods anyway.  If we did have different distributions for the outcome and mediator, we'd have an relatively easy time getting these average prediction values and their differences, as Bayesian approaches are always thinking about posterior predictive distributions.  In any case, here is the code.
 
-```{r brms, cache=TRUE, eval=-9, echo=-10, cache.rebuild=F}
+```{r brms, cache=TRUE, eval=-10, echo=-13, cache.rebuild=F}
 library(brms)
 
 model_mediator <- bf(job_seek ~ treat + econ_hard + sex + age)
 model_outcome  <- bf(depress2 ~ treat + job_seek + econ_hard + sex + age)
 
-med_result = brm(model_mediator + model_outcome + set_rescor(FALSE), 
-                       data = jobs, 
-                       cores=2)
+med_result = brm(
+  model_mediator + model_outcome + set_rescor(FALSE), 
+  data = jobs, 
+  cores = 2
+)
+
 summary(med_result)
 
 print(sjstats::mediation(med_result), digits=4)  # same output as mediation package
-sjstats::mediation(med_result) %>% kable_df()
 # same as
 # hypothesis(med_result, 'jobseek_treat*depress2_job_seek = 0')
+sjstats::mediation(med_result) %>% kable_df()
 ```
 
-Same old story at this point, but with the Bayesian approach we have more fun things to look at.  For example, we can see that we aren't actually capturing the skewness of depression outcome well. Our predicted values vs. the observed don't quite match up.  We're a little better for the mediator, but perhaps still a little high with some of our model-based predictions.
+In the output, anything with `jobseek_*` is a result for the mediator model, while `depress2_*` is for the outcome.  We have the same old story at this point, but with the Bayesian approach we have more fun things to look at.  For example, we can see that we aren't actually capturing the skewness of depression outcome well. Our predicted values vs. the observed don't quite match up.  We're a little better for the mediator, but perhaps still a little high with some of our model-based predictions.
 
 
 
@@ -386,13 +389,13 @@ Some of the packages mentioned can handle more complex models or provide additio
 
 ### Interactions
 
-Some models involve interactions either for the mediation model or outcome, and some unfortunately refer to this as mediated moderation or moderated mediation. I personally don't see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago.  I'm not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable or the mediator or both.
+Some models involve interactions either for the mediation model or outcome, and unfortunately this is often referred to as mediated moderation or moderated mediation. I personally don't see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago.  I'm not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable, the mediator, or both.
 
 Suffice it to say, since we're using standard modeling tools like `lm` and extensions of it, incorporating interactions is trivial for all of the above packages, but the product-of-paths type of approach doesn't hold (`a*b != c'`).
 
-### Generalized models
+### Generalized Linear Models
 
-In some cases our mediator or outcome may be binary or a count.  Or we might want to investigate nonlinear relationships among the treatment/mediator/outcome.  Or we might have data that has correlated observations like repeated measurements or similar.  The <span class="pack">mediation</span> package prides itself on this in particular, but <span class="pack">brms</span> can do anything it can do and more, though you might have to do a little more work to actually calculate the result.  <span class="pack">lavaan</span> can actually do a limited set of models for binary and ordinal variables, but getting the appropriate indirect estimate would require a very tedious by-hand approach.
+In some cases our mediator or outcome may be binary, count, or something where assuming a normal distribution might not be the best idea.  Or we might want to investigate nonlinear relationships among the treatment/mediator/outcome.  Or we might have data that has correlated observations like repeated measurements or similar.  The <span class="pack">mediation</span> package prides itself on this in particular, but <span class="pack">brms</span> can do anything it can do and more, though you might have to do a little more work to actually calculate the result.  <span class="pack">lavaan</span> can actually do a limited set of models for binary and ordinal variables, but getting the appropriate indirect estimate would require a very tedious by-hand approach.
 
 ### Missing data
 
@@ -481,6 +484,10 @@ If we use treatment and sex as factors, <span class="pack">bnlearn</span> will p
 
 CSCAR director Kerby Shedden has given a [Python workshop](nbviewer.jupyter.org/urls/umich.box.com/shared/static/jpmd9y99259u6dv0rj6p46993981m7zm.ipynb) on mediation models, so I show the <span class="pack">statsmodels</span> implementation here.  It follows the Imai approach and so can be seen as the Python version of the <span class="pack">mediation</span> package.  The output is essentially the same as what you would have using treatment as a factor variable, where you get separate results for each treatment category.  This is unnecessary for our demo, so you can just compare the 'average' results to the previous <span class="pack">mediation</span> package results.
 
+```{r pythonbs, echo = FALSE, eval=!file.exists("C:/Program Files/R/")}
+reticulate::use_python("/Users/micl/anaconda3/bin")
+```
+
 ```{python pymediate, cache=T}
 import statsmodels.api as sm
 from statsmodels.stats.mediation import Mediation
@@ -500,6 +507,10 @@ med_result = med.fit(n_rep=500)
 np.round(med_result.summary(), decimals=3)
 ```
 
+
+
+
+
 ### Stata
 
 Finally, I provide an option in Stata. Stata makes it easy to get the indirect effects in this example, but it does so for every covariate, so the output is a bit verbose to say the least[^stataopts].  For those working with Stata, they do not need a separate SEM package to get these sorts of results.
@@ -513,7 +524,120 @@ sem (job_seek <- treat econ_hard sex age) (depress2 <- treat econ_hard sex age j
 estat teffects, compact cformat(%9.3f) pformat(%5.2f)
 ```
 
+```{r output_nostata, echo = FALSE, eval=!file.exists("C:/Program Files/Stata16/StataSE-64.exe")}
+cat(
+  "
+. use 'data\\jobs.dta'
 
+. 
+. sem (job_seek <- treat econ_hard sex age) (depress2 <- treat econ_hard sex age job_seek), 
+cformat(%9.3f) pformat(%5.2f)
+
+Endogenous variables
+
+Observed:  job_seek depress2
+
+Exogenous variables
+
+Observed:  treat econ_hard sex age
+
+Fitting target model:
+
+Iteration 0:   log likelihood = -7711.0956  
+Iteration 1:   log likelihood = -7711.0956  
+
+Structural equation model                       Number of obs     =        899
+Estimation method  = ml
+Log likelihood     = -7711.0956
+
+------------------------------------------------------------------------------
+             |                 OIM
+             |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+Structural   |
+  job_seek   |
+       treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+   econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+         sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+         age |      0.005      0.002     1.98    0.05        0.000       0.009
+       _cons |      3.671      0.125    29.41    0.00        3.426       3.915
+  -----------+----------------------------------------------------------------
+  depress2   |
+    job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+       treat |     -0.040      0.043    -0.93    0.35       -0.125       0.045
+   econ_hard |      0.149      0.021     7.16    0.00        0.108       0.189
+         sex |      0.107      0.041     2.60    0.01        0.026       0.187
+         age |      0.001      0.002     0.33    0.74       -0.003       0.004
+       _cons |      2.208      0.148    14.96    0.00        1.918       2.497
+-------------+----------------------------------------------------------------
+var(e.job_~k)|      0.524      0.025                         0.478       0.575
+var(e.depr~2)|      0.373      0.018                         0.340       0.409
+------------------------------------------------------------------------------
+LR test of model vs. saturated: chi2(0)   =      0.00, Prob > chi2 =      .
+
+. 
+. estat teffects, compact cformat(%9.3f) pformat(%5.2f)
+
+
+Direct effects
+------------------------------------------------------------------------------
+             |                 OIM
+             |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+Structural   |
+  job_seek   |
+       treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+   econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+         sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+         age |      0.005      0.002     1.98    0.05        0.000       0.009
+  -----------+----------------------------------------------------------------
+  depress2   |
+    job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+       treat |     -0.040      0.043    -0.93    0.35       -0.125       0.045
+   econ_hard |      0.149      0.021     7.16    0.00        0.108       0.189
+         sex |      0.107      0.041     2.60    0.01        0.026       0.187
+         age |      0.001      0.002     0.33    0.74       -0.003       0.004
+------------------------------------------------------------------------------
+
+
+Indirect effects
+------------------------------------------------------------------------------
+             |                 OIM
+             |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+Structural   |
+  job_seek   |
+  -----------+----------------------------------------------------------------
+  depress2   |
+       treat |     -0.016      0.012    -1.26    0.21       -0.040       0.009
+   econ_hard |     -0.013      0.006    -2.10    0.04       -0.025      -0.001
+         sex |      0.002      0.012     0.16    0.88       -0.021       0.025
+         age |     -0.001      0.001    -1.93    0.05       -0.002       0.000
+------------------------------------------------------------------------------
+
+
+Total effects
+------------------------------------------------------------------------------
+             |                 OIM
+             |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+Structural   |
+  job_seek   |
+       treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+   econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+         sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+         age |      0.005      0.002     1.98    0.05        0.000       0.009
+  -----------+----------------------------------------------------------------
+  depress2   |
+    job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+       treat |     -0.056      0.045    -1.24    0.21       -0.144       0.032
+   econ_hard |      0.136      0.022     6.31    0.00        0.094       0.178
+         sex |      0.109      0.043     2.55    0.01        0.025       0.192
+         age |     -0.000      0.002    -0.22    0.82       -0.004       0.004
+------------------------------------------------------------------------------
+  "
+)
+```
 
 ## Summary
 
@@ -553,7 +677,7 @@ tibble(
 <!-- footnotes -->
 [^mysem]: I have a much more [detailed document on SEM](https://m-clark.github.io/sem/), including mediation analysis.
 
-[^mass]: <span class="pack">MASS</span> has been superseded by others for over a decade at this point, and it mostly just tends to muck up your <span class="pack" style = "">tidyverse</span> and other packages when it's loaded.  It's a fine package (and was great back in the day), but if you want to use it in a package, it would be good to not load it (or other packages) in the environment just to use a function or two.  I mostly just see it used for <span class="func">mvrnorm</span> (multivariate normal distribution) and <span class="func">glm.nb</span>, but there are other packages with that functionality that would provide additional benefits, and not mask <span class="pack">dplyr</span> functions, which are among the most popular used in the R community. 
+[^mass]: <span class="pack">MASS</span> has been superseded by others for over a decade at this point, and it mostly just tends to muck up your <span class="pack" style = "">tidyverse</span> and other packages when it's loaded.  It's a fine package (and was great back in the day), but if you want to use it in a package, it would be good to not load it (or other packages) in the environment just to use a function or two.  I mostly just see it used for <span class="func">mvrnorm</span> (multivariate normal distribution) and <span class="func">glm.nb</span>, but there are other packages with that functionality that would provide additional benefits, and not mask <span class="pack">dplyr</span> functions, which are among the most commonly used in the R community. 
 
 [^cfabrms]: [<span class="pack">brms</span> is working on it](https://github.com/paul-buerkner/brms/issues/304).
 
@@ -561,4 +685,4 @@ tibble(
 
 [^imai]: Imai makes his articles available at his [website](https://imai.fas.harvard.edu/projects/mechanisms.html).
 
-[^stataopts]: The options are there to suppress/minimize what can be.
+[^stataopts]: The options in the code are there to suppress/minimize what can be.
