@@ -67,7 +67,7 @@ code[class*="language-"], pre[class*="language-"] {
 }
 ```
 
-Updated `r format(Sys.Date(), "%B %d, %Y")`
+Updated `r format(Sys.Date(), "%B %d, %Y")`. Code can be downloaded [here](https://raw.githubusercontent.com/m-clark/m-clark.github.io/master/_posts/2019-03-12-mediation-models/mediation-models-code.R).
 
 <br>
 
@@ -86,6 +86,8 @@ Mediation analysis is very popular in social science disciplines, though by no m
 ```{r gm_mediation, echo=FALSE, cache=FALSE, out.width=800, out.height=200}
 DiagrammeR::grViz('scripts/mediation.gv')
 ```
+
+In this case, `a` and `b` reflect the indirect path of the effect of $\mathrm{X}$ on the outcome through the mediator, while `c'` is the direct effect of $\mathrm{X}$ on the outcome after the indirect path has been removed (`c` would be the effect before positing the indirect effect, and `c` - `c'` equals the indirect effect).  The <span class="emph" style = "">total effect</span> of $\mathrm{X}$ is the combined indirect and direct effects.
 
 I should note a few things based on what I see in consulting across dozens of disciplines.  To begin, it seems very few people who think they need a mediation model actually do.  For example, if you cannot think of your model in temporal or physical terms, such that $\mathrm{X}$ *necessarily* leads to the mediator, which then *necessarily* leads to the outcome, you likely do not need a mediation model.  If you could see the arrows going either direction, again, you probably don't need such a model.  Also, if when describing your model, everyone thinks you're talking about an interaction (a.k.a. <span class="emph">moderation</span>), you might not need this.  And finally, as one might suspect, if there is no **strong** correlation between key variables ($\mathrm{X}$) and mediator (path `a`), and if there is no **strong** correlation between mediator and the outcome(s) (path `b`), you probably don't need this.  While nothing will stop you from doing mediation analysis, without such prerequisites, you will almost certainly have a weak and probably more confusing model than you otherwise would have.
 
@@ -138,12 +140,12 @@ We will look at the following packages to demonstrate how one can conduct mediat
 - <span class="pack">psych</span>
 - <span class="pack">brms</span>
 
-
+While these will be the focus, I'll also note some other alternatives, including Python and Stata.
 
 
 ### mediation
 
-We will start with the <span class="pack">mediation</span> package, as it basically requires no more knowledge to conduct than one possesses already from running standard regression models in R.  The package provides the <span class="emph">average causal mediation effect</span>, defined as follows from the help file and Imai's articles[^imai]:
+We will start with the <span class="pack">mediation</span> package, as it basically requires no more programming ability to conduct than one possesses already from running standard regression models in R.  The package provides the <span class="emph">average causal mediation effect</span>, defined as follows from the help file and Imai's articles[^imai]:
 
 > The average causal mediation effect (ACME) represents the expected difference in the potential outcome when the mediator took the value that would realize under the treatment condition as opposed to the control condition, while the treatment status itself is held constant.
 
@@ -176,16 +178,17 @@ detach(package:mediation)
 detach(package:MASS)
 ```
 
-<aside> The result is based on simulations of a multivariate normal draw of the coefficients given their estimated covariance matrix. For example:
+<aside> The result is based on simulations of a multivariate normal draw of the coefficients given their estimated covariance matrix. The algorithm is summarized as follows (from Imai et al. 2010)
 
-```{demo_sim, eval=FALSE}
-c = coef(mod)
-vc = vcov(mod)
-coef_sim = mvrnorm(nsim, c, vc)
-```
+1. Fit models for the observed outcome and mediator variables.
+2. Simulate model parameters from their sampling distribution.
+3. Repeat the following three steps: 
+    (a) simulate the potential values of the mediator, 
+    (b) simulate the potential outcomes given the simulated values of the mediator, 
+    (c) compute the causal mediation effects.
+4. Compute summary statistics such as point estimates and confidence intervals.
 
-Given those values, we then make predictions using the original data, but where in one case everyone is assumed in the treatment condition, and in the other case, everyone is assumed to be in the control group.  With this we can obtain the average difference and corresponding quantiles based on the simulated draws.
-</aside>
+With this approach we can obtain the average difference and corresponding quantiles based on the simulated draws.</aside>
 
 ```{r mediation_summary, eval=FALSE}
 summary(mediation_result)
@@ -293,7 +296,7 @@ Note also that the output shows the $R^2$ value for both models. In the case of 
 
 - Requires additional coding to estimate the indirect effect
 - Single random effects
-- While the models could incorporate binary or ordinal variables for the mediator/outcomes, there is no straightforward way to calculate the indirect effect in the manner of the <span class="pack">mediation</span> package.
+- While the models could incorporate binary or ordinal variables for the mediator/outcomes, there is no straightforward way to calculate the indirect effect in the manner of the <span class="pack">mediation</span> package in those settings.
 
 ### psych
 
@@ -338,7 +341,7 @@ For our next demo we come to what I feel is the most powerful package, <span cla
 
 We generally do as we have before, specifying the mediator model and the outcome model.  <span class="pack">brms</span> doesn't do anything special for mediation analysis, but its <span class="func">hypothesis</span> function can allow us to test the product-of-paths approach.  Furthermore, the <span class="pack">sjstats</span> package will essentially provide the results in the same way the <span class="pack">mediation</span> package does for us, and for that matter, the <span class="pack">mediation</span> package is basically an attempt at a Bayesian solution using frequentist methods anyway.  If we did have different distributions for the outcome and mediator, we'd have an relatively easy time getting these average prediction values and their differences, as Bayesian approaches are always thinking about posterior predictive distributions.  In any case, here is the code.
 
-```{r brms, cache=TRUE, eval=-10, echo=-13, cache.rebuild=F}
+```{r brms, cache=TRUE, echo=-15, cache.rebuild=F}
 library(brms)
 
 model_mediator <- bf(job_seek ~ treat + econ_hard + sex + age)
@@ -347,14 +350,16 @@ model_outcome  <- bf(depress2 ~ treat + job_seek + econ_hard + sex + age)
 med_result = brm(
   model_mediator + model_outcome + set_rescor(FALSE), 
   data = jobs, 
-  cores = 2
+  cores = 4
 )
 
 summary(med_result)
 
-print(sjstats::mediation(med_result), digits=4)  # same output as mediation package
-# same as
+# using brms we can calculate the indirect effect as follows
 # hypothesis(med_result, 'jobseek_treat*depress2_job_seek = 0')
+
+# sjstats provides similar printing as the mediation package
+# print(sjstats::mediation(med_result), digits=4)
 sjstats::mediation(med_result) %>% kable_df()
 ```
 
@@ -416,7 +421,7 @@ The <span class="pack">bnlearn</span> package allows investigation of directed, 
 
 <aside></aside>
 
-For the initial model, we'll make sure that paths exist between treatment - mediator, treatment - outcome, and mediator - outcome (the <span class="emph">whitelist</span>).  We will disallow nonsensical paths like having arrows to the treatment (which was randomly assigned), sex, and age (the <span class="emph">blacklist</span>).  Otherwise, we'll see what the data suggests.
+For the initial model, we'll make sure that paths exist between treatment - mediator, treatment - outcome, and mediator - outcome (the <span class="emph">whitelist</span>).  We will disallow nonsensical paths like having arrows to the treatment (which was randomly assigned), sex, economic hardship, and age (the <span class="emph">blacklist</span>).  Otherwise, we'll see what the data suggests.
 
 ```{r bnlearn, eval=T, fig.height=5, fig.show='hold'}
 library(bnlearn)
@@ -427,7 +432,7 @@ whitelist = data.frame(
 
 blacklist = expand.grid(
   from = colnames(mediation_result$model.y$model),
-  to   = c('treat', 'sex', 'age')
+  to   = c('treat', 'sex', 'age', 'econ_hard')
 )
 
 # For simpler output we'll use treatment and sex as numeric (explained later)
@@ -452,11 +457,11 @@ plot(model)
 ```
 
 
-We see in the plot that age now only relates to job seeking self-efficacy, which itself now effects economic hardship, rather than the other way around. Sex only has an effect on depression, and age only affects efficacy.
+We see in the plot that things have changed a bit.  For example, age now only relates to job seeking self-efficacy, and sex only has an effect on depression.
 
 If we restrict the paths to only be what they are in our previous examples, we'd get the same results.
 
-```{r bnlearn_reproduction, eval=T, fig.height=5}
+```{r bnlearn_reproduction, eval=T, fig.height=5, cache.rebuild=T}
 whitelist = data.frame(
   from = c('treat', 'age', 'sex', 'econ_hard', 'treat', 'job_seek', 'age', 'sex', 'econ_hard'),
   to   = c('job_seek', 'job_seek','job_seek','job_seek', 'depress2', 'depress2', 'depress2', 'depress2', 'depress2')
@@ -513,7 +518,7 @@ np.round(med_result.summary(), decimals=3)
 
 ### Stata
 
-Finally, I provide an option in Stata. Stata makes it easy to get the indirect effects in this example, but it does so for every covariate, so the output is a bit verbose to say the least[^stataopts].  For those working with Stata, they do not need a separate SEM package to get these sorts of results.
+Finally, I provide an option in Stata using its `sem` command. Stata makes it easy to get the indirect effects in this example, but it does so for every covariate, so the output is a bit verbose to say the least[^stataopts].  For those working with Stata, they do not need a separate SEM package to get these sorts of results.
 
 ```{stata, engine.path="C:/Program Files/Stata16/StataSE-64.exe", eval=file.exists("C:/Program Files/Stata16/StataSE-64.exe")}
 
@@ -641,7 +646,7 @@ Structural   |
 
 ## Summary
 
-Models with indirect effects require careful theoretical consideration to employ for data analysis.  However, if the model is appropriate for your data situation, it is quite easy to get results from a variety of packages in R. Furthermore, one does not need to use a structural equation modeling package to conduct an analysis with indirect effects, and in fact, one can get far using standard R syntax.
+Models with indirect effects require careful theoretical consideration to employ for data analysis.  However, if the model is appropriate for your data situation, it is quite easy to get results from a variety of packages in R. Furthermore, one does not need to use a structural equation modeling package to conduct an analysis with indirect effects, and in fact, one can get far using standard R syntax.  For strictly observed, i.e. no latent, variables, no SEM tool is necessary, or even recommended.
 
 $$\mathcal{Enjoy\ your\ model\ exploration!}$$
 
