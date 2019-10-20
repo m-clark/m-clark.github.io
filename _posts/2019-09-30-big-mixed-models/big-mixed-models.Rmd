@@ -16,7 +16,7 @@ draft: true
 bibliography: gam_references.bib
 nocite:  | 
   @li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1
-tags: [mixed models, big data, generalized linear mixed models, additive models, random effects, lme4, glmmTMB, mgcv, lmer, glmer]
+tags: [mixed models, big data, generalized linear mixed models, additive models, random effects, lme4, <span class="pack" style = "">glmmTMB</span>, mgcv, lmer, glmer]
 ---
 
 ```{r setup, include=FALSE}
@@ -474,7 +474,7 @@ system.time({
 })
 ```
 
-That didn't actually improve our situation, and was much worse in time- more than 20 minutes!  Remember though, that the <span class="pack" style = "">mgcv</span> approach has to estimate all those random effect coefficients, while <span class="pack" style = "">lme4</span> is dealing with a perfectly balanced data set with which to estimate a single variance component. In practice, with additional complexities <span class="func" style = "">bam</span> would win out eventually[^bamwins].  
+That didn't actually improve our situation, and was much worse in time- more than 20 minutes!  Remember though, that the <span class="pack" style = "">mgcv</span> approach has to estimate all those random effect coefficients, while <span class="pack" style = "">lme4</span> is able to take advantage of design for mixed models among other things.
 
 However, even here we haven't used all our secret weapons.  Another option with <span class="func" style = "">bam</span> works on a modified data set using binned/rounded values for continuous covariates, and working with only the minimum data necessary to estimate the coefficients[@wood_generalized_2015]. With large enough data, as is the case here, the estimated parameters might not be different at all, while the efficiency gains could be tremendous.  Let's add `discrete = TRUE` and see what happens.
 
@@ -546,7 +546,7 @@ bind_rows(
 
 And finally, let's look at the estimated random effects for the first 5 clusters.
 
-<aside>Just a note, unless you have very many observations per cluster, you should not expect to get very close to the true values of the random effects except on average.  For example, if you just want to estimate a noisy mean, how many observations would you need to get reasonably close?</aside>
+<aside>Just a note, unless you have very many observations per cluster, you should not expect to get very close to the true values of the random effects except on average, which should serve as a caution for any 2-step approach one might undertake using the estimates. The rank correlations of the estimates vs. the true values in this example are 1.0.</aside>
 
 ```{r big-re-results, echo=FALSE}
 re_big = tibble(
@@ -560,7 +560,7 @@ re_big %>%
   rownames_to_column(var = 'cluster') %>% 
   kable_df(digits = 7, caption = 'Estimated Random Effects')
 
-# cor(re_big)
+# cor(re_big, method = 'spearman')
 # ranef(mixed_big_glmm)[['g']] %>% rownames_to_column() %>% head_tail()
 ```
 
@@ -589,19 +589,20 @@ So we're getting what we should in general.
 
 ## When to use bam
 
-The following are some guidelines for when <span class="func" style = "">bam</span> might be preferable compared to other mixed modeling tools.
+The following are some guidelines for when <span class="func" style = "">bam</span> might be preferable compared to other mixed modeling tools.  To help with this, I've conducted my own examinations on very large data sets of up to [one million observations][Simulation Settings], and included timing results from other relevant studies, which will be presented here.
 
 ### Linear Mixed Models
 
-In general you'll probably need very large data for <span class="func" style = "">bam</span> to be preferred to <span class="pack" style = "">lme4</span> for linear mixed models unless:
+As we'll see, in general you'll probably need very large data for <span class="func" style = "">bam</span> to be preferred to <span class="pack" style = "">lme4</span> for linear mixed models unless:
 
 - You have complicated structure that begins to bog down lme4
 - You want to add smooth terms[^smoothlme4]
 - You have memory issues
+- You have a computing setup that can take advantage of <span class="func" style = "">bam</span>
 
-The following shows some timings for <span class="pack" style = "">lme4</span>, glmmTMB, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 500k observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
+The following shows some timings for <span class="pack" style = "">lme4</span>, <span class="pack" style = "">glmmTMB</span>, and <span class="pack" style = "">mgcv</span> for the linear mixed model case under a variety of settings with large data.  In some sense, this is not exactly a fair comparison as <span class="pack" style = "">mgcv</span> parallelizes computations while <span class="pack" style = "">lme4</span> and <span class="pack" style = "">glmmTMB</span> do not.  However, this is also exactly the point of the demonstration - those who can, do.  In general though, the <span class="pack" style = "">lme4</span> advantage holds until around 500k observations. We can see that the main issue for <span class="func" style = "">bam</span> is not so much the sample size, but the number of parameters to estimate.
 
-<aside>For <span class="pack" style = "">lme4</span>, I set at least one argument to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model (See tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/)).  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
+<aside>For <span class="pack" style = "">lme4</span>, I set at least one argument to possibly improve speed/performance for both lme and glmm models, though this only shaved a few seconds for the largest sample size settings for the linear mixed model.  For <span class="pack" style = "">mgcv</span> I only used 12 cores for parallelization so as to be similar to what is common on modern machines (8-12), but anyone with access to a better machine or cluster computing environment would see even more speed gain by utilizing additional cores, so I also looked at 16 cores. For <span class="pack" style = "">glmmTMB</span>, settings were left at defaults, as I've not come across any specific speed recommendations. See Brooks et al.[@brooks_glmmtmb_2017] (@brooks_glmmtmb_2017) for more speed comparisons of <span class="pack" style = "">glmmTMB</span>, <span class="pack" style = "">mgcv</span>, <span class="pack" style = "">lme4</span>, and others, as well as the [glmmTMB vignette](https://cran.r-project.org/web/packages/glmmTMB/vignettes/glmmTMB.pdf).</aside>
 
 ```{r lme-timings, echo=FALSE, background='transparent', cache.rebuild=FALSE}
 # knitr::include_graphics("../../img/bam/lme_results.svg")
@@ -613,12 +614,24 @@ lme_results_gathered %>%
   mutate(
     re = if_else(tau_2 == 0, '1 Random Effect', '2 Random Effects'),
     balanced2 = if_else(balanced == 1, 'Balanced', 'Unbalanced'),
-    elapsed_avg = elapsed/5
+    elapsed_avg = elapsed/5,
+    test = case_when(
+      test == 'mgcv' ~ 'mgcv_12',
+      test == 'mgcv_max' ~ 'mgcv_16',
+      TRUE ~ test
+    )
   ) %>% 
+  # filter(grepl(test, pattern = 'mgcv')) %>% 
   rename(method = test) %>% 
   ggplot(aes(N, elapsed_avg)) +
-  geom_point(aes(color = method)) +
-  geom_line(aes(color = method, lty = balanced2, alpha = method=='mgcv')) +
+  geom_point(aes(color = method), alpha = .5) +
+  geom_line(
+    aes(
+      color = method, 
+      lty = balanced2, 
+      alpha = grepl(method, pattern = 'mgcv')
+    )
+  ) +
   facet_grid(cols = vars(re)) +
   labs(
     x = 'Sample Size',
@@ -626,7 +639,7 @@ lme_results_gathered %>%
     title = 'Linear mixed model',
     caption = 'Sample size in the unbalanced case is 75% of balanced case'
   ) +
-  scale_alpha_discrete(range = c(.25, 1)) +
+  scale_alpha_discrete(range = c(.1, 1)) +
   scale_x_continuous(
     breaks = round(unique(lme_results_gathered$N)),
     limits = c(range(lme_results_gathered$N)),
@@ -637,7 +650,7 @@ lme_results_gathered %>%
     limits = c(range(lme_results_gathered$elapsed/5)),
     trans = 'log'
   ) +
-  scico::scale_color_scico_d(name = 'Method', begin = .33, end = .66) + 
+  scico::scale_color_scico_d(name = 'Method', begin = .20, end = .80) + 
   scale_linetype(name = 'Balanced') + 
   guides(alpha = 'none') +
   visibly::theme_clean() + 
@@ -669,9 +682,9 @@ kable_df(lme_results_gathered)
 
 For the generalized setting with binary, count, and other outcomes:
 
-- <span class="pack" style = "">lme4</span>, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate
-- <span class="pack" style = "">glmmTMB</span> is probably viable up to 100k and one or two random effects, but would be the slower option
-- Use <span class="pack" style = "">mgcv</span> for same reasons as above, but it potentially becomes an advantage with as few as 100k.
+- <span class="pack" style = "">lme4</span>, at least at the time of this writing, will almost certainly start giving convergence warnings even in well-behaved data settings, and as such, will require tweaking to mitigate.
+- <span class="pack" style = "">glmmTMB</span> is probably viable up to 100k and one or two random effects, but may generally be a slower option.
+- Use <span class="pack" style = "">mgcv</span> for same reasons as with linear mixed models, but here it potentially becomes an advantage with as few as 100k.
 
 ```{r gmm-timings, echo=FALSE, background='transparent', fig.asp=1, cache.rebuild=FALSE}
 # knitr::include_graphics("../../img/bam/gmm_results.svg")
@@ -683,12 +696,24 @@ gmm_results_gathered %>%
     re = if_else(tau_2 == 0, '1 Random Effect', '2 Random Effects'),
     balanced2 = if_else(balanced == 1, 'Balanced', 'Unbalanced'),
     elapsed_avg = elapsed/5,
-    rare = factor(rare, labels = c('Common', 'Rare'))
+    rare = factor(rare, labels = c('Common', 'Rare')),
+    test = case_when(
+      test == 'mgcv' ~ 'mgcv_12',
+      test == 'mgcv_max' ~ 'mgcv_16',
+      TRUE ~ test
+    )
   ) %>% 
+  # filter(grepl(test, pattern = 'mgcv')) %>% 
   rename(method = test) %>% 
   ggplot(aes(N, elapsed_avg)) +
-  geom_point(aes(color = method)) +
-  geom_line(aes(color = method, lty = balanced2, alpha = method=='mgcv')) +
+  geom_point(aes(color = method), alpha = .5) +
+  geom_line(
+    aes(
+      color = method, 
+      lty = balanced2, 
+      alpha = grepl(method, pattern = 'mgcv')
+    )
+  ) +
   facet_grid(rows = vars(rare), cols = vars(re)) +
   labs(
     x = 'Sample Size',
@@ -696,7 +721,7 @@ gmm_results_gathered %>%
     title = 'Generalized Linear Mixed Model (logistic)',
     caption = 'Sample size in the unbalanced case is 75% of balanced case'
   ) +
-  scale_alpha_discrete(range = c(.25, 1)) +
+  scale_alpha_discrete(range = c(.1, 1)) +
   scale_x_continuous(
     breaks = round(unique(gmm_results_gathered$N)),
     limits = c(range(gmm_results_gathered$N)),
@@ -708,7 +733,7 @@ gmm_results_gathered %>%
     trans = 'log'
   ) +
   guides(alpha = 'none') +
-  scico::scale_color_scico_d(name = 'Method', begin = .33, end = .66) + 
+  scico::scale_color_scico_d(name = 'Method', begin = .20, end = .80) + 
   scale_linetype(name = 'Balanced') + 
   visibly::theme_clean() + 
   theme(
@@ -733,7 +758,7 @@ gmm_results_gathered %>%
 
 When looking into mixed models for big data, you typically won't find much in the way of options.  I've seen some packages or offerings for some machine learning approaches like random forests[^mixrf], but this doesn't address the issue of large data.  A Spark module provided by LinkedIn is available, [photonML](https://github.com/linkedin/photon-ml), but it's not clear how easy it is to implement.  Julia has recently made multithreading a viable option for any function.  This is notable since Doug Bates, one of the <span class="pack" style = "">lme4</span> authors, develops the [MixedModels](https://github.com/dmbates/MixedModels.jl) module for Julia.  Should multithreading functionality be added, it could be a very powerful tool[^deepmixed].  
 
-Among proprietary options, SAS and Stata are the more commonly used tools.  SAS PROC HPMIXED essentially uses the <span class="pack" style = "">lme4</span> approach, but can be faster for well-behaved data. Stata, while commonly used for mixed models, is generally slower than the <span class="pack" style = "">lme4</span> even for standard settings and the smallest data settings noted here[^mccoach].
+Among proprietary options, SAS and Stata are the more commonly used tools.  SAS PROC HPMIXED essentially uses the <span class="pack" style = "">lme4</span> approach, but can be faster for well-behaved data. Stata, while commonly used for mixed models, is generally slower than the <span class="pack" style = "">lme4</span> even for standard settings, and is likely prohibitively slow for settings above[^mccoach].
 
 <aside>SAS uses disk rather than RAM for processing, so may be preferred for low RAM devices.</aside>
 
@@ -742,7 +767,7 @@ Here is a summary of other timings of various tools for mixed models.
 
 ##### McCoach et al. 2018
 
-The results from McCoach et al.[@mccoach2018] with a standard linear mixed model. Sample size fixed at 10000. In the first five cases, a true variance parameter was set to zero, a situation <span class="pack" style = "">lme4</span> handles well[^mccoach]. 
+These are the results from McCoach et al.[@mccoach2018] with a standard linear mixed model. Sample size fixed at 10000, with a single grouping factor with only 50 levels. Models included five covariates each with a random slope. In the first five cases, a true variance parameter was set to zero, a situation <span class="pack" style = "">lme4</span> handles well[^mccoach].  SAS is very speedy for such settings if data is well-behaved. 
 
 ```{r mccoach, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/mccoach.png")
@@ -750,7 +775,7 @@ knitr::include_graphics("../../img/bam/mccoach.png")
 
 ##### Brooks et al. 2018 timing as a function of sample size
 
-Brooks et al. uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package.  Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.
+Brooks et al. uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package. It has a single grouping factor for the random effect with `r nlevels(glmmTMB::Salamanders$site)` levels. Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.  In this particular setting <span class="pack" style = "">glmmTMB</span> has an advantage.
 
 ```{r brooksn, echo=FALSE, background='transparent', caption = 'Brooks et al 2018 timing as a function of sample size'}
 knitr::include_graphics("../../img/bam/brooks_n.png")
@@ -758,7 +783,7 @@ knitr::include_graphics("../../img/bam/brooks_n.png")
 
 ##### Brooks et al. 2018 timing as a function of number of levels
 
-This data is simulated based on models from the previous, and adds increasing numbers of (balanced) levels to the random effect. This shows a similar effect on <span class="pack" style = "">mgcv</span> as the study here.
+This data is simulated based on models from the previous, and adds increasing numbers of (balanced) levels to the random effect. This shows a similar effect of the number of levels on <span class="pack" style = "">mgcv</span> as the simulation presented in this post, though they are not using the functionality of <span class="func" style = "">bam</span>.
 
 ```{r brooksnlev, echo=FALSE, background='transparent', caption = 'Brooks et al 2018 timing as a function of number of levels'}
 knitr::include_graphics("../../img/bam/brooks_nlevels.png")
@@ -766,7 +791,7 @@ knitr::include_graphics("../../img/bam/brooks_nlevels.png")
 
 ##### TMB timings
 
-Depending on the data, and whether the target is assumed gaussian or not, <span class="pack" style = "">glmmTMB</span> might be preferable.  For the following, in the first case a small data set was replicated to create larger data, and in the second, a larger data set was sub-sampled[^bolker_summary].
+As previously noted, depending on the data, and whether the target is assumed gaussian or not, <span class="pack" style = "">glmmTMB</span> might be preferable.  For the following, in the first case a small data set was replicated to create larger data, and in the second, a larger data set was sub-sampled[^bolker_summary].  The advantage is to <span class="pack" style = "">glmmTMB</span> in the first case, and <span class="pack" style = "">lme4</span> in the second.
 
 ```{r tmb_vignette, echo=FALSE, background='transparent', caption = 'TMB timings'}
 knitr::include_graphics("../../img/bam/tmb_vignette_larger_contra.png")
@@ -776,9 +801,9 @@ knitr::include_graphics("../../img/bam/tmb_vignette_larger_insteval.png")
 
 ## Limitations
 
-To summarize the limitations of the <span class="pack" style = "">mgcv</span> approach, we can note the following:
+There are limitations to the use of the <span class="pack" style = "">mgcv</span> approach.
     
-- The number of parameters to estimate increases greatly, which may void any gains until very large data with complex models
+- The number of parameters to estimate increases with the number of random effect levels, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. slopes and intercepts
 - When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
 
@@ -792,15 +817,72 @@ The take home point here is that you now have viable tools to run mixed models o
 
 ## Supplemental
 
-I will set up a repo with the simulation code at some point and link it here.
+### Simulation Settings
 
-[^bamwins]: Even just adding an additional random effect would possibly be enough for this data example.
+I will set up a repo with the simulation code at some point and link it here.  But the settings for the timings can be summarized as follows.
+
+#### Linear mixed model
+The following are for the linear mixed model.  `N` is the sample size, balanced refers to whether a random 75% sample was taken with proportion equivalent to the group index (first grouping variable for both 1 and 2 random effect settings), and `tau_2` is zero if there is only one random effect, or refers to the standard deviation of the second random effect. 
+
+```{r lme-settings, echo=FALSE}
+lme = crossing(
+  N = c(1e4, 5e4, 1e5, 5e5, 1e6),
+  balanced = c(TRUE, .75),
+  tau_2 = c(0, .5),
+) 
+
+lme %>% 
+  kable_df()
+```
+
+Held constant are:
+
+- The number of covariates: 20, all drawn from a standardized normal distribution
+- Fixed effect coefficients: drawn from a random uniform (-1, 1)
+- Residual standard deviation: 1
+- The number of levels in each factor: 1000 for the first, 100 for the second
+- The standard deviations of the random effects: .5 for both
+
+#### Generalized lienar mixed model
+
+For the generalized linear mixed model, the settings are the same but we also add a case where the outcome is rare or not in this binary setting (~ 10% prevalence or less).
+
+```{r gmm-settings, echo=FALSE}
+gmm = crossing(
+  N = c(1e4, 5e4, 1e5, 5e5, 1e6),
+  balanced = c(TRUE, .75),
+  tau_2 = c(0, .5),
+  rare = c(TRUE, FALSE)
+)
+
+gmm %>% 
+  kable_df()
+```
+
+#### Function arguments
+
+For <span class="func" style = "">g/lmer</span> I set `check.derivatives = FALSE` and for the GLMM I additionally set `nAGQ = 0`, as this is precisely the setting one would do so[^nagq0].  I did not mess with the optimizers but it is possible to get a speed gain there in some settings. See performance tips [here](https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html) and demonstrated [here](http://svmiller.com/blog/2018/06/mixed-effects-models-optimizer-checks/).
+
+For <span class="func" style = "">bam</span> I set the following.
+
+- `gc.level = 0`
+- `use.chol = TRUE`
+- `nthreads = 12/16`
+- `chunk.size = 1000`
+- `samfrac = .1`
+
+<span class="func" style = "">glmmTMB</span> was left at defaults as I'm not aware of a specific approach for speed gain.
+
+
+
+
+[^nagq0]: See this R user group thread for a [discussion](https://stat.ethz.ch/pipermail/r-sig-mixed-models/2017q3/025938.html), this [stackoverflow exchange](https://stats.stackexchange.com/questions/77313/why-cant-i-match-glmer-family-binomial-output-with-manual-implementation-of-g) involving one of the lme4 contributors, and Bates [Julia notebook](https://github.com/dmbates/MixedModelsinJulia/blob/master/nAGQ.ipynb) for more detail.
 
 [^mixrf]: See [REEMtree](https://cran.r-project.org/web/packages/REEMtree/), [mixRF](https://cran.r-project.org/web/packages/MixRF/) for example.
 
 [^smoothlme4]: You could use construct the smooth with <span class="pack" style = "">mgcv</span> and add it to the model matrix for <span class="pack" style = "">lme4</span>. 
 
-[^mccoach]: See McCoach reference [@mccoach2018].  They also look at HLM and Mplus. However, I haven't in years consulted with anyone across dozens of disciplines that was using HLM for mixed models. With Mplus, the verbosity of the syntax, plus additional data processing required, plus huge lack of post-processing of the model would negate any speed gain one might get from simply running the model. Couple this with the fact that campus-wide licenses are rare for either, neither could be recommended for mixed models.  Note also, that one setting of <span class="func" style = "">lmer</span> probably would have negated almost all their convergence issues.
+[^mccoach]: See McCoach reference [@mccoach2018].  They also look at HLM and Mplus. However, I haven't in years consulted with anyone across dozens of disciplines that was using HLM for mixed models. With Mplus, the verbosity of the syntax, plus additional data processing required, plus huge lack of post-processing of the model would negate any speed gain one might get from simply running the model. Couple this with the fact that campus-wide licenses are rare for either, neither could be recommended for mixed models.  Note also, that one setting of <span class="func" style = "">lmer</span> probably would have negated almost all their reported convergence issues.
 
 [^bolker_summary]: "In general, we expect <span class="pack" style = "">glmmTMB</span>'s advantages over <span class="pack" style = "">lme4</span> to be (1) greater flexibility (zero-inflation etc.); (2) greater speed for GLMMs, especially those with large number of 'top-level' parameters (fixed effects plus random-effects variance-covariance parameters). In contrast, lme4 should be faster for LMMs."
 
