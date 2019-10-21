@@ -51,7 +51,7 @@
   <!--radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-rmarkdown-metadata">
-  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","bibliography","nocite","tags"]}},"value":[{"type":"character","attributes":{},"value":["Mixed Models for Big Data"]},{"type":"character","attributes":{},"value":["Explorations of a fast penalized regression approach with mgcv\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["October 20, 2019"]},{"type":"character","attributes":{},"value":["../../img/gam_sim.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["gam_references.bib"]},{"type":"character","attributes":{},"value":["@li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1\n"]},{"type":"character","attributes":{},"value":["mixed models","big data","generalized linear mixed models","additive models","random effects","lme4","<span class=\"pack\" style = \"\">glmmTMB<\/span>","mgcv","lmer","glmer"]}]}
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","bibliography","nocite","tags"]}},"value":[{"type":"character","attributes":{},"value":["Mixed Models for Big Data"]},{"type":"character","attributes":{},"value":["Explorations of a fast penalized regression approach with mgcv\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["2019-10-20"]},{"type":"character","attributes":{},"value":["../../img/gam_sim.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["gam_references.bib"]},{"type":"character","attributes":{},"value":["@li_faster_2019, @wood_mgcv:_2012, @wood_generalized_2015, @wood_generalized_2015-1, @wood_generalized_2017-1\n"]},{"type":"character","attributes":{},"value":["mixed models","big data","generalized linear mixed models","additive models","random effects","lme4","<span class=\"pack\" style = \"\">glmmTMB<\/span>","mgcv","lmer","glmer"]}]}
   </script>
   <!--/radix_placeholder_rmarkdown_metadata-->
   
@@ -968,7 +968,7 @@
 <div class="d-byline">
   Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
   
-<br/>October 20, 2019
+<br/>2019-10-20
 </div>
 
 <div class="d-article">
@@ -999,6 +999,9 @@
 </ul>
 </nav>
 <hr class="d-toc-separator"/>
+<aside>
+Last updated October 20, 2019.
+</aside>
 <h2 id="introduction">Introduction</h2>
 <p>With mixed models, it is easy to run into data that is larger in size than some more typical data scenarios. Consider a cross-sectional data set with 200 individuals. This is fairly small data. Now, if we observe them each five times, as in a longitudinal setting, we suddenly have 1000 observations. There may be less than 200 countries in the world, but if we survey 100s or 1000s of people in many of them, we suddenly have a notable data set size, and still would potentially like to model a country-level random effect. What are our options when dealing with possibly gigabytes of data?</p>
 <p>This post will demonstrate an approach that can be used with potentially millions of data points, multiple random effects, and possibly other complexities. First we’ll demonstrate how to get typical mixed model results using the approach used for generalized additive models. We’ll compare the output of the GAM, lme4, and even fully Bayesian mixed models. Then we’ll show some timings to compare the speed of the different approaches of common tools, and summarize some findings from other places.</p>
@@ -3915,7 +3918,7 @@ For <span class="pack" style="">lme4</span>, I set at least one argument to poss
 <p><img src="big-mixed-models_files/figure-html5/gmm-timings-1.svg" width="624" style="display: block; margin: auto;" /></p>
 </div>
 <aside>
-I have also done some timings on a local machine with as many as 10000 levels for one of the random effects, or 5 million observations for a binary outcome. Depending on the computational setup this could take 2-3 hours.
+I have also done some timings on a local machine with as many as 10000 levels for one of the random effects, 1000 for the other, and 5 million observations. Depending on the computational setup this could take 30 minutes for a linear mixed model and 24 cores, to 2-3 hours for a logistic mixed model using 12 cores.
 </aside>
 <h3 id="other-options">Other options</h3>
 <p>When looking into mixed models for big data, you typically won’t find much in the way of options. I’ve seen some packages or offerings for some machine learning approaches like random forests<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, but this doesn’t address the issue of large data. A Spark module provided by LinkedIn is available, <a href="https://github.com/linkedin/photon-ml">photonML</a>, but it’s not clear how easy it is to implement. Julia has recently made multithreading a viable option for any function. This is notable since Doug Bates, one of the <span class="pack" style="">lme4</span> authors, develops the <a href="https://github.com/dmbates/MixedModels.jl">MixedModels</a> module for Julia. Should multithreading functionality be added, it could be a very powerful tool<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>.</p>
@@ -3939,7 +3942,7 @@ SAS uses disk rather than RAM for processing, so may be preferred for low RAM de
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="../../img/bam/brooks_nlevels.png" width="451" style="display: block; margin: auto;" /></p>
 </div>
-<h5 id="tmb-timings">TMB timings</h5>
+<h5 id="glmmtmb-timings">glmmTMB timings</h5>
 <p>As previously noted, depending on the data, and whether the target is assumed gaussian or not, <span class="pack" style="">glmmTMB</span> might be preferable. For the following, in the first case a small data set was replicated to create larger data, and in the second, a larger data set was sub-sampled<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>. The advantage is to <span class="pack" style="">glmmTMB</span> in the first case, and <span class="pack" style="">lme4</span> in the second.</p>
 <div class="layout-chunk" data-layout="l-body">
 <p><img src="../../img/bam/tmb_vignette_larger_contra.png" width="329" style="display: block; margin: auto;" /><img src="../../img/bam/tmb_vignette_larger_insteval.png" width="333" style="display: block; margin: auto;" /></p>
@@ -3948,17 +3951,17 @@ SAS uses disk rather than RAM for processing, so may be preferred for low RAM de
 <p>There are limitations to the use of the <span class="pack" style="">mgcv</span> approach.</p>
 <ul>
 <li>The number of parameters to estimate increases with the number of random effect levels, which may void any gains until very large data with complex models</li>
-<li>No estimation of random effect correlations, e.g. slopes and intercepts</li>
+<li>No estimation of random effect correlations, e.g. between slopes and intercepts</li>
 <li>When <code>discrete = TRUE</code>, some <span class="func" style="">predict.gam</span> functionality may be lost</li>
 </ul>
 <p>All in all, these are pretty minor, and the last one likely will be remedied in a future release.</p>
 <h2 id="summary">Summary</h2>
-<p>The take home point here is that you now have viable tools to run mixed models on very large data. This doesn’t mean you won’t have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times. The alternative estimation procedures may even make otherwise problematic models more</p>
+<p>The take home point here is that you now have viable tools to run mixed models on even very large data with millions of observations. This doesn’t mean you won’t have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times. The alternative estimation procedures may even make otherwise problematic models more feasible in smaller data settings. Good luck!</p>
 <h2 id="supplemental">Supplemental</h2>
 <h3 id="simulation-settings">Simulation Settings</h3>
 <p>I will set up a repo with the simulation code at some point and link it here. But the settings for the timings can be summarized as follows.</p>
 <h4 id="linear-mixed-model">Linear mixed model</h4>
-<p>The following are for the linear mixed model. <code>N</code> is the sample size, balanced refers to whether a random 75% sample was taken with proportion equivalent to the group index (first grouping variable for both 1 and 2 random effect settings), and <code>tau_2</code> is zero if there is only one random effect, or refers to the standard deviation of the second random effect.</p>
+<p>The following are for the linear mixed model. <code>N</code> is the sample size, balanced refers to whether a random 75% sample was taken with proportion equivalent to the group index (first grouping variable for both 1 and 2 random effect settings), and <code>tau_2</code> is zero if there is only one random effect, or refers to the standard deviation of the second random effect. Each of these settings was run 5 times, and the previous visualizations display the average timing of those.</p>
 <div class="layout-chunk" data-layout="l-body">
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
@@ -4206,7 +4209,7 @@ tau_2
 <li>The number of levels in each factor: 1000 for the first, 100 for the second</li>
 <li>The standard deviations of the random effects: .5 for both</li>
 </ul>
-<h4 id="generalized-lienar-mixed-model">Generalized lienar mixed model</h4>
+<h4 id="generalized-linear-mixed-model">Generalized linear mixed model</h4>
 <p>For the generalized linear mixed model, the settings are the same but we also add a case where the outcome is rare or not in this binary setting (~ 10% prevalence or less).</p>
 <div class="layout-chunk" data-layout="l-body">
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">

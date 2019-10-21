@@ -5,7 +5,7 @@ description: |
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
+date: 2019-10-20
 preview: ../../img/gam_sim.png  
 output:
   distill::distill_article:
@@ -45,6 +45,8 @@ kable_df <- function(..., digits=3) {
     kable_styling(full_width = F)
 }
 ```
+
+<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`.</aside>
 
 ## Introduction
 
@@ -752,7 +754,7 @@ gmm_results_gathered %>%
 ```
 
 
-<aside>I have also done some timings on a local machine with as many as 10000 levels for one of the random effects, or 5 million observations for a binary outcome. Depending on the computational setup this could take 2-3 hours.</aside>
+<aside>I have also done some timings on a local machine with as many as 10000 levels for one of the random effects, 1000 for the other, and 5 million observations. Depending on the computational setup this could take 30 minutes for a linear mixed model and 24 cores, to 2-3 hours for a logistic mixed model using 12 cores.</aside>
 
 ### Other options
 
@@ -777,7 +779,7 @@ knitr::include_graphics("../../img/bam/mccoach.png")
 
 Brooks et al. uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package. It has a single grouping factor for the random effect with `r nlevels(glmmTMB::Salamanders$site)` levels. Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.  In this particular setting <span class="pack" style = "">glmmTMB</span> has an advantage.
 
-```{r brooksn, echo=FALSE, background='transparent', caption = 'Brooks et al 2018 timing as a function of sample size'}
+```{r brooksn, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/brooks_n.png")
 ```
 
@@ -785,15 +787,15 @@ knitr::include_graphics("../../img/bam/brooks_n.png")
 
 This data is simulated based on models from the previous, and adds increasing numbers of (balanced) levels to the random effect. This shows a similar effect of the number of levels on <span class="pack" style = "">mgcv</span> as the simulation presented in this post, though they are not using the functionality of <span class="func" style = "">bam</span>.
 
-```{r brooksnlev, echo=FALSE, background='transparent', caption = 'Brooks et al 2018 timing as a function of number of levels'}
+```{r brooksnlev, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/brooks_nlevels.png")
 ```
 
-##### TMB timings
+##### glmmTMB timings
 
 As previously noted, depending on the data, and whether the target is assumed gaussian or not, <span class="pack" style = "">glmmTMB</span> might be preferable.  For the following, in the first case a small data set was replicated to create larger data, and in the second, a larger data set was sub-sampled[^bolker_summary].  The advantage is to <span class="pack" style = "">glmmTMB</span> in the first case, and <span class="pack" style = "">lme4</span> in the second.
 
-```{r tmb_vignette, echo=FALSE, background='transparent', caption = 'TMB timings'}
+```{r tmb_vignette, echo=FALSE, background='transparent'}
 knitr::include_graphics("../../img/bam/tmb_vignette_larger_contra.png")
 knitr::include_graphics("../../img/bam/tmb_vignette_larger_insteval.png")
 ```
@@ -804,7 +806,7 @@ knitr::include_graphics("../../img/bam/tmb_vignette_larger_insteval.png")
 There are limitations to the use of the <span class="pack" style = "">mgcv</span> approach.
     
 - The number of parameters to estimate increases with the number of random effect levels, which may void any gains until very large data with complex models
-- No estimation of random effect correlations, e.g. slopes and intercepts
+- No estimation of random effect correlations, e.g. between slopes and intercepts
 - When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
 
 All in all, these are pretty minor, and the last one likely will be remedied in a future release.
@@ -812,7 +814,7 @@ All in all, these are pretty minor, and the last one likely will be remedied in 
 
 ## Summary
 
-The take home point here is that you now have viable tools to run mixed models on very large data.  This doesn't mean you won't have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times.  The alternative estimation procedures may even make otherwise problematic models more 
+The take home point here is that you now have viable tools to run mixed models on even very large data with millions of observations.  This doesn't mean you won't have to wait for it, especially for more complicated models, but you may even be able to run some of these on standard machines in reasonable times.  The alternative estimation procedures may even make otherwise problematic models more feasible in smaller data settings.  Good luck!
 
 
 ## Supplemental
@@ -822,7 +824,8 @@ The take home point here is that you now have viable tools to run mixed models o
 I will set up a repo with the simulation code at some point and link it here.  But the settings for the timings can be summarized as follows.
 
 #### Linear mixed model
-The following are for the linear mixed model.  `N` is the sample size, balanced refers to whether a random 75% sample was taken with proportion equivalent to the group index (first grouping variable for both 1 and 2 random effect settings), and `tau_2` is zero if there is only one random effect, or refers to the standard deviation of the second random effect. 
+
+The following are for the linear mixed model.  `N` is the sample size, balanced refers to whether a random 75% sample was taken with proportion equivalent to the group index (first grouping variable for both 1 and 2 random effect settings), and `tau_2` is zero if there is only one random effect, or refers to the standard deviation of the second random effect. Each of these settings was run 5 times, and the previous visualizations display the average timing of those.
 
 ```{r lme-settings, echo=FALSE}
 lme = crossing(
@@ -843,7 +846,7 @@ Held constant are:
 - The number of levels in each factor: 1000 for the first, 100 for the second
 - The standard deviations of the random effects: .5 for both
 
-#### Generalized lienar mixed model
+#### Generalized linear mixed model
 
 For the generalized linear mixed model, the settings are the same but we also add a case where the outcome is rare or not in this binary setting (~ 10% prevalence or less).
 
