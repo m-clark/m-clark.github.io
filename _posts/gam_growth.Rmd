@@ -1,0 +1,89 @@
+---
+title: "logistic growth vs. gam"
+author: "Michael Clark"
+date: "1/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r eval = FALSE, echo=FALSE}
+us_pop = data.frame(
+  year = c(seq(1790, 2010, by = 10), 2019),
+  pop = c(
+    3929214,
+    5236631,
+    7239881,
+    9638453,
+    12866020,
+    17069453,
+    23191876,
+    31443321,
+    38558371,
+    49371340,
+    62979766,
+    76212168,
+    92228531,
+    106021568,
+    123202660,
+    132165129,
+    151325798,
+    179323175,
+    203211926,
+    226545805,
+    248709873,
+    281421906,
+    308745538,
+    329970000
+  )
+)
+
+# see https://bscheng.com/2014/05/07/modeling-logistic-growth-data-in-r/
+# y <- phi_1 / (1 + exp(-(phi_2 + phi_3 * x)))
+# y = Wilson’s mass, or could be a population, or any response variable exhibiting logistic growth
+# phi1 = the first parameter and is the asymptote (e.g. Wilson’s stable adult mass)
+# phi2 = the second parameter and there’s not much else to say about it
+# phi3 = the third parameter and is also known as the growth parameter, describes how quickly y approaches the asymptote
+# x = the input variable, in our case, days since Wilson’s birth
+# 5e8 rough approx of pop asymptote
+asym = 5e8
+
+inits = coef(glm(pop / asym ~ year, family = quasibinomial))
+
+test1 <- nls(
+  pop ~ phi1 / (1 + exp(-(
+    phi2 + phi3 * year
+  ))),
+  start = list(
+    phi1 = 5e8,
+    phi2 = inits[1],
+    phi3 = inits[2]
+  ),
+  data = us_pop,
+  trace = TRUE
+)
+
+summary(test1)
+
+test2 <- nls(pop ~ SSlogis(year, Asym, Par2, Rate), data = us_pop)
+
+summary(test2)
+
+gamfits = fitted(mgcv::gam(pop ~ s(year), , data = us_pop))
+
+ggplot(us_pop, aes(x = year, y = pop)) +
+  geom_line(aes(y = fitted(test1)), color = '#ff5500', size = 3, alpha = .5) +
+  geom_line(aes(y = fitted(test2)), color = '#00aaff', size = 2, alpha = .5) +
+  geom_line(aes(y = gamfits), color = '#990022', size = 1, alpha = .5) +
+  geom_point(size = 2 , alpha = .5) +
+  visibly::theme_clean()
+  
+
+
+# given the starts, can come up with completely diffeer
+```
+
