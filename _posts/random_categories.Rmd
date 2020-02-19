@@ -1,0 +1,142 @@
+---
+title: "Title"
+description: |
+  blah blah
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: true
+tags: [tags, taggy]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options=list(width=120), 
+  cache.rebuild=F, 
+  cache=T,
+  fig.align='center', 
+  fig.asp = .7,
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = function(x, digits = 3) arm::fround(x, digits = digits)
+```
+
+
+```{r}
+# adding actual slope re in this case we're assuming the form of (1 + cat_var |
+# id) with corresponding correlations
+
+library(tidyverse)
+library(lme4)
+library(mixedup)
+
+
+# for simplicity keeping to 3 cat levels
+set.seed(1234)
+ng = 5000     # n groups
+cat_levs = 3  # n obs per group
+reps = 5      # number of obs per level per cat
+
+id = rep(1:ng, each = cat_levs*reps)
+cat_var = rep(1:cat_levs, times = ng, e = reps)
+x = rnorm(ng*cat_levs*reps)
+x_c = rep(rnorm(ng), e = cat_levs*reps)  # cluster level covariate
+
+
+# as independent
+# re_id = rep(rnorm(ng, sd = .5), each = cat_levs*reps)
+# re_id_cat_lev2 = rep(rnorm(ng*cat_levs, sd = .25), each = reps)
+# re_id_cat_lev3 = rep(rnorm(ng*cat_levs, sd = .25), each = reps)
+
+# as correlated
+cov_mat = lazerhawk::create_corr(c(.25, .25, .25), diagonal = c(1, .5, .5))
+
+# cov_mat = matrix(c(.5, .25, .25, .5), 2, byrow = T)  # .5 var, .25 sd  .5 cor
+cov2cor(cov_mat)
+
+re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
+  data.frame()
+
+y = 2  + .5*x - .5*x_c + 
+  rep(re_id_cat_lev[,1], each = cat_levs*reps) + 
+  (.25 + rep(re_id_cat_lev[,2], each = cat_levs*reps)) * (cat_var == 2) +
+  (.40 + rep(re_id_cat_lev[,3], each = cat_levs*reps)) * (cat_var == 3) +
+  rnorm(ng*cat_levs*reps, sd = .5)
+
+df = tibble(
+    id,
+    cat_var,
+    x,
+    x_c,
+    y,
+    re_id = rep(re_id_cat_lev[, 1], each = cat_levs*reps),
+    re_id_cat_lev2 = rep(re_id_cat_lev[, 2], each = cat_levs*reps),
+    re_id_cat_lev3 = rep(re_id_cat_lev[, 3], each = cat_levs*reps)
+  ) %>% 
+  mutate(
+    cat_var = factor(cat_var),
+    cat_as_num = as.integer(cat_var),
+    id = factor(id),
+    cat_var_1 = factor(cat_var == 1),
+    cat_var_2 = factor(cat_var == 2),
+    cat_var_3 = factor(cat_var == 3)
+  )
+
+df %>% print(n = 30)
+
+m_lm = lm(y ~ x + x_c + cat_var, df)
+
+m_int_only = lmer(y ~ x + x_c + cat_var + (1 | id), df)
+m_interaction_only = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var), df)
+m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)    # problems!
+m_as_numeric = lmer(y ~ x + x_c + cat_var + (1 + cat_as_num | id), df)
+m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)
+m_separate_re = lmer(y ~ x + x_c + cat_var + (1 | id) + (1 | id:cat_var), df)
+# m4 = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var_1) + (1 | id:cat_var_2)  + (1 | id:cat_var_3), 
+#           df %>% mutate()
+# )
+
+model_mixed = list(
+  m_int_only = m_int_only,
+  m_interaction_only = m_interaction_only,
+  m_as_numeric = m_as_numeric,
+  m_random_slope = m_random_slope,
+  m_vector_valued = m_vector_valued,
+  m_separate_re = m_separate_re
+)
+
+summary(m_lm)
+map_df(model_mixed, extract_fixed_effects, .id = 'model') %>% data.frame()
+map_df(model_mixed, extract_vc, ci_level = 0, .id = 'model')
+
+# summarize_model(m2, cor_re = T, ci = 0)
+
+# preds = tibble(
+#   m2 = predict(m2),
+#   m5 = predict(m5)
+# )
+
+# cor(preds)
+
+```
+
