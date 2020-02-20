@@ -71,8 +71,22 @@ model_m_slope = lmer(score ~ Machine + (1 + Machine | Worker), machines)
 model_w_wm = lmer(score ~ Machine + (1 | Worker) + (1 | Worker:Machine), machines)
 ```
 ```{r}
-model_m_slope_0 = lmer(score ~ Machine + (0 + Machine | Worker), machines)
+model_m_vv = lmer(score ~ Machine + (0 + Machine | Worker), machines)
 ```
+
+```{r}
+machines_dum = data.frame(machines, model.matrix(score ~ 0 + Machine, machines))
+model_m_dummy = lmer(
+  score ~ Machine + 
+    (1 | Worker:MachineA) + 
+    (1 | Worker:MachineB) + 
+    (1 | Worker:MachineC),
+  machines_dum
+)
+
+summary(model_m_dummy)
+```
+
 
 ```{r}
 model_list = mget(ls(pattern = 'model_'))
@@ -80,12 +94,37 @@ fe = map_df(model_list, extract_fixed_effects, .id = 'model')
 vc = map_df(model_list, extract_vc, ci_level = 0, .id = 'model')
 ```
 
-```{r}
-fe
+```{r echo=FALSE}
+kable_df(fe)
 ```
 
 ```{r}
-vc
+kable_df(vc)
+```
+
+
+As we would expect if we dummy coded vs. running a model without the intercept, the random slope model and vector-valued models are identical and produce the same AIC. Likewose the intercept variance of the former is equal to the first group variance of the vector-valued model.
+
+```{r}
+map_df(model_list, AIC) %>% data.frame()
+```
+
+We can see that the `base_wm` model has (non-residual) variance `r extract_vc(model_base_wm, ci_level = 0)$variance[1]`.  This equals the total of the two (non-residual) variance components of the `w_wm` model, and variance of the vector-valued model divided by the number of groups `r extract_vc(model_m_vv, ci_level = 0)$variance[1:3]` `/` `r nlevels(machines$Machine)`.
+
+We can see that the estimated random effects are essentially the same as from the baseline, interaction-only model (also the two identical models produce identical random effects).  However, the way it is estimated allows for estimation of correlations among the machine random effects, so they are not identical.
+
+```{r echo=FALSE}
+extract_random_effects(model_m_vv) %>% arrange(group, effect) %>% 
+  kable_df()
+extract_random_effects(model_base_wm) %>% 
+  kable_df()
+```
+
+Even the default way that the extracted random effects are structured implies this. In the first we have a multivariate normal draw for 6 workers and 3 machines (i.e. 3 variances and 3 covariances).  In the latter, we assume no covariance and equal variance to draw for 18 groups (1 variance).
+
+```{r}
+ranef(model_m_vv)
+ranef(model_base_wm)
 ```
 
 
@@ -164,9 +203,9 @@ m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)    # probl
 m_as_numeric = lmer(y ~ x + x_c + cat_var + (1 + cat_as_num | id), df)
 m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)
 m_separate_re = lmer(y ~ x + x_c + cat_var + (1 | id) + (1 | id:cat_var), df)
-# m4 = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var_1) + (1 | id:cat_var_2)  + (1 | id:cat_var_3), 
-#           df %>% mutate()
-# )
+m4 = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var_1) + (1 | id:cat_var_2)  + (1 | id:cat_var_3),
+          df
+)
 
 model_mixed = list(
   m_int_only = m_int_only,
