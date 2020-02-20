@@ -1,5 +1,5 @@
 ---
-title: "Title"
+title: "Categorical Effects as Random"
 description: |
   blah blah
 author:
@@ -22,11 +22,11 @@ knitr::opts_chunk$set(
   message = F, 
   warning = F, 
   comment = NA,
-  R.options=list(width=120), 
-  cache.rebuild=F, 
-  cache=T,
-  fig.align='center', 
-  fig.asp = .7,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7, 
   dev = 'svg', 
   dev.args=list(bg = 'transparent')
 )
@@ -38,17 +38,69 @@ kable_df <- function(..., digits=3) {
     kable_styling(full_width = F)
 }
 
-rnd = function(x, digits = 3) arm::fround(x, digits = digits)
+rnd = tidyext::rnd
 ```
+
+##  Introduction
+
+http://pages.stat.wisc.edu/~bates/UseR2008/WorkshopD.pdf
+
+```{r packages}
+library(tidyverse)
+library(lme4)
+library(mixedup)
+```
+
+## Machines
+
+>Data on an experiment to compare three brands of machines used in an industrial process are presented in Milliken and Johnson (p. 285, 1992). Six workers were chosen randomly among the employees of a factory to operate each machine three times. The response is an overall productivity score taking into account the number and quality of components produced.
+
+```{r}
+machines = nlme::Machines
+
+model_base_w = lmer(score ~ Machine + (1 | Worker), machines)
+model_base_wm = lmer(score ~ Machine + (1 | Worker:Machine), machines)
+```
+
+```{r}
+model_m_slope = lmer(score ~ Machine + (1 + Machine | Worker), machines)
+```
+
+
+```{r}
+model_w_wm = lmer(score ~ Machine + (1 | Worker) + (1 | Worker:Machine), machines)
+```
+```{r}
+model_m_slope_0 = lmer(score ~ Machine + (0 + Machine | Worker), machines)
+```
+
+```{r}
+model_list = mget(ls(pattern = 'model_'))
+fe = map_df(model_list, extract_fixed_effects, .id = 'model')
+vc = map_df(model_list, extract_vc, ci_level = 0, .id = 'model')
+```
+
+```{r}
+fe
+```
+
+```{r}
+vc
+```
+
+
+
+## Simulation
+
+
+
+
 
 
 ```{r}
 # adding actual slope re in this case we're assuming the form of (1 + cat_var |
 # id) with corresponding correlations
 
-library(tidyverse)
-library(lme4)
-library(mixedup)
 
 
 # for simplicity keeping to 3 cat levels
