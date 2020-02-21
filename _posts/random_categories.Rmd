@@ -41,69 +41,157 @@ kable_df <- function(..., digits=3) {
 rnd = tidyext::rnd
 ```
 
+Prereq: familiarity with mixed models
+
 ##  Introduction
 
-http://pages.stat.wisc.edu/~bates/UseR2008/WorkshopD.pdf
+It's often the case where, for mixed models, we want to look at random 'slopes' as well as random intercepts, such that coefficients for the fixed effects are expected to vary by group.  This is very common in longitudinal settings, were we want to examine an overall trend, but allow the trend to vary by individual.
+
+In such settings, when time is numeric, things are straightforward.  The variance is decomposed into parts for the intercept, the coefficient for the time indicator, and the residual variance (for linear mixed models).  But what happens if we have only three time points?  Does it make sense to treat it as numeric and hope for the best?
+
+This came up in consulting because someone had a similar issue, and tried to keep the format for random slopes while treating the time indicator as categorical. This lead to convergence issues, so we thought about what models might be possible.  This post explores the scenario.
+
+
+Packages used:
 
 ```{r packages}
 library(tidyverse)
 library(lme4)
-library(mixedup)
+library(mixedup)  # http://m-clark.github.io/mixedup
 ```
 
 ## Machines
 
+Let's start with a very simple data set from the nlme package, which comes with the standard R installation.  The reason I chose this is because [Doug Bates has a good treatment](http://pages.stat.wisc.edu/~bates/UseR2008/WorkshopD.pdf) (see slides starting at 85) on this topic using that example, which I just extend a bit.
+
+Here is the data description from the help file.
 >Data on an experiment to compare three brands of machines used in an industrial process are presented in Milliken and Johnson (p. 285, 1992). Six workers were chosen randomly among the employees of a factory to operate each machine three times. The response is an overall productivity score taking into account the number and quality of components produced.
 
-```{r}
+So for each worker and each machine, we'll have three scores.  Let's look.
+
+```{r load-data}
 machines = nlme::Machines
 
-model_base_w = lmer(score ~ Machine + (1 | Worker), machines)
-model_base_wm = lmer(score ~ Machine + (1 | Worker:Machine), machines)
+# for some reason worker is an ordered factor.
+machines = machines %>% 
+  mutate(Worker = factor(Worker, levels = 1:6, ordered = FALSE))
 ```
 
-```{r}
+```{r show-data, echo=FALSE}
+machines %>%
+  arrange(Worker, Machine) %>% 
+  kable_df()
+```
+
+This duplicates the plot in Bates' notes.
+
+```{r vis-data, echo=FALSE}
+# the order in the plot doesn't match the ordered worker factor 
+machines %>% 
+  mutate(Worker = ordered(Worker, levels = rev(c(3,5,1,4,2,6)))) %>%
+  group_by(Worker, Machine) %>% 
+  mutate(mean = mean(score)) %>% 
+  arrange(Worker) %>%
+  ggplot(aes(
+    x = score,
+    y = Worker,
+    color = Machine,
+    group = Machine
+  )) +
+  geom_point() +
+  geom_path(aes(x = mean)) +
+  visibly::theme_clean()
+```
+
+
+The random effects of interest are for worker and machine, so how do we specify this?  Let's try the following standard approach.
+
+```{r model_m_slope}
 model_m_slope = lmer(score ~ Machine + (1 + Machine | Worker), machines)
 ```
 
+Exactly the same issue our client had.  Problematic convergence.  This could more of an issue with `lme4`, and we could certainly explore tweaks to make this issue go away (or use a different package like `glmmTMB`), but let's run with it.
 
-```{r}
+```{r m-slope-results}
+summarize_model(model_m_slope, ci = FALSE, cor_re = TRUE)
+```
+
+We get the variance components we expect, The variance attributable to the intercept (i.e. Machine A), as well as for the slopes for the difference in machine B vs. A, and C vs. A.  We also see the correlations among the random effects.  It's this part that Bates notes is hard to estimate and incurs estimating potentially notably more parameters than typical random effects models.  In this case we have different options that will be available to us.  
+
+
+Let's start with the simplest, most plausible models.  The first would be to have at least a worker effect.  The next baseline model could be if we only had a machine by worker effect, i.e. a separate effect of each machine for each worker, essentially treating the interaction term as the sole clustering unit.
+
+
+```{r baseline-models}
+model_base_w  = lmer(score ~ Machine + (1 | Worker), machines)
+model_base_wm = lmer(score ~ Machine + (1 | Worker:Machine), machines)
+```
+
+Examine the random effects to make clear the difference.  For our first baseline model, we only have 6 effects, one for each worker
+
+```{r machines-baseline-re, eval=FALSE}
+extract_random_effects(model_base_w)  # only 6 effects
+extract_random_effects(model_base_wm) # 6 workers by 3 machines = 18 effects
+```
+
+```{r machines-baseline-re, echo=FALSE}
+extract_random_effects(model_base_w)   %>% kable_df()
+extract_random_effects(model_base_wm)  %>% kable_df()
+```
+
+
+Now let's add an interaction of worker with machine rather than machine as a random slope.  This combines our two baseline models
+
+```{r model_w_wm}
 model_w_wm = lmer(score ~ Machine + (1 | Worker) + (1 | Worker:Machine), machines)
 ```
+
+Now we have 6 worker effects plus 18 machine within worker effects[^within]. 
+
 ```{r}
+# model_w_wm2 = lmer(score ~ Machine + (1 | Worker) + (0 + Machine | Worker), machines)
+```
+
+Next we do the 'vector-valued' model Bates describes.
+
+```{r model_m_vv}
 model_m_vv = lmer(score ~ Machine + (0 + Machine | Worker), machines)
 ```
 
 ```{r}
-machines_dum = data.frame(machines, model.matrix(score ~ 0 + Machine, machines))
-model_m_dummy = lmer(
-  score ~ Machine + 
-    (1 | Worker:MachineA) + 
-    (1 | Worker:MachineB) + 
-    (1 | Worker:MachineC),
-  machines_dum
-)
-
-summary(model_m_dummy)
+# machines_dum = data.frame(machines, model.matrix(score ~ 0 + Machine, machines))
+# model_m_dummy = lmer(
+#   score ~ Machine + 
+#     (1 | Worker:MachineA) + 
+#     (1 | Worker:MachineB) + 
+#     (1 | Worker:MachineC),
+#   machines_dum
+# )
+# 
+# summary(model_m_dummy)
 ```
 
+Now let's extract the fixed effect and variance component summaries.
 
-```{r}
+```{r machines-model-list}
 model_list = mget(ls(pattern = 'model_'))
 fe = map_df(model_list, extract_fixed_effects, .id = 'model')
 vc = map_df(model_list, extract_vc, ci_level = 0, .id = 'model')
 ```
 
-```{r echo=FALSE}
+Here are the fixed effects.  There are no differences in the coefficients for the fixed effect of machine.  However, there are notable differences for the estimated standard errors.  Practically we'd come to know differences in our conclusions, but the uncertainty associated with them would be different.
+
+```{r machines-fe, echo=FALSE}
 kable_df(fe)
 ```
 
-```{r}
+Here are the variance components
+
+```{r machines-vc}
 kable_df(vc)
 ```
 
-
-As we would expect if we dummy coded vs. running a model without the intercept, the random slope model and vector-valued models are identical and produce the same AIC. Likewose the intercept variance of the former is equal to the first group variance of the vector-valued model.
+As we would expect if we dummy coded vs. running a model without the intercept, the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.
 
 ```{r}
 map_df(model_list, AIC) %>% data.frame()
@@ -120,7 +208,7 @@ extract_random_effects(model_base_wm) %>%
   kable_df()
 ```
 
-Even the default way that the extracted random effects are structured implies this. In the first we have a multivariate normal draw for 6 workers and 3 machines (i.e. 3 variances and 3 covariances).  In the latter, we assume no covariance and equal variance to draw for 18 groups (1 variance).
+Even the default way that the extracted random effects are structured implies this. In the first we have a multivariate normal draw for 6 workers and 3 machines (i.e. 3 variances and 3 covariances).  In the latter, we do not estimate any covariances  and assume equal variance to draw for 18 groups (1 variance).
 
 ```{r}
 ranef(model_m_vv)
@@ -128,6 +216,7 @@ ranef(model_base_wm)
 ```
 
 
+https://github.com/m-clark/Visuals/tree/master/random_effects
 
 ## Simulation
 
@@ -231,3 +320,4 @@ map_df(model_mixed, extract_vc, ci_level = 0, .id = 'model')
 
 ```
 
+[^within]: Though I use the word 'within', do not take it to mean we have nested data.
