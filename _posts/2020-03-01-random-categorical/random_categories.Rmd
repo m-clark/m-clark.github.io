@@ -114,7 +114,7 @@ machines %>%
 
 ### Random Effects Models
 
-The random effects of potential interest are for worker and machine, so how do we specify this?  Let's try the following standard approach. The following is the type of model tried by our client.
+The random effects of potential interest are for worker and machine, so how do we specify this?  Let's try a standard approach. The following is the type of model tried by our client.
 
 ```{r model_m_slope, warning=TRUE}
 model_m_slope = lmer(score ~ Machine + (1 + Machine | Worker), machines)
@@ -148,7 +148,7 @@ extract_random_effects(model_base_w)   %>% kable_df()
 extract_random_effects(model_base_wm)  %>% kable_df()
 ```
 
-Now let's add an interaction of worker with machine.  This essentially combines our two baseline models.
+As a next step, we'll essentially combine our two baseline models.
 
 ```{r machines-model_w_wm}
 model_w_wm = lmer(score ~ Machine + (1 | Worker) + (1 | Worker:Machine), machines)
@@ -165,7 +165,7 @@ extract_random_effects(model_w_wm) %>%
   kable_df()
 ```
 
-If you look closely at these effects, and add them together, you will get a value similar to our second baseline model, which is probably not too surprising. For example in the above model `1:B + 1` = `r extract_random_effects(model_w_wm)$value[2]` `+` `r extract_random_effects(model_w_wm)$value[19]`.  Looking at the initial model, the estimated random effect for `1:B` was `r extract_random_effects(model_base_wm)$value[2]`. So this model allows us to disentangle the worker and machine effects, where our baseline models did not.
+If you look closely at these effects, and add them together, you will get a value similar to our second baseline model, which is probably not too surprising. For example in the above model `1:B + 1` = `r extract_random_effects(model_w_wm)$value[2]` `+` `r extract_random_effects(model_w_wm)$value[19]`.  Looking at the initial model, the estimated random effect for `1:B` was `r extract_random_effects(model_base_wm)$value[2]`. Likewise if we look at the variance components, we can see that the sum of the non-residual effect variances for `model_w_wm` equals the variance of `model_base_wm`  (`r rnd(extract_vc(model_base_wm)$variance[1], 1)`).  So this latest model allows us to disentangle the worker and machine effects, where our baseline models did not.
 
 
 ```{r misc1, echo=FALSE}
@@ -173,7 +173,7 @@ If you look closely at these effects, and add them together, you will get a valu
 # model_w_wm2 = lmer(score ~ Machine + (1 | Worker) + (0 + Machine | Worker), machines)
 ```
 
-Next we'll do the 'vector-valued' model Bates describes.  This removes the intercept portion of the forumla in the initial model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note at least that we have no convergence problem.
+Next we'll do the 'vector-valued' model Bates describes.  This removes the intercept portion of the formula in the random slopes model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note that at least have no convergence problem.
 
 ```{r machines-model_m_vv, message=TRUE}
 model_m_vv = lmer(score ~ Machine + (0 + Machine | Worker), machines)
@@ -206,7 +206,7 @@ fe = map_df(model_list, extract_fixed_effects, .id = 'model')
 vc = map_df(model_list, extract_vc, ci_level = 0, .id = 'model')
 ```
 
-First, let's look at the fixed effects.  We see that there are no differences in the coefficients for the fixed effect of machine.  However, there are notable differences for the estimated standard errors.  Practically we'd come to no differences in our conclusions, but the uncertainty associated with them would be different.
+First, let's look at the fixed effects.  We see that there are no differences in the coefficients for the fixed effect of machine, which is our only covariate in the model.  However, there are notable differences for the estimated standard errors.  Practically we'd come to no differences in our conclusions, but the uncertainty associated with them would be different.
 
 ```{r machines-fe, echo=FALSE}
 kable_df(fe)
@@ -219,11 +219,17 @@ kable_df(vc)
 ```
 
 
-We can see that the `base_wm` model has (non-residual) variance `r extract_vc(model_base_wm, ci_level = 0)$variance[1]`.  This equals the total of the two (non-residual) variance components of the `w_wm` model `r extract_vc(model_w_wm, ci_level = 0)$variance[1]` `+` `r extract_vc(model_w_wm, ci_level = 0)$variance[2]`, which agains speaks to the latter model decomposing a machine effect into worker + machine effects.  This value also equals the variance of the vector-valued model divided by the number of groups (`r paste(extract_vc(model_m_vv, ci_level = 0)$variance[1:3], collapse = ' + ')`) `/` `r nlevels(machines$Machine)`.
+We can see that the `base_wm` model has (non-residual) variance `r extract_vc(model_base_wm, ci_level = 0)$variance[1]`.  This equals the total of the two (non-residual) variance components of the `w_wm` model `r extract_vc(model_w_wm, ci_level = 0)$variance[1]` `+` `r extract_vc(model_w_wm, ci_level = 0)$variance[2]`, which again speaks to the latter model decomposing a machine effect into worker + machine effects.  This value also equals the variance of the vector-valued model divided by the number of groups (`r paste(extract_vc(model_m_vv, ci_level = 0)$variance[1:3], collapse = ' + ')`) `/` `r nlevels(machines$Machine)`.
 
 We can see that the estimated random effects from the vector-valued model are essentially the same as from the baseline, interaction-only model.  However, the way it is estimated allows for incorporation of correlations among the machine random effects, so they are not identical (but pretty close).
 
-```{r machines-ranef, echo=FALSE}
+```{r machines-ranef, eval=FALSE}
+extract_random_effects(model_m_vv)
+
+extract_random_effects(model_base_wm) 
+```
+
+```{r machines-ranef-display, echo=FALSE}
 extract_random_effects(model_m_vv) %>%
   arrange(fct_inorder(group), effect) %>% 
   kable_df()
@@ -232,21 +238,23 @@ extract_random_effects(model_base_wm) %>%
   kable_df()
 ```
 
-Even the default way that the extracted random effects are structured implies this difference. In the vector-valued model we have a multivariate normal draw for 6 workers and 3 machines (i.e. 3 variances and 3 covariances).  In the baseline model, we do not estimate any covariances  and assume equal variance to draw for 18 groups (1 variance).
+Even the default way that the extracted random effects are structured implies this difference. In the vector-valued model we have a multivariate normal draw for 3 machines (i.e. 3 variances and 3 covariances) for each of six workers.  In the baseline model, we do not estimate any covariances  and assume equal variance to draw for 18 groups (1 variance).
 
 ```{r machines-base-ranef}
 ranef(model_base_wm)
 ranef(model_m_vv)
 ```
 
-Now let's compare the models directly via AIC. As we would expect if we dummy coded vs. running a model without the intercept (e.g. `lm(score ~ machine)`, vs. `lm(score ~ -1 + machine)`), the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.  
+Now let's compare the models directly via AIC. As we would expect if we dummy coded a predictor vs. running a model without the intercept (e.g. `lm(score ~ machine)`, vs. `lm(score ~ -1 + machine)`), the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.  
 
 ```{r machines-aic, echo=FALSE}
 map_df(model_list, AIC) %>% 
   kable_df()
 ```
 
-While such a model is doing better than either of our baseline models, it turns out that our other approach is slightly better, as the additional complexity wasn't really worth it.
+While such a model is doing better than either of our baseline models, it turns out that our other approach is slightly better, as the additional complexity of estimating the covariances and separate variances wasn't really worth it.
+
+At this point we've seen a couple of ways of doing a model in this situation.  Some may be a little too simplistic, others may not capture the correlation structure the way we'd want. 
 
 
 <!-- https://github.com/m-clark/Visuals/tree/master/random_effects -->
