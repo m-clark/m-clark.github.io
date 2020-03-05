@@ -1,0 +1,749 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo=T, 
+  message = F, 
+  warning = F, 
+  comment = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = F,
+  fig.align = 'center',
+  fig.asp = .7, 
+  dev = 'svg', 
+  dev.args=list(bg = 'transparent')
+)
+
+library(tidyverse); library(broom); library(kableExtra); library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd
+```
+## Convergence warnings: a plan of attack
+
+## Data Setup
+
+```{r data-from-stack-overflow}
+df <- structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
+3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
+2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
+3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
+2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
+3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
+2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
+3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
+2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
+3L, 1L, 1L, 2L, 2L), .Label = c("10185", "10186", "10250"), class = "factor"), 
+    tm = structure(c(1L, 2L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    1L, 2L, 2L, 1L, 2L, 1L, 2L, 1L, 1L, 2L, 2L, 1L, 1L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 2L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 
+    1L, 2L, 2L, 1L, 2L, 1L, 1L, 2L, 2L, 1L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 2L, 1L, 1L, 2L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 
+    1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 
+    1L, 2L, 1L, 2L, 1L, 2L, 1L, 1L, 2L, 2L, 1L, 1L, 2L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 
+    1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 
+    1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 1L, 1L, 2L, 1L, 2L, 2L, 1L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 
+    2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L, 1L, 2L
+    ), .Label = c("CT", "PT-04"), class = "factor"), ValidDetections = c(0L, 
+    0L, 6L, 5L, 1L, 7L, 0L, 0L, 5L, 8L, 7L, 3L, 0L, 0L, 1L, 4L, 
+    1L, 0L, 0L, 0L, 0L, 1L, 2L, 1L, 0L, 0L, 0L, 0L, 2L, 0L, 0L, 
+    0L, 3L, 5L, 5L, 4L, 0L, 0L, 6L, 7L, 6L, 5L, 0L, 0L, 0L, 1L, 
+    2L, 1L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 23L, 
+    21L, 15L, 28L, 11L, 27L, 22L, 31L, 29L, 30L, 32L, 45L, 18L, 
+    19L, 29L, 26L, 32L, 43L, 7L, 5L, 7L, 4L, 6L, 10L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 24L, 22L, 19L, 23L, 21L, 34L, 9L, 13L, 30L, 
+    25L, 33L, 21L, 4L, 18L, 22L, 29L, 11L, 38L, 2L, 7L, 5L, 7L, 
+    6L, 9L, 0L, 0L, 0L, 0L, 0L, 0L, 23L, 20L, 24L, 26L, 29L, 
+    34L, 6L, 7L, 5L, 4L, 6L, 10L, 0L, 0L, 3L, 0L, 1L, 6L, 0L, 
+    0L, 0L, 1L, 1L, 1L, 0L, 0L, 0L, 2L, 0L, 5L, 0L, 0L, 0L, 0L, 
+    0L, 1L, 0L, 0L, 0L, 3L, 1L, 11L, 0L, 0L, 2L, 5L, 1L, 2L, 
+    0L, 0L, 0L, 3L, 0L, 4L, 0L, 0L, 0L, 2L, 0L, 2L, 0L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 0L, 4L, 2L, 5L, 6L, 6L, 2L, 3L, 0L, 0L, 1L, 
+    3L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 21L, 12L, 
+    15L, 8L, 23L, 7L, 2L, 2L, 1L, 1L), CountDetections = c(0L, 
+    0L, 7L, 5L, 3L, 7L, 0L, 0L, 5L, 8L, 8L, 4L, 0L, 0L, 1L, 4L, 
+    1L, 1L, 0L, 0L, 0L, 1L, 3L, 3L, 0L, 0L, 1L, 0L, 2L, 4L, 0L, 
+    0L, 4L, 5L, 5L, 5L, 0L, 0L, 6L, 7L, 7L, 5L, 0L, 0L, 0L, 1L, 
+    2L, 2L, 0L, 0L, 0L, 0L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 2L, 23L, 
+    21L, 18L, 28L, 11L, 27L, 23L, 31L, 29L, 30L, 34L, 45L, 19L, 
+    19L, 29L, 26L, 32L, 43L, 7L, 5L, 7L, 4L, 6L, 10L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 24L, 22L, 19L, 23L, 21L, 34L, 10L, 15L, 30L, 
+    25L, 34L, 24L, 4L, 19L, 23L, 29L, 13L, 38L, 2L, 7L, 5L, 7L, 
+    7L, 9L, 0L, 0L, 0L, 0L, 0L, 0L, 23L, 20L, 24L, 26L, 29L, 
+    34L, 6L, 7L, 5L, 4L, 6L, 10L, 0L, 0L, 4L, 1L, 1L, 7L, 0L, 
+    0L, 0L, 3L, 2L, 1L, 0L, 0L, 0L, 3L, 0L, 5L, 0L, 0L, 2L, 2L, 
+    0L, 1L, 0L, 0L, 0L, 5L, 1L, 11L, 0L, 0L, 3L, 5L, 1L, 2L, 
+    0L, 0L, 2L, 3L, 0L, 6L, 0L, 0L, 0L, 3L, 0L, 3L, 0L, 0L, 1L, 
+    0L, 0L, 1L, 0L, 0L, 6L, 2L, 5L, 6L, 7L, 4L, 5L, 1L, 0L, 3L, 
+    3L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 23L, 12L, 
+    16L, 10L, 23L, 10L, 2L, 2L, 1L, 1L), FalseDetections = c(0L, 
+    0L, 1L, 0L, 2L, 0L, 0L, 0L, 0L, 0L, 1L, 1L, 0L, 0L, 0L, 0L, 
+    0L, 1L, 0L, 0L, 0L, 0L, 1L, 2L, 0L, 0L, 1L, 0L, 0L, 4L, 0L, 
+    0L, 1L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 
+    0L, 1L, 0L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 2L, 0L, 
+    0L, 3L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 2L, 0L, 1L, 0L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 0L, 1L, 2L, 0L, 0L, 1L, 3L, 0L, 1L, 1L, 0L, 
+    2L, 0L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 
+    0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 1L, 1L, 
+    0L, 1L, 0L, 0L, 0L, 2L, 1L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 0L, 
+    0L, 2L, 2L, 0L, 0L, 0L, 0L, 0L, 2L, 0L, 0L, 0L, 0L, 1L, 0L, 
+    0L, 0L, 0L, 0L, 2L, 0L, 0L, 2L, 0L, 0L, 0L, 1L, 0L, 1L, 0L, 
+    0L, 1L, 0L, 0L, 1L, 0L, 0L, 2L, 0L, 0L, 0L, 1L, 2L, 2L, 1L, 
+    0L, 2L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L, 
+    0L, 1L, 2L, 0L, 3L, 0L, 0L, 0L, 0L), replicate = structure(c(1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L), .Label = c("1", "2"), class = "factor"), 
+    Area = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L
+    ), .Label = c("Drug Channel", "Finger"), class = "factor"), 
+    Day = structure(c(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 
+    1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 2L, 
+    2L, 2L, 2L, 2L, 2L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 3L, 
+    3L, 3L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 
+    4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 
+    4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 
+    4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 
+    4L, 4L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 
+    5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L, 5L
+    ), .Label = c("03/06/13", "2/22/13", "2/26/13", "2/27/13", 
+    "3/14/13"), class = "factor"), R.det = c(0, 0, 0.857142857, 
+    1, 0.333333333, 1, 0, 0, 1, 1, 0.875, 0.75, 0, 0, 1, 1, 1, 
+    0, 0, 0, 0, 1, 0.666666667, 0.333333333, 0, 0, 0, 0, 1, 0, 
+    0, 0, 0.75, 1, 1, 0.8, 0, 0, 1, 1, 0.857142857, 1, 0, 0, 
+    0, 1, 1, 0.5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0.833333333, 
+    1, 1, 1, 0.956521739, 1, 1, 1, 0.941176471, 1, 0.947368421, 
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 
+    1, 1, 1, 1, 0.9, 0.866666667, 1, 1, 0.970588235, 0.875, 1, 
+    0.947368421, 0.956521739, 1, 0.846153846, 1, 1, 1, 1, 1, 
+    0.857142857, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 
+    1, 1, 1, 1, 0, 0, 0.75, 0, 1, 0.857142857, 0, 0, 0, 0.333333333, 
+    0.5, 1, 0, 0, 0, 0.666666667, 0, 1, 0, 0, 0, 0, 0, 1, 0, 
+    0, 0, 0.6, 1, 1, 0, 0, 0.666666667, 1, 1, 1, 0, 0, 0, 1, 
+    0, 0.666666667, 0, 0, 0, 0.666666667, 0, 0.666666667, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0.666666667, 1, 1, 1, 0.857142857, 0.5, 
+    0.6, 0, 0, 0.333333333, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0.913043478, 1, 0.9375, 0.8, 1, 0.7, 1, 1, 1, 1), c.receiver.depth = c(-0.2, 
+    -0.2, -0.2, -0.2, -0.2, -0.2, -0.22, -0.22, -0.22, -0.22, 
+    -0.22, -0.22, -0.22, -0.22, -0.22, -0.22, -0.22, -0.22, -0.225, 
+    -0.225, -0.225, -0.225, -0.225, -0.225, -0.225, -0.225, -0.225, 
+    -0.225, -0.225, -0.225, -0.205, -0.205, -0.205, -0.205, -0.205, 
+    -0.205, -0.185, -0.185, -0.185, -0.185, -0.185, -0.185, -0.18, 
+    -0.18, -0.18, -0.18, -0.18, -0.18, -0.165, -0.165, -0.165, 
+    -0.165, -0.165, -0.165, -0.14, -0.14, -0.14, -0.14, -0.14, 
+    -0.14, -0.34, -0.34, -0.34, -0.34, -0.34, -0.34, -0.365, 
+    -0.365, -0.365, -0.365, -0.365, -0.365, -0.365, -0.365, -0.365, 
+    -0.365, -0.365, -0.365, -0.38, -0.38, -0.38, -0.38, -0.38, 
+    -0.38, -0.385, -0.385, -0.385, -0.385, -0.385, -0.385, -0.395, 
+    -0.395, -0.395, -0.395, -0.395, -0.395, -0.4, -0.4, -0.4, 
+    -0.4, -0.4, -0.4, -0.395, -0.395, -0.395, -0.395, -0.395, 
+    -0.395, -0.38, -0.38, -0.38, -0.38, -0.38, -0.38, -0.37, 
+    -0.37, -0.37, -0.37, -0.37, -0.37, -0.285, -0.285, -0.285, 
+    -0.285, -0.285, -0.285, -0.31, -0.31, -0.31, -0.31, -0.31, 
+    -0.31, 0.22, 0.22, 0.22, 0.22, 0.22, 0.22, 0.225, 0.225, 
+    0.225, 0.225, 0.225, 0.225, 0.225, 0.225, 0.225, 0.225, 0.225, 
+    0.225, 0.21, 0.21, 0.21, 0.21, 0.21, 0.21, 0.185, 0.185, 
+    0.185, 0.185, 0.185, 0.185, 0.175, 0.175, 0.175, 0.175, 0.175, 
+    0.175, 0.14, 0.14, 0.14, 0.14, 0.14, 0.14, 0.13, 0.13, 0.13, 
+    0.13, 0.13, 0.13, 0.105, 0.105, 0.105, 0.105, 0.105, 0.105, 
+    0.215, 0.215, 0.215, 0.215, 0.215, 0.215, 0.54, 0.54, 0.54, 
+    0.54, 0.54, 0.54, 0.525, 0.525, 0.525, 0.525, 0.525, 0.525, 
+    0.515, 0.515, 0.515, 0.515, 0.515, 0.515, 0.545, 0.545, 0.545, 
+    0.545, 0.545, 0.545, 0.525, 0.525, 0.525, 0.525), c.tm.depth = c(0.042807692, 
+    0.042807692, 0.042807692, 0.042807692, 0.042807692, 0.042807692, 
+    -0.282192308, -0.282192308, -0.282192308, -0.282192308, -0.282192308, 
+    -0.282192308, -0.427192308, -0.427192308, -0.427192308, -0.427192308, 
+    -0.427192308, -0.427192308, -0.027192308, -0.027192308, -0.027192308, 
+    -0.027192308, -0.027192308, -0.027192308, 0.022807692, 0.022807692, 
+    0.022807692, 0.022807692, 0.022807692, 0.022807692, 0.042807692, 
+    0.042807692, 0.042807692, 0.042807692, 0.042807692, 0.042807692, 
+    -0.267192308, -0.267192308, -0.267192308, -0.267192308, -0.267192308, 
+    -0.267192308, -0.312192308, -0.312192308, -0.312192308, -0.312192308, 
+    -0.312192308, -0.312192308, 0.062807692, 0.062807692, 0.062807692, 
+    0.062807692, 0.062807692, 0.062807692, 0.127807692, 0.127807692, 
+    0.127807692, 0.127807692, 0.127807692, 0.127807692, -0.592192308, 
+    -0.592192308, -0.592192308, -0.592192308, -0.592192308, -0.592192308, 
+    -0.612192308, -0.612192308, -0.612192308, -0.612192308, -0.612192308, 
+    -0.612192308, -0.597192308, -0.597192308, -0.597192308, -0.597192308, 
+    -0.597192308, -0.597192308, -0.607192308, -0.607192308, -0.607192308, 
+    -0.607192308, -0.607192308, -0.607192308, -0.327192308, -0.327192308, 
+    -0.327192308, -0.327192308, -0.327192308, -0.327192308, -0.572192308, 
+    -0.572192308, -0.572192308, -0.572192308, -0.572192308, -0.572192308, 
+    -0.622192308, -0.622192308, -0.622192308, -0.622192308, -0.622192308, 
+    -0.622192308, -0.572192308, -0.572192308, -0.572192308, -0.572192308, 
+    -0.572192308, -0.572192308, -0.577192308, -0.577192308, -0.577192308, 
+    -0.577192308, -0.577192308, -0.577192308, -0.272192308, -0.272192308, 
+    -0.272192308, -0.272192308, -0.272192308, -0.272192308, -0.547192308, 
+    -0.547192308, -0.547192308, -0.547192308, -0.547192308, -0.547192308, 
+    -0.607192308, -0.607192308, -0.607192308, -0.607192308, -0.607192308, 
+    -0.607192308, 0.552807692, 0.552807692, 0.552807692, 0.552807692, 
+    0.552807692, 0.552807692, 0.402807692, 0.402807692, 0.402807692, 
+    0.402807692, 0.402807692, 0.402807692, 0.777807692, 0.777807692, 
+    0.777807692, 0.777807692, 0.777807692, 0.777807692, 0.752807692, 
+    0.752807692, 0.752807692, 0.752807692, 0.752807692, 0.752807692, 
+    0.752807692, 0.752807692, 0.752807692, 0.752807692, 0.752807692, 
+    0.752807692, 0.402807692, 0.402807692, 0.402807692, 0.402807692, 
+    0.402807692, 0.402807692, 0.292807692, 0.292807692, 0.292807692, 
+    0.292807692, 0.292807692, 0.292807692, 0.667807692, 0.667807692, 
+    0.667807692, 0.667807692, 0.667807692, 0.667807692, 0.677807692, 
+    0.677807692, 0.677807692, 0.677807692, 0.677807692, 0.677807692, 
+    0.777807692, 0.777807692, 0.777807692, 0.777807692, 0.777807692, 
+    0.777807692, 0.252807692, 0.252807692, 0.252807692, 0.252807692, 
+    0.252807692, 0.252807692, 0.352807692, 0.352807692, 0.352807692, 
+    0.352807692, 0.352807692, 0.352807692, 0.502807692, 0.502807692, 
+    0.502807692, 0.502807692, 0.502807692, 0.502807692, 0.027807692, 
+    0.027807692, 0.027807692, 0.027807692, 0.027807692, 0.027807692, 
+    0.077807692, 0.077807692, 0.077807692, 0.077807692), c.temp = c(-4.095807692, 
+    -4.095807692, -4.095807692, -4.095807692, -4.095807692, -4.095807692, 
+    -4.220807692, -4.220807692, -4.220807692, -4.220807692, -4.220807692, 
+    -4.220807692, -4.210807692, -4.210807692, -4.210807692, -4.210807692, 
+    -4.210807692, -4.210807692, -4.175807692, -4.175807692, -4.175807692, 
+    -4.175807692, -4.175807692, -4.175807692, -4.035807692, -4.035807692, 
+    -4.035807692, -4.035807692, -4.035807692, -4.035807692, -3.920807692, 
+    -3.920807692, -3.920807692, -3.920807692, -3.920807692, -3.920807692, 
+    -3.820807692, -3.820807692, -3.820807692, -3.820807692, -3.820807692, 
+    -3.820807692, -3.640807692, -3.640807692, -3.640807692, -3.640807692, 
+    -3.640807692, -3.640807692, -3.660807692, -3.660807692, -3.660807692, 
+    -3.660807692, -3.660807692, -3.660807692, -3.620807692, -3.620807692, 
+    -3.620807692, -3.620807692, -3.620807692, -3.620807692, 0.074192308, 
+    0.074192308, 0.074192308, 0.074192308, 0.074192308, 0.074192308, 
+    -0.015807692, -0.015807692, -0.015807692, -0.015807692, -0.015807692, 
+    -0.015807692, 0.324192308, 0.324192308, 0.324192308, 0.324192308, 
+    0.324192308, 0.324192308, 0.544192308, 0.544192308, 0.544192308, 
+    0.544192308, 0.544192308, 0.544192308, 0.759192308, 0.759192308, 
+    0.759192308, 0.759192308, 0.759192308, 0.759192308, 1.324192308, 
+    1.324192308, 1.324192308, 1.324192308, 1.324192308, 1.324192308, 
+    1.549192308, 1.549192308, 1.549192308, 1.549192308, 1.549192308, 
+    1.549192308, 1.709192308, 1.709192308, 1.709192308, 1.709192308, 
+    1.709192308, 1.709192308, 1.639192308, 1.639192308, 1.639192308, 
+    1.639192308, 1.639192308, 1.639192308, 1.579192308, 1.579192308, 
+    1.579192308, 1.579192308, 1.579192308, 1.579192308, 2.724192308, 
+    2.724192308, 2.724192308, 2.724192308, 2.724192308, 2.724192308, 
+    2.839192308, 2.839192308, 2.839192308, 2.839192308, 2.839192308, 
+    2.839192308, 1.064192308, 1.064192308, 1.064192308, 1.064192308, 
+    1.064192308, 1.064192308, 1.184192308, 1.184192308, 1.184192308, 
+    1.184192308, 1.184192308, 1.184192308, 1.254192308, 1.254192308, 
+    1.254192308, 1.254192308, 1.254192308, 1.254192308, 1.379192308, 
+    1.379192308, 1.379192308, 1.379192308, 1.379192308, 1.379192308, 
+    1.529192308, 1.529192308, 1.529192308, 1.529192308, 1.529192308, 
+    1.529192308, 1.599192308, 1.599192308, 1.599192308, 1.599192308, 
+    1.599192308, 1.599192308, 1.669192308, 1.669192308, 1.669192308, 
+    1.669192308, 1.669192308, 1.669192308, 1.664192308, 1.664192308, 
+    1.664192308, 1.664192308, 1.664192308, 1.664192308, 1.714192308, 
+    1.714192308, 1.714192308, 1.714192308, 1.714192308, 1.714192308, 
+    0.984192308, 0.984192308, 0.984192308, 0.984192308, 0.984192308, 
+    0.984192308, -1.545807692, -1.545807692, -1.545807692, -1.545807692, 
+    -1.545807692, -1.545807692, -1.475807692, -1.475807692, -1.475807692, 
+    -1.475807692, -1.475807692, -1.475807692, -1.460807692, -1.460807692, 
+    -1.460807692, -1.460807692, -1.460807692, -1.460807692, -1.340807692, 
+    -1.340807692, -1.340807692, -1.340807692, -1.340807692, -1.340807692, 
+    -1.265807692, -1.265807692, -1.265807692, -1.265807692), 
+    c.wind = c(1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, 1.27535159, 1.27535159, 1.27535159, 1.27535159, 
+    1.27535159, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, -2.96855001, -2.96855001, -2.96855001, -2.96855001, 
+    -2.96855001, 4.71144999, 4.71144999, 4.71144999, 4.71144999, 
+    4.71144999, 4.71144999, 4.71144999, 4.71144999, 4.71144999, 
+    4.71144999, 4.71144999, 4.71144999, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, -2.939182972, -2.939182972, 
+    -2.939182972, -2.939182972, -2.939182972, 5.88092439, 5.88092439, 
+    5.88092439, 5.88092439, 5.88092439, 5.88092439, 5.88092439, 
+    5.88092439, 5.88092439, 5.88092439, 5.88092439, 5.88092439, 
+    5.88092439, 5.88092439, 5.88092439, 5.88092439, 5.88092439, 
+    5.88092439, 5.88092439, 5.88092439, 5.88092439, 5.88092439, 
+    5.88092439, 5.88092439, 5.88092439, 5.88092439, 5.88092439, 
+    5.88092439), c.distance = c(-160L, -160L, -160L, -160L, -160L, 
+    -160L, -110L, -110L, -110L, -110L, -110L, -110L, -10L, -10L, 
+    -10L, -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 90L, 190L, 
+    190L, 190L, 190L, 190L, 190L, -160L, -160L, -160L, -160L, 
+    -160L, -160L, -110L, -110L, -110L, -110L, -110L, -110L, -10L, 
+    -10L, -10L, -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 90L, 
+    190L, 190L, 190L, 190L, 190L, 190L, -160L, -160L, -160L, 
+    -160L, -160L, -160L, -110L, -110L, -110L, -110L, -110L, -110L, 
+    -10L, -10L, -10L, -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 
+    90L, 190L, 190L, 190L, 190L, 190L, 190L, -160L, -160L, -160L, 
+    -160L, -160L, -160L, -110L, -110L, -110L, -110L, -110L, -110L, 
+    -10L, -10L, -10L, -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 
+    90L, 190L, 190L, 190L, 190L, 190L, 190L, -160L, -160L, -160L, 
+    -160L, -160L, -160L, -110L, -110L, -110L, -110L, -110L, -110L, 
+    -110L, -110L, -110L, -110L, -110L, -110L, -10L, -10L, -10L, 
+    -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 90L, 190L, 190L, 
+    190L, 190L, 190L, 190L, -160L, -160L, -160L, -160L, -160L, 
+    -160L, -110L, -110L, -110L, -110L, -110L, -110L, -10L, -10L, 
+    -10L, -10L, -10L, -10L, 90L, 90L, 90L, 90L, 90L, 90L, 190L, 
+    190L, 190L, 190L, 190L, 190L, -160L, -160L, -160L, -160L, 
+    -160L, -160L, -10L, -10L, -10L, -10L, -10L, -10L, 90L, 90L, 
+    90L, 90L, 90L, 90L, 190L, 190L, 190L, 190L, 190L, 190L, -160L, 
+    -160L, -160L, -160L, -160L, -160L, -110L, -110L, -110L, -110L
+    )), .Names = c("SUR.ID", "tm", "ValidDetections", "CountDetections", 
+"FalseDetections", "replicate", "Area", "Day", "R.det", "c.receiver.depth", 
+"c.tm.depth", "c.temp", "c.wind", "c.distance"), row.names = c(NA, 
+-220L), class = "data.frame")
+```
+
+```{r init-data}
+library(tidyverse)
+library(lme4)
+
+df = df %>% 
+  mutate(
+    SUR.ID = factor(SUR.ID),
+    replicate = factor(replicate),
+    Unit = factor(1:n())
+  )
+
+tidyext::describe_all(df %>% select(-Unit))
+```
+
+
+## Initial model
+
+```{r init-fit}
+m_init <- glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
+    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
+    c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate + 
+    (1|SUR.ID) + (1|Day) + (1|Unit), 
+  data = df, 
+  family = binomial(link=logit)
+)
+```
+
+This gives several warnings, the more egregious of which is that the model has not converged, meaning the estimates may not be trustworthy.  So what do we do?
+
+
+## Step back 
+
+The first step is to step back and look at the data. Are there issues? Are some essentially colinear with others?  In the following, we can see that distance and receiver depth are both notably correlated with each other and with other predictor variables. 
+
+```{r correlation}
+visibly::corr_heat(cor(df %>% select(-Unit, -SUR.ID) %>% mutate_all(as.numeric), use = 'pair'))
+```
+
+We can get an actual metric by looking at VIF.  If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
+
+```{r inspect-vif}
+# car::vif(lm(CountDetections ~ . - Unit - FalseDetections - ValidDetections, dat = df)) # error
+attributes(alias(
+  lm(
+    CountDetections ~ . - Unit - FalseDetections - ValidDetections,
+    dat = df
+  )
+)$Complete)$dimnames[[1]]
+car::vif(lm(CountDetections ~ . -Unit -Day -FalseDetections, dat = df))
+```
+
+So in fact, with these variables, along with `Day` `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates.  So at this point we can consider both it and `Day` as potential predictors to remove.
+
+
+## Start simply
+
+Start with the simplest but still plausible model. If we just look at a GLM without any random effects, can we spot any issues?  
+
+
+```{r m_simple-glm}
+m_simple = glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
+    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
+    c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate +
+    SUR.ID + Day, 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summary(m_simple)
+
+```
+
+Sure enough, there are problems. What's with Day/Area? The issue is that Area only couples with certain Days, thus having one tells you most about what the other could tell you.
+
+```{r day-area-table}
+with(df, table(Day, Area))
+```
+
+Let's take Day out, for example.
+
+```{r m_simple-glm-no-day}
+m_simple = glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
+    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
+    c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate +
+    SUR.ID, # + Day, 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summary(m_simple)
+```
+
+Those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there might be issues with more complicated models.  This is usually a sign of collinearity/separation with binary outcomes, and may be so here as well.  
+
+```{r glm-issues, echo=FALSE}
+init = tidy(m_simple) %>% 
+  slice(-1, -11) %>% 
+  bind_cols(tibble(vif = car::vif(m_simple)[,1]))
+
+init %>% 
+  top_n(5, abs(estimate)) %>% 
+  kable_df()
+
+init %>% 
+  ggplot(aes(abs(estimate), std.error)) +
+  geom_point(aes(size = vif)) +
+  scale_size_continuous(trans = 'log')
+```
+
+At this point I would not assume anything about the mixed model, and be leaning toward this being primarily a data issue.  Let's being our mixed model effort start by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
+
+```{r init-fit}
+m1 <- glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance + c.distance:Area + #c.tm.depth:Area + 
+    # c.receiver.depth:Area + c.temp:Area + c.wind:Area + #c.tm.depth + 
+    c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate + 
+    SUR.ID + 
+    (1|Unit), #  + (1|Day)
+  data = df, 
+  family = binomial(link=logit)
+)
+
+
+summarise_model(m1, ci = FALSE)
+```
+
+We still have issues, so what else can we try?
+
+## Rescale variables
+
+Let's go ahead with the easy part and rescale our variables, which might as well be done with any model.  I will standardize the numeric variables.
+
+```{r m2-rescale}
+sc = function(x) scale(x)[,1]
+
+df = df %>% 
+  mutate(
+    c.receiver.depth_sc = sc(c.receiver.depth),
+    c.tm.depth_sc = sc(c.tm.depth),
+    c.temp_sc = sc(c.temp),
+    c.wind_sc = sc(c.wind),
+    c.distance_sc = sc(c.distance),
+  )
+
+m2 <- glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + c.wind_sc + tm + c.distance_sc + Area + replicate + 
+    SUR.ID +
+    (1|Unit), 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summarize_model(m2, ci=FALSE)
+```
+
+So at least we have the rescaling taken care of.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covaraites: `c.wind` and `c.distance` have only five values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having removed Day.
+
+```{r inspect-wind}
+map_int(df %>% select(-ends_with('sc')), n_distinct)
+
+table(df$c.wind, df$Day)
+```
+
+If we treat these as categorical what happens?  I'll do it just for the glm.
+
+```{r m_glm2}
+m_glm2 <- glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + factor(c.wind_sc) + tm + factor(c.distance_sc) + Area + replicate + 
+    SUR.ID , 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summary(m_glm2)
+```
+
+Ah! So now we see that if we have wind, Area is completely accounted for with it and other factors.
+
+```{r table-wind-area}
+table(df$c.wind, df$Area)
+```
+
+```{r  m_glm3}
+m_glm3 <- glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + factor(c.wind_sc) + tm + factor(c.distance_sc) + #Area +
+    replicate + SUR.ID , 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summary(m_glm3)
+```
+
+The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.
+
+```{r m3}
+df = df %>% 
+  mutate(wind = fct_lump(factor(c.wind), 3, other_level = 'Higher'))
+
+table(df$wind)
+
+m3 <- glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + wind + tm + factor(c.distance) + #Area + 
+    replicate + SUR.ID +
+    (1|Unit), 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summarize_model(m3, ci=FALSE)
+```
+
+Checking variance inflation, wind is still a notable problem.
+
+
+```{r wind-vif, echo = F}
+vif_wind = car::vif(glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + wind + tm + factor(c.distance) + #Area + 
+    replicate + SUR.ID, 
+  data = df, 
+  family = binomial(link=logit)
+))[,1]
+vif_no_wind = car::vif(glm(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc + tm + factor(c.distance) + #Area + 
+    replicate + SUR.ID, 
+  data = df, 
+  family = binomial(link=logit)
+))[,1]
+
+tibble(vif_wind, vif_no_wind = c(vif_no_wind[1:2], NA, vif_no_wind[-(1:2)]))
+```
+
+
+```{r}
+m4 <- glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
+    c.receiver.depth_sc + c.temp_sc  + tm + factor(c.distance) + #Area + 
+    replicate + SUR.ID +
+    (1|Unit), 
+  data = df, 
+  family = binomial(link=logit)
+)
+
+summarize_model(m4, ci=FALSE)
+```
+
+
+## Remove zero random effects
+
+If any variance components estimates are zero we could remove them.  However, at this point we already have. Day was zero because it was already accounted for by other coviariates, and SUR.ID was likewise moved to a fixed effect where it still appears to be a small effect.
+
+## Technical options
+
+### Check singularity
+
+In general, this goes along with removing zero random effects. You'll get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The theta are just our random effect standard deviations, and I would say they probably aren't meaningfully different from zero.
+
+```{r}
+thetas <- getME(m_init,"theta")
+ll <- getME(m_init,"lower")
+min(tt[ll==0])
+```
+
+### Double-checking gradient calculations
+
+```{r}
+derivs1 <- m1_sc@optinfo$derivs
+sc_grad1 <- with(derivs1,solve(Hessian,gradient))
+max(abs(sc_grad1))
+max(pmin(abs(sc_grad1),abs(derivs1$gradient)))
+
+dd <- update(m1_sc,devFunOnly=TRUE)
+pars <- unlist(getME(m1_sc,c("theta","fixef")))
+grad2 <- grad(dd,pars)
+hess2 <- hessian(dd,pars)
+sc_grad2 <- solve(hess2,grad2)
+max(pmin(abs(sc_grad2),abs(grad2)))
+```
+
+### Change the optimizer
+
+At this point, we can start fiddling with the optimizer options. 
+
+
+```{r}
+library(optimx)
+gm_all <- allFit(m4)
+ss <- summary(gm_all)
+```
+
+We can see that while several have convergence problems the estimates and log likelihoods are not meaningfully different.
+
+```{r echo=FALSE}
+bind_cols(as_tibble(ss$fixef), tibble(ll = ss$llik)) %>% 
+  kable_df()
+
+tibble(opt = rownames(ss$fixef), OK = ss$which.OK, Message = ss$msgs) %>% 
+  unnest(cols = Message)
+  kable(df)
+```
+
+
+The conclusion would be that our estimates are probably okay, but the data is not.  
+
+### Restart the fit
+
+You can finally just let the optimizer keep going until it does converge.  Most have a `maxit` type of argument to let you set the number of iterations, and we can use <span class="func" style = "">update</span> to continue where we left off.  There is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at.  So instead, we can just call <span class="func" style = "">update</span> iteratively until there is no convergence warning.  I check this by seeing if there is any output to `@optinfo$conv$lme4`.
+
+```{r restart}
+m = m4
+
+while (length(m@optinfo$conv$lme4) > 0) {
+  ss <- getME(m,c("theta","fixef"))
+  m <-
+    update(m, start = ss, control = glmerControl(optCtrl = list(maxfun = 2e5)))
+}
+
+max(abs( with(m@optinfo$derivs,solve(Hessian,gradient))))  # we win!
+```
+
+## Final Steps
+
+The final step would be to make a hard decision about which covariates to keep that can result in more meaningful results, and that is a theoretical problem, not a statistical one.
+
+```{r}
+
+m_final = glmer(
+  cbind(ValidDetections, FalseDetections) ~ 
+    c.receiver.depth_sc + c.temp_sc + tm + c.distance +
+    replicate + SUR.ID + (1|Unit),
+    data = df,
+    family = binomial
+    )
+
+summarize_model(m_final, ci = 0)
+
+
+```
+
+
+
+
+## Summary
+
+0. Step back and look at your data. Are there issues? Are some essentially colinear with others?
+1. Start with the simplest but still plausible model. Spot any issues?
+2. If some of your random effects only have a few levels, treat them as fixed or see if they are even needed in the model.
+3. Scale your variables. You should be doing this anyway.
+4. Any RE estimates zero? Remove.
+5. Change optimizer (if a small model, compare several with allFit function)
+- If LLs are pretty much the same (and they are rarely different in my experience). Pick one.  
+4. Restart the model with update using previous starting values
+
+In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and lme4 is typically a fixable data problem, or a problematically specified model.  The lme4 developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model.  If it is an lme4 problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.
+
+## References
+
+https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
+https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r
