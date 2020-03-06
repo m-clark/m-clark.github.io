@@ -1,18 +1,18 @@
 ---
 title: "Categorical Effects as Random"
 description: |
-  blah blah
+  Exploring random slopes for categorical covariates and similar models
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
-preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: ../../img/cat_ran/machines.svg   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
     toc: true
     css: ../../styles.css
-draft: true
+draft: false
 tags: [mixed models, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer]
 categories:
   - mixed models
@@ -43,13 +43,13 @@ kable_df <- function(..., digits=3) {
 rnd = tidyext::rnd
 ```
 
-Prerequisites: familiarity with mixed models
+Prerequisites: familiarity with [mixed models](https://m-clark.github.io/mixed-models-with-R/)
 
 ##  Introduction
 
 It's often the case where, for mixed models, we want to look at random 'slopes' as well as random intercepts, such that coefficients for the fixed effects are expected to vary by group.  This is very common in longitudinal settings, were we want to examine an overall trend, but allow the trend to vary by individual.
 
-In such settings, when time is numeric, things are straightforward.  The variance is decomposed into parts for the intercept, the coefficient for the time indicator, and the residual variance (for linear mixed models).  But what happens if we have only three time points?  Does it make sense to treat it as numeric and hope for the best?
+In such settings, when time is numeric, things are straightforward.  The variance components are decomposed into parts for the intercept, the coefficient for the time indicator, and the residual variance (for linear mixed models).  But what happens if we have only three time points?  Does it make sense to treat it as numeric and hope for the best?
 
 This came up in consulting because someone had a similar issue, and tried to keep the format for random slopes while treating the time indicator as categorical. This led to convergence issues, so we thought about what models might be possible.  This post explores that scenario.
 
@@ -89,7 +89,7 @@ machines %>%
   kable_df()
 ```
 
-This duplicates the plot in Bates' notes.
+This duplicates the plot in Bates' notes and visually describes the entire data set.  There likely is variability due to both workers and machines.
 
 ```{r vis-data, echo=FALSE}
 # the order in the plot doesn't match the 'ordered' worker factor- go figure 
@@ -108,6 +108,8 @@ machines %>%
   geom_path(aes(x = mean), size = 1, alpha = .75) +
   scico::scale_color_scico_d(begin = .25, end = .66) +
   visibly::theme_clean()
+
+# ggsave('img/cat_ran/machines.svg')
 ```
 
 ### Random Effects Models
@@ -124,7 +126,7 @@ This was exactly the same issue our client had- problematic convergence.  This c
 summarize_model(model_m_slope, ci = FALSE, cor_re = TRUE)
 ```
 
-We get the variance components we expect, i.e. the variance attributable to the intercept (i.e. Machine A), as well as for the slopes for the difference in machine B vs. A, and C vs. A.  We also see the correlations among the random effects.  It's this part that Bates acknowledges is hard to estimate, and incurs estimating potentially notably more parameters than typical random effects models.  We have different options that will be available to us, so let's try some.
+We get the variance components we expect, i.e. the variance attributable to the intercept (i.e. Machine A), as well as for the slopes for the difference in machine B vs. A, and C vs. A.  We also see the correlations among the random effects.  It's this part that Bates acknowledges is hard to estimate, and incurs estimating potentially notably more parameters than typical random effects models.  We have different options that will be available to us though, so let's try some.
 
 Let's start with the simplest, most plausible models.  The first would be to have at least a worker effect.  The next baseline model could be if we only had a machine by worker effect, i.e. a separate effect of each machine for each worker, essentially treating the interaction term as the sole clustering unit.
 
@@ -171,7 +173,7 @@ If you look closely at these effects, and add them together, you will get a valu
 # model_w_wm2 = lmer(score ~ Machine + (1 | Worker) + (0 + Machine | Worker), machines)
 ```
 
-Next we'll do the 'vector-valued' model Bates describes.  This removes the intercept portion of the formula in the random slopes model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note that at least have no convergence problem.
+Next we'll do the 'vector-valued' model Bates describes.  This removes the intercept portion of the formula in the original random slopes model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note that at least have no convergence problem.
 
 ```{r machines-model_m_vv, message=TRUE}
 model_m_vv = lmer(score ~ Machine + (0 + Machine | Worker), machines)
@@ -219,7 +221,7 @@ kable_df(vc)
 
 We can see that the `base_wm` model has (non-residual) variance `r extract_vc(model_base_wm, ci_level = 0)$variance[1]`.  This equals the total of the two (non-residual) variance components of the `w_wm` model `r extract_vc(model_w_wm, ci_level = 0)$variance[1]` `+` `r extract_vc(model_w_wm, ci_level = 0)$variance[2]`, which again speaks to the latter model decomposing a machine effect into worker + machine effects.  This value also equals the variance of the vector-valued model divided by the number of groups (`r paste(extract_vc(model_m_vv, ci_level = 0)$variance[1:3], collapse = ' + ')`) `/` `r nlevels(machines$Machine)`.
 
-We can see that the estimated random effects from the vector-valued model are essentially the same as from the baseline, interaction-only model.  However, the way it is estimated allows for incorporation of correlations among the machine random effects, so they are not identical (but pretty close).
+We can see that the estimated random effects from the vector-valued model (`m_vv`) are essentially the same as from the baseline, interaction-only model.  However, the way it is estimated allows for incorporation of correlations among the machine random effects, so they are not identical (but pretty close).
 
 ```{r machines-ranef, eval=FALSE}
 extract_random_effects(model_m_vv)
@@ -239,8 +241,8 @@ extract_random_effects(model_base_wm) %>%
 Even the default way that the extracted random effects are structured implies this difference. In the vector-valued model we have a multivariate normal draw for 3 machines (i.e. 3 variances and 3 covariances) for each of six workers.  In the baseline model, we do not estimate any covariances  and assume equal variance to draw for 18 groups (1 variance).
 
 ```{r machines-base-ranef}
-ranef(model_base_wm)
 ranef(model_m_vv)
+ranef(model_base_wm)
 ```
 
 Now let's compare the models directly via AIC. As we would expect if we dummy coded a predictor vs. running a model without the intercept (e.g. `lm(score ~ machine)`, vs. `lm(score ~ -1 + machine)`), the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.  
@@ -252,14 +254,14 @@ map_df(model_list, AIC) %>%
 
 While such a model is doing better than either of our baseline models, it turns out that our other approach is slightly better, as the additional complexity of estimating the covariances and separate variances wasn't really worth it.
 
-At this point we've seen a couple of ways of doing a model in this situation.  Some may be a little too simplistic, others may not capture the correlation structure the way we'd want. 
+At this point we've seen a couple of ways of doing a model in this situation.  Some may be a little too simplistic for a given scenario, others may not capture the correlation structure the way we'd want.  In any case, we have options to explore. 
 
 
 <!-- https://github.com/m-clark/Visuals/tree/master/random_effects -->
 
 ## Simulation
 
-The following is a simple approach to creating data in this scenario, and allows us to play around with the settings to see what happens.  
+The following is a simplified approach to creating data in this scenario, and allows us to play around with the settings to see what happens.  
 
 ### Data Creation
 
@@ -280,20 +282,20 @@ x_c = rep(rnorm(ng), e = cat_levs * reps)        # continuous cluster level cova
 ```
 
 
-So we have the basic data in place, now we need to create the random effects.  There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e. something of the form `(1 + cat_var | group)`.   In this case we assume this model is 'correct', so we're going to create a multivariate normal draw of random effects for each level of the `cat_var`, which is only `r cat_levs` levels. The correlations depicted are the estimates we expect from our model for the random effects.
+So we have the basic data in place, now we need to create the random effects.  There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e. something of the form `(1 + cat_var | group)`.   In this case we assume this model is 'correct', so we're going to create a multivariate normal draw of random effects for each level of the `cat_var`, which is only `r cat_levs` levels. The correlations depicted are the estimates we expect from our model for the random effects[^lazerhawk].
 
 ```{r sim-re-cor}
 # as correlated  (1, .5, .5) var, (1, .25, .25) sd 
 cov_mat = lazerhawk::create_corr(c(.1, .25, .25), diagonal = c(1, .5, .5))
 
-cov2cor(cov_mat)  # this will be the estimated correlations for the random_slope model
+cov2cor(cov_mat)  # these will be the estimated correlations for the random_slope model
 ```
 
 
 Now we create the random effects by drawing an effect for each categorical level for each group.
 
 ```{r sim-re}
-# take a multivariate normal draw for the number of groups in `id`
+# take a multivariate normal draw for each of the groups in `id`
 re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
   data.frame()
 
@@ -309,9 +311,9 @@ y =
   2  + .5*x - .5*x_c +   
   # random intercept
   rep(re_id_cat_lev[, 1], each = cat_levs * reps) +                           
-  # .25 is coef for group 2 vs. 1
+  # .25 is the fixef for group 2 vs. 1
   (.25 + rep(re_id_cat_lev[, 2], each = cat_levs * reps)) * (cat_var == 2) +  
-  # .40 is coef for group 3 vs. 1
+  # .40 is the fixef for group 3 vs. 1
   (.40 + rep(re_id_cat_lev[, 3], each = cat_levs * reps)) * (cat_var == 3) +  
   rnorm(ng * cat_levs * reps, sd = .5)
 ```
@@ -332,14 +334,10 @@ df = tibble(
   mutate(
     cat_var = factor(cat_var),
     cat_as_num = as.integer(cat_var),
-    id = factor(id),
-    cat_var_1 = factor(cat_var == 1),
-    cat_var_2 = factor(cat_var == 2),
-    cat_var_3 = factor(cat_var == 3)
+    id = factor(id)
   )
 
 df %>% print(n = 30)
-
 ```
 
 ### Run the Models & Summarize
@@ -347,7 +345,7 @@ df %>% print(n = 30)
 With everything in place, let's run four models similar to our previous models from the Machine example:
 
 1. The baseline model that does not distinguish the id from cat_var variance.
-2. The random slope approach
+2. The random slope approach (data generating model)
 3. The vector valued model (equivalent to #2)
 4. The scalar model that does not estimate the random effect correlations
 
@@ -385,7 +383,7 @@ The variance components break down as before.
 kable_df(vc)
 ```
 
-In this case, we know the model with correlations is the better model, and this is born out via AIC.
+In this case, we know the model with correlated random effects is the more accurate model, and this is born out via AIC.
 
 ```{r sim-aic, echo = FALSE}
 kable_df(map_df(model_mixed, AIC))
@@ -393,14 +391,14 @@ kable_df(map_df(model_mixed, AIC))
 
 ### Change the model orientation
 
-Now I will make the `vector_valued` model reduce to the `separate_re` model.  First, we create a covariance matrix that has equal variances/covariances (i.e. compound symmetry), and for demonstration, we will apply the random effects a little differently.  Then, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.
+Now I will make the `vector_valued` model reduce to the `separate_re` model.  First, we create a covariance matrix that has equal variances/covariances (i.e. compound symmetry), and for demonstration, we will apply the random effects a little differently.  So, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.
 
 ```{r sim-data2}
 set.seed(1234)
 
 cov_mat = lazerhawk::create_corr(c(0.1, 0.1, 0.1), diagonal = c(.5, .5, .5))
 
-cov2cor(cov_mat)  # this will now be the estimated correlations for the vector_valued model
+cov2cor(cov_mat)  # these will now be the estimated correlations for the vector_valued model
 
 re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
   data.frame()
@@ -409,8 +407,8 @@ y = 2  + .5*x - .5*x_c +   # fixed effect = (2, .5, -.5)
   rep(re_id_cat_lev[, 1], each = cat_levs * reps) * (cat_var == 1) +     # added this
   rep(re_id_cat_lev[, 2], each = cat_levs * reps) * (cat_var == 2) +
   rep(re_id_cat_lev[, 3], each = cat_levs * reps) * (cat_var == 3) +
-  .25 * (cat_var == 2) +  # .25 is coef for group 2 vs. 1
-  .40 * (cat_var == 3) +  # .40 is coef for group 3 vs. 1
+  .25 * (cat_var == 2) +  # .25 is the fixef for group 2 vs. 1
+  .40 * (cat_var == 3) +  # .40 is the fixef for group 3 vs. 1
   rnorm(ng * cat_levs * reps, sd = .5)
 
 
@@ -467,7 +465,9 @@ map_df(model_mixed, logLik) %>%
 
 ## Summary
 
-Here we've demonstrated a couple different ways to specify a particular model with random slopes for a categorical covariate.  Intuition may lead to a model that is not easy to estimate, often leading to convergence problems.  Sometimes, this model may be overly complicated, and a simpler version will likely have less estimation difficulty. Try it out if you run into trouble!
+Here we've demonstrated a couple of different ways to specify a particular model with random slopes for a categorical covariate.  Intuition may lead to a model that is not easy to estimate, often leading to convergence problems.  Sometimes, this model may be overly complicated, and a simpler version will likely have less estimation difficulty. Try it out if you run into trouble!
 
 
 [^within]: Though I use the word 'within', do not take it to mean we have nested data.
+
+[^lazerhawk]: I use a personal package to create the matrix where I can just specify the lower diagonal, as this comes up a lot for simulation.  Feel free to just create the matrix directly given it's just a 3x3.
