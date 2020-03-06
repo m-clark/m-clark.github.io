@@ -16,8 +16,6 @@ draft: true
 tags: [mixed models, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer]
 categories:
   - mixed models
-  - big data
-  - bayesian
 ---
 
 ```{r setup, include=FALSE}
@@ -106,8 +104,8 @@ machines %>%
     color = Machine,
     group = Machine
   )) +
-  geom_point() +
-  geom_path(aes(x = mean)) +
+  geom_point(alpha = .5) +
+  geom_path(aes(x = mean), size = 1, alpha = .75) +
   scico::scale_color_scico_d(begin = .25, end = .66) +
   visibly::theme_clean()
 ```
@@ -261,7 +259,7 @@ At this point we've seen a couple of ways of doing a model in this situation.  S
 
 ## Simulation
 
-The following is a simple approach to creating data in this scenario, an allows us to play around with the settings to see what happens.  
+The following is a simple approach to creating data in this scenario, and allows us to play around with the settings to see what happens.  
 
 ### Data Creation
 
@@ -272,30 +270,36 @@ First we need some data.  The following creates a group identifier similar to `W
 # for simplicity keeping to 3 cat levels
 set.seed(1234)
 ng = 5000     # n groups
-cat_levs = 3  # n obs per group
-reps = 5      # number of obs per level per cat
+cat_levs = 3  # n levels per group
+reps = 4      # number of obs per level per cat
 
 id = rep(1:ng, each = cat_levs * reps)           # id indicator (e.g. like Worker)
 cat_var = rep(1:cat_levs, times = ng, e = reps)  # categorical variable (e.g. Machine)
 x = rnorm(ng * cat_levs * reps)                  # continuous covariate
-x_c = rep(rnorm(ng), e = cat_levs*reps)          # continuous cluster level covariate
+x_c = rep(rnorm(ng), e = cat_levs * reps)        # continuous cluster level covariate
 ```
 
 
-So we have the basic data in place, now we need to create the random effects.  There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e. something of the form `(1 + cat_var | group)`.   In this case we assume this model is 'correct', so we're going to create a multivariate normal draw of random effects for each level of the `cat_var`, which is only `r cat_levs` levels. 
+So we have the basic data in place, now we need to create the random effects.  There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e. something of the form `(1 + cat_var | group)`.   In this case we assume this model is 'correct', so we're going to create a multivariate normal draw of random effects for each level of the `cat_var`, which is only `r cat_levs` levels. The correlations depicted are the estimates we expect from our model for the random effects.
 
 ```{r sim-re-cor}
 # as correlated  (1, .5, .5) var, (1, .25, .25) sd 
 cov_mat = lazerhawk::create_corr(c(.1, .25, .25), diagonal = c(1, .5, .5))
 
-cov2cor(cov_mat)  # as a correlation matrix
+cov2cor(cov_mat)  # this will be the estimated correlations for the random_slope model
+```
 
+
+Now we create the random effects by drawing an effect for each categorical level for each group.
+
+```{r sim-re}
 # take a multivariate normal draw for the number of groups in `id`
 re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
   data.frame()
 
 head(re_id_cat_lev)
 ```
+
 
 Now that we have the random effects, we can create our target variable.  We do this by adding our first effect to the intercept, and the others to their respective coefficients.
 
@@ -349,7 +353,7 @@ With everything in place, let's run four models similar to our previous models f
 
 ```{r sim-models}
 m_interaction_only = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var), df)
-m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)    # problems!
+m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)    
 m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)
 m_separate_re = lmer(y ~ x + x_c + cat_var + (1 | id) + (1 | id:cat_var), df)
 ```
@@ -363,16 +367,19 @@ model_mixed = list(
   m_separate_re = m_separate_re
 )
 
+# model summaries if desired
 # map(model_mixed, summarize_model, ci = 0, cor_re = TRUE)
 fe = map_df(model_mixed, extract_fixed_effects, .id = 'model') 
 vc = map_df(model_mixed, extract_vc, ci_level = 0, .id = 'model')
 ```
 
-Looking
+Looking at the fixed effects, we get what we should but, as before, we do see differences in the standard errors.
 
 ```{r sim-fe, echo = FALSE}
 kable_df(fe)
 ```
+
+The variance components break down as before.
 
 ```{r sim-vc, echo = FALSE}
 kable_df(vc)
@@ -386,12 +393,14 @@ kable_df(map_df(model_mixed, AIC))
 
 ### Change the model orientation
 
-Now I will make the `vector_valued` model reduce to the `separate_re` model.  First, we create a covariance matrix that has equal variances/covariances (i.e. compound symmetry).  Then, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.
+Now I will make the `vector_valued` model reduce to the `separate_re` model.  First, we create a covariance matrix that has equal variances/covariances (i.e. compound symmetry), and for demonstration, we will apply the random effects a little differently.  Then, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.
 
 ```{r sim-data2}
 set.seed(1234)
 
 cov_mat = lazerhawk::create_corr(c(0.1, 0.1, 0.1), diagonal = c(.5, .5, .5))
+
+cov2cor(cov_mat)  # this will now be the estimated correlations for the vector_valued model
 
 re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
   data.frame()
@@ -417,8 +426,8 @@ df = tibble(
 Rerun the models.
 
 ```{r sim-models2}
-m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df) 
-m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)    # still problems!
+m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)  # still problems!
+m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)   
 m_separate_re = lmer(y ~ x + x_c + cat_var + (1 | id) + (1 | id:cat_var), df)
 ```
 
@@ -430,6 +439,12 @@ model_mixed = list(
   m_vector_valued = m_vector_valued,
   m_separate_re = m_separate_re
 )
+
+# model summaries if desired
+# map(model_mixed, summarize_model, ci = 0, cor_re = TRUE)
+
+# fixed effects if desired
+# fe = map_df(model_mixed, extract_fixed_effects, .id = 'model')
 
 vc = map_df(model_mixed, extract_vc, ci_level = 0, .id = 'model')
 ```
@@ -452,100 +467,7 @@ map_df(model_mixed, logLik) %>%
 
 ## Summary
 
+Here we've demonstrated a couple different ways to specify a particular model with random slopes for a categorical covariate.  Intuition may lead to a model that is not easy to estimate, often leading to convergence problems.  Sometimes, this model may be overly complicated, and a simpler version will likely have less estimation difficulty. Try it out if you run into trouble!
 
-```{r eval = FALSE, echo=FALSE}
-# adding actual slope re in this case we're assuming the form of (1 + cat_var |
-# id) with corresponding correlations
-
-
-
-# for simplicity keeping to 3 cat levels
-set.seed(1234)
-ng = 5000     # n groups
-cat_levs = 3  # n obs per group
-reps = 5      # number of obs per level per cat
-
-id = rep(1:ng, each = cat_levs*reps)
-cat_var = rep(1:cat_levs, times = ng, e = reps)
-x = rnorm(ng*cat_levs*reps)
-x_c = rep(rnorm(ng), e = cat_levs*reps)  # cluster level covariate
-
-
-# as independent
-# re_id = rep(rnorm(ng, sd = .5), each = cat_levs*reps)
-# re_id_cat_lev2 = rep(rnorm(ng*cat_levs, sd = .25), each = reps)
-# re_id_cat_lev3 = rep(rnorm(ng*cat_levs, sd = .25), each = reps)
-
-# as correlated
-cov_mat = lazerhawk::create_corr(c(.25, .25, .25), diagonal = c(1, .5, .5))
-
-# cov_mat = matrix(c(.5, .25, .25, .5), 2, byrow = T)  # .5 var, .25 sd  .5 cor
-cov2cor(cov_mat)
-
-re_id_cat_lev = mvtnorm::rmvnorm(ng, mean = rep(0, 3), sigma = cov_mat) %>% 
-  data.frame()
-
-y = 2  + .5*x - .5*x_c + 
-  rep(re_id_cat_lev[,1], each = cat_levs*reps) + 
-  (.25 + rep(re_id_cat_lev[,2], each = cat_levs*reps)) * (cat_var == 2) +
-  (.40 + rep(re_id_cat_lev[,3], each = cat_levs*reps)) * (cat_var == 3) +
-  rnorm(ng*cat_levs*reps, sd = .5)
-
-df = tibble(
-    id,
-    cat_var,
-    x,
-    x_c,
-    y,
-    re_id = rep(re_id_cat_lev[, 1], each = cat_levs*reps),
-    re_id_cat_lev2 = rep(re_id_cat_lev[, 2], each = cat_levs*reps),
-    re_id_cat_lev3 = rep(re_id_cat_lev[, 3], each = cat_levs*reps)
-  ) %>% 
-  mutate(
-    cat_var = factor(cat_var),
-    cat_as_num = as.integer(cat_var),
-    id = factor(id),
-    cat_var_1 = factor(cat_var == 1),
-    cat_var_2 = factor(cat_var == 2),
-    cat_var_3 = factor(cat_var == 3)
-  )
-
-df %>% print(n = 30)
-
-m_lm = lm(y ~ x + x_c + cat_var, df)
-
-m_int_only = lmer(y ~ x + x_c + cat_var + (1 | id), df)
-m_interaction_only = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var), df)
-m_random_slope = lmer(y ~ x + x_c + cat_var + (1 + cat_var | id), df)    # problems!
-m_as_numeric = lmer(y ~ x + x_c + cat_var + (1 + cat_as_num | id), df)
-m_vector_valued = lmer(y ~ x + x_c + cat_var + (0 + cat_var | id), df)
-m_separate_re = lmer(y ~ x + x_c + cat_var + (1 | id) + (1 | id:cat_var), df)
-m4 = lmer(y ~ x + x_c + cat_var + (1 | id:cat_var_1) + (1 | id:cat_var_2)  + (1 | id:cat_var_3),
-          df
-)
-
-model_mixed = list(
-  m_int_only = m_int_only,
-  m_interaction_only = m_interaction_only,
-  m_as_numeric = m_as_numeric,
-  m_random_slope = m_random_slope,
-  m_vector_valued = m_vector_valued,
-  m_separate_re = m_separate_re
-)
-
-summary(m_lm)
-map_df(model_mixed, extract_fixed_effects, .id = 'model') %>% data.frame()
-map_df(model_mixed, extract_vc, ci_level = 0, .id = 'model')
-
-# summarize_model(m2, cor_re = T, ci = 0)
-
-# preds = tibble(
-#   m2 = predict(m2),
-#   m5 = predict(m5)
-# )
-
-# cor(preds)
-
-```
 
 [^within]: Though I use the word 'within', do not take it to mean we have nested data.
