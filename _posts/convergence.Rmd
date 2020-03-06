@@ -29,9 +29,16 @@ rnd = tidyext::rnd
 ```
 ## Convergence warnings: a plan of attack
 
+## Intro
+
+Though the following regards an example with the R package lme4, most of it would potentially apply to any complex modeling situation where convergence problems arise.  The goal is provide some steps one can take to get their models back on track.  The running example is taken from the data posted at this [stackoverflow question](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r). Ben Bolker's response there can be seen as the basis for this post, along with some extensions, updates and other organization.
+
 ## Data Setup
 
-```{r data-from-stack-overflow}
+You can download the data from [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS) (RDS file), or go to the [stackoverflow discussion]((https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r)) and paste the code there.
+
+
+```{r data-from-stack-overflow, echo=FALSE, eval=FALSE}
 df <- structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 
 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
@@ -355,15 +362,32 @@ df <- structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L,
     -160L, -160L, -10L, -10L, -10L, -10L, -10L, -10L, 90L, 90L, 
     90L, 90L, 90L, 90L, 190L, 190L, 190L, 190L, 190L, 190L, -160L, 
     -160L, -160L, -160L, -160L, -160L, -110L, -110L, -110L, -110L
-    )), .Names = c("SUR.ID", "tm", "ValidDetections", "CountDetections", 
-"FalseDetections", "replicate", "Area", "Day", "R.det", "c.receiver.depth", 
-"c.tm.depth", "c.temp", "c.wind", "c.distance"), row.names = c(NA, 
--220L), class = "data.frame")
+    )), .Names = c(
+      "SUR.ID",
+      "tm",
+      "ValidDetections",
+      "CountDetections",
+      "FalseDetections",
+      "replicate",
+      "Area",
+      "Day",
+      "R.det",
+      "c.receiver.depth",
+      "c.tm.depth",
+      "c.temp",
+      "c.wind",
+      "c.distance"
+    ), row.names = c(NA,-220L), class = "data.frame")
+
+saveRDS(df, file = 'data/convergence.RDS')
 ```
 
 ```{r init-data}
 library(tidyverse)
 library(lme4)
+
+
+df = readRDS('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')
 
 df = df %>% 
   mutate(
