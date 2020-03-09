@@ -64,14 +64,14 @@ library(mixedup)  # http://m-clark.github.io/mixedup
 
 ## Intro
 
-Though the following regards an example with the R package <span class="pack" style = "">lme4</span>, most of it would potentially apply to any complex modeling situation where convergence problems arise.  The goal is provide some steps one can take to get their models back on track.  The running example is taken from the data posted at this [stackoverflow question](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r). Ben Bolker's[^bolker] response there can be seen as the basis for this post, along with some extensions, updates and other organization.
+It is not uncommon that complex models lead to difficulties with convergence. Though the following example is a demo with the R package <span class="pack" style = "">lme4</span>, most of it would potentially apply to any complex modeling situation where convergence problems arise.  The goal is provide some steps one can take to get their models back on track.  The running example is taken from the data posted at this [stackoverflow question](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r). Ben Bolker's[^bolker] response there can be seen as the basis for this post, along with some extensions, updates and other organization.
 
 ## Data Setup
 
 You can download the data from [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS) (RDS file), or go to the [stackoverflow discussion](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r) and paste the code there.  There isn't any real explanation of the variables unfortunately, though you can get a sense of some of them (e.g. Day, replicate, temperature, etc.).
 
 
-```{r data-from-stack-overflow, echo=FALSE, eval=T}
+```{r data-from-stack-overflow, echo=FALSE, eval=FALSE}
 df = structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 
 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
@@ -416,7 +416,13 @@ saveRDS(df, file = 'data/convergence.RDS')
 ```
 
 ```{r init-data}
-# df = readRDS('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')
+# df = readRDS(
+#   gzcon(
+#     url('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')
+#   )
+# )
+
+df = readRDS('data/convergence.RDS')
 
 df = df %>% 
   mutate(
@@ -426,9 +432,7 @@ df = df %>%
   )
 ```
 
-```{r init-data-show, echo=FALSE}
-tidyext::describe_all(df %>% select(-Unit))
-```
+
 
 
 ## Initial model
@@ -452,7 +456,11 @@ This gives several warnings, the more egregious of which is that the model has n
 
 ## Step back 
 
-The first step is to step back and look at the data. Are there issues? Are some essentially collinear with others?  In the following, we can see that distance and receiver depth are both notably correlated with each other and with other predictor variables. 
+The first step is to step back and look at the data. Are there issues that can be spotted? Are some essentially collinear with others?  In the following, we can see that some variables are only a few levels, and some, like `Day`, `c.tm.depth` and `c.receiver.depth`, are both notably correlated with each other and with other predictor variables. 
+
+```{r init-data-show, echo=FALSE}
+tidyext::describe_all(df %>% select(-Unit))
+```
 
 ```{r correlation, echo=FALSE}
 df %>% 
@@ -462,7 +470,7 @@ df %>%
   visibly::corr_heat()
 ```
 
-We can obtain a rough metric of total correlation of a variable with the others by looking at the variance inflation factor (VIF).  We can use the <span class="pack" style = "">car</span> package for this. If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
+We can obtain a rough metric of total correlation of a variable with the others by looking at the variance inflation factor (VIF).  For this, we'll treat any binary or ordered data as numeric, and we can use the <span class="pack" style = "">car</span> package to get the VIF.  This requires running an arbitrary regression model, but only regards the predictor variables. If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
 
 ```{r inspect-vif}
 # the model used to acquire the vif doesn't matter- anything could be used for
@@ -481,12 +489,14 @@ attributes(alias(
 car::vif(lm(CountDetections ~ . -Unit -Day -FalseDetections, dat = df))
 ```
 
-It looks like, along with `Day`, `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates[^vif].  So at this point we can consider both it and `Day` as potential predictors to remove.
+It looks like, along with `Day`, `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates[^vif].   So at this point we can consider both it and `Day` as potential predictors to remove.  Wind is less an issue once `Day` is removed.
+
+An alternative approach I tried (not shown) was just running a PCA on those variables.  Only six components were needed to account for nearly almost 90% of the total variance, and many covariates had over 90% of their variance accounted for by the other covariates.  I think it's safe to say there is a lot of redundancy in this data.
 
 
 ## Start simply
 
-Start with the simplest but still plausible model. If we just look at a GLM without any random effects, can we spot any issues?  
+So we know there may be some data issues, so let's start with a model that's relatively simple but still plausible. If we just look at a GLM without any random effects, can we spot any issues?  
 
 
 ```{r m_glm-glm}
@@ -501,16 +511,15 @@ m_glm = glm(
 )
 
 summary(m_glm)
-
 ```
 
-Sure enough, there are problems. What's with Day/Area? The issue is that Area only couples with certain Days, thus having one tells you most about what the other could tell you.
+Sure enough, there are problems. What's with Day/Area? One issue is that `Area` only couples with certain days, so having one tells you most about what the other could tell you.  
 
 ```{r day-area-table}
 with(df, table(Day, Area))
 ```
 
-Let's take Day out, for example.
+You could potentially create a combined type of variable to deal with this for example, but otherwise the problem will persist with both in the model. There are likely remaining collinearities besides, but let's take Day out for example.
 
 ```{r m_glm-glm-no-day}
 m_glm = glm(
@@ -520,13 +529,13 @@ m_glm = glm(
     c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate +
     SUR.ID, # + Day, 
   data = df, 
-  family = binomial(link=logit)
+  family = binomial(link = logit)
 )
 
 summary(m_glm)
 ```
 
-Those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there might be issues with more complicated models.  This is usually a sign of collinearity/separation with binary outcomes, and may be so here as well.  
+Well, at least we got rid of the complete collinearity- no `NA` remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there would still be issues with the more complicated mixed models.  With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know this is in fact an issue.  Here is a table of the more egregious offenders and a plot of all of the coefficients, their standard errors, and the vif (size)
 
 ```{r glm-issues, echo=FALSE}
 init = tidy(m_glm) %>% 
@@ -540,10 +549,11 @@ init %>%
 init %>% 
   ggplot(aes(abs(estimate), std.error)) +
   geom_point(aes(size = vif)) +
-  scale_size_continuous(trans = 'log')
+  scale_size_continuous(trans = 'log') +
+  theme_clean()
 ```
 
-At this point I would not assume anything about the mixed model approach being a problem, and be leaning toward this being primarily a data issue.  Let's being our mixed model effort restart by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
+At this point I would not assume anything about the mixed model approach being a problem, and be leaning toward this being primarily a data issue.  So let's begin our mixed model effort restart by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
 
 ```{r model_mixed1, warning=TRUE}
 model_mixed1 = glmer(
@@ -553,8 +563,8 @@ model_mixed1 = glmer(
     c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate + 
     SUR.ID + 
     (1|Unit), #  + (1|Day)
-  data = df, 
-  family = binomial(link=logit)
+  data = df,
+  family = binomial(link = logit)
 )
 
 
@@ -586,14 +596,14 @@ model_mixed2 = glmer(
     c.receiver.depth_sc + c.temp_sc + c.wind_sc + tm + c.distance_sc + Area + replicate + 
     SUR.ID +
     (1|Unit), 
-  data = df, 
-  family = binomial(link=logit)
+  data = df,
+  family = binomial(link = logit)
 )
 
-summarize_model(model_mixed2, ci=FALSE)
+summarize_model(model_mixed2, ci = FALSE)
 ```
 
-So at least we have the rescaling taken care of.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covaraites: `c.wind` and `c.distance` have only five unique values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having removed Day.
+So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covariates - `c.wind` and `c.distance` - have only five unique values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having previously removed Day.
 
 ```{r inspect-wind}
 map_int(df %>% select(-ends_with('sc')), n_distinct)
@@ -601,23 +611,23 @@ map_int(df %>% select(-ends_with('sc')), n_distinct)
 table(df$c.wind, df$Day)
 ```
 
-If we treat these as categorical what happens?  I'll do it just for the glm.
+If we treat these as categorical what happens?  I'll do it just for the glm again.
 
 ```{r m_glmodel_mixed2}
-m_glmodel_mixed2 = glm(
+m_glm = glm(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
-    c.receiver.depth_sc + c.temp_sc + factor(c.wind_sc) + tm + factor(c.distance_sc) + Area + replicate + 
+    c.receiver.depth_sc + c.temp_sc + factor(c.wind) + tm + factor(c.distance) + Area + replicate + 
     SUR.ID , 
   data = df, 
-  family = binomial(link=logit)
+  family = binomial(link = logit)
 )
 
-summary(m_glmodel_mixed2)
+summary(m_glm)
 ```
 
-Ah! So now we see that if we have wind, Area is completely accounted for with it and other factors.
+Ah! So now we see that Area is completely accounted for by other factors.  In addition, wind is still problematic.
 
 ```{r table-wind-area}
 table(df$c.wind, df$Area)
@@ -631,7 +641,7 @@ m_glmodel_mixed3 = glm(
     c.receiver.depth_sc + c.temp_sc + factor(c.wind_sc) + tm + factor(c.distance_sc) + #Area +
     replicate + SUR.ID , 
   data = df, 
-  family = binomial(link=logit)
+  family = binomial(link = logit)
 )
 
 summary(m_glmodel_mixed3)
@@ -653,10 +663,10 @@ model_mixed3 = glmer(
     replicate + SUR.ID +
     (1|Unit), 
   data = df, 
-  family = binomial(link=logit)
+  family = binomial(link = logit)
 )
 
-summarize_model(model_mixed3, ci=FALSE)
+summarize_model(model_mixed3, ci = FALSE)
 ```
 
 Checking variance inflation, wind is still a notable problem.
@@ -672,6 +682,7 @@ vif_wind = car::vif(glm(
   data = df, 
   family = binomial(link=logit)
 ))[,1]
+
 vif_no_wind = car::vif(glm(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
@@ -695,14 +706,14 @@ model_mixed4 = glmer(
     c.receiver.depth_sc + c.temp_sc  + tm + factor(c.distance) + #Area + 
     replicate + SUR.ID +
     (1|Unit), 
-  data = df, 
-  family = binomial(link=logit)
+  data = df,
+  family = binomial(link = logit)
 )
 
-summarize_model(model_mixed4, ci=FALSE)
+summarize_model(model_mixed4, ci = FALSE)
 ```
 
-We're doing better, but still maybe not where we want to be.  What else can we do?
+We're doing better, our max value is closer to the tolerance value, but still maybe not where we want to be.  What else can we do?
 
 
 ## Remove zero random effects
@@ -715,7 +726,7 @@ In order to best check more technical issues, it helps to know something about t
 
 ### Check singularity
 
-In general, checking singularity[^singularity] goes along with removing zero random effects. You'll usually get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking this as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The theta are just our random effect standard deviations, and I would say they probably aren't meaningfully different from zero.
+In general, checking singularity[^singularity] goes along with removing zero random effects. You'll usually get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking this as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The `theta` below are just our random effect standard deviations, and I would say that the ones besides `Unit` probably aren't meaningfully different from zero.
 
 ```{r check-singularity}
 thetas = getME(m_init, "theta")
@@ -775,6 +786,31 @@ max(pmin(abs(sc_grad_init), abs(derivs_init$gradient)))
 ```
 
 
+### Restart the fit
+
+As another step along our technical travails, we can just let the optimizer keep going until it does converge.  Most have a `maxit` type of argument to let you set the number of iterations, and we can use <span class="func" style = "">update</span> to continue where we left off.  There is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at.  So instead, we can just call <span class="func" style = "">update</span> iteratively until there is no convergence warning.  I check this by seeing if there is any output to `@optinfo$conv$lme4`.
+
+```{r restart}
+model_mixed5 = model_mixed4
+
+while (length(model_mixed5@optinfo$conv$lme4) > 0) {
+  ss = getME(model_mixed5,c("theta","fixef"))
+  model_mixed5 <-
+    update(model_mixed5,
+           start = ss,
+           control = glmerControl(optCtrl = list(maxfun = 2e5)))
+}
+
+max(
+  abs(
+    with(
+      model_mixed5@optinfo$derivs, solve(Hessian, gradient)
+    )
+  )
+)  
+# we win!
+```
+
 ### Change the optimizer
 
 At this point, we can start fiddling with the optimizer options. The <span class="pack" style = "">lme4</span> package has a nice function <span class="func" style = "">allFit</span> that will search across several different optimizers (some may require additional packages to be installed). However, in any particular setting you could potentially do this, though often you may not be able to without quite a bit of effort.
@@ -803,21 +839,7 @@ bind_cols(as_tibble(ss$fixef), tibble(ll = ss$llik)) %>%
 
 The conclusion would be that our estimates are probably okay, but the data likely has issues that still need to be overcome.  
 
-### Restart the fit
 
-You can finally just let the optimizer keep going until it does converge.  Most have a `maxit` type of argument to let you set the number of iterations, and we can use <span class="func" style = "">update</span> to continue where we left off.  There is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at.  So instead, we can just call <span class="func" style = "">update</span> iteratively until there is no convergence warning.  I check this by seeing if there is any output to `@optinfo$conv$lme4`.
-
-```{r restart}
-m = model_mixed4
-
-while (length(m@optinfo$conv$lme4) > 0) {
-  ss = getME(m,c("theta","fixef"))
-  m <-
-    update(m, start = ss, control = glmerControl(optCtrl = list(maxfun = 2e5)))
-}
-
-max(abs( with(m@optinfo$derivs,solve(Hessian,gradient))))  # we win!
-```
 
 ## Final Steps
 
