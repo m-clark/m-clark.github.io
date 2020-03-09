@@ -1,45 +1,78 @@
 ---
-title: "Untitled"
-output: html_document
+title: "Convergence Problems"
+description: |
+  A plan of attack
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: 2020-03-16
+preview: ../../img/convergence/warning.png
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: true
+bibliography: conv_references.bib
+nocite:  | 
+  @bates2015parsimonious
+tags: [mixed models, convergence, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer]
+categories:
+  - regression
+  - mixed models
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo=T, 
-  message = F, 
-  warning = F, 
+  echo = T,
+  message = F,
+  warning = F,
   comment = NA,
   R.options = list(width = 120),
   cache.rebuild = F,
-  cache = F,
-  fig.align = 'center',
-  fig.asp = .7, 
-  dev = 'svg', 
-  dev.args=list(bg = 'transparent')
+  cache = T,
+  fig.align = 'center', 
+  fig.asp = .7,
+  dev = 'svglite', 
+  dev.args = list(bg = 'transparent')
 )
 
-library(tidyverse); library(broom); library(kableExtra); library(visibly)
+library(tidyverse)
+library(tidyext)
+library(broom)
+library(kableExtra)
+library(visibly)
 
-kable_df <- function(..., digits=3) {
+kable_df = function(..., digits=3) {
   kable(..., digits=digits) %>% 
     kable_styling(full_width = F)
 }
-
-rnd = tidyext::rnd
 ```
-## Convergence warnings: a plan of attack
+
+<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`.</aside>
+
+Prerequisite: Knowledge of regression modeling. Helpful would be to know something about mixed models and optimization.
+
+Primary packages used:
+
+```{r packages}
+library(tidyverse)
+library(lme4)
+library(mixedup)  # http://m-clark.github.io/mixedup
+```
+
 
 ## Intro
 
-Though the following regards an example with the R package lme4, most of it would potentially apply to any complex modeling situation where convergence problems arise.  The goal is provide some steps one can take to get their models back on track.  The running example is taken from the data posted at this [stackoverflow question](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r). Ben Bolker's response there can be seen as the basis for this post, along with some extensions, updates and other organization.
+Though the following regards an example with the R package <span class="pack" style = "">lme4</span>, most of it would potentially apply to any complex modeling situation where convergence problems arise.  The goal is provide some steps one can take to get their models back on track.  The running example is taken from the data posted at this [stackoverflow question](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r). Ben Bolker's[^bolker] response there can be seen as the basis for this post, along with some extensions, updates and other organization.
 
 ## Data Setup
 
-You can download the data from [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS) (RDS file), or go to the [stackoverflow discussion](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r) and paste the code there.  There isn't any real explanation of the variables unfortunately, though you can get a sense of some of them.s
+You can download the data from [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS) (RDS file), or go to the [stackoverflow discussion](https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r) and paste the code there.  There isn't any real explanation of the variables unfortunately, though you can get a sense of some of them (e.g. Day, replicate, temperature, etc.).
 
 
-```{r data-from-stack-overflow, echo=FALSE, eval=FALSE}
-df <- structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 
+```{r data-from-stack-overflow, echo=FALSE, eval=T}
+df = structure(list(SUR.ID = structure(c(1L, 1L, 2L, 2L, 3L, 3L, 1L, 
 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 
 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 
 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 1L, 2L, 2L, 3L, 3L, 1L, 
@@ -383,11 +416,7 @@ saveRDS(df, file = 'data/convergence.RDS')
 ```
 
 ```{r init-data}
-library(tidyverse)
-library(lme4)
-
-
-df = readRDS('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')
+# df = readRDS('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')
 
 df = df %>% 
   mutate(
@@ -395,22 +424,26 @@ df = df %>%
     replicate = factor(replicate),
     Unit = factor(1:n())
   )
+```
 
+```{r init-data-show, echo=FALSE}
 tidyext::describe_all(df %>% select(-Unit))
 ```
 
 
 ## Initial model
 
-```{r init-fit}
-m_init <- glmer(
+The following is the model that led to the stackoverflow post.  It's fairly complicated with multiple interactions and random effects, modeling the proportion of valid detections via a binomial model.  The `Unit` effect is used to account for overdispersion, a common issue in count modeling.
+
+```{r init-fit, warning=TRUE}
+m_init = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
     c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
     c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate + 
     (1|SUR.ID) + (1|Day) + (1|Unit), 
   data = df, 
-  family = binomial(link=logit)
+  family = binomial(link = logit)
 )
 ```
 
@@ -419,26 +452,36 @@ This gives several warnings, the more egregious of which is that the model has n
 
 ## Step back 
 
-The first step is to step back and look at the data. Are there issues? Are some essentially colinear with others?  In the following, we can see that distance and receiver depth are both notably correlated with each other and with other predictor variables. 
+The first step is to step back and look at the data. Are there issues? Are some essentially collinear with others?  In the following, we can see that distance and receiver depth are both notably correlated with each other and with other predictor variables. 
 
-```{r correlation}
-visibly::corr_heat(cor(df %>% select(-Unit, -SUR.ID) %>% mutate_all(as.numeric), use = 'pair'))
+```{r correlation, echo=FALSE}
+df %>% 
+  select(-Unit, -SUR.ID) %>% 
+  mutate_all(as.numeric) %>% 
+  cor(use = 'pair') %>% 
+  visibly::corr_heat()
 ```
 
-We can get an actual metric by looking at VIF.  If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
+We can obtain a rough metric of total correlation of a variable with the others by looking at the variance inflation factor (VIF).  We can use the <span class="pack" style = "">car</span> package for this. If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
 
 ```{r inspect-vif}
-# car::vif(lm(CountDetections ~ . - Unit - FalseDetections - ValidDetections, dat = df)) # error
+# the model used to acquire the vif doesn't matter- anything could be used for
+# the target variable
+
+# this produces errors about aliased coefficients
+# car::vif(lm(CountDetections ~ . - Unit - FalseDetections - ValidDetections, dat = df))
+
 attributes(alias(
   lm(
     CountDetections ~ . - Unit - FalseDetections - ValidDetections,
     dat = df
   )
 )$Complete)$dimnames[[1]]
+
 car::vif(lm(CountDetections ~ . -Unit -Day -FalseDetections, dat = df))
 ```
 
-So in fact, with these variables, along with `Day` `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates.  So at this point we can consider both it and `Day` as potential predictors to remove.
+It looks like, along with `Day`, `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates[^vif].  So at this point we can consider both it and `Day` as potential predictors to remove.
 
 
 ## Start simply
@@ -446,18 +489,18 @@ So in fact, with these variables, along with `Day` `tm.depth` is probably going 
 Start with the simplest but still plausible model. If we just look at a GLM without any random effects, can we spot any issues?  
 
 
-```{r m_simple-glm}
-m_simple = glm(
-  cbind(ValidDetections, FalseDetections) ~ 
-    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
-    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
+```{r m_glm-glm}
+m_glm = glm(
+  cbind(ValidDetections, FalseDetections) ~
+    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area +
+    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth +
     c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate +
-    SUR.ID + Day, 
-  data = df, 
-  family = binomial(link=logit)
+    SUR.ID + Day,
+  data = df,
+  family = binomial(link = logit)
 )
 
-summary(m_simple)
+summary(m_glm)
 
 ```
 
@@ -469,8 +512,8 @@ with(df, table(Day, Area))
 
 Let's take Day out, for example.
 
-```{r m_simple-glm-no-day}
-m_simple = glm(
+```{r m_glm-glm-no-day}
+m_glm = glm(
   cbind(ValidDetections, FalseDetections) ~ 
     tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
     c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
@@ -480,15 +523,15 @@ m_simple = glm(
   family = binomial(link=logit)
 )
 
-summary(m_simple)
+summary(m_glm)
 ```
 
 Those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there might be issues with more complicated models.  This is usually a sign of collinearity/separation with binary outcomes, and may be so here as well.  
 
 ```{r glm-issues, echo=FALSE}
-init = tidy(m_simple) %>% 
+init = tidy(m_glm) %>% 
   slice(-1, -11) %>% 
-  bind_cols(tibble(vif = car::vif(m_simple)[,1]))
+  bind_cols(tibble(vif = car::vif(m_glm)[,1]))
 
 init %>% 
   top_n(5, abs(estimate)) %>% 
@@ -500,10 +543,10 @@ init %>%
   scale_size_continuous(trans = 'log')
 ```
 
-At this point I would not assume anything about the mixed model, and be leaning toward this being primarily a data issue.  Let's being our mixed model effort start by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
+At this point I would not assume anything about the mixed model approach being a problem, and be leaning toward this being primarily a data issue.  Let's being our mixed model effort restart by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
 
-```{r init-fit}
-m1 <- glmer(
+```{r model_mixed1, warning=TRUE}
+model_mixed1 = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance + c.distance:Area + #c.tm.depth:Area + 
     # c.receiver.depth:Area + c.temp:Area + c.wind:Area + #c.tm.depth + 
@@ -515,28 +558,28 @@ m1 <- glmer(
 )
 
 
-summarise_model(m1, ci = FALSE)
+summarize_model(model_mixed1, ci = FALSE)
 ```
 
-We still have issues, so what else can we try?
+Well, we still have issues, so what else can we try?
 
 ## Rescale variables
 
 Let's go ahead with the easy part and rescale our variables, which might as well be done with any model.  I will standardize the numeric variables.
 
-```{r m2-rescale}
-sc = function(x) scale(x)[,1]
+```{r model_mixed2-rescale, warning=TRUE}
+sc = function(x) scale(x)[, 1]
 
 df = df %>% 
   mutate(
     c.receiver.depth_sc = sc(c.receiver.depth),
     c.tm.depth_sc = sc(c.tm.depth),
-    c.temp_sc = sc(c.temp),
-    c.wind_sc = sc(c.wind),
+    c.temp_sc     = sc(c.temp),
+    c.wind_sc     = sc(c.wind),
     c.distance_sc = sc(c.distance),
   )
 
-m2 <- glmer(
+model_mixed2 = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
@@ -547,10 +590,10 @@ m2 <- glmer(
   family = binomial(link=logit)
 )
 
-summarize_model(m2, ci=FALSE)
+summarize_model(model_mixed2, ci=FALSE)
 ```
 
-So at least we have the rescaling taken care of.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covaraites: `c.wind` and `c.distance` have only five values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having removed Day.
+So at least we have the rescaling taken care of.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covaraites: `c.wind` and `c.distance` have only five unique values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having removed Day.
 
 ```{r inspect-wind}
 map_int(df %>% select(-ends_with('sc')), n_distinct)
@@ -560,8 +603,8 @@ table(df$c.wind, df$Day)
 
 If we treat these as categorical what happens?  I'll do it just for the glm.
 
-```{r m_glm2}
-m_glm2 <- glm(
+```{r m_glmodel_mixed2}
+m_glmodel_mixed2 = glm(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
@@ -571,7 +614,7 @@ m_glm2 <- glm(
   family = binomial(link=logit)
 )
 
-summary(m_glm2)
+summary(m_glmodel_mixed2)
 ```
 
 Ah! So now we see that if we have wind, Area is completely accounted for with it and other factors.
@@ -580,8 +623,8 @@ Ah! So now we see that if we have wind, Area is completely accounted for with it
 table(df$c.wind, df$Area)
 ```
 
-```{r  m_glm3}
-m_glm3 <- glm(
+```{r  m_glmodel_mixed3}
+m_glmodel_mixed3 = glm(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
@@ -591,18 +634,18 @@ m_glm3 <- glm(
   family = binomial(link=logit)
 )
 
-summary(m_glm3)
+summary(m_glmodel_mixed3)
 ```
 
 The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.
 
-```{r m3}
+```{r model_mixed3}
 df = df %>% 
   mutate(wind = fct_lump(factor(c.wind), 3, other_level = 'Higher'))
 
 table(df$wind)
 
-m3 <- glmer(
+model_mixed3 = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
@@ -613,7 +656,7 @@ m3 <- glmer(
   family = binomial(link=logit)
 )
 
-summarize_model(m3, ci=FALSE)
+summarize_model(model_mixed3, ci=FALSE)
 ```
 
 Checking variance inflation, wind is still a notable problem.
@@ -642,9 +685,10 @@ vif_no_wind = car::vif(glm(
 tibble(vif_wind, vif_no_wind = c(vif_no_wind[1:2], NA, vif_no_wind[-(1:2)]))
 ```
 
+What happens if we remove it?  
 
-```{r}
-m4 <- glmer(
+```{r model_mixed4, warning=TRUE}
+model_mixed4 = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
@@ -655,8 +699,10 @@ m4 <- glmer(
   family = binomial(link=logit)
 )
 
-summarize_model(m4, ci=FALSE)
+summarize_model(model_mixed4, ci=FALSE)
 ```
+
+We're doing better, but still maybe not where we want to be.  What else can we do?
 
 
 ## Remove zero random effects
@@ -665,66 +711,107 @@ If any variance components estimates are zero we could remove them.  However, at
 
 ## Technical options
 
+In order to best check more technical issues, it helps to know something about the underlying optimization algorithms, or at least optimization in general. I suggest refraining from this unless the previous steps have failed.
+
 ### Check singularity
 
-In general, this goes along with removing zero random effects. You'll get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The theta are just our random effect standard deviations, and I would say they probably aren't meaningfully different from zero.
+In general, checking singularity[^singularity] goes along with removing zero random effects. You'll usually get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking this as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The theta are just our random effect standard deviations, and I would say they probably aren't meaningfully different from zero.
 
-```{r}
-thetas <- getME(m_init,"theta")
-ll <- getME(m_init,"lower")
-min(tt[ll==0])
+```{r check-singularity}
+thetas = getME(m_init, "theta")
+
+thetas
+
+ll = getME(m_init, "lower") # lower bounds on model parameters (random effects parameters only)
+
+min(thetas[ll == 0])
 ```
+
+These days lme4 provides the function <span class="func" style = "">isSingular</span> which uses the steps above to check the minimum value against some specified tolerance. 
+
+```{r check-singularity2}
+isSingular(m_init, tol = 1e-5)
+# rePCA(m_init)  # via PCA of the random-effects variance-covariance estimates
+```
+
 
 ### Double-checking gradient calculations
 
-```{r}
-derivs1 <- m1_sc@optinfo$derivs
-sc_grad1 <- with(derivs1,solve(Hessian,gradient))
-max(abs(sc_grad1))
-max(pmin(abs(sc_grad1),abs(derivs1$gradient)))
+For the mixed model setting, Bolker notes the following:
 
-dd <- update(m1_sc,devFunOnly=TRUE)
-pars <- unlist(getME(m1_sc,c("theta","fixef")))
-grad2 <- grad(dd,pars)
-hess2 <- hessian(dd,pars)
-sc_grad2 <- solve(hess2,grad2)
-max(pmin(abs(sc_grad2),abs(grad2)))
+> One general problem is that large scaled gradients are often associated with small absolute gradients: we might decide that we're more interested in testing the (parallel) minimum of these two quantities.
+
+We can do this as follows for the initial model. 
+
+```{r check-gradients}
+derivs_init  = m_init@optinfo$derivs
+sc_grad_init = with(derivs_init, solve(Hessian, gradient))
+
+max(abs(sc_grad_init))
+max(pmin(abs(sc_grad_init), abs(derivs_init$gradient)))
 ```
+
+We see that the unscaled gradient results in a lower maximum value, but is still large relative to the tolerance. It may be instructive to compare the result to the model where we scaled the inputs. In this case the scaled gradient results in the lower max value.
+
+```{r check_gradients2}
+derivs_model_mixed2 = model_mixed2@optinfo$derivs
+sc_grad_model_mixed2 = with(derivs_model_mixed2, solve(Hessian, gradient))
+max(abs(sc_grad_model_mixed2))
+max(pmin(abs(sc_grad_model_mixed2), abs(derivs_model_mixed2$gradient)))
+```
+
+Bolker also suggests checking if the result is different from a different calculation, but it's not clear what we'd do if this was the case.  In any event, the conclusion would be similar.
+
+```{r check-gradients-num-deriv}
+devfun_init  = update(m_init, devFunOnly = TRUE)
+pars_init    = unlist(getME(m_init, c("theta", "fixef")))
+grad_init    = numDeriv::grad(devfun_init, pars_init)
+hess_init    = numDeriv::hessian(devfun_init, pars_init)
+sc_grad_init = solve(hess_init, grad_init)
+
+max(pmin(abs(sc_grad_init), abs(grad_init)))
+
+max(pmin(abs(sc_grad_init), abs(derivs_init$gradient)))
+```
+
 
 ### Change the optimizer
 
-At this point, we can start fiddling with the optimizer options. 
+At this point, we can start fiddling with the optimizer options. The <span class="pack" style = "">lme4</span> package has a nice function <span class="func" style = "">allFit</span> that will search across several different optimizers (some may require additional packages to be installed). However, in any particular setting you could potentially do this, though often you may not be able to without quite a bit of effort.
 
 
-```{r}
+```{r allfit}
 library(optimx)
-gm_all <- allFit(m4)
-ss <- summary(gm_all)
+gm_all = allFit(model_mixed4)
+ss = summary(gm_all)
 ```
 
-We can see that while several have convergence problems the estimates and log likelihoods are not meaningfully different.
+The '[OK]' just means there wasn't an error, however we can see that several have convergence problems. In the end though, the estimates and log likelihoods are not meaningfully different.
 
-```{r echo=FALSE}
-bind_cols(as_tibble(ss$fixef), tibble(ll = ss$llik)) %>% 
+```{r allfit-result,  echo=FALSE}
+tibble(opt = rownames(ss$fixef), OK = ss$which.OK, Message = ss$msgs) %>% 
+  unnest(cols = Message) %>% 
   kable_df()
 
-tibble(opt = rownames(ss$fixef), OK = ss$which.OK, Message = ss$msgs) %>% 
-  unnest(cols = Message)
-  kable(df)
+bind_cols(as_tibble(ss$fixef), tibble(ll = ss$llik)) %>% 
+  mutate(optimizer = names(gm_all)) %>% 
+  select(optimizer, everything()) %>% 
+  kable_df() %>% 
+  scroll_box(width = '768px')
 ```
 
 
-The conclusion would be that our estimates are probably okay, but the data is not.  
+The conclusion would be that our estimates are probably okay, but the data likely has issues that still need to be overcome.  
 
 ### Restart the fit
 
 You can finally just let the optimizer keep going until it does converge.  Most have a `maxit` type of argument to let you set the number of iterations, and we can use <span class="func" style = "">update</span> to continue where we left off.  There is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at.  So instead, we can just call <span class="func" style = "">update</span> iteratively until there is no convergence warning.  I check this by seeing if there is any output to `@optinfo$conv$lme4`.
 
 ```{r restart}
-m = m4
+m = model_mixed4
 
 while (length(m@optinfo$conv$lme4) > 0) {
-  ss <- getME(m,c("theta","fixef"))
+  ss = getME(m,c("theta","fixef"))
   m <-
     update(m, start = ss, control = glmerControl(optCtrl = list(maxfun = 2e5)))
 }
@@ -767,7 +854,13 @@ summarize_model(m_final, ci = 0)
 
 In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and lme4 is typically a fixable data problem, or a problematically specified model.  The lme4 developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model.  If it is an lme4 problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.
 
-## References
+<!-- ## References -->
 
-https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html
-https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r
+<!-- https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html -->
+<!-- https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r -->
+
+[^bolker]: Ben Bolker is one of the primary developers of the <span class="pack" style = "">lme4</span> package.
+
+[^vif]: For a basic linear model situation, $1-1/VIF = R^2$, where $R^2$ is a regression model where a covariate is predicted by all the other covariates.
+
+[^singularity]: Think of doing a principal components analysis on the variance-covariance matrix for the random effects. If one of those components is essentially accounting for zero variance, it may suggest at least one of the estimated random effects is not needed.
