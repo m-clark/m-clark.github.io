@@ -14,8 +14,10 @@ map(init, dim)
 
 # for now it starts at the fourth table and ends with the seventh table, but in general it's very poorly organized; 
 
+# need to remove stupid bracket footnotes
 clean_tables <- function(data, world = FALSE) {
   col_names = slice(data, 1)
+  col_names[1] = 'region'
   
   world_data = filter(data, str_detect(X1, 'World|Doubling|Total'))
   
@@ -30,35 +32,39 @@ clean_tables <- function(data, world = FALSE) {
   
   if (world) {
     data = world_data %>% 
-      rename(region = Date) %>%
-      select(-`First reported case`) %>% 
-      pivot_longer(-region, values_to = 'count') %>%
-      mutate(count = as.numeric(str_remove_all(count, '[[:punct:]]'))) %>%
-      filter(!str_detect(region, 'doubling')) %>% 
-      rename(date = name) %>% 
-      separate(date, into = c('Month', 'Day')) %>% 
-      mutate(date = lubridate::ymd(glue::glue('2020-{Month}-{Day}')))
-  } else {
-    data = data %>% 
-      rename(country = Date, first_report = `First reported case`) %>% 
-      mutate_at(vars(-country,-first_report), function(x)
-        as.numeric(str_remove_all(x, '[[:punct:]]'))) %>%
-      pivot_longer(c(-country,-first_report),
-                   names_to = 'date',
-                   values_to = 'count') %>% 
-      mutate(first_report = lubridate::as_date(first_report)) %>% 
-      separate(date, into = c('Month', 'Day')) %>% 
-      mutate(date = lubridate::ymd(glue::glue('2020-{Month}-{Day}')))
-  }
+      filter(!str_detect(tolower(region), 'doubling')) #%>% 
+  } 
   
-  data
+  data = data %>% 
+    rename(first_report = `First reported case`) %>% 
+    # remove footnotes and commas
+    mutate_at(vars(-region, -first_report), function(x)
+      str_remove_all(x, '\\[(.*?)\\]')) %>% 
+    mutate_at(vars(-region, -first_report), function(x)
+      as.numeric(str_remove_all(x, '[[:punct:]]'))) %>%
+    # reshape
+    pivot_longer(c(-region,-first_report),
+                 names_to = 'date',
+                 values_to = 'count') %>% 
+    # deal with dates
+    mutate(first_report = lubridate::as_date(first_report)) %>% 
+    separate(date, into = c('month', 'day')) %>% 
+    mutate(date = lubridate::ymd(glue::glue('2020-{month}-{day}'))) 
+  
+  if (world) 
+    return(select(data, -first_report))
+  else
+    data
 }
 
+# check it hear
 debugonce(clean_tables)
+clean_tables(init[[4]], world = F)
 clean_tables(init[[4]], world = T)
-clean_tables(init[[6]])
+clean_tables(init[[5]])
 
 countries = map_df(init[4:7], clean_tables)
+world = map_df(init[4:7], clean_tables, world = TRUE)
 
 library(gganimate)
 
@@ -73,13 +79,20 @@ highlight = c('USA',
               'Spain')
 
 p = countries %>% 
-  ggplot(aes(x = date, y = count, group = country)) +
-  geom_path(alpha = .05) +
-  # geom_path(aes(color = country), data = filter(countries, country %in% highlight)) +
+  ggplot(aes(x = date, y = count, group = region)) +
+  # spline cannot work with gganimate as needs multiple points
+  # ggalt::geom_xspline(alpha = .05, data = filter(countries %>% group_by(region) %>% mutate(N=n()) %>% ungroup(), N>9)) +
+  geom_path(aes(color = region), data = filter(countries, region %in% highlight)) +
   geom_point(
-    aes(color = country),
+    aes(color = region),
     size = 3,
-    data = filter(countries, country %in% highlight)
+    data = filter(countries, region %in% highlight)
+  ) +
+  geom_point(
+    aes(group = NULL),
+    size = 6,
+    alpha = .5,
+    data = filter(world, region == 'World')
   ) +
   scico::scale_color_scico_d(begin = .1, end = .9) +
   scale_y_continuous(trans = 'log',
@@ -95,7 +108,7 @@ p
 
 p_anim = p +
   transition_reveal(date) +
-  shadow_wake(wake_length = 1/3, falloff = "quadratic-in") 
+  shadow_wake(wake_length = 1/3, falloff = "cubic-in-out") 
 
 animate(
   p_anim,
