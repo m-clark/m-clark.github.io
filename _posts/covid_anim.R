@@ -66,6 +66,9 @@ clean_tables(init[[5]])
 countries = map_df(init[4:7], clean_tables)
 world = map_df(init[4:7], clean_tables, world = TRUE)
 
+all = bind_rows(countries, world) %>% 
+  filter(!grepl(region, pattern = 'Total|except'))
+
 library(gganimate)
 
 highlight = c('USA',
@@ -82,10 +85,14 @@ p = countries %>%
   ggplot(aes(x = date, y = count, group = region)) +
   # spline cannot work with gganimate as needs multiple points
   # ggalt::geom_xspline(alpha = .05, data = filter(countries %>% group_by(region) %>% mutate(N=n()) %>% ungroup(), N>9)) +
-  geom_path(aes(), alpha = .05, data = filter(countries, !region %in% highlight)) +
+  geom_path(aes(),
+            alpha = .01,
+            # data = filter(countries,!region %in% highlight)
+            ) +
   geom_point(
     aes(color = region),
     size = 3,
+    alpha = .5,
     data = filter(countries, region %in% highlight)
   ) +
   geom_point(
