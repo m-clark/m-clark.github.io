@@ -58,7 +58,7 @@ clean_tables <- function(data, world = FALSE) {
 }
 
 # check it hear
-debugonce(clean_tables)
+# debugonce(clean_tables)
 clean_tables(init[[4]], world = F)
 clean_tables(init[[4]], world = T)
 clean_tables(init[[5]])
@@ -82,7 +82,7 @@ p = countries %>%
   ggplot(aes(x = date, y = count, group = region)) +
   # spline cannot work with gganimate as needs multiple points
   # ggalt::geom_xspline(alpha = .05, data = filter(countries %>% group_by(region) %>% mutate(N=n()) %>% ungroup(), N>9)) +
-  geom_path(aes(color = region), data = filter(countries, region %in% highlight)) +
+  geom_path(aes(), alpha = .05, data = filter(countries, !region %in% highlight)) +
   geom_point(
     aes(color = region),
     size = 3,
