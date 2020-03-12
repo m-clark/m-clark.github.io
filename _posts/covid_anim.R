@@ -81,31 +81,36 @@ highlight = c('USA',
               'Germany',
               'Spain')
 
-p = countries %>% 
-  ggplot(aes(x = date, y = count, group = region)) +
-  # spline cannot work with gganimate as needs multiple points
-  # ggalt::geom_xspline(alpha = .05, data = filter(countries %>% group_by(region) %>% mutate(N=n()) %>% ungroup(), N>9)) +
-  geom_path(aes(),
-            alpha = .01,
-            # data = filter(countries,!region %in% highlight)
-            ) +
+p = all %>% 
+  ggplot(aes(x = date, y = count)) +
+  geom_path(aes(group = region), alpha = .01) +
+  geom_point(
+    aes(),
+    size = 6,
+    alpha = .1,
+    data = filter(world, region == 'World')
+  ) +
   geom_point(
     aes(color = region),
-    size = 3,
+    size = 2,
     alpha = .5,
     data = filter(countries, region %in% highlight)
   ) +
-  geom_point(
-    aes(group = NULL),
-    size = 6,
-    alpha = .5,
-    data = filter(world, region == 'World')
-  ) +
   scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(date_breaks = '2 weeks') +
   scale_y_continuous(trans = 'log',
                      breaks = c(50, 100, 500, 1000, 5000, 10000, 50000, 100000)) +
   visibly::theme_clean() + 
-  theme(legend.title = element_blank())
+  labs(x = '', caption = 'Dark large dot is world total') +
+  theme(
+    axis.text.x = element_text(size = 6),
+    legend.title = element_blank(),
+    legend.key.size = unit(.25, 'cm'),
+    legend.text = element_text(size = 6),
+    legend.box.spacing =  unit(0, 'mm'),
+    legend.box.margin =  margin(0),
+    title = element_text(size = 12)
+  )
 
 p
 
@@ -125,7 +130,89 @@ animate(
   end_pause = 10,
   width = 800,
   height = 600,
-  res = 72
+  res = 144
 )
 
 anim_save('img/covid.gif')
+
+
+# plot derivs
+all_for_model = all %>% 
+  mutate(region = factor(region),
+         date_num = as.numeric(date)) %>% 
+  group_by(region) %>% 
+  mutate(N = n()) %>% 
+  ungroup() %>% 
+  filter((region %in% highlight | N >= 30 & region != 'World') & date >= '2020-02-01')
+
+library(lubridate)
+
+library(mgcv)
+
+mod = bam(
+  count ~ s(date_num, region, bs = 'fs', k = 5),
+  # family = poisson,
+  # family = Gamma(link = 'log'),
+  # family = gaussian(link = 'log'),
+  data = all_for_model,
+  nthreads = 10
+)
+summary(mod)
+
+visibly::plot_gam_by(mod, date_num, region, begin = .1, end = .8, alpha = .7) +
+  geom_text(
+    aes(label = region),
+    size = 2,
+    vjust = -.75,
+    show.legend = FALSE,
+    data = . %>% filter(date_num == max(date_num))
+  )
+
+plotly::ggplotly()
+
+slibrary(gratia)
+
+deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250)
+
+# draw(deriv_dat_1) #+
+# lims(y = c(-2.25, 1.5))
+
+plot_dat = deriv_dat_1 %>% 
+  mutate(
+    date = lubridate::as_date(data),
+    region = str_remove_all(smooth, 's\\(date_num\\):region'),
+    region = fs_var
+  )
+
+
+
+plot_dat_peaks_valleys = plot_dat %>%
+  group_by(region) %>% 
+  slice(quantmod::findPeaks(derivative)-1, 
+        quantmod::findValleys(derivative)-1)  # see helpfile for why -1
+
+
+library(ggrepel)
+
+plot_dat %>% 
+  ggplot(aes(date, y = derivative)) +
+  # geom_ribbon(aes(ymin=lower, ymax=upper, group=region), alpha = .02) +
+  geom_hline(yintercept = 0, color = 'gray92') +
+  geom_line(aes(color = region), alpha = .5) +
+  geom_point(aes(color = region), size = 2, data = plot_dat_peaks_valleys %>% filter(region == 'China')) +
+  geom_text_repel(
+    aes(label = as.character(date), color = region), 
+    size = 2,
+    alpha = .5,
+    data = plot_dat_peaks_valleys %>% filter(region == 'China')) +
+  geom_text_repel(
+    aes(label = region), 
+    size = 2,
+    alpha = .5,
+    data = plot_dat %>% filter(date == max(date) & derivative > 50)) +
+  labs(x = '') +
+  scico::scale_color_scico_d(begin = .25, end = .75) +
+  visibly::theme_clean() +
+  theme(
+    legend.position = 'bottom',
+  )
