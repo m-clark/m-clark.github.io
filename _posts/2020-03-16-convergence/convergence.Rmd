@@ -1,7 +1,7 @@
 ---
 title: "Convergence Problems"
 description: |
-  A plan of attack
+  Convergence got ya down? A plan of attack.
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
@@ -500,7 +500,7 @@ So we know there may be some data issues, so let's start with a model that's rel
 
 
 ```{r m_glm-glm}
-m_glm = glm(
+m_glm1 = glm(
   cbind(ValidDetections, FalseDetections) ~
     tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area +
     c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth +
@@ -510,10 +510,10 @@ m_glm = glm(
   family = binomial(link = logit)
 )
 
-summary(m_glm)
+summary(m_glm1)
 ```
 
-Sure enough, there are problems. What's with Day/Area? One issue is that `Area` only couples with certain days, so having one tells you most about what the other could tell you.  
+Sure enough, there are problems. What's going on with `Day` and `Area`? One issue is that `Area` only couples with certain days, so having one already tells you a lot about what the other could tell you.  
 
 ```{r day-area-table}
 with(df, table(Day, Area))
@@ -521,26 +521,18 @@ with(df, table(Day, Area))
 
 You could potentially create a combined type of variable to deal with this for example, but otherwise the problem will persist with both in the model. There are likely remaining collinearities besides, but let's take Day out for example.
 
-```{r m_glm-glm-no-day}
-m_glm = glm(
-  cbind(ValidDetections, FalseDetections) ~ 
-    tm:Area + tm:c.distance + c.distance:Area + c.tm.depth:Area + 
-    c.receiver.depth:Area + c.temp:Area + c.wind:Area + c.tm.depth + 
-    c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + replicate +
-    SUR.ID, # + Day, 
-  data = df, 
-  family = binomial(link = logit)
-)
+```{r glm-no-day}
+m_glm2 = update(m_glm1, . ~ . -Day)
 
-summary(m_glm)
+summary(m_glm2)
 ```
 
-Well, at least we got rid of the complete collinearity- no `NA` remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there would still be issues with the more complicated mixed models.  With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know this is in fact an issue.  Here is a table of the more egregious offenders and a plot of all of the coefficients, their standard errors, and the vif (size)
+Well, at least we got rid of the complete collinearity- no `NA` remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there would still be issues with the more complicated mixed models.  With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know this is in fact an issue.  Here is a table of the more egregious offenders and a plot of all of the coefficients, their standard errors, and the VIF (size).
 
 ```{r glm-issues, echo=FALSE}
-init = tidy(m_glm) %>% 
+init = tidy(m_glm2) %>% 
   slice(-1, -11) %>% 
-  bind_cols(tibble(vif = car::vif(m_glm)[,1]))
+  bind_cols(tibble(vif = car::vif(m_glm2)[,1]))
 
 init %>% 
   top_n(5, abs(estimate)) %>% 
@@ -548,7 +540,7 @@ init %>%
 
 init %>% 
   ggplot(aes(abs(estimate), std.error)) +
-  geom_point(aes(size = vif)) +
+  geom_point(aes(size = vif), color = '#ff5500', alpha = .5) +
   scale_size_continuous(trans = 'log') +
   theme_clean()
 ```
@@ -603,51 +595,45 @@ model_mixed2 = glmer(
 summarize_model(model_mixed2, ci = FALSE)
 ```
 
-So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem.  What can we check for next?  I looked to see if there was further imbalance of any categorical variables, and didn't spot much issue. But then discovered something else.  A couple covariates - `c.wind` and `c.distance` - have only five unique values, and for the former, some of those values only occur a few times.  In addition, it was unique per day, so was completely confounded with it.  So we can feel fine with having previously removed Day.
+So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem.  What can we check for next?  I looked to see if there was any further imbalance of  categorical variables, though didn't spot much issue. But then discovered something else.  A couple covariates - `c.wind` and `c.distance` - have only five unique values, and for the former, some of those values only occur a few times.  In addition, `c.wind` was unique per day, so was essentially confounded with it.  So we can feel fine with having previously removed Day.
 
 ```{r inspect-wind}
-map_int(df %>% select(-ends_with('sc')), n_distinct)
+df %>% 
+  select(-ends_with('sc')) %>% 
+  map_int(n_distinct)
 
 table(df$c.wind, df$Day)
 ```
 
-If we treat these as categorical what happens?  I'll do it just for the glm again.
+If we treat these as categorical what happens?  I'll do it just for the GLM again.
 
-```{r m_glmodel_mixed2}
-m_glm = glm(
-  cbind(ValidDetections, FalseDetections) ~ 
-    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
+```{r m_glm3}
+m_glm3 = glm(
+  cbind(ValidDetections, FalseDetections) ~
+    # tm:Area + tm:c.distance_sc + c.distance_sc:Area +
     # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
-    c.receiver.depth_sc + c.temp_sc + factor(c.wind) + tm + factor(c.distance) + Area + replicate + 
-    SUR.ID , 
-  data = df, 
+    c.receiver.depth_sc + c.temp_sc + factor(c.wind) + tm + factor(c.distance) + Area + replicate +
+    SUR.ID ,
+  data = df,
   family = binomial(link = logit)
 )
 
-summary(m_glm)
+summary(m_glm3)
 ```
 
-Ah! So now we see that Area is completely accounted for by other factors.  In addition, wind is still problematic.
+Ah! So now we see that `Area` is completely accounted for by other factors.  In addition, wind is still problematic.  Let's take out `Area`, while still treating wind and distance as categorical for our diagnostic adventure.
 
-```{r table-wind-area}
+```{r table-wind-area, echo=FALSE, eval=FALSE}
 table(df$c.wind, df$Area)
 ```
 
-```{r  m_glmodel_mixed3}
-m_glmodel_mixed3 = glm(
-  cbind(ValidDetections, FalseDetections) ~ 
-    # tm:Area + tm:c.distance_sc + c.distance_sc:Area + 
-    # c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +
-    c.receiver.depth_sc + c.temp_sc + factor(c.wind_sc) + tm + factor(c.distance_sc) + #Area +
-    replicate + SUR.ID , 
-  data = df, 
-  family = binomial(link = logit)
-)
+```{r m_glm4}
+m_glm4 =  update(m_glm3, . ~ . - Area)
 
-summary(m_glmodel_mixed3)
+summary(m_glm4)
 ```
 
-The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.
+The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.  Let's try collapsing wind values and making it officially categorical.
 
 ```{r model_mixed3}
 df = df %>% 
@@ -713,20 +699,22 @@ model_mixed4 = glmer(
 summarize_model(model_mixed4, ci = FALSE)
 ```
 
-We're doing better, our max value is closer to the tolerance value, but still maybe not where we want to be.  What else can we do?
+We're doing better, our `max|grad|` value is closer to the tolerance value, but still maybe not where we want to be.  What else can we do?
 
 
 ## Remove zero random effects
 
-If any variance components estimates are zero we could remove them.  However, at this point we already have. Day was zero because it was already accounted for by other coviariates, and SUR.ID was likewise moved to a fixed effect where it still appears to be a small effect.
+If any variance components estimates are zero we could remove them.  However, at this point we already have. `Day` was zero because it was already accounted for by other covariates. `SUR.ID`  moved to a fixed effect, where it still appears to be a small effect, but at least won't cause computational problems. The remaining `Unit` effect does appear to capture some overdispersion, so we can leave it for now.
 
 ## Technical options
 
-In order to best check more technical issues, it helps to know something about the underlying optimization algorithms, or at least optimization in general. I suggest refraining from this unless the previous steps have failed.
+At this point, we have explored some of the more problematic aspects of the data.  Some might feel that they are missing out on some of their theoretical priorities by removing some covariates, but if they are confounded with other covariates their story simply can't be disentangled anyway. As noted we could still play around with creation of different categorical effects through further collapsing or combining, but a lot of that would be arbitrary, so must be done with caution.  
+
+In general, at some point one may exhaust what they can do data-wise, and still have convergence issues.  This leaves exploration of the more technical side of things, to see what tweaks can be made to help further. In order to best check more technical issues, it helps to know something about the underlying optimization algorithms, or at least optimization in general. And in general, I suggest refraining from this unless the previous steps have failed.  It is very common that once the data has been sorted, convergence suddenly gets solved as well.  In any case, let's see what else we can do!
 
 ### Check singularity
 
-In general, checking singularity[^singularity] goes along with removing zero random effects. You'll usually get a singularity warning these days when that is likely the case.  Bolker in the past suggested checking this as follows, but concluded this wasn't close enough to zero to cause estimation problems.  The `theta` below are just our random effect standard deviations, and I would say that the ones besides `Unit` probably aren't meaningfully different from zero.
+In general, checking singularity[^singularity] goes along with removing zero random effects. You'll usually get a singularity warning these days when that is likely the case. In the past, Bolker suggested checking this as follows, but concluded the result wasn't close enough to zero to cause estimation problems.  The `theta` below are just our random effect standard deviations, and I would say that the ones besides `Unit` probably weren't meaningfully different from zero.
 
 ```{r check-singularity}
 thetas = getME(m_init, "theta")
@@ -738,7 +726,7 @@ ll = getME(m_init, "lower") # lower bounds on model parameters (random effects p
 min(thetas[ll == 0])
 ```
 
-These days lme4 provides the function <span class="func" style = "">isSingular</span> which uses the steps above to check the minimum value against some specified tolerance. 
+These days <span class="pack" style = "">lme4</span> provides the function <span class="func" style = "">isSingular</span> which uses the steps above to check the minimum value against some specified tolerance. 
 
 ```{r check-singularity2}
 isSingular(m_init, tol = 1e-5)
@@ -752,26 +740,29 @@ For the mixed model setting, Bolker notes the following:
 
 > One general problem is that large scaled gradients are often associated with small absolute gradients: we might decide that we're more interested in testing the (parallel) minimum of these two quantities.
 
-We can do this as follows for the initial model. 
+We can do this as follows for the initial mixed model. 
 
 ```{r check-gradients}
 derivs_init  = m_init@optinfo$derivs
 sc_grad_init = with(derivs_init, solve(Hessian, gradient))
 
 max(abs(sc_grad_init))
+
 max(pmin(abs(sc_grad_init), abs(derivs_init$gradient)))
 ```
 
-We see that the unscaled gradient results in a lower maximum value, but is still large relative to the tolerance. It may be instructive to compare the result to the model where we scaled the inputs. In this case the scaled gradient results in the lower max value.
+We see that the unscaled gradient results in a lower maximum value, but is still large relative to the tolerance. That value is what is reported in the warning message. It may be instructive to compare the result to the model where we scaled the inputs. In this case the scaled gradient results in the lower max value.
 
 ```{r check_gradients2}
 derivs_model_mixed2 = model_mixed2@optinfo$derivs
 sc_grad_model_mixed2 = with(derivs_model_mixed2, solve(Hessian, gradient))
+
 max(abs(sc_grad_model_mixed2))
+
 max(pmin(abs(sc_grad_model_mixed2), abs(derivs_model_mixed2$gradient)))
 ```
 
-Bolker also suggests checking if the result is different from a different calculation, but it's not clear what we'd do if this was the case.  In any event, the conclusion would be similar.
+Bolker also suggests checking if the result varies from using a different calculation, but it's not clear what we'd do if this was the case.  In any event, the results would be similar.
 
 ```{r check-gradients-num-deriv}
 devfun_init  = update(m_init, devFunOnly = TRUE)
@@ -865,19 +856,23 @@ summarize_model(m_final, ci = 0)
 
 ## Summary
 
-0. Step back and look at your data. Are there issues? Are some essentially colinear with others?
+We can summarize our approach to convergence problems as follows:
+
+0. Step back and look at your data. Are there issues? Are some essentially collinear with others?
 1. Start with the simplest but still plausible model. Spot any issues?
 2. If some of your random effects only have a few levels, treat them as fixed or see if they are even needed in the model.
-3. Scale your variables. You should be doing this anyway.
-4. Any RE estimates zero? Remove.
-5. Change optimizer (if a small model, compare several with allFit function)
-- If LLs are pretty much the same (and they are rarely different in my experience). Pick one.  
-4. Restart the model with update using previous starting values
+3. Scale your continuous variables. You should be doing this anyway. If some categorical levels have very relatively few observations, consider collapsing.
+4. Are any random effect variance estimates zero or nearly zero? Remove.
+4. Restart the model with <span class="func" style = "">update</span> using previous starting values, and run until convergence.
+5. Change optimizer (if a small model, compare several with allFit function). 
+    - If log-likelihood and parameter estimates are pretty much the same (and they are rarely notably different in my experience), pick one and go with it.
+6. Use a different package.  The different estimation approach may simply work better for the current problem or provide other opportunities for tweaks.  For example, one could use <span class="pack" style = "">glmmTMB</span> or <span class="pack" style = "">brms</span> (Bayesian) in lieu of <span class="pack" style = "">lme4</span>.
 
-In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and lme4 is typically a fixable data problem, or a problematically specified model.  The lme4 developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model.  If it is an lme4 problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.
+
+In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and <span class="pack" style = "">lme4</span> is typically a fixable data problem, or a problematically specified model.  The <span class="pack" style = "">lme4</span> developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model.  If it is an <span class="pack" style = "">lme4</span> problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.
 
 <!-- ## References -->
-
+<span class="" style = ""></span>
 <!-- https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html -->
 <!-- https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r -->
 
