@@ -433,6 +433,10 @@ df = df %>%
 ```
 
 
+```{r df-no-zeros, echo=FALSE}
+df_no_zeros = df %>% 
+  filter(CountDetections > 0)
+```
 
 
 ## Initial model
@@ -464,13 +468,14 @@ tidyext::describe_all(df %>% select(-Unit))
 
 ```{r correlation, echo=FALSE}
 df %>% 
-  select(-Unit, -SUR.ID) %>% 
+  select(-Unit, -SUR.ID, -CountDetections) %>% 
   mutate_all(as.numeric) %>% 
   cor(use = 'pair') %>% 
   visibly::corr_heat()
 ```
 
-We can obtain a rough metric of total correlation of a variable with the others by looking at the variance inflation factor (VIF).  For this, we'll treat any binary or ordered data as numeric, and we can use the <span class="pack" style = "">car</span> package to get the VIF.  This requires running an arbitrary regression model, but only regards the predictor variables. If we just try it with a dummy model, we get an error, since the lm model has perfect collinearity.  We can find out that `Day` is probably causing issues, and we'll see why later.
+
+We can obtain a rough metric of total correlation of a variable with the others by looking at the [variance inflation factor](https://en.wikipedia.org/wiki/Variance_inflation_factor) (VIF)[^vif].  For this, we'll treat any binary or ordered data as numeric, and we can use the <span class="pack" style = "">car</span> package to get the VIF.  This requires running an arbitrary regression model that includes the covariates of interest, but the value is derived only from the predictor variables. If we just try it with a dummy model, we get an error, since the linear  model has perfect collinearity.  We  find out that `Day` is probably causing issues, and we'll see why later.
 
 ```{r inspect-vif}
 # the model used to acquire the vif doesn't matter- anything could be used for
@@ -489,14 +494,15 @@ attributes(alias(
 car::vif(lm(CountDetections ~ . -Unit -Day -FalseDetections, dat = df))
 ```
 
-It looks like, along with `Day`, `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates[^vif].   So at this point we can consider both it and `Day` as potential predictors to remove.  Wind is less an issue once `Day` is removed.
+It looks like, along with `Day`, `tm.depth` is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates.   So at this point we can consider both it and `Day` as potential predictors to remove.  Wind is less an issue once `Day` is removed.
 
-An alternative approach I tried (not shown) was just running a PCA on those variables.  Only six components were needed to account for nearly almost 90% of the total variance, and many covariates had over 90% of their variance accounted for by the other covariates.  I think it's safe to say there is a lot of redundancy in this data.
+An alternative approach I tried (not shown) was just running a PCA on the predictor variables.  Only six components were needed to account for nearly almost 90% of the total variance, so I think it's safe to say there is a notable amount of redundancy in this data.
 
+One final note is that the target variable is a potential problem as well. More than half of the data is a 1.0 proportion of `Valid Detections`, and it also turns out this doesn't appear to be proportional data per se, as sometimes both Valid and False Detections can be zero, meaning such observations don't contribute meaningfully to the model.  This isn't necessarily a problem as these observations are basically dropped dropped from the model, and you will note in the GLM results that follow that the residual degrees of freedom will be notably lower than the total number of observations (`r nrow(df)`). This is due to the dropout of those observations, which is about `r rnd((1 - nrow(df_no_zeros)/nrow(df))*100, 0)`% of the data. Even so, the lack of variability may be an underlying issue in general.  Especially in the case of interactions, it is likely that some cells have no variability in the outcome.
 
 ## Start simply
 
-So we know there may be some data issues, so let's start with a model that's relatively simple but still plausible. If we just look at a GLM without any random effects, can we spot any issues?  
+So we know there are some data issues, so let's start with a model that's relatively simple but still plausible. If we just look at a GLM without any random effects, can we spot any issues?  
 
 
 ```{r m_glm-glm}
@@ -527,12 +533,12 @@ m_glm2 = update(m_glm1, . ~ . -Day)
 summary(m_glm2)
 ```
 
-Well, at least we got rid of the complete collinearity- no `NA` remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there would still be issues with the more complicated mixed models.  With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know this is in fact an issue.  Here is a table of the more egregious offenders and a plot of all of the coefficients, their standard errors, and the VIF (size).
+Well, at least we got rid of the complete collinearity- no `NA` remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn't really be surprised there would still be issues with the more complicated mixed models.  With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know from our previous exploration that something similar is going on in this proportional binomial model.  Here is a table of the more egregious offenders and a plot of all coefficients, their standard errors, and the VIF (size).
 
 ```{r glm-issues, echo=FALSE}
 init = tidy(m_glm2) %>% 
   slice(-1, -11) %>% 
-  bind_cols(tibble(vif = car::vif(m_glm2)[,1]))
+  bind_cols(tibble(vif = car::vif(m_glm2)[,3])) # use the adjusted one
 
 init %>% 
   top_n(5, abs(estimate)) %>% 
@@ -545,9 +551,9 @@ init %>%
   theme_clean()
 ```
 
-At this point I would not assume anything about the mixed model approach being a problem, and be leaning toward this being primarily a data issue.  So let's begin our mixed model effort restart by pulling some of those we thought had some collinearity issues.  You might have noticed from the GLM that SUR.ID was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
+At this point I would not assume anything about the mixed model itself being a problem, and be leaning toward this being primarily a data issue.  Or, at the very least, data issues will need to be sorted out.  So let's begin the restart of our mixed model effort by pulling out some of those variables we thought had some collinearity issues.  You might have noticed from the GLM that `SUR.ID` was only 3 levels, so let's move that to a fixed effect also.  In keeping things simple, I'm not including any interactions.
 
-```{r model_mixed1, warning=TRUE}
+```{r model_mixed1, warning=TRUE, message=TRUE}
 model_mixed1 = glmer(
   cbind(ValidDetections, FalseDetections) ~ 
     # tm:Area + tm:c.distance + c.distance:Area + #c.tm.depth:Area + 
@@ -569,7 +575,7 @@ Well, we still have issues, so what else can we try?
 
 Let's go ahead with the easy part and rescale our variables, which might as well be done with any model.  I will standardize the numeric variables.
 
-```{r model_mixed2-rescale, warning=TRUE}
+```{r model_mixed2-rescale, warning=TRUE, message=TRUE}
 sc = function(x) scale(x)[, 1]
 
 df = df %>% 
@@ -595,7 +601,7 @@ model_mixed2 = glmer(
 summarize_model(model_mixed2, ci = FALSE)
 ```
 
-So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem.  What can we check for next?  I looked to see if there was any further imbalance of  categorical variables, though didn't spot much issue. But then discovered something else.  A couple covariates - `c.wind` and `c.distance` - have only five unique values, and for the former, some of those values only occur a few times.  In addition, `c.wind` was unique per day, so was essentially confounded with it.  So we can feel fine with having previously removed Day.
+So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem.  What can we check for next?  I looked to see if there was any further imbalance of  categorical variables, didn't spot much issue, but then discovered something else.  A couple covariates - `c.wind` and `c.distance` - have only five unique values, and for the former, some of those values only occur a few times.  In addition, `c.wind` was unique per day, so was essentially confounded with it.  So we can feel fine with having previously removed Day.
 
 ```{r inspect-wind}
 df %>% 
@@ -604,6 +610,8 @@ df %>%
 
 table(df$c.wind, df$Day)
 ```
+
+<br>
 
 If we treat these as categorical what happens?  I'll do it just for the GLM again.
 
@@ -621,7 +629,7 @@ m_glm3 = glm(
 summary(m_glm3)
 ```
 
-Ah! So now we see that `Area` is completely accounted for by other factors.  In addition, wind is still problematic.  Let's take out `Area`, while still treating wind and distance as categorical for our diagnostic adventure.
+Ah! So now we see that `Area` is also accounted for by other factors.  In addition, wind is still problematic.  Let's take out `Area`, while still treating wind and distance as categorical for our diagnostic adventure.
 
 ```{r table-wind-area, echo=FALSE, eval=FALSE}
 table(df$c.wind, df$Area)
@@ -633,7 +641,7 @@ m_glm4 =  update(m_glm3, . ~ . - Area)
 summary(m_glm4)
 ```
 
-The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.  Let's try collapsing wind values and making it officially categorical.
+The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down.  Let's try collapsing wind values and officially making it categorical.
 
 ```{r model_mixed3}
 df = df %>% 
@@ -834,21 +842,18 @@ The conclusion would be that our estimates are probably okay, but the data likel
 
 ## Final Steps
 
-The final step would be to make a hard decision about which covariates to keep that can result in more meaningful results, and that is a theoretical problem, not a statistical one.
+The final step would be to make a hard decision about which covariates to keep that can result in more meaningful results, including trying different target variables. But that is a theoretical problem, not a statistical one.  
 
-```{r}
-
+```{r final-model, message=TRUE}
 m_final = glmer(
-  cbind(ValidDetections, FalseDetections) ~ 
-    c.receiver.depth_sc + c.temp_sc + tm + c.distance +
+  ValidDetections ~ 
+    c.receiver.depth_sc + c.temp_sc + tm + 
     replicate + SUR.ID + (1|Unit),
     data = df,
-    family = binomial
+    family = poisson
     )
 
 summarize_model(m_final, ci = 0)
-
-
 ```
 
 
@@ -858,15 +863,22 @@ summarize_model(m_final, ci = 0)
 
 We can summarize our approach to convergence problems as follows:
 
-0. Step back and look at your data. Are there issues? Are some essentially collinear with others?
-1. Start with the simplest but still plausible model. Spot any issues?
-2. If some of your random effects only have a few levels, treat them as fixed or see if they are even needed in the model.
+0. Step back and look at your data. Are there issues? Are some variables essentially collinear with others?
+
+1. Start with the simplest but still plausible model. Spo
+t any issues?  If there are, these probably need to be remedied before moving to more complex models.
+2. For mixed models, if some of your random effects only have a few levels, treat them as fixed or see if they are even needed in the model.
+
 3. Scale your continuous variables. You should be doing this anyway. If some categorical levels have very relatively few observations, consider collapsing.
-4. Are any random effect variance estimates zero or nearly zero? Remove.
-4. Restart the model with <span class="func" style = "">update</span> using previous starting values, and run until convergence.
-5. Change optimizer (if a small model, compare several with allFit function). 
-    - If log-likelihood and parameter estimates are pretty much the same (and they are rarely notably different in my experience), pick one and go with it.
-6. Use a different package.  The different estimation approach may simply work better for the current problem or provide other opportunities for tweaks.  For example, one could use <span class="pack" style = "">glmmTMB</span> or <span class="pack" style = "">brms</span> (Bayesian) in lieu of <span class="pack" style = "">lme4</span>.
+
+4. For mixed models, are any random effect variance estimates zero or nearly zero? Remove.
+
+4. Restart the model with <span class="func" style = "">update</span> using previous starting values, and run until convergence if possible. Many packages provide some functionality with this function, but what exactly is provided may be limited.
+
+5. Change the optimizer (if a small mixed model using <span class="pack" style = "">lme4</span>, compare several with <span class="func" style = "">allFit</span> function). 
+    - If log-likelihood and parameter estimates are pretty much the same across optimizers (and they are rarely notably different in my experience), pick one and go with it.
+    
+6. Use a different package.  The different estimation approach may simply work better for the current problem or provide other opportunities for tweaks.  For example, with mixed models one could use <span class="pack" style = "">glmmTMB</span> or <span class="pack" style = "">brms</span> (Bayesian) in lieu of <span class="pack" style = "">lme4</span>.
 
 
 In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and <span class="pack" style = "">lme4</span> is typically a fixable data problem, or a problematically specified model.  The <span class="pack" style = "">lme4</span> developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model.  If it is an <span class="pack" style = "">lme4</span> problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.
@@ -874,10 +886,11 @@ In my experience with many clients with many types of data coming across many fi
 <!-- ## References -->
 <span class="" style = ""></span>
 <!-- https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html -->
-<!-- https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r -->
+https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r
 
 [^bolker]: Ben Bolker is one of the primary developers of the <span class="pack" style = "">lme4</span> package.
 
-[^vif]: For a basic linear model situation, $1-1/VIF = R^2$, where $R^2$ is a regression model where a covariate is predicted by all the other covariates.
+[^vif]: For a basic linear model situation, $1-1/VIF = R^2$, where $R^2$ is a regression model where a covariate is predicted by all the other covariates.  We wouldn't typically use a standard linear regression for binary outcomes or other scenarios, but this provides a quick and rough metric. The car package actually also provides a 'generalized' VIF though. In terms of interpretation, it tells us how much the standard error increases relative to the covariate if it was independent of the others.  We would be concerned with redundancy of anything of VIF > 10 /  $R^2$ > .90, but maybe even less.  As a final note, collinearity is basically a sample size issue, as larger data would reduce the standard errors, and we'd likely get a fuller sense of true variability in the covariates.
+
 
 [^singularity]: Think of doing a principal components analysis on the variance-covariance matrix for the random effects. If one of those components is essentially accounting for zero variance, it may suggest at least one of the estimated random effects is not needed.
