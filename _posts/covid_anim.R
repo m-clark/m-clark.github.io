@@ -1,6 +1,14 @@
+
+# Country Level Counts from WHO Incidence ---------------------------------
+
+
 library(rvest)
 library(tidyverse)
 
+
+# Unfortunately, JH repo doesn't keep up the situation reports so we snag them
+# from Wikipedia.  But the Wiki changes, and has numerous issues, so what works
+# one day probably won't another.
 site = 'https://en.wikipedia.org/wiki/Template:2019%E2%80%9320_coronavirus_outbreak_data/WHO_situation_reports'
 
 init = read_html(site) %>% 
@@ -16,23 +24,24 @@ map(init, dim)
 
 # need to remove stupid bracket footnotes
 clean_tables <- function(data, world = FALSE) {
-  col_names = slice(data, 1)
-  col_names[1] = 'region'
+  # it is a so-called 'feature' that na columns can't be dealt with; and as long
+  # as they exist, nothing in tidyverse will work.
+  data = as_tibble(data, .name_repair = 'unique')
+  data = select(data, -starts_with('...'))
   
-  world_data = filter(data, str_detect(X1, 'World|Doubling|Total'))
+  world_data = filter(data, str_detect(Date, 'World|Doubling|Total'))
+  data = filter(data, !str_detect(Date, 'Date|World|Doubling|Total|Notes|References'))
   
-  data = filter(data, !str_detect(X1, 'Date|World|Doubling|Total|Notes'))
-  
-  colnames(data) = colnames(world_data) = col_names
-  
-  na_columns = which(map_lgl(data, function(x) all(is.na(x)))) # 'feature' that na columns can't be dealt with
+  na_columns = which(map_lgl(data, function(x) all(is.na(x)))) 
   
   data[, na_columns] = NULL
   world_data[, na_columns] = NULL
+
+  colnames(data)[1] = colnames(world_data)[1] = 'region'  # currently incorrectly called 'Date'
   
   if (world) {
     data = world_data %>% 
-      filter(!str_detect(tolower(region), 'doubling')) #%>% 
+      filter(!str_detect(tolower(region), 'doubling')) 
   } 
   
   data = data %>% 
@@ -47,7 +56,7 @@ clean_tables <- function(data, world = FALSE) {
                  names_to = 'date',
                  values_to = 'count') %>% 
     # deal with dates
-    mutate(first_report = lubridate::as_date(first_report)) %>% 
+    mutate(first_report = lubridate::mdy(first_report)) %>%   # they will probably change format at some point
     separate(date, into = c('month', 'day')) %>% 
     mutate(date = lubridate::ymd(glue::glue('2020-{month}-{day}'))) 
   
@@ -58,13 +67,13 @@ clean_tables <- function(data, world = FALSE) {
 }
 
 # check it hear
-# debugonce(clean_tables)
-clean_tables(init[[4]], world = F)
+debugonce(clean_tables)
+clean_tables(init[[2]], world = F)
 clean_tables(init[[4]], world = T)
 clean_tables(init[[5]])
 
-countries = map_df(init[4:7], clean_tables)
-world = map_df(init[4:7], clean_tables, world = TRUE)
+countries = map_df(init[2:6], clean_tables)
+world = map_df(init[2:6], clean_tables, world = TRUE)
 
 all = bind_rows(countries, world) %>% 
   filter(!grepl(region, pattern = 'Total|except'))
@@ -153,7 +162,7 @@ mod = bam(
   count ~ s(date_num, region, bs = 'fs', k = 5),
   # family = poisson,
   # family = Gamma(link = 'log'),
-  # family = gaussian(link = 'log'),
+  family = gaussian(link = 'log'),
   data = all_for_model,
   nthreads = 10
 )
@@ -170,7 +179,7 @@ visibly::plot_gam_by(mod, date_num, region, begin = .1, end = .8, alpha = .7) +
 
 plotly::ggplotly()
 
-slibrary(gratia)
+library(gratia)
 
 deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250)
 
@@ -183,7 +192,6 @@ plot_dat = deriv_dat_1 %>%
     region = str_remove_all(smooth, 's\\(date_num\\):region'),
     region = fs_var
   )
-
 
 
 plot_dat_peaks_valleys = plot_dat %>%
@@ -216,3 +224,130 @@ plot_dat %>%
   theme(
     legend.position = 'bottom',
   )
+
+
+# U.S. States ----------------------------------------------------------------
+
+# Get data from JH repo
+library(tidyverse)
+
+import_and_clean_data = function(
+  current = FALSE,
+  us_only = FALSE,
+  state_city = 'state'
+  ) {
+  
+  confirmed_url = 'https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv'
+  deaths_url    = 'https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv'
+  recovered_url = 'https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv'
+  
+  confirmed = read_csv(confirmed_url)
+  deaths = read_csv(deaths_url)
+  recovered = read_csv(recovered_url)
+  
+  df_list = list(confirmed = confirmed,
+                 deaths = deaths,
+                 recovered = recovered)
+
+  data  = df_list %>% 
+    map_df(
+      function(x)
+        x %>% 
+        rename(province_state = `Province/State`,
+               country_region = `Country/Region`) %>% 
+        pivot_longer(
+          c(-province_state,-country_region,-Lat,-Long),
+          names_to = 'date',
+          values_to = 'count'
+        ) %>% 
+        mutate(date = lubridate::mdy(date)),
+      .id = 'type'
+    )
+  
+  
+  if (current)
+    data = data %>% 
+    group_by(province_state, type) %>% 
+    slice(n())
+  
+  if (us_only) {
+    # this will remove city rows, which mostly just have zero count anyway
+    if (state_city == 'state') {
+      data = data %>% 
+        filter(country_region == 'US', province_state %in% state.name) %>% 
+        rename(state = province_state) %>% 
+        select(-country_region)     
+    } 
+    else {
+      data = data %>% 
+        filter(country_region == 'US', !province_state %in% state.name) %>% 
+        rename(state = province_state) %>% 
+        select(-country_region)     
+    }
+  }
+  
+  data
+} 
+
+
+
+# debugonce(import_and_clean_data)
+world = import_and_clean_data()
+us_current = import_and_clean_data(us_only = TRUE, current = TRUE)
+us_series = import_and_clean_data(us_only = TRUE, current = FALSE)
+
+# install.packages("statebins", repos = "https://cinc.rud.is")
+
+library(statebins)
+
+us_current %>% 
+  filter(type == 'confirmed') %>% 
+  statebins(
+    value_col = "log(count)",
+    palette = "OrRd", 
+    direction = 1,
+    name = "Covid Counts (log)"
+  ) +
+  statebins::theme_statebins()
+
+library(geofacet)
+
+us_series %>% 
+  filter(count != 0, type == 'confirmed') %>% 
+  ggplot(aes(date, count, group = state)) +
+  geom_path(color = '#ff550080') +
+  labs(y = '', x = '') +
+  visibly::theme_clean() +
+  facet_geo(~state, scales = 'free') +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 4),
+    strip.text = element_text(size = 4),
+  )
+
+
+
+
+
+# JH Repo WHO Situation ---------------------------------------------------
+
+# as mentioned above, these aren't being updated and at present are two weeks
+# old, but should they update them, they are likely more usable and less
+# volatile than the wikipedia data
+
+who_situation = read_csv('https://github.com/CSSEGISandData/COVID-19/raw/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv')
+
+glimpse(who_situation)
+
+who_situation = who_situation %>% 
+  select(-starts_with('X')) %>%   # these are empty columns
+  rename(province_state = `Province/States`,
+         country_region = `Country/Region`,
+         who_region = `WHO region`) %>% 
+  pivot_longer(
+    c(-province_state, -country_region, -who_region),
+    names_to = 'date',
+    values_to = 'count'
+  ) %>% 
+  mutate(date = lubridate::mdy(date))
