@@ -9,6 +9,7 @@ library(tidyverse)
 # Unfortunately, JH repo doesn't keep up the situation reports so we snag them
 # from Wikipedia.  But the Wiki changes, and has numerous issues, so what works
 # one day probably won't another.
+
 site = 'https://en.wikipedia.org/wiki/Template:2019%E2%80%9320_coronavirus_outbreak_data/WHO_situation_reports'
 
 init = read_html(site) %>% 
@@ -20,10 +21,11 @@ map(init, dim)
 
 # map(init, glimpse)
 
-# for now it starts at the fourth table and ends with the seventh table, but in general it's very poorly organized; 
+# depending on the time you get it, do it the starting table could be any of the
+# initial ones, and still is very poorly organized besides
 
 # need to remove stupid bracket footnotes
-clean_tables <- function(data, world = FALSE) {
+clean_tables <- function(data, world = FALSE, doubling = FALSE) {
   # it is a so-called 'feature' that na columns can't be dealt with; and as long
   # as they exist, nothing in tidyverse will work.
   data = as_tibble(data, .name_repair = 'unique')
@@ -41,7 +43,12 @@ clean_tables <- function(data, world = FALSE) {
   
   if (world) {
     data = world_data %>% 
-      filter(!str_detect(tolower(region), 'doubling')) 
+      mutate(region = if_else(duplicated(region), 'Doubling (except China)', region))
+    
+    if (!doubling)
+      data = world_data %>% 
+        filter(!str_detect(region, 'Doubling')) 
+
   } 
   
   data = data %>% 
@@ -67,13 +74,13 @@ clean_tables <- function(data, world = FALSE) {
 }
 
 # check it hear
-debugonce(clean_tables)
+# debugonce(clean_tables)
 clean_tables(init[[2]], world = F)
 clean_tables(init[[4]], world = T)
-clean_tables(init[[5]])
 
-countries = map_df(init[2:6], clean_tables)
-world = map_df(init[2:6], clean_tables, world = TRUE)
+# check start and end tables!
+countries = map_df(init[3:7], clean_tables)  
+world = map_df(init[3:7], clean_tables, world = TRUE, doubling = TRUE)
 
 all = bind_rows(countries, world) %>% 
   filter(!grepl(region, pattern = 'Total|except'))
@@ -145,6 +152,16 @@ animate(
 anim_save('img/covid.gif')
 
 
+# plot doubling
+
+world %>% filter(str_detect(region, 'Doubling')) %>% qplot(
+  data = .,
+  x = date,
+  y = count,
+  geom = 'path',
+  color = region
+)
+
 # plot derivs
 all_for_model = all %>% 
   mutate(region = factor(region),
@@ -162,7 +179,7 @@ mod = bam(
   count ~ s(date_num, region, bs = 'fs', k = 5),
   # family = poisson,
   # family = Gamma(link = 'log'),
-  family = gaussian(link = 'log'),
+  # family = gaussian(link = 'log'),
   data = all_for_model,
   nthreads = 10
 )
@@ -329,12 +346,11 @@ us_series %>%
 
 
 
-
 # JH Repo WHO Situation ---------------------------------------------------
 
-# as mentioned above, these aren't being updated and at present are two weeks
-# old, but should they update them, they are likely more usable and less
-# volatile than the wikipedia data
+# as mentioned above, while this data is cleaner, it isn't being updated, and at
+# present is two weeks old, but should they update them, they are likely more
+# usable and less volatile than the wikipedia data
 
 who_situation = read_csv('https://github.com/CSSEGISandData/COVID-19/raw/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv')
 
