@@ -311,7 +311,7 @@ import_and_clean_data = function(
   
   if (current)
     data = data %>% 
-    group_by(province_state, type) %>% 
+    group_by(country_region, province_state, type) %>% 
     slice(n())
   
   if (us_only) {
@@ -337,16 +337,38 @@ import_and_clean_data = function(
 
 # debugonce(import_and_clean_data)
 world = import_and_clean_data()
+world_current = import_and_clean_data(current = TRUE)
 us_current = import_and_clean_data(us_only = TRUE, current = TRUE)
 us_series = import_and_clean_data(us_only = TRUE, current = FALSE)
 
-death_rates = us_current %>% 
+world_death_rates = world_current %>% 
+  filter(type == 'confirmed' | type == 'deaths') %>% 
+  pivot_wider(names_from = type, values_from = count) %>% 
+  group_by(country_region) %>% 
+  summarise(
+    confirmed = sum(confirmed),
+    deaths = sum(deaths),
+    rate = deaths/confirmed
+    ) %>% 
+  arrange(desc(rate))
+
+us_death_rates = us_current %>% 
   filter(type == 'confirmed' | type == 'deaths') %>% 
   pivot_wider(names_from = type, values_from = count) %>% 
   mutate(rate = deaths/confirmed) %>% 
   arrange(desc(rate))
 
-sum(death_rates$deaths)/sum(death_rates$confirmed)
+world_death_rates %>%
+  summarise(
+    rate = sum(deaths) / sum(confirmed),
+    rate_no_italy = 
+      sum(deaths[country_region != 'Italy']) / 
+      sum(confirmed[country_region != 'Italy'])
+  )
+
+
+us_death_rates %>% 
+  summarise(rate = sum(deaths)/sum(confirmed))
 
 # install.packages("statebins", repos = "https://cinc.rud.is")
 
@@ -362,7 +384,7 @@ us_current %>%
   ) +
   statebins::theme_statebins()
 
-death_rates %>% 
+us_death_rates %>% 
   statebins(
     value_col = "rate",
     palette = "OrRd", 
@@ -409,7 +431,7 @@ top_20 = world_current %>%
  
 plot_data = world_confirmed %>%
   group_by(country_region, date) %>%
-  mutate(country_cases = sum (count)) %>%
+  mutate(country_cases = sum(count)) %>%
   distinct(country_region, date, country_cases) %>%
   group_by(country_region) %>%
   mutate(new_cases = country_cases - lag(country_cases),
