@@ -1,0 +1,618 @@
+---
+title: "Exploring the Pandemic"
+description: |
+  Processing and Visualizing Covid-19 Data
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r Sys.Date()`'
+preview: ../../img/covid.gif   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: [../../styles.css, ../../css/misc.css]
+    code_folding: hide
+draft: false
+tags: [covid19, sars, mers]
+categories:
+  - visualization
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  comment = NA,
+  R.options = list(width = 120),
+  cache.rebuild = FALSE,
+  cache = FALSE,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svglite',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+library(kableExtra)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd
+```
+
+<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`.</aside>
+
+
+## Introduction
+
+This is just some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with  to make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are problematic, slow to update, and or don't really offer much than what you could just do yourself.
+
+
+I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts, but unlike JH, they don't have recovery numbers.
+
+I use some custom functions, and I don't show code to make a table, but these are inconsequential.  Most of it should be usable by anyone pretty easily.
+
+Resources:
+
+- Johns Hopkins: https://github.com/CSSEGISandData/COVID-19
+- Open COVID-19: https://github.com/open-covid-19/data
+
+## Getting Started
+
+The following is a pretty simple function for reading data from the GitHub repo. It has arguments for filtering to a specific country, whether or not you only wan the current numbers, 
+
+```{r read_covid_data}
+read_covid_data <- function(
+  country = NULL,     # filter to specific country
+  current = FALSE,    # Only the current data
+  totals  = FALSE     # Only totals (no regional)
+) {
+  if (current) {
+    data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv', 
+                           col_types = 'Dcccciiddi')
+  } 
+  else {
+    data = read_csv('https://open-covid-19.github.io/data/data.csv', 
+                           col_types = 'Dcccciiddi')
+  }
+  
+  if (!is.null(country)) {
+     data = filter(data, CountryCode == country | CountryName == country)
+  }
+  
+  # other cleanup and additions
+  data = data %>% 
+    rename(
+      country_code = CountryCode,
+      country_name = CountryName,
+      region_code = RegionCode,
+      region_name = RegionName,
+      total_confirmed = Confirmed,
+      total_deaths = Deaths
+    ) %>% 
+    rename_all(tolower) %>% 
+    group_by(country_code, region_code) %>% 
+    mutate(
+      total_deaths = ifelse(is.na(total_deaths), 0, total_deaths),
+      daily_confirmed = total_confirmed - lag(total_confirmed),
+      daily_deaths = total_deaths - lag(total_deaths),
+      region_name = if_else(region_name == 'South Caroline', 'South Carolina', region_name),
+      death_rate = total_deaths/total_confirmed
+    ) %>% 
+    mutate_at(vars(contains('daily')), function(x) ifelse(is.na(x), 0, x)) %>% 
+    select(date:region_name, contains('daily'), contains('total'), everything()) %>% 
+    ungroup()
+  
+  if (totals) data = filter(data, is.na(region_code))
+  
+  ungroup(data)
+}
+```
+
+
+```{r read_data, cache.rebuild=TRUE}
+library(tidyverse)  # required for function
+
+main = read_covid_data()  # all of the data
+
+world_totals = read_covid_data(current = TRUE, totals = TRUE)  # only country current totals
+
+countries = main %>% filter(is.na(region_code))   # country-level for all dates
+
+us = read_covid_data(country = 'US')  # all US data
+
+us_current = read_covid_data(country = 'US', current = TRUE) # only current US state totals
+```
+
+
+```{r death-rates, echo=FALSE, cache.rebuild=TRUE}
+world_death_rates = world_totals %>%
+  summarise(
+    `Total Confirmed` = sum(total_confirmed),
+    `Total Deaths`    = sum(total_deaths),
+    `Death Rate`      = `Total Deaths` / `Total Confirmed`,
+    `Death Rate (minus Italy)` = 
+      sum(total_deaths[country_name != 'Italy']) / 
+      sum(total_confirmed[country_name != 'Italy'])
+  )
+
+
+us_death_rates = us_current %>% 
+  filter(is.na(region_name)) %>% 
+  select(matches('total|rate'))
+
+mi_death_rates = us_current %>% 
+  filter(region_code == 'MI') %>% 
+  select(matches('total|rate'))
+```
+
+
+#### World
+
+```{r table-of-world-current-counts, echo=FALSE, cache=FALSE}
+world_death_rates %>% 
+  mutate_at(vars(-contains('rate')), scales::comma) %>% 
+  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
+  mutate_all(function(x) cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>% 
+  kable_df(
+    escape = FALSE,
+    align = 'c', 
+    table.attr='class="covid-table"'
+  ) 
+```
+
+#### United States
+
+```{r table-of-us-current-counts, echo=FALSE, cache=FALSE}
+us_death_rates %>% 
+  rename_all(function(x) str_to_title(str_replace_all(x, '_', ' ' ))) %>% 
+  mutate_at(vars(-contains('rate')), scales::comma) %>% 
+  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
+  mutate_all(function(x) cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>% 
+  kable_df(
+    escape = FALSE,
+    align = 'c', 
+    table.attr='class="covid-table"'
+  )
+```
+
+#### Michigan
+
+```{r table-of-michigan-current-counts, echo=FALSE, cache=FALSE}
+mi_death_rates %>% 
+  rename_all(function(x) str_to_title(str_replace_all(x, '_', ' ' ))) %>% 
+  mutate_at(vars(-contains('rate')), scales::comma) %>% 
+  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
+  mutate_all(function(x) cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>% 
+  kable_df(
+    escape = FALSE,
+    align = 'c', 
+    table.attr='class="covid-table"'
+  )
+```
+
+#### Washtenaw County
+
+The following uses <span class="pack" style = "">rvest</span> to grab the current tally at for this county from the county website. It is updated daily at noon.
+
+```{r washtenaw}
+URL = 'https://www.washtenaw.org/3108/Cases'
+
+library(rvest)
+
+init = read_html(URL) %>% 
+  html_table()
+
+washtenaw_cases = as_tibble(init[[1]])
+```
+
+```{r washtenaw-show, echo=FALSE}
+washtenaw_cases %>% 
+  rename(
+    `Total Confirmed` = 1,
+    `Total Deaths` =  3
+  ) %>% 
+  select(-`Total Hospitalizations`, -TotalRecovered) %>% 
+  mutate(`Death Rate` = `Total Deaths`/`Total Confirmed`) %>%   
+  mutate_at(vars(-contains('rate')), scales::comma) %>% 
+  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
+  mutate_all(function(x) cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>% 
+  kable_df(
+    escape = FALSE,
+    align = 'c', 
+    table.attr='class="covid-table"'
+  )
+```
+
+
+
+## The Data
+
+The following is adapted from the ReadMe file at the open covid repo.
+
+The columns of the main dataset are:
+
+| Name | Description | Example |
+| ---- | ----------- | ------- |
+| **date** | ISO 8601 date (YYYY-MM-DD) of the datapoint | 2020-03-21 |
+| **country_code** | ISO 3166-1 code of the country | CN |
+| **country_name** | American English name of the country | China |
+| **region_code** | (Optional) ISO 3166-2 code of the region | HB |
+| **region_name** | (Optional) American English name of the region | Hubei |
+| **total_confirmed** | Total number of cases confirmed after positive test | 67800 |
+| **total_deaths** | Total number of deaths from a positive COVID-19 case | 3139 |
+| **daily_confirmed** | Daily number of cases confirmed after positive test | 67800 |
+| **daily_deaths** | Daily number of deaths from a positive COVID-19 case | 3139 |
+| **latitude** | Floating point representing the geographic coordinate | 30.9756 |
+| **longitude** | Floating point representing the geographic coordinate | 112.2707 |
+| **population** | Total count of humans living in the region | TODO |
+
+<br>
+
+For countries where both country-level and region-level data is available, the
+entry which has a null value for the `region_code` and `region_name` columns
+indicates country-level aggregation. Please note that, sometimes, the
+country-level data and the region-level data come from different sources so
+adding up all region-level values may not equal exactly to the reported
+country-level value.
+
+## Country Level Trends
+
+The following does some additional processing before going to a plot of the trends. I pick some countries to highlight (not necessarily the ones with the most cases), and I treat the world total as a separate addition to the plot.
+
+```{r country-trend-static-proc, cache=FALSE}
+highlight = c(
+  'United States of America',
+  'China',
+  'Japan',
+  'South Korea',
+  'Italy',
+  'Iran',
+  'United Kingdom',
+  'France',
+  'Germany',
+  'Spain'
+)
+
+# current days data may not be complete, and some may be updated a day ahead
+# relative to the U.S. due to time differences
+world = countries %>%
+  filter(date != Sys.Date() + 1) %>%   
+  group_by(date) %>% 
+  summarise(total_confirmed = sum(total_confirmed))
+```
+
+Now we can just do a basic plot.
+
+```{r country-trend-static, cache=FALSE}
+# the 
+p = countries %>% 
+  ggplot(aes(x = date, y = total_confirmed)) +
+  geom_path(aes(group = country_code), alpha = .01) +
+  geom_point(
+    aes(),
+    size = 6,
+    alpha = .1,
+    data = world
+  ) +
+  geom_point(
+    aes(color = country_code),
+    size = 1.5,
+    alpha = .5,
+    data = filter(countries, country_name %in% highlight)
+  ) +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(date_breaks = '2 weeks') +
+  scale_y_continuous(
+    position = "right",
+    trans = 'log',
+    breaks = c(
+      50,
+      100, 
+      500, 
+      1e3, 
+      5e3, 
+      1e4, 
+      5e4, 
+      1e5, 
+      5e5, 
+      1e6,
+      5e6
+    ), 
+    labels = scales::comma
+  ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Total Confirmed Cases',
+    caption = 'Dark large dot is world total'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position = 'left',
+    title = element_text(size = 12)
+  )
+
+p
+```
+
+```{r country-trend-static-save, echo=FALSE, eval=FALSE}
+ggsave('img/covid.svg')
+```
+
+
+The following animates the previous via <span class="pack" style = "">gganimate</span>.
+
+```{r country-trend-animate, cache=TRUE, dev='png', eval=F, echo = -1, dev.args=list(bg = '#fffff8')}
+# note, this will create the files in the top level directory, so they need to
+# be moved to the directory of the post to see
+library(gganimate)
+
+p_anim = p +
+  transition_reveal(date) +
+  shadow_wake(wake_length = 1/3, falloff = "cubic-in-out")
+
+p_animate = animate(
+  p_anim,
+  nframes = 120,
+  fps = 10,
+  start_pause = 10,
+  end_pause = 10,
+  width = 1200,
+  height = 800,
+  device =  'png',
+  res = 300
+)
+```
+
+```{r country-trend-animate-save, echo=1, eval=FALSE}
+p_animate
+anim_save('img/covid.gif')
+# knitr::include_graphics('img/covid.gif')
+```
+
+
+<img src="../../img/covid.gif" style="display:block; margin: 0 auto; width: 75%;">
+
+### NY Times-style Daily Count
+
+The following is similar to the plot shown on the [New York Times daily count](https://www.nytimes.com/interactive/2020/world/coronavirus-maps.html), just without the unnecessary discretizing of the color (the legend already does that for you).  I chose what I thought was a similar palette, but obviously you can play around with that.
+
+```{r nytimes-daily}
+# reduce to just the 20 countries with the most cases
+top_20 = world_totals %>% 
+  top_n(20, total_confirmed) %>% 
+  arrange(desc(total_confirmed))
+ 
+# this is to create a ruled effect, not necessary
+plot_data = main %>%
+  filter(is.na(region_code)) %>%
+  filter(country_name %in% top_20$country_name) %>%
+  mutate(
+    country_name = ordered(country_name, levels = rev(top_20$country_name)),
+    line_positions = as.numeric(country_name) + .5,
+    line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
+  ) 
+  
+plot_data %>% 
+  ggplot(aes(x = date, y = country_name)) +
+  geom_tile(
+    aes(
+      fill = daily_confirmed,
+      width = .9,
+      height = 0.5
+    ),
+    na.rm = T,
+    size = 2
+  ) +
+  geom_hline(
+    aes(yintercept = line_positions),
+    color = 'gray92',
+    size = .25
+  ) +
+  scico::scale_fill_scico(
+    end = .75,
+    na.value = 'gray98',
+    palette = 'lajolla',
+    trans = 'log',
+    breaks = c(5, 25, 100, 500, 2500)
+  ) +
+  labs(x = '', y = '') +
+  guides(fill = guide_legend(title = 'New Cases')) +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    legend.text  = element_text(size = 6),
+    legend.title = element_text(size = 10)
+  )
+```
+
+
+## US Trends
+
+### Trends
+
+We can visualize the state level data in numerous ways.  Here is the world trend plot previously seen, now applied just to the U.S.
+
+
+```{r state_trends, cache.rebuild=F}
+highlight = us_current %>% 
+  filter(!is.na(region_code)) %>% 
+  top_n(10, total_confirmed) %>% 
+  pull(region_name)
+
+p = us %>% 
+  ggplot(aes(x = date, y = total_confirmed)) +
+  geom_path(aes(group = region_code), alpha = .01) +
+  geom_point(
+    aes(),
+    size = 6,
+    alpha = .1,
+    data = filter(us, is.na(region_code))
+  ) +
+  geom_point(
+    aes(color = region_code),
+    size = 1.5,
+    alpha = .5,
+    data = filter(us, region_name %in% highlight)
+  ) +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(date_breaks = '2 weeks') +
+  scale_y_continuous(
+    trans = 'log',
+    breaks = c(
+      50,
+      100, 
+      500, 
+      1e3, 
+      5e3, 
+      1e4, 
+      5e4,
+      1e5,
+      5e5,
+      1e6
+    ), 
+    labels = scales::comma
+    ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Total Confirmed Cases',
+    caption = 'Dark large dot is U.S. total'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    title = element_text(size = 12)
+  )
+
+p
+```
+
+```{r trends-us-save, echo=FALSE}
+ggsave('img/covid_us.svg')
+```
+
+### State Bins
+
+Here we look at counts and death rates via a 'binned' map.  There are numerous issues with trying to depict numeric information on a map.  This at least tries to solve the issue of state size by making them all equal while retaining the basic shape of the U.S.
+
+
+```{r statebins, layout="l-body-outset", cache.rebuild=F, out.width='800px'}
+library(statebins)
+
+us_current %>% 
+  filter(region_code != 'DC') %>%
+  statebins(
+    state_col = 'region_name',
+    value_col = "log(total_confirmed)",
+    palette = "OrRd", 
+    direction = 1,
+    name = "Covid Counts (log)"
+  ) +
+  theme_statebins(base_size = 8)
+
+us_current %>% 
+  filter(!is.na(region_name)) %>% 
+  statebins(
+    state_col = 'region_name',
+    value_col = "death_rate",
+    palette = "OrRd", 
+    direction = 1,
+    name = "Death Rate"
+  ) +
+  theme_statebins(base_size = 8)
+```
+
+### Geofacet
+
+We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. As of late March, this is one of the scarier graphics.
+
+```{r geo-facet-trends, cache.rebuild=F}
+library(geofacet)
+
+us %>% 
+  filter(total_confirmed != 0, region_code != 'DC') %>%
+  ggplot(aes(date, total_confirmed, group = region_code)) +
+  geom_path(color = '#ff550080') +
+  labs(y = '', x = '') +
+  facet_geo(~region_code, scales = 'free') +
+  visibly::theme_clean() +
+  theme(
+    axis.text.x  = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y  = element_text(size = 4),
+    strip.text   = element_text(size = 4),
+  )
+```
+
+
+### Daily counts
+
+We can do the daily counts as before.
+
+```{r us-daily, dpi = 144, cache.rebuild=F}
+levs = us_current %>% 
+  filter(!is.na(region_name)) %>% 
+  arrange(total_confirmed) %>% 
+  pull(region_name)
+
+plot_data = us %>%
+  filter(!is.na(region_code)) %>%
+  mutate(
+    region_name    = ordered(region_name, levels = levs),
+    line_positions = as.numeric(region_name) + .5,
+    line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
+  ) 
+  
+plot_data %>% 
+  ggplot(aes(x = date, y = region_name)) +
+  geom_tile(aes(
+    fill = daily_confirmed,
+    width = .9,
+    height = 0.5
+  ),
+  na.rm = T,
+  size = 2) +
+  geom_hline(aes(yintercept = line_positions),
+             color = 'gray92',
+             size = .25) +
+  scico::scale_fill_scico(
+    end = .75,
+    na.value = 'gray98',
+    palette = 'lajolla',
+    trans = 'log',
+    breaks = c(5, 25, 100, 500, 2500)
+  ) +
+  labs(x = '', y = '') +
+  guides(fill = guide_legend(title = 'New Cases')) +
+  visibly::theme_clean() +
+  theme(
+    axis.text.y  = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.text  = element_text(size = 6),
+    legend.title = element_text(size = 10)
+  )
+```
