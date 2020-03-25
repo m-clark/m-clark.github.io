@@ -64,7 +64,7 @@
 <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"character","attributes":{},"value":["covid_files/bowser-1.9.3/bowser.min.js","covid_files/distill-2.2.21/template.v2.js","covid_files/figure-html5/country-trend-static-1.svg","covid_files/figure-html5/geo-facet-trends-1.svg","covid_files/figure-html5/nytimes-daily-1.svg","covid_files/figure-html5/state_trends-1.svg","covid_files/figure-html5/statebins-1.svg","covid_files/figure-html5/statebins-2.svg","covid_files/figure-html5/us-daily-1.svg","covid_files/jquery-1.11.3/jquery.min.js","covid_files/kePrint-0.0.1/kePrint.js","covid_files/webcomponents-2.0.0/webcomponents.js"]}
+  {"type":"character","attributes":{},"value":["covid_files/bowser-1.9.3/bowser.min.js","covid_files/distill-2.2.21/template.v2.js","covid_files/figure-html5/country-trend-static-1.svg","covid_files/figure-html5/geo-facet-trends-1.svg","covid_files/figure-html5/nytimes-daily-1.svg","covid_files/figure-html5/state_trends-1.svg","covid_files/figure-html5/statebins-1.svg","covid_files/figure-html5/statebins-2.svg","covid_files/figure-html5/us-daily-1.svg","covid_files/jquery-1.11.3/jquery.min.js","covid_files/kePrint-0.0.1/kePrint.js","covid_files/webcomponents-2.0.0/webcomponents.js","img/covid_us.svg","img/covid.gif"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
 
@@ -1841,20 +1841,20 @@ start right up at their border */
 Last updated March 24, 2020.
 </aside>
 <h2 id="introduction">Introduction</h2>
-<p>This is just some code to get processed data and visualizations regarding the COVID-19 outbreak. The goal here is just to present some code that I’m playing with to make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are problematic, slow to update, and or don’t really offer much than what you could just do yourself.</p>
-<p>I actually started scraping Wikipedia’s WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily. I then started playing with the data behind the <a href="https://coronavirus.jhu.edu/map.html">Johns Hopkins dashboard</a>, which was notably better, but didn’t have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts, but unlike JH, they don’t have recovery numbers.</p>
-<p>I use some custom functions, and I don’t show code to make a table, but these are inconsequential. Most of it should be usable by anyone pretty easily.</p>
+<p>This is some code to get processed data and visualizations regarding the COVID-19 outbreak. The goal here is just to present some code that I’m playing with that may also make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are currently (in my opinion) problematic, slow to update, and or don’t really offer much than what you could just do yourself. I’ll likely be updating this daily for the time being.</p>
+<p>I actually started scraping Wikipedia’s WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily. I then started playing with the data behind the <a href="https://coronavirus.jhu.edu/map.html">Johns Hopkins dashboard</a>, which was notably better, but didn’t have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts. Unlike JH, Open Covid doesn’t have recovery numbers.</p>
+<p>I use some custom functions in the following, and I don’t show every bit of code, but most of these cases are inconsequential. The bulk of this code should be usable by anyone pretty easily if they are familiar with the <span class="pack" style="">tidyverse</span>.</p>
 <p>Resources:</p>
 <ul>
 <li>Johns Hopkins: <a href="https://github.com/CSSEGISandData/COVID-19" class="uri">https://github.com/CSSEGISandData/COVID-19</a></li>
 <li>Open COVID-19: <a href="https://github.com/open-covid-19/data" class="uri">https://github.com/open-covid-19/data</a></li>
 </ul>
 <h2 id="getting-started">Getting Started</h2>
-<p>The following is a pretty simple function for reading data from the GitHub repo. It has arguments for filtering to a specific country, whether or not you only wan the current numbers,</p>
+<p>The following is a fairly simple function for reading data from the GitHub repo. It has arguments for filtering to a specific country, whether or not you only wan the current numbers,</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 read_covid_data &lt;- function(
-  country = NULL,     # filter to specific country
+  country = NULL,     # Filter to specific country
   current = FALSE,    # Only the current data
   totals  = FALSE     # Only totals (no regional)
 ) {
@@ -1887,11 +1887,11 @@ read_covid_data &lt;- function(
       total_deaths = ifelse(is.na(total_deaths), 0, total_deaths),
       daily_confirmed = total_confirmed - lag(total_confirmed),
       daily_deaths = total_deaths - lag(total_deaths),
-      region_name = if_else(region_name == &#39;South Caroline&#39;, &#39;South Carolina&#39;, region_name),
-      death_rate = total_deaths/total_confirmed
+      region_name  = if_else(region_name == &#39;South Caroline&#39;, &#39;South Carolina&#39;, region_name),
+      death_rate   = total_deaths/total_confirmed
     ) %&gt;% 
     mutate_at(vars(contains(&#39;daily&#39;)), function(x) ifelse(is.na(x), 0, x)) %&gt;% 
-    select(date:region_name, contains(&#39;daily&#39;), contains(&#39;total&#39;), everything()) %&gt;% 
+    select(date:region_name, contains(&#39;daily&#39;), contains(&#39;total&#39;), death_rate, everything()) %&gt;% 
     ungroup()
   
   if (totals) data = filter(data, is.na(region_code))
@@ -1917,6 +1917,7 @@ us_current = read_covid_data(country = &#39;US&#39;, current = TRUE) # only curr
 
 </div>
 <h4 id="world">World</h4>
+<p>Now that we have the data, we can see what’s going on.</p>
 <div class="layout-chunk" data-layout="l-body">
 <table class="covid-table table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
@@ -1938,13 +1939,13 @@ Death Rate (minus Italy)
 <tbody>
 <tr>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">384,354</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">391,537</span>
 </td>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">16,872</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">17,910</span>
 </td>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">4.4%</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">4.6%</span>
 </td>
 <td style="text-align:center;">
 <span style="     color: #ff5500 !important;font-size: 36px;">3.4%</span>
@@ -2003,13 +2004,13 @@ Death Rate
 <tbody>
 <tr>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">1,328</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">1,791</span>
 </td>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">15</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">24</span>
 </td>
 <td style="text-align:center;">
-<span style="     color: #ff5500 !important;font-size: 36px;">1.1%</span>
+<span style="     color: #ff5500 !important;font-size: 36px;">1.3%</span>
 </td>
 </tr>
 </tbody>
@@ -2106,26 +2107,31 @@ Death Rate
 <td>3139</td>
 </tr>
 <tr class="even">
-<td><strong>daily_confirmed</strong></td>
-<td>Daily number of cases confirmed after positive test</td>
-<td>67800</td>
+<td><strong>death_rate</strong></td>
+<td>Rate of deaths from a positive COVID-19 case</td>
+<td>0.04629794</td>
 </tr>
 <tr class="odd">
-<td><strong>daily_deaths</strong></td>
-<td>Daily number of deaths from a positive COVID-19 case</td>
-<td>3139</td>
+<td><strong>daily_confirmed</strong></td>
+<td>Daily number of cases confirmed after positive test</td>
+<td>0</td>
 </tr>
 <tr class="even">
+<td><strong>daily_deaths</strong></td>
+<td>Daily number of deaths from a positive COVID-19 case</td>
+<td>6</td>
+</tr>
+<tr class="odd">
 <td><strong>latitude</strong></td>
 <td>Floating point representing the geographic coordinate</td>
 <td>30.9756</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><strong>longitude</strong></td>
 <td>Floating point representing the geographic coordinate</td>
 <td>112.2707</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>population</strong></td>
 <td>Total count of humans living in the region</td>
 <td>TODO</td>
@@ -2158,51 +2164,47 @@ world = countries %&gt;%
   group_by(date) %&gt;% 
   summarise(total_confirmed = sum(total_confirmed))</code></pre>
 </div>
-<p>Now we can just do a basic plot.</p>
+<p>Now we can just do a basic plot. I use <span class="pack" style="">ggrepel</span> to see more clearly where the highest cases are currently.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
-# the 
+library(ggrepel)
+
 p = countries %&gt;% 
   ggplot(aes(x = date, y = total_confirmed)) +
   geom_path(aes(group = country_code), alpha = .01) +
   geom_point(
     aes(),
-    size = 6,
+    size  = 6,
     alpha = .1,
-    data = world
+    data  = world
   ) +
   geom_point(
     aes(color = country_code),
-    size = 1.5,
+    size  = 1.5,
     alpha = .5,
-    data = filter(countries, country_name %in% highlight)
+    data  = filter(countries, country_name %in% highlight)
+  ) +
+  geom_text_repel(
+    aes(label = country_code, color = country_code),
+    size  = 2,
+    alpha = .85,
+    data  = filter(countries, country_name %in% highlight, date == max(date)-1),
+    show.legend = FALSE
   ) +
   scico::scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(date_breaks = &#39;2 weeks&#39;) +
   scale_y_continuous(
     position = &quot;right&quot;,
-    trans = &#39;log&#39;,
-    breaks = c(
-      50,
-      100, 
-      500, 
-      1e3, 
-      5e3, 
-      1e4, 
-      5e4, 
-      1e5, 
-      5e5, 
-      1e6,
-      5e6
-    ), 
-    labels = scales::comma
+    trans    = &#39;log&#39;,
+    breaks   = c(50, unlist(map(c(1,5), function(x) x*10^(2:6)))), 
+    labels   = scales::comma
   ) +
   visibly::theme_clean() + 
   labs(
     x = &#39;&#39;, 
     y = &#39;&#39;,
     subtitle =  &#39;Total Confirmed Cases&#39;,
-    caption = &#39;Dark large dot is world total&#39;
+    caption  = &#39;Dark large dot is world total&#39;
     ) +
   theme(
     axis.text.x  = element_text(size = 6),
@@ -2214,7 +2216,7 @@ p = countries %&gt;%
     legend.text        = element_text(size = 6),
     legend.box.spacing = unit(0, &#39;mm&#39;),
     legend.box.margin  = margin(0),
-    legend.position = &#39;left&#39;,
+    legend.position    = &#39;left&#39;,
     title = element_text(size = 12)
   )
 
@@ -2238,19 +2240,22 @@ p_animate = animate(
   p_anim,
   nframes = 120,
   fps = 10,
-  start_pause = 10,
-  end_pause = 10,
-  width = 1200,
-  height = 800,
+  start_pause = 5,
+  end_pause   = 15,
+  width  = 800,
+  height = 600,
   device =  &#39;png&#39;,
-  res = 300
+  res    = 144
 )</code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 p_animate</code></pre>
 </div>
-<p><img src="../../img/covid.gif" style="display:block; margin: 0 auto; width: 75%;"></p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="img/covid.gif" style="display: block; margin: auto;" /></p>
+</div>
+<!-- <img src="../../img/covid.gif" style="display:block; margin: 0 auto; width: 100%;"> -->
 <h3 id="ny-times-style-daily-count">NY Times-style Daily Count</h3>
 <p>The following is similar to the plot shown on the <a href="https://www.nytimes.com/interactive/2020/world/coronavirus-maps.html">New York Times daily count</a>, just without the unnecessary discretizing of the color (the legend already does that for you). I chose what I thought was a similar palette, but obviously you can play around with that.</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -2265,7 +2270,7 @@ plot_data = main %&gt;%
   filter(is.na(region_code)) %&gt;%
   filter(country_name %in% top_20$country_name) %&gt;%
   mutate(
-    country_name = ordered(country_name, levels = rev(top_20$country_name)),
+    country_name   = ordered(country_name, levels = rev(top_20$country_name)),
     line_positions = as.numeric(country_name) + .5,
     line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
   ) 
@@ -2274,24 +2279,24 @@ plot_data %&gt;%
   ggplot(aes(x = date, y = country_name)) +
   geom_tile(
     aes(
-      fill = daily_confirmed,
-      width = .9,
+      fill   = daily_confirmed,
+      width  = .9,
       height = 0.5
     ),
     na.rm = T,
-    size = 2
+    size  = 2
   ) +
   geom_hline(
     aes(yintercept = line_positions),
     color = &#39;gray92&#39;,
-    size = .25
+    size  = .25
   ) +
   scico::scale_fill_scico(
     end = .75,
     na.value = &#39;gray98&#39;,
-    palette = &#39;lajolla&#39;,
-    trans = &#39;log&#39;,
-    breaks = c(5, 25, 100, 500, 2500)
+    palette  = &#39;lajolla&#39;,
+    trans    = &#39;log&#39;,
+    breaks   = c(5, 25, 100, 500, 2500)
   ) +
   labs(x = &#39;&#39;, y = &#39;&#39;) +
   guides(fill = guide_legend(title = &#39;New Cases&#39;)) +
@@ -2306,7 +2311,7 @@ plot_data %&gt;%
 <h2 id="us-trends">US Trends</h2>
 <h3 id="trends">Trends</h3>
 <p>We can visualize the state level data in numerous ways. Here is the world trend plot previously seen, now applied just to the U.S.</p>
-<div class="layout-chunk" data-layout="l-body">
+<div class="layout-chunk" data-layout="l-body-offset">
 <pre class="r"><code>
 highlight = us_current %&gt;% 
   filter(!is.na(region_code)) %&gt;% 
@@ -2318,33 +2323,29 @@ p = us %&gt;%
   geom_path(aes(group = region_code), alpha = .01) +
   geom_point(
     aes(),
-    size = 6,
+    size  = 6,
     alpha = .1,
-    data = filter(us, is.na(region_code))
+    data  = filter(us, is.na(region_code))
   ) +
   geom_point(
     aes(color = region_code),
-    size = 1.5,
+    size  = 1.5,
     alpha = .5,
-    data = filter(us, region_name %in% highlight)
+    data  = filter(us, region_name %in% highlight)
+  ) +
+  geom_text_repel(
+    aes(label = region_code, color = region_code),
+    size  = 2,
+    alpha = .85,
+    data  = filter(us, region_name %in% highlight, date == max(date))
   ) +
   scico::scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(date_breaks = &#39;2 weeks&#39;) +
   scale_y_continuous(
-    trans = &#39;log&#39;,
-    breaks = c(
-      50,
-      100, 
-      500, 
-      1e3, 
-      5e3, 
-      1e4, 
-      5e4,
-      1e5,
-      5e5,
-      1e6
-    ), 
-    labels = scales::comma
+    position = &quot;right&quot;,
+    trans    = &#39;log&#39;,
+    breaks   = c(50, unlist(map(c(1,5), function(x) x*10^(2:6)))), 
+    labels   = scales::comma
     ) +
   visibly::theme_clean() + 
   labs(
@@ -2363,6 +2364,7 @@ p = us %&gt;%
     legend.text        = element_text(size = 6),
     legend.box.spacing = unit(0, &#39;mm&#39;),
     legend.box.margin  = margin(0),
+    legend.position = &#39;left&#39;,
     title = element_text(size = 12)
   )
 
@@ -2383,7 +2385,7 @@ us_current %&gt;%
   statebins(
     state_col = &#39;region_name&#39;,
     value_col = &quot;log(total_confirmed)&quot;,
-    palette = &quot;OrRd&quot;, 
+    palette   = &quot;OrRd&quot;, 
     direction = 1,
     name = &quot;Covid Counts (log)&quot;
   ) +
@@ -2395,7 +2397,7 @@ us_current %&gt;%
   statebins(
     state_col = &#39;region_name&#39;,
     value_col = &quot;death_rate&quot;,
-    palette = &quot;OrRd&quot;, 
+    palette   = &quot;OrRd&quot;, 
     direction = 1,
     name = &quot;Death Rate&quot;
   ) +
@@ -2403,7 +2405,7 @@ us_current %&gt;%
 <p><img src="covid_files/figure-html5/statebins-2.svg" width="800px" style="display: block; margin: auto;" /></p>
 </div>
 <h3 id="geofacet">Geofacet</h3>
-<p>We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style="">geofacet</span> package. As of late March, this is one of the scarier graphics.</p>
+<p>We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style="">geofacet</span> package. As of late March, this is one of the scarier graphics, with no flattening in sight.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 library(geofacet)
@@ -2442,22 +2444,26 @@ plot_data = us %&gt;%
   
 plot_data %&gt;% 
   ggplot(aes(x = date, y = region_name)) +
-  geom_tile(aes(
-    fill = daily_confirmed,
-    width = .9,
-    height = 0.5
-  ),
-  na.rm = T,
-  size = 2) +
-  geom_hline(aes(yintercept = line_positions),
-             color = &#39;gray92&#39;,
-             size = .25) +
+  geom_tile(
+    aes(
+      fill   = daily_confirmed,
+      width  = .9,
+      height = 0.5
+    ),
+    na.rm = T,
+    size  = 2
+  ) +
+  geom_hline(
+    aes(yintercept = line_positions),
+    color = &#39;gray92&#39;,
+    size  = .25
+  ) +
   scico::scale_fill_scico(
     end = .75,
     na.value = &#39;gray98&#39;,
-    palette = &#39;lajolla&#39;,
-    trans = &#39;log&#39;,
-    breaks = c(5, 25, 100, 500, 2500)
+    palette  = &#39;lajolla&#39;,
+    trans    = &#39;log&#39;,
+    breaks   = c(5, 25, 100, 500, 2500)
   ) +
   labs(x = &#39;&#39;, y = &#39;&#39;) +
   guides(fill = guide_legend(title = &#39;New Cases&#39;)) +
