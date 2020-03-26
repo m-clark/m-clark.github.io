@@ -6,7 +6,7 @@ author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: '`r Sys.Date()`'
-preview: ../../img/covid.gif   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: ../../img/covid_preview.gif   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
@@ -199,7 +199,7 @@ mi_death_rates %>%
 
 #### Washtenaw County
 
-The following uses <span class="pack" style = "">rvest</span> to grab the current tally at for this county from the county website. It is updated daily at noon.
+The following uses <span class="pack" style = "">rvest</span> to grab the current tally for this county from the county website. It is updated daily at noon.
 
 ```{r washtenaw}
 URL = 'https://www.washtenaw.org/3108/Cases'
@@ -317,7 +317,10 @@ p = countries %>%
     show.legend = FALSE
   ) +
   scico::scale_color_scico_d(begin = .1, end = .9) +
-  scale_x_date(date_breaks = '2 weeks') +
+  scale_x_date(
+    date_breaks = '2 weeks',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
   scale_y_continuous(
     position = "right",
     trans    = 'log',
@@ -379,7 +382,25 @@ p_animate = animate(
 
 ```{r country-trend-animate-save, echo=1, eval=FALSE}
 p_animate
+
 anim_save('img/covid.gif')
+
+# for preview
+p_animate_preview = animate(
+  p_anim,
+  nframes = 120,
+  fps = 10,
+  start_pause = 5,
+  end_pause   = 15,
+  width  = 400,
+  height = 300,
+  device =  'png',
+  res    = 72
+)
+
+p_animate_preview
+
+anim_save('img/covid_preview.gif')
 ```
 
 ```{r  country-trend-animate-show, echo=FALSE, layout='l-body'}
@@ -441,6 +462,60 @@ plot_data %>%
     legend.title = element_text(size = 10)
   )
 ```
+
+
+The following shows the percentage increase in cases over the previous day (capped at 100 or greater).  Early on this isn't very useful (e.g. going from 5 to 10 is a 100% increase).  We can see that China and South Korea have minimal to no increase day to day at present, while other countries are continuing to see relatively large increases.
+
+```{r percent-new-cases}
+plot_data = main %>%
+  filter(is.na(region_code)) %>%
+  filter(country_name %in% top_20$country_name) %>% 
+  group_by(country_code) %>% 
+  mutate(
+    daily_perc = 100 * (total_confirmed / lag(total_confirmed) - 1), 
+    daily_perc = ifelse(daily_perc > 100, 100, daily_perc)
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    country_name   = ordered(country_name, levels = rev(top_20$country_name)),
+    line_positions = as.numeric(country_name) + .5,
+    line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
+  ) 
+  
+
+plot_data %>% 
+  ggplot(aes(x = date, y = country_name)) +
+  geom_tile(
+    aes(
+      fill   = daily_perc,
+      width  = .9,
+      height = 0.5
+    ),
+    na.rm = T,
+    size  = 2
+  ) +
+  geom_hline(
+    aes(yintercept = line_positions),
+    color = 'gray92',
+    size  = .25
+  ) +
+  scico::scale_fill_scico(
+    end = .75,
+    na.value = 'gray98',
+    palette  = 'lajolla',
+    # trans    = 'log',
+    # breaks   = c(seq(0, 100, 10))
+  ) +
+  labs(x = '', y = '') +
+  guides(fill = guide_legend(title = '% New Cases')) +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    legend.text  = element_text(size = 6),
+    legend.title = element_text(size = 10)
+  )
+```
+
 
 
 ## US Trends
