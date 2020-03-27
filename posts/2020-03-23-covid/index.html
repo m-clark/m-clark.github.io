@@ -64,7 +64,7 @@
 <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"character","attributes":{},"value":["covid_files/bowser-1.9.3/bowser.min.js","covid_files/distill-2.2.21/template.v2.js","covid_files/figure-html5/country-trend-static-1.svg","covid_files/figure-html5/geo-facet-trends-1.svg","covid_files/figure-html5/nytimes-daily-1.svg","covid_files/figure-html5/percent-new-cases-1.svg","covid_files/figure-html5/state_trends-1.svg","covid_files/figure-html5/statebins-1.svg","covid_files/figure-html5/statebins-2.svg","covid_files/figure-html5/us-daily-1.svg","covid_files/jquery-1.11.3/jquery.min.js","covid_files/kePrint-0.0.1/kePrint.js","covid_files/webcomponents-2.0.0/webcomponents.js","img/covid_us.svg","img/covid.gif"]}
+  {"type":"character","attributes":{},"value":["covid_files/bowser-1.9.3/bowser.min.js","covid_files/distill-2.2.21/template.v2.js","covid_files/figure-html5/country-trend-static-1.svg","covid_files/figure-html5/geo-facet-trends-1.svg","covid_files/figure-html5/nytimes-daily-1.svg","covid_files/figure-html5/percent-new-cases-1.svg","covid_files/figure-html5/state_trends-1.svg","covid_files/figure-html5/statebins-1.svg","covid_files/figure-html5/statebins-2.svg","covid_files/figure-html5/us-daily-1.svg","covid_files/figure-html5/us-top-20-per-capita-1.svg","covid_files/figure-html5/world-top-20-per-capita-1.svg","covid_files/jquery-1.11.3/jquery.min.js","covid_files/kePrint-0.0.1/kePrint.js","covid_files/webcomponents-2.0.0/webcomponents.js","img/covid_us.svg","img/covid.gif"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
 
@@ -1827,12 +1827,14 @@ start right up at their border */
 <li><a href="#the-data">The Data</a></li>
 <li><a href="#country-level-trends">Country Level Trends</a><ul>
 <li><a href="#ny-times-style-daily-count">NY Times-style Daily Count</a></li>
+<li><a href="#per-capita-country-trends">Per Capita Country Trends</a></li>
 </ul></li>
 <li><a href="#us-trends">US Trends</a><ul>
 <li><a href="#trends">Trends</a></li>
 <li><a href="#state-bins">State Bins</a></li>
 <li><a href="#geofacet">Geofacet</a></li>
 <li><a href="#daily-counts">Daily counts</a></li>
+<li><a href="#per-capita-state-trends">Per Capita State Trends</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -2363,7 +2365,60 @@ plot_data %&gt;%
   )</code></pre>
 <p><img src="covid_files/figure-html5/percent-new-cases-1.svg" width="624" style="display: block; margin: auto;" /></p>
 </div>
-<!-- ### Per Capita Trends -->
+<h3 id="per-capita-country-trends">Per Capita Country Trends</h3>
+<p>The following shows the number of confirmed cases per 10000 people. However, this obviously doesn’t account for the lack of testing.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+countries_rate = countries %&gt;% 
+  filter(country_code %in% top_20$country_code) %&gt;% 
+  mutate(rate = 10000*total_confirmed/population)
+
+p = countries_rate %&gt;% 
+  ggplot(aes(x = date, y = rate)) +
+  geom_path(aes(group = country_code), alpha = .1) +
+  geom_point(
+    aes(color = country_code),
+    size  = .5,
+    alpha = .5
+  ) +
+  geom_text_repel(
+    aes(label = country_code, color = country_code),
+    size  = 2,
+    alpha = 1,
+    data  = filter(countries_rate, date == max(date)-1),
+    show.legend = FALSE
+  ) +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(
+    date_breaks = &#39;2 weeks&#39;,
+    labels = function(x) format(x, format = &quot;%m/%d&quot;)
+  ) +
+  scale_y_continuous(
+    position = &quot;right&quot;
+  ) +
+  visibly::theme_clean() + 
+  labs(
+    x = &#39;&#39;, 
+    y = &#39;&#39;,
+    subtitle =  &#39;Confirmed Cases Per Ten Thousand People&#39;
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, &#39;cm&#39;),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, &#39;mm&#39;),
+    legend.box.margin  = margin(0),
+    legend.position    = &#39;left&#39;,
+    title = element_text(size = 12)
+  )
+
+p</code></pre>
+<p><img src="covid_files/figure-html5/world-top-20-per-capita-1.svg" width="2080" style="display: block; margin: auto;" /></p>
+</div>
 <h2 id="us-trends">US Trends</h2>
 <h3 id="trends">Trends</h3>
 <p>We can visualize the state level data in numerous ways. Here is the world trend plot previously seen, now applied just to the U.S.</p>
@@ -2531,6 +2586,11 @@ plot_data %&gt;%
     legend.title = element_text(size = 10)
   )</code></pre>
 <p><img src="covid_files/figure-html5/us-daily-1.svg" width="936" style="display: block; margin: auto;" /></p>
+</div>
+<h3 id="per-capita-state-trends">Per Capita State Trends</h3>
+<p>The following shows the number of confirmed cases per 10000 people. Highlighted are the states with the most total cases (top 10).</p>
+<div class="layout-chunk" data-layout="l-body">
+<p><img src="covid_files/figure-html5/us-top-20-per-capita-1.svg" width="2080" style="display: block; margin: auto;" /></p>
 </div>
 <!--radix_placeholder_article_footer-->
 <div class="article-footer">

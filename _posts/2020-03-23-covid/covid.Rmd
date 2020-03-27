@@ -516,7 +516,61 @@ plot_data %>%
   )
 ```
 
-<!-- ### Per Capita Trends -->
+### Per Capita Country Trends
+
+The following shows the number of confirmed cases per 10000 people.  However, this obviously doesn't account for the lack of testing.
+
+```{r world-top-20-per-capita, dpi = 320}
+countries_rate = countries %>% 
+  filter(country_code %in% top_20$country_code) %>% 
+  mutate(rate = 10000*total_confirmed/population)
+
+p = countries_rate %>% 
+  ggplot(aes(x = date, y = rate)) +
+  geom_path(aes(group = country_code), alpha = .1) +
+  geom_point(
+    aes(color = country_code),
+    size  = .5,
+    alpha = .5
+  ) +
+  geom_text_repel(
+    aes(label = country_code, color = country_code),
+    size  = 2,
+    alpha = 1,
+    data  = filter(countries_rate, date == max(date)-1),
+    show.legend = FALSE
+  ) +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(
+    date_breaks = '2 weeks',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
+  scale_y_continuous(
+    position = "right"
+  ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Confirmed Cases Per Ten Thousand People'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position    = 'left',
+    title = element_text(size = 12)
+  )
+
+p
+```
+
 
 ## US Trends
 
@@ -692,4 +746,68 @@ plot_data %>%
     legend.text  = element_text(size = 6),
     legend.title = element_text(size = 10)
   )
+```
+
+### Per Capita State Trends
+
+The following shows the number of confirmed cases per 10000 people.  Highlighted are the states with the most total cases (top 10).
+
+```{r us-top-20-per-capita, echo = F, dpi = 320}
+state_pop = readxl::read_xlsx('data/census-pop-2019.xlsx', col_names = T, skip = 1) %>% 
+  select(region, `2019`) %>% 
+  mutate(region = str_remove_all(region, '\\.')) %>% 
+  rename(region_name = region, population = `2019`)
+
+us_rate = us %>% 
+  filter(!is.na(region_code)) %>% 
+  select(-population) %>% 
+  left_join(state_pop, by = 'region_name') %>% 
+  mutate(rate = 10000*total_confirmed/population)
+
+
+p = us_rate %>% 
+  ggplot(aes(x = date, y = rate)) +
+  geom_path(aes(group = region_code), alpha = .05) +
+  geom_point(
+    aes(color = region_code),
+    size  = 1.5,
+    alpha = .5,
+    data = filter(us_rate, region_name %in% highlight)
+  ) +
+  geom_text_repel(
+    aes(label = region_code, color = region_code),
+    size  = 2,
+    alpha = 1,
+    data  = filter(us_rate, region_name %in% highlight, date == max(date)),
+    show.legend = FALSE
+  ) +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(
+    date_breaks = '2 weeks',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
+  scale_y_continuous(
+    position = "right"
+  ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Confirmed Cases Per Ten Thousand People'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position    = 'left',
+    title = element_text(size = 12)
+  )
+
+p
 ```
