@@ -14,7 +14,7 @@ output:
     css: [../../styles.css, ../../css/misc.css]
     code_folding: hide
 draft: false
-tags: [covid19, sars, mers]
+tags: [covid19, daily, total, world, u.s., michigan, washtenaw, wayne, detroit, sars, mers]
 categories:
   - visualization
 ---
@@ -45,7 +45,7 @@ kable_df <- function(..., digits=3) {
 rnd = tidyext::rnd
 ```
 
-<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`.</aside>
+<aside>First posted 2020-03-23 .</aside>
 
 
 ## Introduction
@@ -60,6 +60,9 @@ Resources:
 
 - Johns Hopkins: https://github.com/CSSEGISandData/COVID-19
 - Open COVID-19: https://github.com/open-covid-19/data
+- NY Times finally put their data up on March 27 (only for U.S.): https://github.com/nytimes/covid-19-data
+
+Check out CSCAR chum Alex Cao's more local efforts here: https://observablehq.com/@caocscar/covid-19-michigan-data
 
 ## Getting Started
 
@@ -518,7 +521,7 @@ plot_data %>%
 
 ### Per Capita Country Trends
 
-The following shows the number of confirmed cases per 10000 people.  However, this obviously doesn't account for the lack of testing.
+The following shows the number of confirmed cases per 10000 people.  However, this obviously doesn't account for the lack of testing.  To keep things clean, we again focus on the twenty countries with the most cases.
 
 ```{r world-top-20-per-capita, dpi = 320}
 countries_rate = countries %>% 
@@ -677,7 +680,7 @@ us_current %>%
 
 We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. As of late March, this is one of the scarier graphics, with no flattening in sight.
 
-```{r geo-facet-trends, cache.rebuild=F}
+```{r geo-facet-trends, layout='l-page'}
 library(geofacet)
 
 us %>% 
@@ -811,3 +814,247 @@ p = us_rate %>%
 
 p
 ```
+
+
+## County Trends
+
+The following function gets county level data trends from the Johns Hopkins data base.  The format and collection of this data fundamentally changed on March 22, so we begin there.  You can modify this function to grab data from other countries, but the data sets do not match to those previous to that date.
+
+```{r get-county-data-function}
+get_county_data = function(
+  first_date = lubridate::mdy('03-22-2020'),
+  last_date  = Sys.Date() - 1,
+  parallel = FALSE
+) {
+  
+  base_url = 'https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_daily_reports/'
+  
+  dates = first_date:last_date
+  
+  if (parallel) {
+    library(future)
+    library(furrr)
+    
+    suppressWarnings({plan(multiprocess)})
+    
+    result = future_map_dfr(
+      dates, 
+      function(date)
+        suppressWarnings({
+          read_csv(
+            paste0(
+              base_url,
+              format(lubridate::as_date(date), format = '%m-%d-%Y'),
+              '.csv'
+            ),
+            col_types = c('cccccddd')
+          ) %>% mutate(date = lubridate::as_date(date))
+        })
+    )
+    
+    plan(sequential)
+  }
+  else {
+    result = map_df(
+      dates, 
+      function(date)
+        suppressWarnings({
+          read_csv(
+            paste0(
+              base_url,
+              format(lubridate::as_date(date), format = '%m-%d-%Y'),
+              '.csv'
+            ),
+            col_types = c('cccccddd')
+          ) %>% mutate(date = lubridate::as_date(date))
+        })
+      )
+  }
+  
+  result %>%  
+    rename_all(tolower) %>% 
+    rename(
+      county = admin2,
+      state  = province_state,
+      long   = long_
+    ) %>% 
+    filter(country_region == 'US') %>% 
+    select(date, everything()) %>% 
+    mutate_at(vars(lat, long, confirmed), as.numeric) %>% 
+    mutate(last_update = lubridate::as_datetime(last_update))
+}
+```
+
+
+Now we can get the data. As time goes on, doing so in parallel will be quicker.
+
+```{r get-county-data}
+county_trends = get_county_data(parallel = TRUE)
+```
+
+### Michigan
+
+The following creates an animated plot of Michigan counties over time.
+
+```{r mi-county-map-animate}
+library(sf)
+
+mi_counties = county_trends %>% 
+  filter(state == 'Michigan')
+
+all_counties_sf = st_as_sf(maps::map("county", plot = FALSE, fill = TRUE))
+
+prep_counties = mi_counties %>% 
+  mutate(county = str_remove(tolower(county), '[[:punct:]]'), 
+         state = tolower(state)) %>% 
+  mutate(confirmed = if_else(is.na(confirmed), 0, confirmed))
+
+mi_counties_sf = all_counties_sf %>% 
+  filter(grepl("michigan", ID)) %>% 
+  separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
+  select(-state) %>%
+  left_join(prep_counties)
+
+
+mi_counties_sf$area <- as.numeric(st_area(mi_counties_sf))
+
+mi_plot =
+  ggplot(data = mi_counties_sf) +
+  geom_sf(aes(fill = confirmed), color = NA) +
+  coord_sf(xlim = c(-91,-82),
+           ylim = c(41, 48.5),
+           expand = FALSE) +
+  scico::scale_fill_scico(
+    trans = 'log',
+    breaks = c(1, 10, 50, 250, 1250, 5000),
+    palette = 'lajolla',
+    na.value = 'gray95'
+  ) +
+  guides(fill = guide_legend(title = '')) +
+  theme_void() +
+  theme(
+    legend.key.size = unit(.25, 'cm'),
+    legend.text     =  element_text(size = 6),
+    legend.title    = element_text(size = 6)
+  )
+
+mi_plot
+```
+
+Now let's show it over time with <span class="pack" style = "">gganimate</span>.
+
+```{r animate-show, eval=FALSE}
+library(gganimate)
+
+mi_plot_anim = mi_plot +
+  labs(title = '{closest_state}') +
+  transition_states(states = date) +
+  theme(title = element_text(color ='gray50'))
+
+mi_plot_anim
+```
+
+
+```{r county-trend-anim-save, echo=FALSE, eval=FALSE}
+animate(
+  mi_plot_anim,
+  nframes = 120,
+  fps = 10,
+  start_pause = 5,
+  end_pause   = 15,
+  width  = 800,
+  height = 600,
+  device =  'png',
+  res    = 144
+)
+
+anim_save('img/mi-county-trend.gif')
+```
+
+```{r  county-trend-animate-show, echo=FALSE, layout='l-body'}
+knitr::include_graphics('img/mi-county-trend.gif')
+```
+
+### US
+
+For the following map of the whole US, I wanted to do a point plot since counties are arbitrarily shaped, making it easy to think things are going weird in random places. We can use the county centroid locations, make very faint the county lines, and [not use a ridiculous point range size](https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html) to get a better sense of the overall pattern.  I'm not used to the <span class="pack" style = "">sf</span> package, so it took a while to get what I wanted beyond a simple county map.  Adding points was not very intuitive, but I got it sorted out in the end, so you get the benefit of the cleaned up code.
+
+```{r us-county-map, layout='l-page'}
+library(sf)
+
+prep_counties = county_trends %>% 
+  mutate(
+    county = str_remove(tolower(county), '[[:punct:]]'),
+    state  = tolower(state),
+    confirmed = if_else(is.na(confirmed), 0, confirmed)
+  ) %>% 
+  filter(!state %in% c('alaska', 'hawaii', 'puerto rico'), long < 100)
+
+all_counties_sf2 = all_counties_sf %>% 
+  separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
+  left_join(prep_counties) %>% 
+  select(ID, geom, everything())
+
+all_counties_sf2$area = as.numeric(st_area(all_counties_sf2))
+
+glimpse(all_counties_sf2)
+
+all_plot = 
+  ggplot(data = all_counties_sf2) +
+  geom_sf(fill = 'gray99', color = 'gray97', size = .1) +
+  geom_sf(
+    aes(
+      color = confirmed,
+      size  = confirmed
+    ),
+    data = st_as_sf(
+      prep_counties %>% drop_na(lat, long) %>% filter(lat > 0),
+      coords = c('long', 'lat'),
+      crs = '+proj=longlat'
+    ),
+    alpha = .1,
+    show.legend = F) +
+  scico::scale_color_scico(
+    trans    = 'log',
+    breaks   = c(1, 10, 50, 250, 1250, 5000),
+    na.value = 'gray99'
+  ) +
+  scale_size_continuous(range =  c(.1, 10)) +
+  theme_void() 
+
+all_plot
+```
+
+```{r all-county-anim, echo=FALSE, eval=FALSE}
+## old code
+# library("rnaturalearth")
+# library("rnaturalearthdata")
+# 
+# world_map <- ne_countries(scale = "medium", returnclass = "sf")
+# world_map_2 <-
+#   st_as_sf(maps::map("world", plot = FALSE, fill = TRUE))
+# us_map <-
+#   ne_countries(scale = "medium",
+#                country = 'United States of America',
+#                returnclass = "sf")
+# us_map <-
+#   ne_countries(
+#     scale = "medium",
+#     country = 'United States of America',
+#     type = 'map_units',
+#     returnclass = "sf"
+#   )
+# 
+# all_states_sf <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE))
+
+# doesn't really work
+all_plot_anim = all_plot +
+  labs(title = '{closest_state}') +
+  transition_states(states = date) +
+  theme(
+    title = element_text(color ='gray50')
+  )
+
+all_plot_anim
+```
+
