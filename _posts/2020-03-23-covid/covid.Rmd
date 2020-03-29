@@ -1072,7 +1072,7 @@ all_counties_sf2 = all_counties_sf %>%
   left_join(prep_counties) %>% 
   select(ID, geom, everything())
 
-all_plot = 
+county_point_plot = 
   ggplot(data = all_counties_sf2) +
   geom_sf(fill = 'gray99', color = 'gray97', size = .1) +
   geom_sf(
@@ -1095,8 +1095,94 @@ all_plot =
   scale_size_continuous(range =  c(.1, 10)) +
   theme_void() 
 
-all_plot
+county_point_plot
 ```
+
+What's interesting if we do the same plot, but actually look for hotspots rather than just calling more largely populated areas as 'hotspots'.  To do this we need either a per capita rate, a percentage change or similar, while making the assumption that populated areas are already the ones that are going to have the most cases.
+
+
+I grabbed population values with <span class="pack" style = "">tidycensus</span> (not shown), then removed the top 20 most populated counties from consideration.  You can get the data [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/census-county-population.csv). The visualization shows numerous hotspots across the deep south, and others not considered in the midwest, e.g. the Indianapolis area.
+
+```{r get-county-census-pop, eval=FALSE, echo=FALSE}
+state_codes = state.abb
+
+library(future)
+library(furrr)
+
+plan(multiprocess)
+
+pop <- future_map_dfr(
+  state.abb,
+  function(state)
+    get_acs(
+      geography = "county", 
+      variables = c(population = "B01003_001"), 
+      state = state, 
+      year = 2018
+    )
+)
+  
+plan(sequential)
+
+write_csv(pop, 'data/census-county-population.csv')
+```
+
+```{r county-rates, echo=FALSE}
+pop = read_csv('data/census-county-population.csv')
+
+prep_counties = county_trends %>% 
+  filter(date == max(date)) %>% 
+  left_join(pop, by = c('fips' = 'GEOID')) %>% 
+  mutate(
+    county = str_remove(tolower(county), '[[:punct:]]'),
+    state  = tolower(state),
+    confirmed = if_else(is.na(confirmed), 0, confirmed)
+  ) %>% 
+  rename(population = estimate) %>% 
+  mutate(rate = 10000*confirmed/population) %>% 
+  filter(
+    !state %in% c(
+      'alaska',
+      'hawaii'
+    )
+  ) %>% 
+  arrange(desc(population)) %>% 
+  slice(-(1:100))
+  
+  
+all_counties_sf2 = all_counties_sf %>% 
+  separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
+  left_join(prep_counties) %>% 
+  select(ID, geom, everything())
+
+county_point_plot = 
+  ggplot(data = all_counties_sf2) +
+  geom_sf(fill = 'gray99', color = 'gray97', size = .1) +
+  geom_sf(
+    aes(
+      color = rate,
+      size  = rate
+    ),
+    data = st_as_sf(
+      prep_counties %>% drop_na(lat, long) %>% filter(lat > 0),
+      coords = c('long', 'lat'),
+      crs = '+proj=longlat'
+    ),
+    alpha = .2,
+    show.legend = F) +
+  scico::scale_color_scico(
+    trans    = 'log',
+    na.value = 'gray99'
+  ) +
+  scale_size_continuous(range =  c(.1, 10)) +
+  labs(title = 'Cases per 10000', subtitle = 'Top 20 most populous counties not considered') +
+  theme_void() +
+  theme(title = element_text(color = 'gray50'))
+
+county_point_plot
+```
+
+
 
 ```{r all-county-anim, echo=FALSE, eval=FALSE}
 ## old code
