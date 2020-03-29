@@ -1177,3 +1177,127 @@ hcmap(
   hc_credits(enabled = FALSE)
 ```
 
+<!-- ## Model Country Trends -->
+
+<!-- ```{r} -->
+<!-- # Model it ---------------------------------------------------------------- -->
+
+
+<!-- # plot doubling -->
+
+<!-- countries %>%  -->
+<!--   qplot( -->
+<!--   data = ., -->
+<!--   x = date, -->
+<!--   y = total_confirmed, -->
+<!--   geom = 'path', -->
+<!--   color = country_code, -->
+<!--   show.legend = F -->
+<!-- ) -->
+
+<!-- # plot derivs -->
+<!-- all_for_model = countries %>%  -->
+<!--   mutate(country_code = factor(country_code), -->
+<!--          date_num = as.numeric(date)) %>%  -->
+<!--   filter(is.na(region_code)) %>%  -->
+<!--   select(-contains('region'), -latitude, -longitude) %>%  -->
+<!--   group_by(country_name) %>%  -->
+<!--   mutate(N = n()) %>%  -->
+<!--   ungroup() %>%  -->
+<!--   filter( -->
+<!--     (country_name %in% highlight |  -->
+<!--        N >= 40 -->
+<!--     ) &  -->
+<!--       date >= '2020-02-01' -->
+<!--   ) %>%  -->
+<!--   droplevels() -->
+
+
+<!-- library(lubridate) -->
+
+<!-- library(mgcv) -->
+
+<!-- mod = gam( -->
+<!--   total_confirmed ~ s(date_num, country_code, bs = 'fs', k = 5), -->
+<!--   # family = ziP(), -->
+<!--   # family = Gamma(link = 'log'), -->
+<!--   family = gaussian(link = 'log'), -->
+<!--   data = all_for_model, -->
+<!--   nthreads = 10 -->
+<!-- ) -->
+
+<!-- summary(mod) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- highlight = all_for_model %>%  -->
+<!--   filter(country_name %in% highlight) %>%  -->
+<!--   pull(country_code) -->
+
+<!-- visibly::plot_gam_by( -->
+<!--   mod, -->
+<!--   date_num, -->
+<!--   country_code, -->
+<!--   begin = .1, -->
+<!--   end = .8, -->
+<!--   alpha = .7 -->
+<!--   ) + -->
+<!--   geom_text( -->
+<!--     aes(label = country_code), -->
+<!--     size = 2, -->
+<!--     vjust = -.75, -->
+<!--     show.legend = FALSE, -->
+<!--     data = . %>% filter(date_num == max(date_num) & country_code %in% highlight) -->
+<!--   ) + -->
+<!--   guides(color = 'none') -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- library(gratia) -->
+
+<!-- deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250) -->
+
+<!-- plot_dat = deriv_dat_1 %>%  -->
+<!--   mutate( -->
+<!--     date = lubridate::as_date(data), -->
+<!--     country_code = str_remove_all(smooth, 's\\(date_num\\):country_code'), -->
+<!--     country_code = fs_var -->
+<!--   ) -->
+
+
+<!-- plot_dat_peaks_valleys = plot_dat %>% -->
+<!--   group_by(country_code) %>% -->
+<!--   slice(quantmod::findPeaks(derivative) - 1, -->
+<!--         quantmod::findValleys(derivative) - 1)  # see helpfile for why -1 -->
+
+<!-- library(ggrepel) -->
+
+<!-- plot_dat %>% -->
+<!--   ggplot(aes(date, y = derivative)) + -->
+<!--   # geom_ribbon(aes(ymin=lower, ymax=upper, group=country_code), alpha = .02) + -->
+<!--   geom_hline(yintercept = 0, color = 'gray92') + -->
+<!--   geom_line(aes(color = country_code), alpha = .5) + -->
+<!--   # geom_point( -->
+<!--   #   aes(color = country_code), -->
+<!--   #   size = 2, -->
+<!--   #   data = plot_dat_peaks_valleys %>% filter(country_code == 'CN') -->
+<!--   # ) + -->
+<!--   # geom_text_repel( -->
+<!--   #   aes(label = as.character(date), color = country_code), -->
+<!--   #   size = 2, -->
+<!--   #   alpha = .5, -->
+<!--   #   data = plot_dat_peaks_valleys %>% filter(country_code == 'CN') -->
+<!--   # ) + -->
+<!--   geom_text_repel( -->
+<!--     aes(label = country_code), -->
+<!--     size = 2, -->
+<!--     alpha = .5, -->
+<!--     data = plot_dat %>% filter(date == max(date) & derivative > 1000) -->
+<!--   ) + -->
+<!--   guides(color = 'none') + -->
+<!--   labs(x = '') + -->
+<!--   scico::scale_color_scico_d(begin = .25, end = .75) + -->
+<!--   visibly::theme_clean() + -->
+<!--   theme(legend.position = 'bottom') -->
+<!-- ``` -->
+
