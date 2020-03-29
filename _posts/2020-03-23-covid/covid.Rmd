@@ -50,9 +50,9 @@ rnd = tidyext::rnd
 
 ## Introduction
 
-This is some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with that may also make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are currently (in my opinion) problematic, slow to update, and or don't really offer much than what you could just do yourself.  I'll likely be updating this daily for the time being.
+This is some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with that may also make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are currently (in my opinion) problematic, slow to update, and or don't really offer much than what you could just do yourself, as demonstrated below.  I'll likely be updating this daily for the time being.
 
-I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts. Unlike JH, Open Covid doesn't have recovery numbers.
+I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts.
 
 I use some custom functions in the following, and I don't show every bit of code, but most of these cases are inconsequential.  The bulk of this code should be usable by anyone pretty easily if they are familiar with the <span class="pack" style = "">tidyverse</span>.
 
@@ -60,6 +60,7 @@ Resources:
 
 - Johns Hopkins: https://github.com/CSSEGISandData/COVID-19
 - Open COVID-19: https://github.com/open-covid-19/data
+- Open COVID categorical data: https://open-covid-19.github.io/data/data_categories.csv
 - NY Times finally put their data up on March 27 (only for U.S.): https://github.com/nytimes/covid-19-data
 
 Check out CSCAR chum Alex Cao's more local efforts here: https://observablehq.com/@caocscar/covid-19-michigan-data
@@ -75,12 +76,12 @@ read_covid_data <- function(
   totals  = FALSE     # Only totals (no regional)
 ) {
   if (current) {
-    data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv', 
+    data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv',
                            col_types = 'Dcccciiddi')
-  } 
+  }
   else {
-    data = read_csv('https://open-covid-19.github.io/data/data.csv', 
-                           col_types = 'Dcccciiddi')
+    data = read_csv('https://open-covid-19.github.io/data/data.csv',
+                    col_types = 'Dcccciiddi')
   }
   
   if (!is.null(country)) {
@@ -133,7 +134,12 @@ us_current = read_covid_data(country = 'US', current = TRUE) # only current US s
 
 
 ```{r death-rates, echo=FALSE, cache.rebuild=TRUE}
+# current days data may not be complete, and Spain is always given an update before everyone. I do an initial check to see if there has been an update for the U.S. current date, otherwise Spain (and probably Italy) are a day ahead.
+
 world_death_rates = world_totals %>%
+  group_by(country_code) %>% 
+  filter(date == max(date)) %>% 
+  ungroup() %>% 
   summarise(
     `Total Confirmed` = sum(total_confirmed),
     `Total Deaths`    = sum(total_deaths),
@@ -266,11 +272,33 @@ country-level data and the region-level data come from different sources so
 adding up all region-level values may not equal exactly to the reported
 country-level value.
 
+
+### U.S. State Totals
+
+Here is a data table for easy look-up of current U.S. 
+
+```{r us-current-state-lookup, echo=FALSE}
+us_current %>% 
+  mutate(
+    region_code = if_else(is.na(region_code), 'Total', region_code),
+    region_name = if_else(is.na(region_name), 'Total', region_name),
+  ) %>% 
+  select(-(latitude:population), -country_name, -country_code) %>% 
+  DT::datatable(
+    width = 800,
+    rownames = FALSE,
+    options = list(
+      scrollX = TRUE
+    )
+  )
+```
+
+
 ## Country Level Trends
 
 The following does some additional processing before going to a plot of the trends. I pick some countries to highlight (not necessarily the ones with the most cases), and I treat the world total as a separate addition to the plot.  
 
-```{r country-trend-static-proc, cache=FALSE}
+```{r country-trend-static-proc}
 highlight = c(
   'United States of America',
   'China',
@@ -284,10 +312,8 @@ highlight = c(
   'Spain'
 )
 
-# current days data may not be complete, and some may be updated a day ahead
-# relative to the U.S. due to time differences
 world = countries %>%
-  filter(date != Sys.Date() + 1) %>%   
+  filter(date < Sys.Date() + 1) %>%
   group_by(date) %>% 
   summarise(total_confirmed = sum(total_confirmed))
 ```
@@ -302,7 +328,7 @@ p = countries %>%
   geom_path(aes(group = country_code), alpha = .01) +
   geom_point(
     aes(),
-    size  = 6,
+    size  = 5,
     alpha = .1,
     data  = world
   ) +
@@ -310,7 +336,7 @@ p = countries %>%
     aes(color = country_code),
     size  = 1.5,
     alpha = .5,
-    data  = filter(countries, country_name %in% highlight)
+    data  = filter(countries, country_name %in% highlight, date < Sys.Date() + 1)
   ) +
   geom_text_repel(
     aes(label = country_code, color = country_code),
@@ -878,7 +904,19 @@ get_county_data = function(
       state  = province_state,
       long   = long_
     ) %>% 
-    filter(country_region == 'US') %>% 
+    filter(
+      country_region == 'US',
+      !state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'American Samoa',
+        'Wuhan Evacuee',
+        'Virgin Islands',
+        'Grand Princess',
+        'Diamond Princess'
+      )
+    ) %>% 
     select(date, everything()) %>% 
     mutate_at(vars(lat, long, confirmed), as.numeric) %>% 
     mutate(last_update = lubridate::as_datetime(last_update))
@@ -914,9 +952,6 @@ mi_counties_sf = all_counties_sf %>%
   separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
   select(-state) %>%
   left_join(prep_counties)
-
-
-mi_counties_sf$area <- as.numeric(st_area(mi_counties_sf))
 
 mi_plot =
   ggplot(data = mi_counties_sf) +
@@ -975,6 +1010,43 @@ anim_save('img/mi-county-trend.gif')
 knitr::include_graphics('img/mi-county-trend.gif')
 ```
 
+#### Interactive County Map
+
+I thought I would try an interactive map for Michigan counties using highcharts via the <span class="pack" style = "">highcharter</span> package.  This requires creating a unique county code that is nothing more than a FIPS code (but oddly doesn't simply use the actual FIPS code).
+
+```{r mi-county-interactive}
+library(highcharter)
+
+plot_data = mi_counties %>%
+  filter(date == max(date)) %>%
+  mutate(code = paste0('us-mi-', str_sub(fips, start = 3)))
+
+hcmap(
+  "countries/us/us-mi-all",
+  data = plot_data,
+  name = "Michigan",
+  value = "confirmed",
+  joinBy = c("hc-key", "code"),
+  borderColor = "#fffff8",
+  borderWidth = .1
+) %>%
+  hc_colorAxis(
+    dataClasses = color_classes(
+      c(0, 10, 100, 500, 1000, 2000, 5000),
+      colors = scico::scico(6, end = .9, palette = 'lajolla')
+    )
+  ) %>%
+  hc_legend(
+    layout = "vertical",
+    align = "right",
+    floating = TRUE,
+    valueDecimals = 0#,
+    # valueSuffix = "%"
+  ) %>% 
+  hc_credits(enabled = FALSE)
+```
+
+
 ### US
 
 For the following map of the whole US, I wanted to do a point plot since counties are arbitrarily shaped, making it easy to think things are going weird in random places. We can use the county centroid locations, make very faint the county lines, and [not use a ridiculous point range size](https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html) to get a better sense of the overall pattern.  I'm not used to the <span class="pack" style = "">sf</span> package, so it took a while to get what I wanted beyond a simple county map.  Adding points was not very intuitive, but I got it sorted out in the end, so you get the benefit of the cleaned up code.
@@ -988,16 +1060,17 @@ prep_counties = county_trends %>%
     state  = tolower(state),
     confirmed = if_else(is.na(confirmed), 0, confirmed)
   ) %>% 
-  filter(!state %in% c('alaska', 'hawaii', 'puerto rico'), long < 100)
+  filter(
+    !state %in% c(
+      'alaska',
+      'hawaii'
+    )
+  ) 
 
 all_counties_sf2 = all_counties_sf %>% 
   separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
   left_join(prep_counties) %>% 
   select(ID, geom, everything())
-
-all_counties_sf2$area = as.numeric(st_area(all_counties_sf2))
-
-glimpse(all_counties_sf2)
 
 all_plot = 
   ggplot(data = all_counties_sf2) +
@@ -1056,5 +1129,51 @@ all_plot_anim = all_plot +
   )
 
 all_plot_anim
+```
+
+#### Interactive County Map
+
+If you do want an actual county map, here is an interactive one as before.  To make it easier I add state abbreviations to the original data before creating codes for every county. A value is initially missing for Oglala county South Dakota, because highcharts hasn't updated its map data source in several years, and it has since been renamed from Shannon county. Likewise, in Alaska, highcharts still refers to Wade Hampton rather than Kusilvak.
+
+```{r us-county-interactive, layout='l-page'}
+states = tibble(state = state.name, state_abb = state.abb)
+
+plot_data = county_trends %>%
+  mutate(confirmed = if_else(is.na(confirmed), 0, confirmed)) %>% 
+  filter(date == max(date)) %>% 
+  left_join(states) %>% 
+  mutate(
+    code = paste0('us-', tolower(state_abb), '-', str_sub(fips, start = 3)),
+    code = if_else(code == 'us-sd-102', 'us-sd-113', code),  # Oglala
+    code = if_else(code == 'us-ak-158', 'us-ak-270', code),  # Kusilvak
+  )
+  
+
+# plot_data
+
+hcmap(
+  "countries/us/us-all-all",
+  data = plot_data,
+  name = "Confirmed cases:",
+  value = "confirmed",
+  joinBy = c("hc-key", "code"),
+  borderColor = "#fffff8",
+  borderWidth = .1,
+  download_map_data = T
+) %>%
+  hc_colorAxis(
+    dataClasses = color_classes(
+      c(0, sort(unlist(map(c(1, 5), function(x)  x * 10^(1:4))))),
+      colors = scico::scico(6, end = .9, palette = 'lajolla')
+    )
+  ) %>%
+  hc_legend(
+    layout = "vertical",
+    align = "right",
+    floating = TRUE,
+    valueDecimals = 0#,
+    # valueSuffix = "%"
+  ) %>% 
+  hc_credits(enabled = FALSE)
 ```
 
