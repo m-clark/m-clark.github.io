@@ -45,12 +45,12 @@ kable_df <- function(..., digits=3) {
 rnd = tidyext::rnd
 ```
 
-<aside>First posted 2020-03-23 .</aside>
+<aside>First posted 2020-03-23.</aside>
 
 
 ## Introduction
 
-This is some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with that may also make it easier for others to get their hands dirty. There are actually already some R packages regarding this, but they are currently (in my opinion) problematic, slow to update, and or don't really offer much than what you could just do yourself, as demonstrated below.  I'll likely be updating this daily for the time being.
+This is some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with that may also make it easier for others to get their hands dirty. In other words, this is for enabling others to play with the data as well, while presenting some clean code and data. There are actually already some R packages doing some of this, but they are currently (in my opinion) problematic, slow to update, and or don't really offer much than what you could just do yourself, as demonstrated below.  I'll likely be updating this daily for the time being.
 
 I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts.
 
@@ -495,7 +495,7 @@ plot_data %>%
 
 The following shows the percentage increase in cases over the previous day (capped at 100 or greater).  Early on this isn't very useful (e.g. going from 5 to 10 is a 100% increase).  We can see that China and South Korea have minimal to no increase day to day at present, while other countries are continuing to see relatively large increases.
 
-```{r percent-new-cases}
+```{r percent-new-cases, echo = FALSE}
 plot_data = main %>%
   filter(is.na(region_code)) %>%
   filter(country_name %in% top_20$country_name) %>% 
@@ -1092,16 +1092,21 @@ county_point_plot =
     breaks   = c(1, 10, 50, 250, 1250, 5000),
     na.value = 'gray99'
   ) +
+  labs(title = 'Confirmed cases') +
   scale_size_continuous(range =  c(.1, 10)) +
-  theme_void() 
+  theme_void()  +
+  theme(title = element_text(color = 'gray50'))
 
 county_point_plot
 ```
 
-What's interesting if we do the same plot, but actually look for hotspots rather than just calling more largely populated areas as 'hotspots'.  To do this we need either a per capita rate, a percentage change or similar, while making the assumption that populated areas are already the ones that are going to have the most cases.
+What's interesting is if we do a similar plot, but actually look for more anomalous results, rather than just calling more largely populated areas hotspots.  To do this we need either a per capita rate, a percentage change or similar, or even adjusting the size range, while making the assumption that populated areas are already the ones that are going to have the most cases.
 
 
-I grabbed population values with <span class="pack" style = "">tidycensus</span> (not shown), then removed the top 20 most populated counties from consideration.  You can get the data [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/census-county-population.csv). The visualization shows numerous hotspots across the deep south, and others not considered in the midwest, e.g. the Indianapolis area.
+I grabbed population values with <span class="pack" style = "">tidycensus</span> (not shown), then removed the top 20 most populated counties from consideration.  You can get the data [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/census-county-population.csv). 
+
+
+The visualization shows numerous hotspots across the deep south, and others not considered in the midwest, e.g. the Indianapolis area, Rocky Mountain areas, and more.  It definitely makes the spread more apparent than the simple counts might suggest.
 
 ```{r get-county-census-pop, eval=FALSE, echo=FALSE}
 state_codes = state.abb
@@ -1127,7 +1132,7 @@ plan(sequential)
 write_csv(pop, 'data/census-county-population.csv')
 ```
 
-```{r county-rates, echo=FALSE}
+```{r county-rates, layout='l-page', echo=FALSE}
 pop = read_csv('data/census-county-population.csv')
 
 prep_counties = county_trends %>% 
@@ -1147,7 +1152,7 @@ prep_counties = county_trends %>%
     )
   ) %>% 
   arrange(desc(population)) %>% 
-  slice(-(1:100))
+  slice(-(1:20))
   
   
 all_counties_sf2 = all_counties_sf %>% 
