@@ -412,7 +412,7 @@ p_animate = animate(
 ```{r country-trend-animate-save, echo=1, eval=FALSE}
 p_animate
 
-anim_save('img/covid.gif')
+anim_save('_posts/2020-03-23-covid/img/covid.gif')
 
 # for preview
 p_animate_preview = animate(
@@ -428,7 +428,7 @@ p_animate_preview = animate(
 )
 
 p_animate_preview
-
+  
 anim_save('img/covid_preview.gif')
 ```
 
@@ -938,7 +938,7 @@ The following creates an animated plot of Michigan counties over time.
 library(sf)
 
 mi_counties = county_trends %>% 
-  filter(state == 'Michigan')
+  filter(state == 'Michigan', date < '2020-04-01')
 
 all_counties_sf = st_as_sf(maps::map("county", plot = FALSE, fill = TRUE))
 
@@ -953,8 +953,8 @@ mi_counties_sf = all_counties_sf %>%
   select(-state) %>%
   left_join(prep_counties)
 
-mi_plot =
-  ggplot(data = mi_counties_sf) +
+mi_plot =  mi_counties_sf %>% 
+  ggplot() +
   geom_sf(aes(fill = confirmed), color = NA) +
   coord_sf(xlim = c(-91,-82),
            ylim = c(41, 48.5),
@@ -983,7 +983,7 @@ library(gganimate)
 
 mi_plot_anim = mi_plot +
   labs(title = '{closest_state}') +
-  transition_states(states = date) +
+  transition_states(date, wrap = FALSE) +
   theme(title = element_text(color ='gray50'))
 
 mi_plot_anim
