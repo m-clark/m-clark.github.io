@@ -77,11 +77,11 @@ read_covid_data <- function(
 ) {
   if (current) {
     data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv',
-                           col_types = 'Dciiccccddi')
+                           col_types = 'Dccccciiddi')
   }
   else {
     data = read_csv('https://open-covid-19.github.io/data/data.csv',
-                    col_types = 'Dciiccccddi')
+                    col_types = 'Dccccciiddi')
   }
   
   if (!is.null(country)) {
@@ -1276,7 +1276,7 @@ hcmap(
 
 <!-- # plot doubling -->
 
-<!-- countries %>%  -->
+<!-- countries %>% -->
 <!--   qplot( -->
 <!--   data = ., -->
 <!--   x = date, -->
@@ -1287,20 +1287,20 @@ hcmap(
 <!-- ) -->
 
 <!-- # plot derivs -->
-<!-- all_for_model = countries %>%  -->
+<!-- all_for_model = countries %>% -->
 <!--   mutate(country_code = factor(country_code), -->
-<!--          date_num = as.numeric(date)) %>%  -->
-<!--   filter(is.na(region_code)) %>%  -->
-<!--   select(-contains('region'), -latitude, -longitude) %>%  -->
-<!--   group_by(country_name) %>%  -->
-<!--   mutate(N = n()) %>%  -->
-<!--   ungroup() %>%  -->
+<!--          date_num = as.numeric(date)) %>% -->
+<!--   filter(is.na(region_code)) %>% -->
+<!--   select(-contains('region'), -latitude, -longitude) %>% -->
+<!--   group_by(country_name) %>% -->
+<!--   mutate(N = n(), total_confirmed_log = log(total_confirmed + 1)) %>% -->
+<!--   ungroup() %>% -->
 <!--   filter( -->
-<!--     (country_name %in% highlight |  -->
+<!--     (country_name %in% highlight | -->
 <!--        N >= 40 -->
-<!--     ) &  -->
+<!--     ) & -->
 <!--       date >= '2020-02-01' -->
-<!--   ) %>%  -->
+<!--   ) %>% -->
 <!--   droplevels() -->
 
 
@@ -1308,21 +1308,22 @@ hcmap(
 
 <!-- library(mgcv) -->
 
-<!-- mod = gam( -->
+<!-- mod = bam( -->
 <!--   total_confirmed ~ s(date_num, country_code, bs = 'fs', k = 5), -->
 <!--   # family = ziP(), -->
 <!--   # family = Gamma(link = 'log'), -->
 <!--   family = gaussian(link = 'log'), -->
 <!--   data = all_for_model, -->
-<!--   nthreads = 10 -->
+<!--   # nthreads = 10, -->
+<!--   discrete = FALSE -->
 <!-- ) -->
 
 <!-- summary(mod) -->
 <!-- ``` -->
 
 <!-- ```{r} -->
-<!-- highlight = all_for_model %>%  -->
-<!--   filter(country_name %in% highlight) %>%  -->
+<!-- highlight = all_for_model %>% -->
+<!--   filter(country_name %in% highlight) %>% -->
 <!--   pull(country_code) -->
 
 <!-- visibly::plot_gam_by( -->
@@ -1331,7 +1332,7 @@ hcmap(
 <!--   country_code, -->
 <!--   begin = .1, -->
 <!--   end = .8, -->
-<!--   alpha = .7 -->
+<!--   alpha = .25 -->
 <!--   ) + -->
 <!--   geom_text( -->
 <!--     aes(label = country_code), -->
@@ -1348,7 +1349,7 @@ hcmap(
 
 <!-- deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250) -->
 
-<!-- plot_dat = deriv_dat_1 %>%  -->
+<!-- plot_dat = deriv_dat_1 %>% -->
 <!--   mutate( -->
 <!--     date = lubridate::as_date(data), -->
 <!--     country_code = str_remove_all(smooth, 's\\(date_num\\):country_code'), -->
