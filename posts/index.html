@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+  <meta name="generator" content="distill" />
+
+  <style type="text/css">
+  /* Hide doc at startup (prevent jankiness while JS renders/transforms) */
+  body {
+    visibility: hidden;
+  }
+  </style>
+
+ <!--radix_placeholder_import_source-->
+ <!--/radix_placeholder_import_source-->
+
+  <!--radix_placeholder_meta_tags-->
+<title>Michael Clark: Factor Analysis with the psych package</title>
+
+<meta property="description" itemprop="description" content="Making sense of the results"/>
+
+<link rel="canonical" href="https://m-clark.github.io/posts/"/>
+<link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"/>
+<link rel="icon" type="image/vnd.microsoft.icon" href="../img/favicon.ico"/>
+
+<!--  https://schema.org/Article -->
+<meta property="article:published" itemprop="datePublished" content="2020-04-10"/>
+<meta property="article:created" itemprop="dateCreated" content="2020-04-10"/>
+<meta name="article:author" content="Michael Clark"/>
+
+<!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
+<meta property="og:title" content="Michael Clark: Factor Analysis with the psych package"/>
+<meta property="og:type" content="article"/>
+<meta property="og:description" content="Making sense of the results"/>
+<meta property="og:url" content="https://m-clark.github.io/posts/"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:site_name" content="Michael Clark"/>
+
+<!--  https://dev.twitter.com/cards/types/summary -->
+<meta property="twitter:card" content="summary"/>
+<meta property="twitter:title" content="Michael Clark: Factor Analysis with the psych package"/>
+<meta property="twitter:description" content="Making sense of the results"/>
+<meta property="twitter:url" content="https://m-clark.github.io/posts/"/>
+
+<!--  https://scholar.google.com/intl/en/scholar/inclusion.html#indexing -->
+<meta name="citation_title" content="Michael Clark: Factor Analysis with the psych package"/>
+<meta name="citation_fulltext_html_url" content="https://m-clark.github.io/posts/"/>
+<meta name="citation_fulltext_world_readable" content=""/>
+<meta name="citation_online_date" content="2020/04/10"/>
+<meta name="citation_publication_date" content="2020/04/10"/>
+<meta name="citation_author" content="Michael Clark"/>
+<!--/radix_placeholder_meta_tags-->
+  <!--radix_placeholder_rmarkdown_metadata-->
+
+<script type="text/json" id="radix-rmarkdown-metadata">
+{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["creative_commons","title","description","author","date","preview","output","draft","tags","categories","citation_url","canonical_url"]}},"value":[{"type":"character","attributes":{},"value":["CC BY-SA"]},{"type":"character","attributes":{},"value":["Factor Analysis with the psych package"]},{"type":"character","attributes":{},"value":["Making sense of the results"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["2020-04-10"]},{"type":"character","attributes":{},"value":["../../img/covid_preview.gif"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css","code_folding"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css","../../css/misc.css"]},{"type":"character","attributes":{},"value":["hide"]}]}]},{"type":"logical","attributes":{},"value":[false]},{"type":"character","attributes":{},"value":["factor analysis","psych package","rmsea","TLI"]},{"type":"character","attributes":{},"value":["visualization"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io/posts/"]}]}
+</script>
+<!--/radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-resource-manifest">
+  {"type":"character","attributes":{},"value":["2018-09-23-using-radix/mc_logo.png","2018-09-23-using-radix/using-radix.html","2018-09-23-using-radix/using-radix.Rmd","2019-03-12-mediation-models/mediation-models_cache/html5/__packages","2019-03-12-mediation-models/mediation-models_cache/html5/brms_c13c89b2c9017149d0246011861f126d.RData","2019-03-12-mediation-models/mediation-models_cache/html5/brms_c13c89b2c9017149d0246011861f126d.rdb","2019-03-12-mediation-models/mediation-models_cache/html5/brms_c13c89b2c9017149d0246011861f126d.rdx","2019-03-12-mediation-models/mediation-models_cache/html5/lavaan_425be57597e0678f234ddfb4cfddc179.RData","2019-03-12-mediation-models/mediation-models_cache/html5/lavaan_425be57597e0678f234ddfb4cfddc179.rdb","2019-03-12-mediation-models/mediation-models_cache/html5/lavaan_425be57597e0678f234ddfb4cfddc179.rdx","2019-03-12-mediation-models/mediation-models_cache/html5/mediation_pack_09e788f5c7f6f29561958f5331bb6993.RData","2019-03-12-mediation-models/mediation-models_cache/html5/mediation_pack_09e788f5c7f6f29561958f5331bb6993.rdb","2019-03-12-mediation-models/mediation-models_cache/html5/mediation_pack_09e788f5c7f6f29561958f5331bb6993.rdx","2019-03-12-mediation-models/mediation-models_cache/html5/pymediate_833fc47f2495dbb82f1f4b6f3d22eeed.RData","2019-03-12-mediation-models/mediation-models_cache/html5/pymediate_833fc47f2495dbb82f1f4b6f3d22eeed.rdb","2019-03-12-mediation-models/mediation-models_cache/html5/pymediate_833fc47f2495dbb82f1f4b6f3d22eeed.rdx","2019-03-12-mediation-models/mediation-models_files/bowser-1.9.3/bowser.min.js","2019-03-12-mediation-models/mediation-models_files/DiagrammeR-styles-0.2/styles.css","2019-03-12-mediation-models/mediation-models_files/distill-2.2.21/template.v2.js","2019-03-12-mediation-models/mediation-models_files/figure-html/bnlearn-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html/mediation_pack-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/bnlearn_reproduction-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/bnlearn-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/mediation_bayes_ppcheck-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/mediation_bayes_ppcheck-2.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/mediation_pack-1.png","2019-03-12-mediation-models/mediation-models_files/figure-html5/mediation_pack-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/mediation_result_pretty-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/psych_mediate-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/unnamed-chunk-2-1.png","2019-03-12-mediation-models/mediation-models_files/figure-html5/unnamed-chunk-2-1.svg","2019-03-12-mediation-models/mediation-models_files/figure-html5/unnamed-chunk-3-1.svg","2019-03-12-mediation-models/mediation-models_files/grViz-binding-1.0.0/grViz.js","2019-03-12-mediation-models/mediation-models_files/grViz-binding-1.0.1/grViz.js","2019-03-12-mediation-models/mediation-models_files/htmlwidgets-1.3/htmlwidgets.js","2019-03-12-mediation-models/mediation-models_files/jquery-1.11.3/jquery.min.js","2019-03-12-mediation-models/mediation-models_files/kePrint-0.0.1/kePrint.js","2019-03-12-mediation-models/mediation-models_files/viz-0.3/viz.js","2019-03-12-mediation-models/mediation-models_files/webcomponents-2.0.0/webcomponents.js","2019-03-12-mediation-models/mediation-models-code.R","2019-03-12-mediation-models/mediation-models.html","2019-03-12-mediation-models/mediation-models.Rmd","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/bowser-1.9.3/bowser.min.js","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/distill-2.2.21/template.v2.js","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/figure-html5/unnamed-chunk-1-1.svg","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/figure-html5/vis_baseline_model-1.svg","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/jquery-1.11.3/jquery.min.js","2019-05-14-shrinkage-in-mixed-models/shrinkage_files/webcomponents-2.0.0/webcomponents.js","2019-05-14-shrinkage-in-mixed-models/shrinkage.html","2019-05-14-shrinkage-in-mixed-models/shrinkage.Rmd","2019-06-21-empirical-bayes/data/bayes_full.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/__packages","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/add_predictions_caf0b1796d02cedec7fab73122674577.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/add_predictions_caf0b1796d02cedec7fab73122674577.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/add_predictions_caf0b1796d02cedec7fab73122674577.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_full_d8bd712c2cec73fb7b710d72e32e3e83.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_full_d8bd712c2cec73fb7b710d72e32e3e83.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_full_d8bd712c2cec73fb7b710d72e32e3e83.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_6918799b1ea26489ce0daeb6dddf893b.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_6918799b1ea26489ce0daeb6dddf893b.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_6918799b1ea26489ce0daeb6dddf893b.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_average_eb72684a56e9d605fe7cc71025703efd.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_average_eb72684a56e9d605fe7cc71025703efd.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/bayes_inspect_average_eb72684a56e9d605fe7cc71025703efd.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/beta_binomial_6a8f335a2935f2aba01e05f95823392f.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/beta_binomial_6a8f335a2935f2aba01e05f95823392f.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/beta_binomial_6a8f335a2935f2aba01e05f95823392f.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/career_all_predictions_0c1c682052d0074f51204b34b45c25c6.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/career_all_predictions_0c1c682052d0074f51204b34b45c25c6.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/career_all_predictions_0c1c682052d0074f51204b34b45c25c6.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_0c53b0a5bfdb3e816b1594a2b0fd1daa.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_0c53b0a5bfdb3e816b1594a2b0fd1daa.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_0c53b0a5bfdb3e816b1594a2b0fd1daa.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_table_09facc45e8fca15a0f9bc1984ee0e528.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_table_09facc45e8fca15a0f9bc1984ee0e528.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_bot_predictions_table_09facc45e8fca15a0f9bc1984ee0e528.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_14db0534896f954fdfd67900f9b42b5f.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_14db0534896f954fdfd67900f9b42b5f.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_14db0534896f954fdfd67900f9b42b5f.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_table_63374cec86ec39b3437e2f5c3f1cc3f0.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_table_63374cec86ec39b3437e2f5c3f1cc3f0.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/compare_top_predictions_table_63374cec86ec39b3437e2f5c3f1cc3f0.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/data_setup_ed9acf5b084172ec9ac1bc57689a3c67.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/data_setup_ed9acf5b084172ec9ac1bc57689a3c67.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/data_setup_ed9acf5b084172ec9ac1bc57689a3c67.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/density_plot_743f8feb54e439c653a3d72399593a28.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/density_plot_743f8feb54e439c653a3d72399593a28.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/density_plot_743f8feb54e439c653a3d72399593a28.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/eb_estimates_e55598ac1978abb91e50e909826968f6.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/eb_estimates_e55598ac1978abb91e50e909826968f6.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/eb_estimates_e55598ac1978abb91e50e909826968f6.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/filtered_models_fcfa432b8d24df9fda31c8c76532d1a8.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/filtered_models_fcfa432b8d24df9fda31c8c76532d1a8.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/filtered_models_fcfa432b8d24df9fda31c8c76532d1a8.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glm_binomial_ab258830a647bfc12c0dfac6806ac083.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glm_binomial_ab258830a647bfc12c0dfac6806ac083.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glm_binomial_ab258830a647bfc12c0dfac6806ac083.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glmer_full_a8d882ada2b17a9aabe81ed08355b58e.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glmer_full_a8d882ada2b17a9aabe81ed08355b58e.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/glmer_full_a8d882ada2b17a9aabe81ed08355b58e.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/misc_68b9b6438c495c10c6e522ec85ac44f2.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/misc_68b9b6438c495c10c6e522ec85ac44f2.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/misc_68b9b6438c495c10c6e522ec85ac44f2.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_625d75af8ca660220ff0181cb1a62afa.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_625d75af8ca660220ff0181cb1a62afa.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_625d75af8ca660220ff0181cb1a62afa.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_original_023dd9caa933737ea064b260006108d0.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_original_023dd9caa933737ea064b260006108d0.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/robinson_plot_original_023dd9caa933737ea064b260006108d0.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_bayes_model_2379b9910287b4115a91f25d98dbac7a.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_bayes_model_2379b9910287b4115a91f25d98dbac7a.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_bayes_model_2379b9910287b4115a91f25d98dbac7a.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_mixed_model_f211c5fdf620f7a8aa2863ed92abcb9d.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_mixed_model_f211c5fdf620f7a8aa2863ed92abcb9d.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/save_mixed_model_f211c5fdf620f7a8aa2863ed92abcb9d.rdx","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/show_data_2c692a1dc69e36947681cae099fb553a.RData","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/show_data_2c692a1dc69e36947681cae099fb553a.rdb","2019-06-21-empirical-bayes/empirical-bayes_cache/html5/show_data_2c692a1dc69e36947681cae099fb553a.rdx","2019-06-21-empirical-bayes/empirical-bayes_files/bowser-1.9.3/bowser.min.js","2019-06-21-empirical-bayes/empirical-bayes_files/crosstalk-1.0.0/css/crosstalk.css","2019-06-21-empirical-bayes/empirical-bayes_files/crosstalk-1.0.0/js/crosstalk.js","2019-06-21-empirical-bayes/empirical-bayes_files/crosstalk-1.0.0/js/crosstalk.js.map","2019-06-21-empirical-bayes/empirical-bayes_files/crosstalk-1.0.0/js/crosstalk.min.js","2019-06-21-empirical-bayes/empirical-bayes_files/crosstalk-1.0.0/js/crosstalk.min.js.map","2019-06-21-empirical-bayes/empirical-bayes_files/datatables-binding-0.7/datatables.js","2019-06-21-empirical-bayes/empirical-bayes_files/datatables-css-0.0.0/datatables-crosstalk.css","2019-06-21-empirical-bayes/empirical-bayes_files/distill-2.2.21/template.v2.js","2019-06-21-empirical-bayes/empirical-bayes_files/dt-core-1.10.16/css/jquery.dataTables.extra.css","2019-06-21-empirical-bayes/empirical-bayes_files/dt-core-1.10.16/css/jquery.dataTables.min.css","2019-06-21-empirical-bayes/empirical-bayes_files/dt-core-1.10.16/js/jquery.dataTables.min.js","2019-06-21-empirical-bayes/empirical-bayes_files/figure-html5/bayes_inspect_average-1.svg","2019-06-21-empirical-bayes/empirical-bayes_files/figure-html5/bayes_inspect-1.svg","2019-06-21-empirical-bayes/empirical-bayes_files/figure-html5/density_plot-1.svg","2019-06-21-empirical-bayes/empirical-bayes_files/figure-html5/robinson_plot_original-1.svg","2019-06-21-empirical-bayes/empirical-bayes_files/figure-html5/robinson_plot-1.svg","2019-06-21-empirical-bayes/empirical-bayes_files/htmlwidgets-1.3/htmlwidgets.js","2019-06-21-empirical-bayes/empirical-bayes_files/jquery-1.12.4/jquery.min.js","2019-06-21-empirical-bayes/empirical-bayes_files/jquery-1.12.4/LICENSE.txt","2019-06-21-empirical-bayes/empirical-bayes_files/kePrint-0.0.1/kePrint.js","2019-06-21-empirical-bayes/empirical-bayes_files/webcomponents-2.0.0/webcomponents.js","2019-06-21-empirical-bayes/empirical-bayes.html","2019-06-21-empirical-bayes/empirical-bayes.Rmd","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/bowser-1.9.3/bowser.min.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/DiagrammeR-styles-0.2/styles.css","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/distill-2.2.21/template.v2.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/grViz-binding-1.0.0/grViz.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/htmlwidgets-1.3/htmlwidgets.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/jquery-1.11.3/jquery.min.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/kePrint-0.0.1/kePrint.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/viz-0.3/viz.js","2019-08-05-comparing-latent-variables/comparing-latent-variables_files/webcomponents-2.0.0/webcomponents.js","2019-08-05-comparing-latent-variables/comparing-latent-variables.html","2019-08-05-comparing-latent-variables/comparing-latent-variables.Rmd","2019-08-20-fractional-regression/fracreg_cache/html5/__packages","2019-08-20-fractional-regression/fracreg_cache/html5/glm_4b81d1d0ee318952a79acf7f14cb226b.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glm_4b81d1d0ee318952a79acf7f14cb226b.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glm_4b81d1d0ee318952a79acf7f14cb226b.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/glm-se_328ac2cf4c79f945a1e629bcd69ba327.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glm-se_328ac2cf4c79f945a1e629bcd69ba327.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glm-se_328ac2cf4c79f945a1e629bcd69ba327.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/glm-summary_fb87836272c06965f44381e51012cd2a.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glm-summary_fb87836272c06965f44381e51012cd2a.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glm-summary_fb87836272c06965f44381e51012cd2a.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-se_3aed056b82bbf5f29b4182f53c13a853.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-se_3aed056b82bbf5f29b4182f53c13a853.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-se_3aed056b82bbf5f29b4182f53c13a853.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-summary_acf38e56266cd05375f3ffdef5bcfa52.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-summary_acf38e56266cd05375f3ffdef5bcfa52.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glmm-summary_acf38e56266cd05375f3ffdef5bcfa52.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/glmmTMB_031d6990d74132e11623626854aa80aa.RData","2019-08-20-fractional-regression/fracreg_cache/html5/glmmTMB_031d6990d74132e11623626854aa80aa.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/glmmTMB_031d6990d74132e11623626854aa80aa.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/initial-import_2d6626f2b73330478225e073176e65ba.RData","2019-08-20-fractional-regression/fracreg_cache/html5/initial-import_2d6626f2b73330478225e073176e65ba.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/initial-import_2d6626f2b73330478225e073176e65ba.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/lme4_d36cf154c94f12699315b150ba887034.RData","2019-08-20-fractional-regression/fracreg_cache/html5/lme4_d36cf154c94f12699315b150ba887034.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/lme4_d36cf154c94f12699315b150ba887034.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv_55bf36b13ef592d68c329b7bf02ffeca.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv_55bf36b13ef592d68c329b7bf02ffeca.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv_55bf36b13ef592d68c329b7bf02ffeca.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re_b4292fe832d0d1a16974c90fd3bd0cee.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re_b4292fe832d0d1a16974c90fd3bd0cee.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re_b4292fe832d0d1a16974c90fd3bd0cee.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-se_e31bc1bb996f05fd7866ecb546c0afad.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-se_e31bc1bb996f05fd7866ecb546c0afad.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-se_e31bc1bb996f05fd7866ecb546c0afad.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-summary_437ed00739a20d39544d845d6ca59c33.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-summary_437ed00739a20d39544d845d6ca59c33.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-re-summary_437ed00739a20d39544d845d6ca59c33.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-se_1add9ec346cc05f2c7993e86b1b5c7da.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-se_1add9ec346cc05f2c7993e86b1b5c7da.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-se_1add9ec346cc05f2c7993e86b1b5c7da.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-summary_904f3db2380e8012ebcaf67fd0a5f0f7.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-summary_904f3db2380e8012ebcaf67fd0a5f0f7.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv-summary_904f3db2380e8012ebcaf67fd0a5f0f7.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv2_aa6b4f81c43ef5edcfa435af4dd918db.RData","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv2_aa6b4f81c43ef5edcfa435af4dd918db.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/mgcv2_aa6b4f81c43ef5edcfa435af4dd918db.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/prate-vis_596f1595f260d67ab15a85fe31c17078.RData","2019-08-20-fractional-regression/fracreg_cache/html5/prate-vis_596f1595f260d67ab15a85fe31c17078.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/prate-vis_596f1595f260d67ab15a85fe31c17078.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/quasi_d73ad9aa0565769b58f767e064ab1801.RData","2019-08-20-fractional-regression/fracreg_cache/html5/quasi_d73ad9aa0565769b58f767e064ab1801.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/quasi_d73ad9aa0565769b58f767e064ab1801.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/quasi-summary_a437eccc5de6436f19b8e79934b2e948.RData","2019-08-20-fractional-regression/fracreg_cache/html5/quasi-summary_a437eccc5de6436f19b8e79934b2e948.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/quasi-summary_a437eccc5de6436f19b8e79934b2e948.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se_930d3e8c2e79497fe20f36da9106a8b7.RData","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se_930d3e8c2e79497fe20f36da9106a8b7.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se_930d3e8c2e79497fe20f36da9106a8b7.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-print_48e6b8221c6e21ec457003ae64a9d19a.RData","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-print_48e6b8221c6e21ec457003ae64a9d19a.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-print_48e6b8221c6e21ec457003ae64a9d19a.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-quasi-print_395ee3213198640f5ee398f23dca69ec.RData","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-quasi-print_395ee3213198640f5ee398f23dca69ec.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/robust-se-quasi-print_395ee3213198640f5ee398f23dca69ec.rdx","2019-08-20-fractional-regression/fracreg_cache/html5/stata_0558930e8ae45a6173f607537f28145a.RData","2019-08-20-fractional-regression/fracreg_cache/html5/stata_0558930e8ae45a6173f607537f28145a.rdb","2019-08-20-fractional-regression/fracreg_cache/html5/stata_0558930e8ae45a6173f607537f28145a.rdx","2019-08-20-fractional-regression/fracreg_files/bowser-1.9.3/bowser.min.js","2019-08-20-fractional-regression/fracreg_files/distill-2.2.21/template.v2.js","2019-08-20-fractional-regression/fracreg_files/figure-html5/prate-vis-1.svg","2019-08-20-fractional-regression/fracreg_files/jquery-1.11.3/jquery.min.js","2019-08-20-fractional-regression/fracreg_files/kePrint-0.0.1/kePrint.js","2019-08-20-fractional-regression/fracreg_files/webcomponents-2.0.0/webcomponents.js","2019-08-20-fractional-regression/fracreg.html","2019-08-20-fractional-regression/fracreg.Rmd","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/__packages","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_76fda91b3e77c8b907f03cb96188d7ff.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_76fda91b3e77c8b907f03cb96188d7ff.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_76fda91b3e77c8b907f03cb96188d7ff.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_discrete_2e567626290fa6863e6ca406231edd70.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_discrete_2e567626290fa6863e6ca406231edd70.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam_big_discrete_2e567626290fa6863e6ca406231edd70.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam-fe-results_d8c63d20c3d8cad01e6038f70c8c2eff.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam-fe-results_d8c63d20c3d8cad01e6038f70c8c2eff.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bam-fe-results_d8c63d20c3d8cad01e6038f70c8c2eff.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_ae59eb91597956e548349b57b16dd60e.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_ae59eb91597956e548349b57b16dd60e.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_ae59eb91597956e548349b57b16dd60e.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_discrete_a92179bad0f0818db6bc1ef594cbcb82.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_discrete_a92179bad0f0818db6bc1ef594cbcb82.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_bam_discrete_a92179bad0f0818db6bc1ef594cbcb82.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_d3ea22e4c05ddacbba6c2826cdba7586.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_d3ea22e4c05ddacbba6c2826cdba7586.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_d3ea22e4c05ddacbba6c2826cdba7586.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_summary_d2e479eb8da9f7bfddda9c7951b1737c.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_summary_d2e479eb8da9f7bfddda9c7951b1737c.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/basic_model_summary_d2e479eb8da9f7bfddda9c7951b1737c.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes_b87403c0310bd33b052eb168313ade58.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes_b87403c0310bd33b052eb168313ade58.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes_b87403c0310bd33b052eb168313ade58.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes-compare_7b92f693d9f8fd78aeb0771dbcf71589.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes-compare_7b92f693d9f8fd78aeb0771dbcf71589.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/bayes-compare_7b92f693d9f8fd78aeb0771dbcf71589.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-re-results_cb367af76c9b1a1679f62e4b68547622.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-re-results_cb367af76c9b1a1679f62e4b68547622.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-re-results_cb367af76c9b1a1679f62e4b68547622.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-vc-results_b845b74f85faad15d9548f512a81fe73.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-vc-results_b845b74f85faad15d9548f512a81fe73.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/big-vc-results_b845b74f85faad15d9548f512a81fe73.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksn_32f8cb3717ec9c405c247da964b58337.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksn_32f8cb3717ec9c405c247da964b58337.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksn_32f8cb3717ec9c405c247da964b58337.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksnlev_66309d9242bc391bd015b72a0d7ca409.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksnlev_66309d9242bc391bd015b72a0d7ca409.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/brooksnlev_66309d9242bc391bd015b72a0d7ca409.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef_6eeb2e673d8d5a83cbc5410dc2822f0d.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef_6eeb2e673d8d5a83cbc5410dc2822f0d.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef_6eeb2e673d8d5a83cbc5410dc2822f0d.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef-se_4eccf30fe82f2af2c7848819474b555c.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef-se_4eccf30fe82f2af2c7848819474b555c.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-fixef-se_4eccf30fe82f2af2c7848819474b555c.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc_a41553a7357fad1f179c0f30f1ce46cc.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc_a41553a7357fad1f179c0f30f1ce46cc.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc_a41553a7357fad1f179c0f30f1ce46cc.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int_f3b9e6410db7be8ae11bb39ec5e64cd8.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int_f3b9e6410db7be8ae11bb39ec5e64cd8.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int_f3b9e6410db7be8ae11bb39ec5e64cd8.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int-table_6fe933aae8d0f78a2fa4d909dd041d58.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int-table_6fe933aae8d0f78a2fa4d909dd041d58.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/compare-vc-int-table_6fe933aae8d0f78a2fa4d909dd041d58.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/data-prep_0792b70ab89ac7df0ed82e1324e809ed.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/data-prep_0792b70ab89ac7df0ed82e1324e809ed.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/data-prep_0792b70ab89ac7df0ed82e1324e809ed.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmm_big_bayes_bd33796440e8e64f31ea01f206504492.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmm_big_bayes_bd33796440e8e64f31ea01f206504492.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmm_big_bayes_bd33796440e8e64f31ea01f206504492.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmmTMB_big_65245723ee828c52a8cfb0cb2847cbf3.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmmTMB_big_65245723ee828c52a8cfb0cb2847cbf3.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/glmmTMB_big_65245723ee828c52a8cfb0cb2847cbf3.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-settings_8cd099024535b2be1c9297555bbac41b.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-settings_8cd099024535b2be1c9297555bbac41b.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-settings_8cd099024535b2be1c9297555bbac41b.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-timings_417556e17d17926a104cd538f75c0aa9.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-timings_417556e17d17926a104cd538f75c0aa9.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/gmm-timings_417556e17d17926a104cd538f75c0aa9.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc_c133f5fa95b1caacc7c38b4cda0ce3a5.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc_c133f5fa95b1caacc7c38b4cda0ce3a5.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc_c133f5fa95b1caacc7c38b4cda0ce3a5.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc-show_50ba11e1d25fc1182d794bd95d029a4b.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc-show_50ba11e1d25fc1182d794bd95d029a4b.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/initial-vc-show_50ba11e1d25fc1182d794bd95d029a4b.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-settings_171b89e494c886aa64ec0f1ef9494ebc.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-settings_171b89e494c886aa64ec0f1ef9494ebc.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-settings_171b89e494c886aa64ec0f1ef9494ebc.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings_7fdad9ab0f183826150636af8560f037.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings_7fdad9ab0f183826150636af8560f037.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings_7fdad9ab0f183826150636af8560f037.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings-data_73406c094436d250a7ef52666e51ecb2.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings-data_73406c094436d250a7ef52666e51ecb2.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/lme-timings-data_73406c094436d250a7ef52666e51ecb2.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mccoach_e36ac4c1bc6effeeb768bf2fe5e6843a.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mccoach_e36ac4c1bc6effeeb768bf2fe5e6843a.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mccoach_e36ac4c1bc6effeeb768bf2fe5e6843a.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mixed_big_glmm_fe_results_a10ad048371342e3e4fbe38b7b3b3597.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mixed_big_glmm_fe_results_a10ad048371342e3e4fbe38b7b3b3597.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/mixed_big_glmm_fe_results_a10ad048371342e3e4fbe38b7b3b3597.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re_e3295f674cc02d5180f078b033e4ee35.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re_e3295f674cc02d5180f078b033e4ee35.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re_e3295f674cc02d5180f078b033e4ee35.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-days_2e03333b9d561e8d311f00fb768e1fc4.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-days_2e03333b9d561e8d311f00fb768e1fc4.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-days_2e03333b9d561e8d311f00fb768e1fc4.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int_e8877c994e582e60b1648578bad65a8e.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int_e8877c994e582e60b1648578bad65a8e.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int_e8877c994e582e60b1648578bad65a8e.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int-se_cfe7500342603b73ea2a54b9d1a19daf.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int-se_cfe7500342603b73ea2a54b9d1a19daf.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/re-int-se_cfe7500342603b73ea2a54b9d1a19daf.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/show-data_1ea668bda236faf2e3536e2e84ee2120.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/show-data_1ea668bda236faf2e3536e2e84ee2120.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/show-data_1ea668bda236faf2e3536e2e84ee2120.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_big_mixed_binary_3eb303ce007d62508a7d5b95a2032f2d.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_big_mixed_binary_3eb303ce007d62508a7d5b95a2032f2d.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_big_mixed_binary_3eb303ce007d62508a7d5b95a2032f2d.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_mixed_3196c6449b55136fd905d1423ff128b6.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_mixed_3196c6449b55136fd905d1423ff128b6.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/simple_mixed_3196c6449b55136fd905d1423ff128b6.rdx","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/tmb_vignette_e2a607c2d11009c20abbfeba37a050b7.RData","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/tmb_vignette_e2a607c2d11009c20abbfeba37a050b7.rdb","2019-10-20-big-mixed-models/big-mixed-models_cache/html5/tmb_vignette_e2a607c2d11009c20abbfeba37a050b7.rdx","2019-10-20-big-mixed-models/big-mixed-models_files/bowser-1.9.3/bowser.min.js","2019-10-20-big-mixed-models/big-mixed-models_files/distill-2.2.21/template.v2.js","2019-10-20-big-mixed-models/big-mixed-models_files/figure-html5/gmm-timings-1.svg","2019-10-20-big-mixed-models/big-mixed-models_files/figure-html5/lme-timings-1.svg","2019-10-20-big-mixed-models/big-mixed-models_files/figure-html5/lme-timings-2.svg","2019-10-20-big-mixed-models/big-mixed-models_files/jquery-1.11.3/jquery.min.js","2019-10-20-big-mixed-models/big-mixed-models_files/kePrint-0.0.1/kePrint.js","2019-10-20-big-mixed-models/big-mixed-models_files/webcomponents-2.0.0/webcomponents.js","2019-10-20-big-mixed-models/big-mixed-models.html","2019-10-20-big-mixed-models/big-mixed-models.Rmd","2019-10-20-big-mixed-models/gam_references.bib","2019-10-20-big-mixed-models/gmm_results_summary.RData","2019-10-20-big-mixed-models/lme_results_old.RData","2019-10-20-big-mixed-models/lme_results_summary.RData","2019-10-20-big-mixed-models/lme_results.RData","2019-10-20-big-mixed-models/mccoach.pdf","2019-10-20-big-mixed-models/mgcv_max_lme_5e6_10000_1000_24_result.rdata","2019-10-20-big-mixed-models/mgcv_max_lme_5e6_10000_1000_32_result.rdata","2019-10-20-big-mixed-models/mgcv_max_lme_5m_result.rdata","2019-10-20-big-mixed-models/mgcv_max_lme_result.RData","2019-10-20-big-mixed-models/preview_image.R","2019-10-20-big-mixed-models/timings_plot.R","2020-03-01-random-categorical/random_categories_files/bowser-1.9.3/bowser.min.js","2020-03-01-random-categorical/random_categories_files/distill-2.2.21/template.v2.js","2020-03-01-random-categorical/random_categories_files/figure-html5/vis-data-1.svg","2020-03-01-random-categorical/random_categories_files/jquery-1.11.3/jquery.min.js","2020-03-01-random-categorical/random_categories_files/kePrint-0.0.1/kePrint.js","2020-03-01-random-categorical/random_categories_files/webcomponents-2.0.0/webcomponents.js","2020-03-01-random-categorical/random_categories.html","2020-03-01-random-categorical/random_categories.Rmd","2020-03-16-convergence/conv_references.bib","2020-03-16-convergence/convergence_cache/html5/__packages","2020-03-16-convergence/convergence_cache/html5/allfit_1a28ce0fce7dc7948d3d7bbc621d412e.RData","2020-03-16-convergence/convergence_cache/html5/allfit_1a28ce0fce7dc7948d3d7bbc621d412e.rdb","2020-03-16-convergence/convergence_cache/html5/allfit_1a28ce0fce7dc7948d3d7bbc621d412e.rdx","2020-03-16-convergence/convergence_cache/html5/allfit-result_0d66d48b240fb329d265225c203ab1c8.RData","2020-03-16-convergence/convergence_cache/html5/allfit-result_0d66d48b240fb329d265225c203ab1c8.rdb","2020-03-16-convergence/convergence_cache/html5/allfit-result_0d66d48b240fb329d265225c203ab1c8.rdx","2020-03-16-convergence/convergence_cache/html5/check_gradients2_0a250fc0c28db2ad9b93a1b456124a33.RData","2020-03-16-convergence/convergence_cache/html5/check_gradients2_0a250fc0c28db2ad9b93a1b456124a33.rdb","2020-03-16-convergence/convergence_cache/html5/check_gradients2_0a250fc0c28db2ad9b93a1b456124a33.rdx","2020-03-16-convergence/convergence_cache/html5/check-gradients_e58338ea63083dd3b655c94f37d374d2.RData","2020-03-16-convergence/convergence_cache/html5/check-gradients_e58338ea63083dd3b655c94f37d374d2.rdb","2020-03-16-convergence/convergence_cache/html5/check-gradients_e58338ea63083dd3b655c94f37d374d2.rdx","2020-03-16-convergence/convergence_cache/html5/check-gradients-num-deriv_693396e7a215af2a1cd0a08839f50426.RData","2020-03-16-convergence/convergence_cache/html5/check-gradients-num-deriv_693396e7a215af2a1cd0a08839f50426.rdb","2020-03-16-convergence/convergence_cache/html5/check-gradients-num-deriv_693396e7a215af2a1cd0a08839f50426.rdx","2020-03-16-convergence/convergence_cache/html5/check-singularity_22d49f6975813303f9e342acccc4a5eb.RData","2020-03-16-convergence/convergence_cache/html5/check-singularity_22d49f6975813303f9e342acccc4a5eb.rdb","2020-03-16-convergence/convergence_cache/html5/check-singularity_22d49f6975813303f9e342acccc4a5eb.rdx","2020-03-16-convergence/convergence_cache/html5/check-singularity2_312250cde14799680380aceda1c58f70.RData","2020-03-16-convergence/convergence_cache/html5/check-singularity2_312250cde14799680380aceda1c58f70.rdb","2020-03-16-convergence/convergence_cache/html5/check-singularity2_312250cde14799680380aceda1c58f70.rdx","2020-03-16-convergence/convergence_cache/html5/compare-converged_b84791a947ce29e82eb0006f02858fe4.RData","2020-03-16-convergence/convergence_cache/html5/compare-converged_b84791a947ce29e82eb0006f02858fe4.rdb","2020-03-16-convergence/convergence_cache/html5/compare-converged_b84791a947ce29e82eb0006f02858fe4.rdx","2020-03-16-convergence/convergence_cache/html5/correlation_7f89deb3cf63da8e0056a45e08b992f9.RData","2020-03-16-convergence/convergence_cache/html5/correlation_7f89deb3cf63da8e0056a45e08b992f9.rdb","2020-03-16-convergence/convergence_cache/html5/correlation_7f89deb3cf63da8e0056a45e08b992f9.rdx","2020-03-16-convergence/convergence_cache/html5/data-from-stack-overflow_10dec85b8afb737372b5b4184292d6e7.RData","2020-03-16-convergence/convergence_cache/html5/data-from-stack-overflow_10dec85b8afb737372b5b4184292d6e7.rdb","2020-03-16-convergence/convergence_cache/html5/data-from-stack-overflow_10dec85b8afb737372b5b4184292d6e7.rdx","2020-03-16-convergence/convergence_cache/html5/day-area-table_7849936660c99e355b839fdd4f7cedea.RData","2020-03-16-convergence/convergence_cache/html5/day-area-table_7849936660c99e355b839fdd4f7cedea.rdb","2020-03-16-convergence/convergence_cache/html5/day-area-table_7849936660c99e355b839fdd4f7cedea.rdx","2020-03-16-convergence/convergence_cache/html5/df-no-zeros_011e2a4ad69941ee7522c1c0194f2c2e.RData","2020-03-16-convergence/convergence_cache/html5/df-no-zeros_011e2a4ad69941ee7522c1c0194f2c2e.rdb","2020-03-16-convergence/convergence_cache/html5/df-no-zeros_011e2a4ad69941ee7522c1c0194f2c2e.rdx","2020-03-16-convergence/convergence_cache/html5/final-model_d3d9e890feda213fc1512db19494617c.RData","2020-03-16-convergence/convergence_cache/html5/final-model_d3d9e890feda213fc1512db19494617c.rdb","2020-03-16-convergence/convergence_cache/html5/final-model_d3d9e890feda213fc1512db19494617c.rdx","2020-03-16-convergence/convergence_cache/html5/glm-issues_2578e1a0765716003073a83def45db21.RData","2020-03-16-convergence/convergence_cache/html5/glm-issues_2578e1a0765716003073a83def45db21.rdb","2020-03-16-convergence/convergence_cache/html5/glm-issues_2578e1a0765716003073a83def45db21.rdx","2020-03-16-convergence/convergence_cache/html5/glm-no-day_a49f32170808e9bc67bc2362baebd85f.RData","2020-03-16-convergence/convergence_cache/html5/glm-no-day_a49f32170808e9bc67bc2362baebd85f.rdb","2020-03-16-convergence/convergence_cache/html5/glm-no-day_a49f32170808e9bc67bc2362baebd85f.rdx","2020-03-16-convergence/convergence_cache/html5/init-data_3efd992c0828cbbe203ca8a0f3d7b8be.RData","2020-03-16-convergence/convergence_cache/html5/init-data_3efd992c0828cbbe203ca8a0f3d7b8be.rdb","2020-03-16-convergence/convergence_cache/html5/init-data_3efd992c0828cbbe203ca8a0f3d7b8be.rdx","2020-03-16-convergence/convergence_cache/html5/init-data-show_3ff6b2cd66d9f4b4d0a0c1ec12eaa137.RData","2020-03-16-convergence/convergence_cache/html5/init-data-show_3ff6b2cd66d9f4b4d0a0c1ec12eaa137.rdb","2020-03-16-convergence/convergence_cache/html5/init-data-show_3ff6b2cd66d9f4b4d0a0c1ec12eaa137.rdx","2020-03-16-convergence/convergence_cache/html5/init-fit_15e1ace08631ffac902ef9af8fba4048.RData","2020-03-16-convergence/convergence_cache/html5/init-fit_15e1ace08631ffac902ef9af8fba4048.rdb","2020-03-16-convergence/convergence_cache/html5/init-fit_15e1ace08631ffac902ef9af8fba4048.rdx","2020-03-16-convergence/convergence_cache/html5/init-warning-message_cccba5d65c56302f6d0556b509d1a392.RData","2020-03-16-convergence/convergence_cache/html5/init-warning-message_cccba5d65c56302f6d0556b509d1a392.rdb","2020-03-16-convergence/convergence_cache/html5/init-warning-message_cccba5d65c56302f6d0556b509d1a392.rdx","2020-03-16-convergence/convergence_cache/html5/inspect-vif_e49627044d8b43afd0b652408871550c.RData","2020-03-16-convergence/convergence_cache/html5/inspect-vif_e49627044d8b43afd0b652408871550c.rdb","2020-03-16-convergence/convergence_cache/html5/inspect-vif_e49627044d8b43afd0b652408871550c.rdx","2020-03-16-convergence/convergence_cache/html5/inspect-wind_a26c1463b4585c5100161899847167e4.RData","2020-03-16-convergence/convergence_cache/html5/inspect-wind_a26c1463b4585c5100161899847167e4.rdb","2020-03-16-convergence/convergence_cache/html5/inspect-wind_a26c1463b4585c5100161899847167e4.rdx","2020-03-16-convergence/convergence_cache/html5/model_glm_3_6ec5acd97198da56144dbd11ae511b0e.RData","2020-03-16-convergence/convergence_cache/html5/model_glm_3_6ec5acd97198da56144dbd11ae511b0e.rdb","2020-03-16-convergence/convergence_cache/html5/model_glm_3_6ec5acd97198da56144dbd11ae511b0e.rdx","2020-03-16-convergence/convergence_cache/html5/model_glm_4_4ca0c5dff8eeb43511e8cb7a92659d86.RData","2020-03-16-convergence/convergence_cache/html5/model_glm_4_4ca0c5dff8eeb43511e8cb7a92659d86.rdb","2020-03-16-convergence/convergence_cache/html5/model_glm_4_4ca0c5dff8eeb43511e8cb7a92659d86.rdx","2020-03-16-convergence/convergence_cache/html5/model_glm-glm_7bd5de080e136a5f0f68c2ee0d84355d.RData","2020-03-16-convergence/convergence_cache/html5/model_glm-glm_7bd5de080e136a5f0f68c2ee0d84355d.rdb","2020-03-16-convergence/convergence_cache/html5/model_glm-glm_7bd5de080e136a5f0f68c2ee0d84355d.rdx","2020-03-16-convergence/convergence_cache/html5/model_mixed_1_f0c32312bf89f2cebeb090fd4ab1a370.RData","2020-03-16-convergence/convergence_cache/html5/model_mixed_1_f0c32312bf89f2cebeb090fd4ab1a370.rdb","2020-03-16-convergence/convergence_cache/html5/model_mixed_1_f0c32312bf89f2cebeb090fd4ab1a370.rdx","2020-03-16-convergence/convergence_cache/html5/model_mixed_2-rescale_fa14fbd2a99aa43c584c0b8b287d97c3.RData","2020-03-16-convergence/convergence_cache/html5/model_mixed_2-rescale_fa14fbd2a99aa43c584c0b8b287d97c3.rdb","2020-03-16-convergence/convergence_cache/html5/model_mixed_2-rescale_fa14fbd2a99aa43c584c0b8b287d97c3.rdx","2020-03-16-convergence/convergence_cache/html5/model_mixed_3_8d0c4b67154a4979caed69889117889f.RData","2020-03-16-convergence/convergence_cache/html5/model_mixed_3_8d0c4b67154a4979caed69889117889f.rdb","2020-03-16-convergence/convergence_cache/html5/model_mixed_3_8d0c4b67154a4979caed69889117889f.rdx","2020-03-16-convergence/convergence_cache/html5/model_mixed_4_5198ff85e477b0366a6224d956a370a1.RData","2020-03-16-convergence/convergence_cache/html5/model_mixed_4_5198ff85e477b0366a6224d956a370a1.rdb","2020-03-16-convergence/convergence_cache/html5/model_mixed_4_5198ff85e477b0366a6224d956a370a1.rdx","2020-03-16-convergence/convergence_cache/html5/packages_895925f701b38a06b81202d6dab6be11.RData","2020-03-16-convergence/convergence_cache/html5/packages_895925f701b38a06b81202d6dab6be11.rdb","2020-03-16-convergence/convergence_cache/html5/packages_895925f701b38a06b81202d6dab6be11.rdx","2020-03-16-convergence/convergence_cache/html5/restart_ba30ad08d4e628bd0a479387d3863f45.RData","2020-03-16-convergence/convergence_cache/html5/restart_ba30ad08d4e628bd0a479387d3863f45.rdb","2020-03-16-convergence/convergence_cache/html5/restart_ba30ad08d4e628bd0a479387d3863f45.rdx","2020-03-16-convergence/convergence_cache/html5/table-wind-area_98f4dbf30ae859c60ec8aab35c416041.RData","2020-03-16-convergence/convergence_cache/html5/table-wind-area_98f4dbf30ae859c60ec8aab35c416041.rdb","2020-03-16-convergence/convergence_cache/html5/table-wind-area_98f4dbf30ae859c60ec8aab35c416041.rdx","2020-03-16-convergence/convergence_cache/html5/wind-vif_1506719d589ee9acf6c27cd9f9b2e7b5.RData","2020-03-16-convergence/convergence_cache/html5/wind-vif_1506719d589ee9acf6c27cd9f9b2e7b5.rdb","2020-03-16-convergence/convergence_cache/html5/wind-vif_1506719d589ee9acf6c27cd9f9b2e7b5.rdx","2020-03-16-convergence/convergence_files/bowser-1.9.3/bowser.min.js","2020-03-16-convergence/convergence_files/crosstalk-1.0.0/css/crosstalk.css","2020-03-16-convergence/convergence_files/crosstalk-1.0.0/js/crosstalk.js","2020-03-16-convergence/convergence_files/crosstalk-1.0.0/js/crosstalk.js.map","2020-03-16-convergence/convergence_files/crosstalk-1.0.0/js/crosstalk.min.js","2020-03-16-convergence/convergence_files/crosstalk-1.0.0/js/crosstalk.min.js.map","2020-03-16-convergence/convergence_files/crosstalk-1.1.0.1/css/crosstalk.css","2020-03-16-convergence/convergence_files/crosstalk-1.1.0.1/js/crosstalk.js","2020-03-16-convergence/convergence_files/crosstalk-1.1.0.1/js/crosstalk.js.map","2020-03-16-convergence/convergence_files/crosstalk-1.1.0.1/js/crosstalk.min.js","2020-03-16-convergence/convergence_files/crosstalk-1.1.0.1/js/crosstalk.min.js.map","2020-03-16-convergence/convergence_files/distill-2.2.21/template.v2.js","2020-03-16-convergence/convergence_files/figure-html5/glm-issues-1.svg","2020-03-16-convergence/convergence_files/htmlwidgets-1.5.1/htmlwidgets.js","2020-03-16-convergence/convergence_files/jquery-1.11.3/jquery-AUTHORS.txt","2020-03-16-convergence/convergence_files/jquery-1.11.3/jquery.js","2020-03-16-convergence/convergence_files/jquery-1.11.3/jquery.min.js","2020-03-16-convergence/convergence_files/jquery-1.11.3/jquery.min.map","2020-03-16-convergence/convergence_files/kePrint-0.0.1/kePrint.js","2020-03-16-convergence/convergence_files/plotly-binding-4.9.2/plotly.js","2020-03-16-convergence/convergence_files/plotly-htmlwidgets-css-1.52.2/plotly-htmlwidgets.css","2020-03-16-convergence/convergence_files/plotly-main-1.52.2/plotly-latest.min.js","2020-03-16-convergence/convergence_files/typedarray-0.1/typedarray.min.js","2020-03-16-convergence/convergence_files/webcomponents-2.0.0/webcomponents.js","2020-03-16-convergence/convergence.html","2020-03-16-convergence/convergence.Rmd","2020-03-23-covid/covid_cache/html5/__packages","2020-03-23-covid/covid_cache/html5/country-trend-animate_76f7eeefc2bb0e886f890383e949faa0.RData","2020-03-23-covid/covid_cache/html5/country-trend-animate_76f7eeefc2bb0e886f890383e949faa0.rdb","2020-03-23-covid/covid_cache/html5/country-trend-animate_76f7eeefc2bb0e886f890383e949faa0.rdx","2020-03-23-covid/covid_files/bowser-1.9.3/bowser.min.js","2020-03-23-covid/covid_files/crosstalk-1.1.0.1/css/crosstalk.css","2020-03-23-covid/covid_files/crosstalk-1.1.0.1/js/crosstalk.js","2020-03-23-covid/covid_files/crosstalk-1.1.0.1/js/crosstalk.js.map","2020-03-23-covid/covid_files/crosstalk-1.1.0.1/js/crosstalk.min.js","2020-03-23-covid/covid_files/crosstalk-1.1.0.1/js/crosstalk.min.js.map","2020-03-23-covid/covid_files/datatables-binding-0.12/datatables.js","2020-03-23-covid/covid_files/datatables-binding-0.13/datatables.js","2020-03-23-covid/covid_files/datatables-css-0.0.0/datatables-crosstalk.css","2020-03-23-covid/covid_files/distill-2.2.21/template.v2.js","2020-03-23-covid/covid_files/dt-core-1.10.20/css/jquery.dataTables.extra.css","2020-03-23-covid/covid_files/dt-core-1.10.20/css/jquery.dataTables.min.css","2020-03-23-covid/covid_files/dt-core-1.10.20/js/jquery.dataTables.min.js","2020-03-23-covid/covid_files/figure-html5/country-trend-static-1.svg","2020-03-23-covid/covid_files/figure-html5/county-rates-1.svg","2020-03-23-covid/covid_files/figure-html5/geo-facet-trends-1.svg","2020-03-23-covid/covid_files/figure-html5/mi-county-map-animate-1.svg","2020-03-23-covid/covid_files/figure-html5/nytimes-daily-1.svg","2020-03-23-covid/covid_files/figure-html5/percent-new-cases-1.svg","2020-03-23-covid/covid_files/figure-html5/state_trends-1.svg","2020-03-23-covid/covid_files/figure-html5/statebins-1.svg","2020-03-23-covid/covid_files/figure-html5/statebins-2.svg","2020-03-23-covid/covid_files/figure-html5/us-county-map-1.svg","2020-03-23-covid/covid_files/figure-html5/us-daily-1.svg","2020-03-23-covid/covid_files/figure-html5/us-top-20-per-capita-1.svg","2020-03-23-covid/covid_files/figure-html5/world-top-20-per-capita-1.svg","2020-03-23-covid/covid_files/highchart-binding-0.7.0/highchart.js","2020-03-23-covid/covid_files/highcharts-7.0.1/css/htmlwdgtgrid.css","2020-03-23-covid/covid_files/highcharts-7.0.1/css/motion.css","2020-03-23-covid/covid_files/highcharts-7.0.1/custom/reset.js","2020-03-23-covid/covid_files/highcharts-7.0.1/custom/symbols-extra.js","2020-03-23-covid/covid_files/highcharts-7.0.1/custom/text-symbols.js","2020-03-23-covid/covid_files/highcharts-7.0.1/highcharts-3d.js","2020-03-23-covid/covid_files/highcharts-7.0.1/highcharts-custom.js","2020-03-23-covid/covid_files/highcharts-7.0.1/highcharts-more.js","2020-03-23-covid/covid_files/highcharts-7.0.1/highcharts.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/accessibility.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/annotations-advanced.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/annotations.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/arrow-symbols.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/boost-canvas.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/boost.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/broken-axis.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/bullet.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/current-date-indicator.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/cylinder.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/data.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/debugger.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/drag-panes.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/draggable-points.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/drilldown.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/export-data.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/exporting.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/full-screen.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/funnel.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/gantt.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/grid-axis.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/heatmap.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/histogram-bellcurve.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/item-series.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/map.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/networkgraph.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/no-data-to-display.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/offline-exporting.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/oldie-polyfills.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/oldie.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/overlapping-datalabels.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/parallel-coordinates.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/pareto.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/pathfinder.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/pattern-fill.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/price-indicator.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/sankey.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/series-label.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/solid-gauge.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/sonification.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/static-scale.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/stock-tools.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/stock.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/streamgraph.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/sunburst.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/tilemap.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/timeline.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/treegrid.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/treemap.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/variable-pie.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/variwide.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/vector.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/venn.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/windbarb.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/wordcloud.js","2020-03-23-covid/covid_files/highcharts-7.0.1/modules/xrange.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/draggable-legend.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/grouped-categories.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/highcharts-regression.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/motion.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/multicolor_series.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/pattern-fill-v2.js","2020-03-23-covid/covid_files/highcharts-7.0.1/plugins/tooltip-delay.js","2020-03-23-covid/covid_files/htmlwidgets-1.5.1/htmlwidgets.js","2020-03-23-covid/covid_files/jquery-1.11.3/jquery.min.js","2020-03-23-covid/covid_files/jquery-1.12.4/jquery.min.js","2020-03-23-covid/covid_files/jquery-1.12.4/LICENSE.txt","2020-03-23-covid/covid_files/kePrint-0.0.1/kePrint.js","2020-03-23-covid/covid_files/proj4js-2.3.15/proj4.js","2020-03-23-covid/covid_files/webcomponents-2.0.0/webcomponents.js","2020-03-23-covid/covid.html","2020-03-23-covid/covid.Rmd","2020-03-23-covid/img/covid_us.svg","2020-03-23-covid/img/covid.gif","2020-03-23-covid/img/mi-county-trend.gif","notes/notes-to-self_files/bowser-1.9.3/bowser.min.js","notes/notes-to-self_files/distill-2.2.21/template.v2.js","notes/notes-to-self_files/jquery-1.11.3/jquery.min.js","notes/notes-to-self_files/webcomponents-2.0.0/webcomponents.js","notes/notes-to-self.html","notes/notes-to-self.Rmd","pkgdown/pkgdown quickstart.Rmd","psych_explained_files/bowser-1.9.3/bowser.min.js","psych_explained_files/distill-2.2.21/template.v2.js","psych_explained_files/jquery-1.11.3/jquery.min.js","psych_explained_files/webcomponents-2.0.0/webcomponents.js"]}
+  </script>
+  <!--radix_placeholder_navigation_in_header-->
+
+<script type="application/javascript">
+
+  window.headroom_prevent_pin = false;
+
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+
+    // initialize headroom for banner
+    var header = $('header').get(0);
+    var headerHeight = header.offsetHeight;
+    var headroom = new Headroom(header, {
+      onPin : function() {
+        if (window.headroom_prevent_pin) {
+          window.headroom_prevent_pin = false;
+          headroom.unpin();
+        }
+      }
+    });
+    headroom.init();
+    if(window.location.hash)
+      headroom.unpin();
+    $(header).addClass('headroom--transition');
+
+    // offset scroll location for banner on hash change
+    // (see: https://github.com/WickyNilliams/headroom.js/issues/38)
+    window.addEventListener("hashchange", function(event) {
+      window.scrollTo(0, window.pageYOffset - (headerHeight + 25));
+    });
+
+    // responsive menu
+    $('.distill-site-header').each(function(i, val) {
+      var topnav = $(this);
+      var toggle = topnav.find('.nav-toggle');
+      toggle.on('click', function() {
+        topnav.toggleClass('responsive');
+      });
+    });
+
+    // nav dropdowns
+    $('.nav-dropbtn').click(function(e) {
+      $(this).next('.nav-dropdown-content').toggleClass('nav-dropdown-active');
+      $(this).parent().siblings('.nav-dropdown')
+         .children('.nav-dropdown-content').removeClass('nav-dropdown-active');
+    });
+    $("body").click(function(e){
+      $('.nav-dropdown-content').removeClass('nav-dropdown-active');
+    });
+    $(".nav-dropdown").click(function(e){
+      e.stopPropagation();
+    });
+  });
+</script>
+
+<style type="text/css">
+
+/* Theme (user-documented overrideables for nav appearance) */
+
+.distill-site-nav {
+  color: rgba(255, 255, 255, 0.8);
+  background-color: #455a64;
+  font-size: 15px;
+  font-weight: 300;
+}
+
+.distill-site-nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.distill-site-nav a:hover {
+  color: white;
+}
+
+@media print {
+  .distill-site-nav {
+    display: none;
+  }
+}
+
+.distill-site-header {
+
+}
+
+.distill-site-footer {
+
+}
+
+
+/* Site Header */
+
+.distill-site-header {
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 3;
+}
+
+.distill-site-header .nav-left {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .distill-site-header .nav-left {
+    margin-left: 0;
+  }
+}
+
+
+.distill-site-header .nav-right {
+  float: right;
+  margin-right: 8px;
+}
+
+.distill-site-header a,
+.distill-site-header .title {
+  display: inline-block;
+  text-align: center;
+  padding: 14px 10px 14px 10px;
+}
+
+.distill-site-header .title {
+  font-size: 18px;
+}
+
+.distill-site-header .logo {
+  padding: 0;
+}
+
+.distill-site-header .logo img {
+  display: none;
+  max-height: 20px;
+  width: auto;
+  margin-bottom: -4px;
+}
+
+.distill-site-header .nav-image img {
+  max-height: 18px;
+  width: auto;
+  display: inline-block;
+  margin-bottom: -3px;
+}
+
+
+
+@media screen and (min-width: 1000px) {
+  .distill-site-header .logo img {
+    display: inline-block;
+  }
+  .distill-site-header .nav-left {
+    margin-left: 20px;
+  }
+  .distill-site-header .nav-right {
+    margin-right: 20px;
+  }
+  .distill-site-header .title {
+    padding-left: 12px;
+  }
+}
+
+
+.distill-site-header .nav-toggle {
+  display: none;
+}
+
+.nav-dropdown {
+  display: inline-block;
+  position: relative;
+}
+
+.nav-dropdown .nav-dropbtn {
+  border: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 16px 10px;
+  background-color: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
+  margin-top: 1px;
+  z-index: 2;
+}
+
+.nav-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: white;
+  min-width: 200px;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 4px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+  z-index: 1;
+  margin-top: 2px;
+  white-space: nowrap;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.nav-dropdown-content hr {
+  margin-top: 4px;
+  margin-bottom: 4px;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.nav-dropdown-active {
+  display: block;
+}
+
+.nav-dropdown-content a, .nav-dropdown-content .nav-dropdown-header {
+  color: black;
+  padding: 6px 24px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.nav-dropdown-content .nav-dropdown-header {
+  display: block;
+  padding: 5px 24px;
+  padding-bottom: 0;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: #999999;
+  white-space: nowrap;
+}
+
+.nav-dropdown:hover .nav-dropbtn {
+  color: white;
+}
+
+.nav-dropdown-content a:hover {
+  background-color: #ddd;
+  color: black;
+}
+
+.nav-right .nav-dropdown-content {
+  margin-left: -45%;
+  right: 0;
+}
+
+@media screen and (max-width: 768px) {
+  .distill-site-header a, .distill-site-header .nav-dropdown  {display: none;}
+  .distill-site-header a.nav-toggle {
+    float: right;
+    display: block;
+  }
+  .distill-site-header .title {
+    margin-left: 0;
+  }
+  .distill-site-header .nav-right {
+    margin-right: 0;
+  }
+  .distill-site-header {
+    overflow: hidden;
+  }
+  .nav-right .nav-dropdown-content {
+    margin-left: 0;
+  }
+}
+
+
+@media screen and (max-width: 768px) {
+  .distill-site-header.responsive {position: relative;}
+  .distill-site-header.responsive a.nav-toggle {
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  .distill-site-header.responsive a,
+  .distill-site-header.responsive .nav-dropdown {
+    display: block;
+    text-align: left;
+  }
+  .distill-site-header.responsive .nav-left,
+  .distill-site-header.responsive .nav-right {
+    width: 100%;
+  }
+  .distill-site-header.responsive .nav-dropdown {float: none;}
+  .distill-site-header.responsive .nav-dropdown-content {position: relative;}
+  .distill-site-header.responsive .nav-dropdown .nav-dropbtn {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+}
+
+/* Site Footer */
+
+.distill-site-footer {
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  z-index: 3;
+  margin-top: 30px;
+  padding-top: 30px;
+  padding-bottom: 30px;
+  text-align: center;
+}
+
+/* Headroom */
+
+d-title {
+  padding-top: 6rem;
+}
+
+@media print {
+  d-title {
+    padding-top: 4rem;
+  }
+}
+
+.headroom {
+  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.headroom--transition {
+  transition: all .4s ease-in-out;
+}
+
+.headroom--unpinned {
+  top: -100px;
+}
+
+.headroom--pinned {
+  top: 0;
+}
+
+</style>
+
+<link href="../site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet"/>
+<link href="../site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet"/>
+<script src="../site_libs/headroom-0.9.4/headroom.min.js"></script>
+<!--/radix_placeholder_navigation_in_header-->
+  <!--radix_placeholder_distill-->
+
+<style type="text/css">
+
+body {
+  background-color: white;
+}
+
+.pandoc-table {
+  width: 100%;
+}
+
+.pandoc-table>caption {
+  margin-bottom: 10px;
+}
+
+.pandoc-table th:not([align]) {
+  text-align: left;
+}
+
+.pagedtable-footer {
+  font-size: 15px;
+}
+
+.html-widget {
+  margin-bottom: 2.0em;
+}
+
+.l-screen-inset {
+  padding-right: 16px;
+}
+
+.l-screen .caption {
+  margin-left: 10px;
+}
+
+.shaded {
+  background: rgb(247, 247, 247);
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.shaded .html-widget {
+  margin-bottom: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.shaded .shaded-content {
+  background: white;
+}
+
+.text-output {
+  margin-top: 0;
+  line-height: 1.5em;
+}
+
+.hidden {
+  display: none !important;
+}
+
+d-article {
+  padding-bottom: 30px;
+}
+
+d-appendix {
+  padding-top: 30px;
+}
+
+d-article>p>img {
+  width: 100%;
+}
+
+d-article iframe {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 2.0em;
+  width: 100%;
+}
+
+figure img.external {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+/* CSS for table of contents */
+
+.d-toc {
+  color: rgba(0,0,0,0.8);
+  font-size: 0.8em;
+  line-height: 1em;
+}
+
+.d-toc-header {
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  margin-top: 0;
+  margin-bottom: 1.3em;
+}
+
+.d-toc a {
+  border-bottom: none;
+}
+
+.d-toc ul {
+  padding-left: 0;
+}
+
+.d-toc li>ul {
+  padding-top: 0.8em;
+  padding-left: 16px;
+  margin-bottom: 0.6em;
+}
+
+.d-toc ul,
+.d-toc li {
+  list-style-type: none;
+}
+
+.d-toc li {
+  margin-bottom: 0.9em;
+}
+
+.d-toc-separator {
+  margin-top: 20px;
+  margin-bottom: 2em;
+}
+
+.d-article-with-toc {
+  border-top: none;
+  padding-top: 0;
+}
+
+
+
+/* Tweak code blocks (note that this CSS is repeated above in an injection
+   into the d-code shadow dom) */
+
+d-code {
+  overflow-x: auto !important;
+}
+
+pre.d-code code.d-code {
+  padding-left: 10px;
+  font-size: 12px;
+  border-left: 2px solid rgba(0,0,0,0.1);
+}
+
+pre.text-output {
+
+  font-size: 12px;
+  color: black;
+  background: none;
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+@media(min-width: 768px) {
+
+d-code {
+  overflow-x: visible !important;
+}
+
+pre.d-code code.d-code  {
+    padding-left: 18px;
+    font-size: 14px;
+}
+pre.text-output {
+  font-size: 14px;
+}
+}
+
+/* Figure */
+
+.figure {
+  position: relative;
+  margin-bottom: 2.5em;
+  margin-top: 1.5em;
+}
+
+.figure img {
+  width: 100%;
+}
+
+.figure .caption {
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  line-height: 1.5em;
+}
+
+.figure img.external {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.figure .caption a {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.figure .caption b,
+.figure .caption strong, {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 1.0);
+}
+
+
+
+/* Tweak 1000px media break to show more text */
+
+@media(min-width: 1000px) {
+  .base-grid,
+  distill-header,
+  d-title,
+  d-abstract,
+  d-article,
+  d-appendix,
+  distill-appendix,
+  d-byline,
+  d-footnote-list,
+  d-citation-list,
+  distill-footer {
+    grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 50px [text-start kicker-end] 65px 65px 65px 65px 65px 65px 65px 65px [text-end gutter-start] 65px [middle-end] 65px [page-end gutter-end] 1fr [screen-end];
+    grid-column-gap: 16px;
+  }
+
+  .grid {
+    grid-column-gap: 16px;
+  }
+
+  d-article {
+    font-size: 1.06rem;
+    line-height: 1.7em;
+  }
+  figure .caption, .figure .caption, figure figcaption {
+    font-size: 13px;
+  }
+}
+
+@media(min-width: 1180px) {
+  .base-grid,
+  distill-header,
+  d-title,
+  d-abstract,
+  d-article,
+  d-appendix,
+  distill-appendix,
+  d-byline,
+  d-footnote-list,
+  d-citation-list,
+  distill-footer {
+    grid-template-columns: [screen-start] 1fr [page-start kicker-start] 60px [middle-start] 60px [text-start kicker-end] 60px 60px 60px 60px 60px 60px 60px 60px [text-end gutter-start] 60px [middle-end] 60px [page-end gutter-end] 1fr [screen-end];
+    grid-column-gap: 32px;
+  }
+
+  .grid {
+    grid-column-gap: 32px;
+  }
+}
+
+
+/* Get the citation styles for the appendix (not auto-injected on render since
+   we do our own rendering of the citation appendix) */
+
+d-appendix .citation-appendix,
+.d-appendix .citation-appendix {
+  font-size: 11px;
+  line-height: 15px;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  padding-left: 18px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.02);
+  padding: 10px 18px;
+  border-radius: 3px;
+  color: rgba(150, 150, 150, 1);
+  overflow: hidden;
+  margin-top: -12px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+
+/* Social footer */
+
+.social_footer {
+  margin-top: 30px;
+  margin-bottom: 0;
+  color: rgba(0,0,0,0.67);
+}
+
+.disqus-comments {
+  margin-right: 30px;
+}
+
+.disqus-comment-count {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+#disqus_thread {
+  margin-top: 30px;
+}
+
+.article-sharing a {
+  border-bottom: none;
+  margin-right: 8px;
+}
+
+.article-sharing a:hover {
+  border-bottom: none;
+}
+
+.sidebar-section.subscribe {
+  font-size: 12px;
+  line-height: 1.6em;
+}
+
+.subscribe p {
+  margin-bottom: 0.5em;
+}
+
+
+.article-footer .subscribe {
+  font-size: 15px;
+  margin-top: 45px;
+}
+
+
+/* Improve display for browsers without grid (IE/Edge <= 15) */
+
+.downlevel {
+  line-height: 1.6em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+}
+
+.downlevel .d-title {
+  padding-top: 6rem;
+  padding-bottom: 1.5rem;
+}
+
+.downlevel .d-title h1 {
+  font-size: 50px;
+  font-weight: 700;
+  line-height: 1.1em;
+  margin: 0 0 0.5rem;
+}
+
+.downlevel .d-title p {
+  font-weight: 300;
+  font-size: 1.2rem;
+  line-height: 1.55em;
+  margin-top: 0;
+}
+
+.downlevel .d-byline {
+  padding-top: 0.8em;
+  padding-bottom: 0.8em;
+  font-size: 0.8rem;
+  line-height: 1.8em;
+}
+
+.downlevel .section-separator {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.downlevel .d-article {
+  font-size: 1.06rem;
+  line-height: 1.7em;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+
+.downlevel .d-appendix {
+  padding-left: 0;
+  padding-right: 0;
+  max-width: none;
+  font-size: 0.8em;
+  line-height: 1.7em;
+  margin-bottom: 0;
+  color: rgba(0,0,0,0.5);
+  padding-top: 40px;
+  padding-bottom: 48px;
+}
+
+.downlevel .footnotes ol {
+  padding-left: 13px;
+}
+
+.downlevel .base-grid,
+.downlevel .distill-header,
+.downlevel .d-title,
+.downlevel .d-abstract,
+.downlevel .d-article,
+.downlevel .d-appendix,
+.downlevel .distill-appendix,
+.downlevel .d-byline,
+.downlevel .d-footnote-list,
+.downlevel .d-citation-list,
+.downlevel .distill-footer,
+.downlevel .appendix-bottom,
+.downlevel .posts-container {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+@media(min-width: 768px) {
+  .downlevel .base-grid,
+  .downlevel .distill-header,
+  .downlevel .d-title,
+  .downlevel .d-abstract,
+  .downlevel .d-article,
+  .downlevel .d-appendix,
+  .downlevel .distill-appendix,
+  .downlevel .d-byline,
+  .downlevel .d-footnote-list,
+  .downlevel .d-citation-list,
+  .downlevel .distill-footer,
+  .downlevel .appendix-bottom,
+  .downlevel .posts-container {
+  padding-left: 150px;
+  padding-right: 150px;
+  max-width: 900px;
+}
+}
+
+.downlevel pre code {
+  display: block;
+  border-left: 2px solid rgba(0, 0, 0, .1);
+  padding: 0 0 0 20px;
+  font-size: 14px;
+}
+
+.downlevel code, .downlevel pre {
+  color: black;
+  background: none;
+  font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+</style>
+
+<script type="application/javascript">
+
+function is_downlevel_browser() {
+  if (bowser.isUnsupportedBrowser({ msie: "12", msedge: "16"},
+                                 window.navigator.userAgent)) {
+    return true;
+  } else {
+    return window.load_distill_framework === undefined;
+  }
+}
+
+// show body when load is complete
+function on_load_complete() {
+
+  // set body to visible
+  document.body.style.visibility = 'visible';
+
+  // force redraw for leaflet widgets
+  if (window.HTMLWidgets) {
+    var maps = window.HTMLWidgets.findAll(".leaflet");
+    $.each(maps, function(i, el) {
+      var map = this.getMap();
+      map.invalidateSize();
+      map.eachLayer(function(layer) {
+        if (layer instanceof L.TileLayer)
+          layer.redraw();
+      });
+    });
+  }
+
+  // trigger 'shown' so htmlwidgets resize
+  $('d-article').trigger('shown');
+}
+
+function init_distill() {
+
+  init_common();
+
+  // create front matter
+  var front_matter = $('<d-front-matter></d-front-matter>');
+  $('#distill-front-matter').wrap(front_matter);
+
+  // create d-title
+  $('.d-title').changeElementType('d-title');
+
+  // create d-byline
+  var byline = $('<d-byline></d-byline>');
+  $('.d-byline').replaceWith(byline);
+
+  // create d-article
+  var article = $('<d-article></d-article>');
+  $('.d-article').wrap(article).children().unwrap();
+
+  // move posts container into article
+  $('.posts-container').appendTo($('d-article'));
+
+  // create d-appendix
+  $('.d-appendix').changeElementType('d-appendix');
+
+  // create d-bibliography
+  var bibliography = $('<d-bibliography></d-bibliography>');
+  $('#distill-bibliography').wrap(bibliography);
+
+  // flag indicating that we have appendix items
+  var appendix = $('.appendix-bottom').children('h3').length > 0;
+
+  // replace citations with <d-cite>
+  $('.citation').each(function(i, val) {
+    appendix = true;
+    var cites = $(this).attr('data-cites').split(" ");
+    var dt_cite = $('<d-cite></d-cite>');
+    dt_cite.attr('key', cites.join());
+    $(this).replaceWith(dt_cite);
+  });
+  // remove refs
+  $('#refs').remove();
+
+  // replace footnotes with <d-footnote>
+  $('.footnote-ref').each(function(i, val) {
+    appendix = true;
+    var href = $(this).attr('href');
+    var id = href.replace('#', '');
+    var fn = $('#' + id);
+    var fn_p = $('#' + id + '>p');
+    fn_p.find('.footnote-back').remove();
+    var text = fn_p.html();
+    var dtfn = $('<d-footnote></d-footnote>');
+    dtfn.html(text);
+    $(this).replaceWith(dtfn);
+  });
+  // remove footnotes
+  $('.footnotes').remove();
+
+  $('h1.appendix, h2.appendix').each(function(i, val) {
+    $(this).changeElementType('h3');
+  });
+  $('h3.appendix').each(function(i, val) {
+    var id = $(this).attr('id');
+    $('.d-toc a[href="#' + id + '"]').parent().remove();
+    appendix = true;
+    $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('d-appendix'));
+  });
+
+  // show d-appendix if we have appendix content
+  $("d-appendix").css('display', appendix ? 'grid' : 'none');
+
+  // replace code blocks with d-code
+  $('pre>code').each(function(i, val) {
+    var code = $(this);
+    var pre = code.parent();
+    var clz = "";
+    var language = pre.attr('class');
+    if (language) {
+      // map unknown languages to "clike" (without this they just dissapear)
+      if ($.inArray(language, ["bash", "clike", "css", "go", "html",
+                               "javascript", "js", "julia", "lua", "markdown",
+                               "markup", "mathml", "python", "svg", "xml"]) == -1)
+        language = "clike";
+      language = ' language="' + language + '"';
+      var dt_code = $('<d-code block' + language + clz + '></d-code>');
+      dt_code.text(code.text());
+      pre.replaceWith(dt_code);
+    } else {
+      code.addClass('text-output').unwrap().changeElementType('pre');
+    }
+  });
+
+  // localize layout chunks to just output
+  $('.layout-chunk').each(function(i, val) {
+
+    // capture layout
+    var layout = $(this).attr('data-layout');
+
+    // apply layout to markdown level block elements
+    var elements = $(this).children().not('d-code, pre.text-output, script');
+    elements.each(function(i, el) {
+      var layout_div = $('<div class="' + layout + '"></div>');
+      if (layout_div.hasClass('shaded')) {
+        var shaded_content = $('<div class="shaded-content"></div>');
+        $(this).wrap(shaded_content);
+        $(this).parent().wrap(layout_div);
+      } else {
+        $(this).wrap(layout_div);
+      }
+    });
+
+
+    // unwrap the layout-chunk div
+    $(this).children().unwrap();
+  });
+
+  // load distill framework
+  load_distill_framework();
+
+  // wait for window.distillRunlevel == 4 to do post processing
+  function distill_post_process() {
+
+    if (!window.distillRunlevel || window.distillRunlevel < 4)
+      return;
+
+    // hide author/affiliations entirely if we have no authors
+    var front_matter = JSON.parse($("#distill-front-matter").html());
+    var have_authors = front_matter.authors && front_matter.authors.length > 0;
+    if (!have_authors)
+      $('d-byline').addClass('hidden');
+
+    // table of contents
+    if (have_authors) // adjust border if we are in authors
+      $('.d-toc').parent().addClass('d-article-with-toc');
+
+    // strip links that point to #
+    $('.authors-affiliations').find('a[href="#"]').removeAttr('href');
+
+    // hide elements of author/affiliations grid that have no value
+    function hide_byline_column(caption) {
+      $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'hidden');
+    }
+
+    // affiliations
+    var have_affiliations = false;
+    for (var i = 0; i<front_matter.authors.length; ++i) {
+      var author = front_matter.authors[i];
+      if (author.affiliation !== "&nbsp;") {
+        have_affiliations = true;
+        break;
+      }
+    }
+    if (!have_affiliations)
+      $('d-byline').find('h3:contains("Affiliations")').css('visibility', 'hidden');
+
+    // published date
+    if (!front_matter.publishedDate)
+      hide_byline_column("Published");
+
+    // document object identifier
+    var doi = $('d-byline').find('h3:contains("DOI")');
+    var doi_p = doi.next().empty();
+    if (!front_matter.doi) {
+      // if we have a citation and valid citationText then link to that
+      if ($('#citation').length > 0 && front_matter.citationText) {
+        doi.html('Citation');
+        $('<a href="#citation"></a>')
+          .text(front_matter.citationText)
+          .appendTo(doi_p);
+      } else {
+        hide_byline_column("DOI");
+      }
+    } else {
+      $('<a></a>')
+         .attr('href', "https://doi.org/" + front_matter.doi)
+         .html(front_matter.doi)
+         .appendTo(doi_p);
+    }
+
+     // change plural form of authors/affiliations
+    if (front_matter.authors.length === 1) {
+      var grid = $('.authors-affiliations');
+      grid.children('h3:contains("Authors")').text('Author');
+      grid.children('h3:contains("Affiliations")').text('Affiliation');
+    }
+
+    // inject pre code styles (can't do this with a global stylesheet b/c a shadow root is used)
+    $('d-code').each(function(i, val) {
+      var style = document.createElement('style');
+      style.innerHTML = 'pre code { padding-left: 10px; font-size: 12px; border-left: 2px solid rgba(0,0,0,0.1); } ' +
+                        '@media(min-width: 768px) { pre code { padding-left: 18px; font-size: 14px; } }';
+      if (this.shadowRoot)
+        this.shadowRoot.appendChild(style);
+    });
+
+    // move appendix-bottom entries to the bottom
+    $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
+    $('.appendix-bottom').remove();
+
+    // clear polling timer
+    clearInterval(tid);
+
+    // show body now that everything is ready
+    on_load_complete();
+  }
+
+  var tid = setInterval(distill_post_process, 50);
+  distill_post_process();
+
+}
+
+function init_downlevel() {
+
+  init_common();
+
+   // insert hr after d-title
+  $('.d-title').after($('<hr class="section-separator"/>'));
+
+  // check if we have authors
+  var front_matter = JSON.parse($("#distill-front-matter").html());
+  var have_authors = front_matter.authors && front_matter.authors.length > 0;
+
+  // manage byline/border
+  if (!have_authors)
+    $('.d-byline').remove();
+  $('.d-byline').after($('<hr class="section-separator"/>'));
+  $('.d-byline a').remove();
+
+  // remove toc
+  $('.d-toc-header').remove();
+  $('.d-toc').remove();
+  $('.d-toc-separator').remove();
+
+  // move appendix elements
+  $('h1.appendix, h2.appendix').each(function(i, val) {
+    $(this).changeElementType('h3');
+  });
+  $('h3.appendix').each(function(i, val) {
+    $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('.d-appendix'));
+  });
+
+
+  // inject headers into references and footnotes
+  var refs_header = $('<h3></h3>');
+  refs_header.text('References');
+  $('#refs').prepend(refs_header);
+
+  var footnotes_header = $('<h3></h3');
+  footnotes_header.text('Footnotes');
+  $('.footnotes').children('hr').first().replaceWith(footnotes_header);
+
+  // move appendix-bottom entries to the bottom
+  $('.appendix-bottom').appendTo('.d-appendix').children().unwrap();
+  $('.appendix-bottom').remove();
+
+  // remove appendix if it's empty
+  if ($('.d-appendix').children().length === 0)
+    $('.d-appendix').remove();
+
+  // prepend separator above appendix
+  $('.d-appendix').before($('<hr class="section-separator" style="clear: both"/>'));
+
+  // trim code
+  $('pre>code').each(function(i, val) {
+    $(this).html($.trim($(this).html()));
+  });
+
+  // move posts-container right before article
+  $('.posts-container').insertBefore($('.d-article'));
+
+  $('body').addClass('downlevel');
+
+  on_load_complete();
+}
+
+
+function init_common() {
+
+  // jquery plugin to change element types
+  (function($) {
+    $.fn.changeElementType = function(newType) {
+      var attrs = {};
+
+      $.each(this[0].attributes, function(idx, attr) {
+        attrs[attr.nodeName] = attr.nodeValue;
+      });
+
+      this.replaceWith(function() {
+        return $("<" + newType + "/>", attrs).append($(this).contents());
+      });
+    };
+  })(jQuery);
+
+  // prevent underline for linked images
+  $('a > img').parent().css({'border-bottom' : 'none'});
+
+  // mark non-body figures created by knitr chunks as 100% width
+  $('.layout-chunk').each(function(i, val) {
+    var figures = $(this).find('img, .html-widget');
+    if ($(this).attr('data-layout') !== "l-body") {
+      figures.css('width', '100%');
+    } else {
+      figures.css('max-width', '100%');
+      figures.filter("[width]").each(function(i, val) {
+        var fig = $(this);
+        fig.css('width', fig.attr('width') + 'px');
+      });
+
+    }
+  });
+
+  // auto-append index.html to post-preview links in file: protocol
+  // and in rstudio ide preview
+  $('.post-preview').each(function(i, val) {
+    if (window.location.protocol === "file:")
+      $(this).attr('href', $(this).attr('href') + "index.html");
+  });
+
+  // get rid of index.html references in header
+  if (window.location.protocol !== "file:") {
+    $('.distill-site-header a[href]').each(function(i,val) {
+      $(this).attr('href', $(this).attr('href').replace("index.html", "./"));
+    });
+  }
+
+  // add class to pandoc style tables
+  $('tr.header').parent('thead').parent('table').addClass('pandoc-table');
+  $('.kable-table').children('table').addClass('pandoc-table');
+
+  // add figcaption style to table captions
+  $('caption').parent('table').addClass("figcaption");
+
+  // initialize posts list
+  if (window.init_posts_list)
+    window.init_posts_list();
+
+  // implmement disqus comment link
+  $('.disqus-comment-count').click(function() {
+    window.headroom_prevent_pin = true;
+    $('#disqus_thread').toggleClass('hidden');
+    if (!$('#disqus_thread').hasClass('hidden')) {
+      var offset = $(this).offset();
+      $(window).resize();
+      $('html, body').animate({
+        scrollTop: offset.top - 35
+      });
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (is_downlevel_browser())
+    init_downlevel();
+  else
+    window.addEventListener('WebComponentsReady', init_distill);
+});
+
+</script>
+
+<!--/radix_placeholder_distill-->
+  <script src="../site_libs/jquery-1.11.3/jquery.min.js"></script>
+  <script src="../site_libs/bowser-1.9.3/bowser.min.js"></script>
+  <script src="../site_libs/webcomponents-2.0.0/webcomponents.js"></script>
+  <script src="../site_libs/distill-2.2.21/template.v2.js"></script>
+  <!--radix_placeholder_site_in_header-->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-79528685-1"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'UA-79528685-1');
+</script>
+<style type="text/css">
+@import url("pygment_highlights.css");
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,400italic,500,500italic,700,700italic,900,900italic,300italic,300,100italic,100);
+@import url("https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono|Roboto+Condensed|Lato|Lora|Fira+Sans");
+
+/* latin-ext */
+@font-face {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Cond Light'), local('OpenSans-CondensedLight'), url(https://fonts.gstatic.com/s/opensanscondensed/v10/gk5FxslNkTTHtojXrkp-xC8hAQ4ocbp44gFQt8tMfcH3rGVtsTkPsbDajuO5ueQw.woff2) format('woff2');
+  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Open Sans Cond Light'), local('OpenSans-CondensedLight'), url(https://fonts.gstatic.com/s/opensanscondensed/v10/gk5FxslNkTTHtojXrkp-xBEur64QvLD-0IbiAdTUNXE.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+
+body {
+  font-family: Roboto, 'Libre Baskerville', sans-serif; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
+  font-size: 15px;
+  font-weight: 300;
+  color: #404040;        /* #404040*/
+  position: relative;
+  background: #FFFFF8;      /* {{ site.page-col }}; */
+  {% if site.page-img %}
+  background-image: url({{ site.page-img }});
+  background-attachment: fixed;
+  {% endif %}
+}
+
+p {
+  font-family: Roboto, 'Libre Baskerville', 'Helvetica Neue' ; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
+  line-height: 1.5;
+  font-weight: 300;
+  margin: 30px 0;
+}
+
+p a {
+  /* text-decoration: underline */
+  color: #03b3ff;
+}
+
+
+
+/* link effects; possibly change to p a */
+p a {
+    color: #03b3ff;
+    background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
+    background-size: 0 100%;
+    background-repeat: no-repeat;
+    text-decoration: none;
+    -webkit-transition: background-size .4s ease;
+    -moz-transition: background-size .4s ease;
+    -ms-transition: background-size .4s ease;
+    -o-transition: background-size .4s ease;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;
+}
+
+/* for twitter etc icon links */
+.social-icon {
+  color: #03b3ff;
+  background-image: none;  /* remove hover line*/
+  background-size: 0 100%;
+  background-repeat: no-repeat;
+  text-decoration: none;
+  -webkit-transition: background-size .4s ease;
+  -moz-transition: background-size .4s ease;
+  -ms-transition: background-size .4s ease;
+  -o-transition: background-size .4s ease;
+  transition: background-size .4s ease;
+  border-bottom: 0px solid;
+}
+
+li a {
+    color: #03b3ff;
+    background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
+    background-size: 0 100%;
+    background-repeat: no-repeat;
+    text-decoration: none;
+    -webkit-transition: background-size .4s ease;
+    -moz-transition: background-size .4s ease;
+    -ms-transition: background-size .4s ease;
+    -o-transition: background-size .4s ease;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;
+}
+
+.categories li > a:hover {
+  border-bottom: none !important;
+}
+
+d-appendix a, d-appendix a:hover {
+    color: #03b3ff !important;
+    background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
+    background-size: 0 100%;
+    background-repeat: no-repeat;
+    text-decoration: none;
+    -webkit-transition: background-size .4s ease;
+    -moz-transition: background-size .4s ease;
+    -ms-transition: background-size .4s ease;
+    -o-transition: background-size .4s ease;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;  
+}
+
+d-article aside a, d-article aside a:hover {
+    color: #03b3ff !important;
+    background-image: linear-gradient(180deg,transparent 90%, #FF4F03 0);
+    background-size: 0 100%;
+    background-repeat: no-repeat;
+    text-decoration: none;
+    -webkit-transition: background-size .4s ease;
+    -moz-transition: background-size .4s ease;
+    -ms-transition: background-size .4s ease;
+    -o-transition: background-size .4s ease;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;  
+}
+
+
+
+.img-cscar {
+  width: 10%;
+}
+
+
+/* text highlights */
+.emph {
+  color: #E32D00 ;  /*#ff5500 #D14300*/
+  font-weight: 450;
+}
+
+/* pack func and objclass colors initially come from hcl(seq(90,360, length.out=4), c=80, l=80); redone for contrast*/
+.pack {
+  color: #1f65b7; /* #990071 #AC9CFF #e41a1c*/
+  font-weight: 400;
+}
+
+.func {
+  color: #007020;   /*#007199 #00CBB6; #984ea3; can just use `` instead*/
+  font-weight: 400;
+}
+
+.objclass {
+  color:  #947100;  /*#AAB400 #4daf4a; #FFC5D0*/
+  font-weight: 400;
+}
+
+/* object/class via inline code */
+p code {
+  color: #947100;
+}
+
+/* radix specific */
+
+d-title h1 {
+  font-family: 'Open Sans Condensed';
+  font-weight: 200;
+  font-size: 50px;
+  color: #ff5500;
+  margin-top: 4rem;
+  margin-bottom: 1.5rem;
+  line-height: 1;
+}
+
+d-article h1 {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 50px;
+  color: #ff5500;
+  margin-top: 2.1rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+d-article h2 {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 150%;
+  color: #ff5500;
+  margin-top: 2.1rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+
+.posts-list .post-preview h2 {
+  font-family: 'Open Sans Condensed', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 150%;
+  color: #ff5500;
+  margin-top: 2.1rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+.posts-list .description h2 {
+  font-family: 'Open Sans Condensed', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 150%;
+  color: #ff5500;
+  margin-top: 2.1rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+
+
+d-article h3 {
+  font-family: 'Open Sans Condensed';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 125%;
+  color: #ff5500;
+  opacity: .9;
+  margin-top: 2rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+d-article  h4 {
+  font-family: 'Open Sans Condensed';
+  font-variant: normal;
+  font-weight: 400;
+  font-size: 110%;
+  color: #ff5500;
+  opacity: .9;
+  margin-top: 1.9rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+d-article  h5 {
+  font-family: 'Open Sans Condensed';
+  font-variant: normal;
+  font-weight: 400;
+  font-size: 100%;
+  color: #ff5500;
+  opacity: .9;
+  margin-top: 1.9rem;
+  margin-bottom: 1.2rem;
+  line-height: 1;
+}
+
+
+
+d-article a:hover {
+  text-decoration: none;
+  border-bottom: none;
+  background-size: 100% 100%;
+  cursor: pointer;
+}
+
+/* changing this will bork the phone; revisit later
+.base-grid, distill-header, d-title, d-abstract, d-article, d-appendix, distill-appendix, d-byline, d-footnote-list, d-citation-list, distill-footer {
+    grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 80px [text-start kicker-end] 80px 80px 80px 80px 80px 80px 80px 80px [text-end gutter-start] 80px [middle-end] 80px [page-end gutter-end] 1fr [screen-end];
+    grid-column-gap: 32px;
+}
+*/
+
+.distill-site-nav {
+  color: #404040;
+  background-color: #d9edf7;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.distill-site-nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.distill-site-nav a:hover {
+  color: #0085a1;
+}
+
+.distill-site-header {
+}
+
+.distill-site-footer {
+}
+
+@media print {
+  .distill-site-nav {
+    display: none;
+  }
+}
+
+.posts-list .post-preview .thumbnail img {
+    width: 100%;
+    background: transparent;
+    display: block;
+}
+
+/* latex */
+.math {
+  color: #404040;  
+  font-weight: normal;
+  font-size: 90%;
+}
+
+/* code */
+
+/* this is the code from selector for a code block, but doesn't do anything */
+
+code #code-container .language-clike {
+  font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+}
+
+code[class*="language-"], pre[class*="language-"] {
+    color: black;
+    background: none;
+    text-shadow: 0 1px white;
+    font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 50%;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+}
+
+
+/* will only affect inline*/
+pre code {
+  font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 90%;
+}
+
+/* code results/output */
+pre.text-output {
+  font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  color: #000000CC;
+}
+
+
+/* is read to a point, only the space before the code */
+d-code {
+  font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 100%;
+  margin: 0px 0 10px 0;
+}
+
+
+
+/* this is literally the css path copied from firefox dev tools, useless */
+code#code-container.language-clike {
+  font-size: 500%;
+  color: red;
+}
+
+#shadowroot pre code#code-container.language-clike {
+  font-size: 500%;
+  color: red;
+}
+
+.token.function {
+  font-size: 200%;
+}
+
+pre, xmp, plaintext, listing {
+    display: block;
+    font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    white-space: pre;
+    margin: 1em 0px;
+}
+
+/* to fix aside; see issue #39 https://github.com/rstudio/distill/issues/39*/ 
+@media(min-width:768px) {
+  aside {
+      margin-top: -00px;
+      margin-bottom: -500px;
+  }
+}
+
+
+/* images */
+img {
+  background: transparent;
+}
+
+/* list */
+
+ul {
+  list-style: none; /* Remove default bullets */
+}
+
+ul li::before {
+  content: "\2022";  /* Add content: \2022 is the CSS Code/unicode for a bullet */
+  color: #ff5500BF; /* Change the color */
+  size: 5;
+  font-weight: bold; /* If you want it to be bold */
+  display: inline-block; /* Needed to add space between the bullet and the text */
+  width: 1em; /* Also needed for space (tweak if needed) */
+  /*margin-left: 0em;  Also needed for space (tweak if needed) */
+}
+
+
+
+/* main part on front page with description */
+
+/*
+
+.posts-with-sidebar .posts-list {
+  float: left;
+  width: 72%;
+}
+
+.posts-list {
+  margin-top: 60px;
+  margin-bottom: 24px;
+}
+
+*/
+
+/* sidebar on front page with category listing */
+
+.posts-with-sidebar .posts-sidebar {
+  float: right;
+  width: 10%;    /* default 20, made narrow */
+  margin-top: 60px;
+  padding-top: 24px;
+  padding-bottom: 24px;
+}
+
+/* attempt to make result not so wide/spacious */ 
+.posts-with-sidebar .posts-list {
+  width: 66% !important;
+  margin-left: 11%;
+}
+
+.posts-sidebar {
+  font-size: 16px;
+}
+
+/* tables */
+
+d-article table {
+    border-collapse: collapse;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* add spacing for figs and tables, so text and other figs/tables don't 
+start right up at their border */
+.l-body {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+</style>
+<!--/radix_placeholder_site_in_header-->
+
+  <link rel="stylesheet" href="../../styles.css" type="text/css"/>
+  <link rel="stylesheet" href="../../css/misc.css" type="text/css"/>
+
+</head>
+
+<body>
+
+<!--radix_placeholder_front_matter-->
+
+<script id="distill-front-matter" type="text/json">
+{"title":"Factor Analysis with the psych package","description":"Making sense of the results","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2020-04-10T00:00:00.000-04:00","citationText":"Clark, 2020"}
+</script>
+
+<!--/radix_placeholder_front_matter-->
+<!--radix_placeholder_navigation_before_body-->
+<header class="header header--fixed" role="banner">
+<nav class="distill-site-nav distill-site-header">
+<div class="nav-left">
+<span class="logo">
+<img src="../img/lcsq.png"/>
+</span>
+<a href="../index.html" class="title">Michael Clark</a>
+</div>
+<div class="nav-right">
+<a href="../index.html">Home</a>
+<a href="../about.html">About</a>
+<a href="../documents.html">Documents</a>
+<a href="../workshops.html">Workshops</a>
+<a href="../code.html">Code</a>
+<a href="../misc.html">Odds/Ends</a>
+<a href="../projects.html">Projects</a>
+<a href="../resources.html">Resources</a>
+<a href="https://github.com/m-clark">
+<i class="fab fa-github-alt fa-1x"></i>
+</a>
+<a href="javascript:void(0);" class="nav-toggle">&#9776;</a>
+</div>
+</nav>
+</header>
+<!--/radix_placeholder_navigation_before_body-->
+<!--radix_placeholder_site_before_body-->
+<!--/radix_placeholder_site_before_body-->
+
+<div class="d-title">
+<h1>Factor Analysis with the psych package</h1>
+<p><p>Making sense of the results</p></p>
+</div>
+
+<div class="d-byline">
+  Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
+  
+<br/>2020-04-10
+</div>
+
+<div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#demonstration">Demonstration</a><ul>
+<li><a href="#loadings">Loadings</a></li>
+<li><a href="#variance-accounted-for">Variance accounted for</a></li>
+<li><a href="#factor-correlations">Factor correlations</a></li>
+<li><a href="#test-results">Test results</a></li>
+<li><a href="#number-of-observations">Number of observations</a></li>
+<li><a href="#fit-indices">Fit indices</a></li>
+<li><a href="#measures-of-factor-score-adequacy">Measures of factor score adequacy</a></li>
+<li><a href="#miscellaneous-results">Miscellaneous results</a></li>
+</ul></li>
+<li><a href="#additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</a></li>
+<li><a href="#alpha">Alpha</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<aside>
+Last updated April 03, 2020.
+</aside>
+<p>Prerequisites: familiarity with <a href="https://m-clark.github.io/sem/">factor analysis</a></p>
+<h2 id="introduction">Introduction</h2>
+<p>The <span class="pack" style="">psych</span> package is a great tool for assessing underlying latent structure. It can provide reliability statistics, do cluster analysis, principal components analysis, medation models, and, of course factor analysis. However, it’s been around a very long time, and many things were added to, subtracted, renamed, etc. And while the package author and noted psychometrician William Revelle even provides a freely available book on the details, it can still be difficult for many to ‘jump right in’ with the package. This is because it provides so much more than other tools, which is great, but also can be overwhelming. Even I don’t recall what some of the output regards for factor analysis, and I use the package often. While a lot of it doesn’t matter for most use, it’d be nice to have a clean reference, so here it is.</p>
+<p>What follows is an explanation of the factor analysis results, but much of it carries over into printed results for principal components via <span class="func" style="">principal</span>, reliability via <span class="func" style="">omega</span>, very simple structure via <span class="func" style="">vss</span> and others.</p>
+<h2 id="demonstration">Demonstration</h2>
+<p>We will use the classic big-five personality measures, but for our purposes, we’re just going to look at the agreeableness and neuroticism items.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(tidyverse)
+library(psych)
+
+data(bfi)
+
+bfi_trim = bfi %&gt;% select(matches(&#39;^A[1-5]|^N&#39;))
+
+test = fa(bfi_trim, 2)
+test</code></pre>
+<pre><code>
+Factor Analysis using method =  minres
+Call: fa(r = bfi_trim, nfactors = 2)
+Standardized loadings (pattern matrix) based upon correlation matrix
+     MR1   MR2   h2   u2 com
+A1  0.07 -0.36 0.14 0.86 1.1
+A2  0.05  0.69 0.47 0.53 1.0
+A3  0.03  0.76 0.56 0.44 1.0
+A4 -0.05  0.47 0.24 0.76 1.0
+A5 -0.12  0.60 0.39 0.61 1.1
+N1  0.78 -0.03 0.61 0.39 1.0
+N2  0.76 -0.02 0.58 0.42 1.0
+N3  0.77  0.05 0.58 0.42 1.0
+N4  0.58 -0.08 0.36 0.64 1.0
+N5  0.54  0.08 0.29 0.71 1.0
+
+                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00
+
+ With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00
+
+Mean item complexity =  1
+Test of the hypothesis that 2 factors are sufficient.
+
+The degrees of freedom for the null model are  45  and the objective function was  2.82 with Chi Square of  7880.99
+The degrees of freedom for the model are 26  and the objective function was  0.23 
+
+The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+The harmonic number of observations is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total number of observations was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98
+Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+</div>
+<h3 id="loadings">Loadings</h3>
+<p>That’s a lot of stuff to work though. Let’s go through each part of the printed output.</p>
+<ul>
+<li>What’s <code>MR</code>, <code>ML</code>, <code>PC</code> etc.? These are factors, and the name merely reflects the fitting method, e.g. minimum residual, maximum likelihood, principal components. The default is minimum residual, so in this case <code>MR</code>.</li>
+<li>Why are they ‘out of order’? the number assigned is arbitrary, but this has to do with a rotated solution. See the help file for more details, otherwise they are numbered in terms of variance accounted for.</li>
+<li><code>h2</code>: communality, the amount of variance in the item/variable explained by the (retained) components. It is the sum of the squared loadings, a.k.a. communality. For example, population is almost completely explained by the three components</li>
+<li><code>u2</code>: 1 - <code>h2</code>. residual variance, a.k.a. uniqueness</li>
+<li><code>com</code>: Item complexity. Specifically it is “Hoffman’s index of complexity for each item. This is just <span class="math inline">\({(Σ a_i^2)^2}/{Σ a_i^4}\)</span> where <span class="math inline">\(a_i\)</span> is the factor loading on the ith factor. From Hofmann (1978), MBR. See also Pettersson and Turkheimer (2010).” It equals one if an item loads only on one factor, 1.5 if evenly loads on two factors, etc. Basically it tells you how much an item reflects a single construct.</li>
+</ul>
+<h3 id="variance-accounted-for">Variance accounted for</h3>
+<pre><code>
+                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00</code></pre>
+<ul>
+<li><p><code>SS Loadings</code>: These are the eigenvalues, the sum of the squared loadings. In this case where we are using a correlation matrix, summing across all factors would equal the number of variables used in the analysis.</p></li>
+<li><p><code>Proportion Var</code>: tells us how much of the overall variance the factor accounts for out of all the variables.</p></li>
+<li><p><code>Cumulative Var</code>: the cumulative sum of <code>Proportion Var</code>.</p></li>
+<li><p><code>Proportion Explained</code>: The relative amount of variance explained- <code></code>Proportion Var<code>/sum(</code>Proportion Var<code>)</code>.</p></li>
+<li><p><code>Cumulative Proportion</code>: the cumulative sum of <code>Proportion Explained</code>.</p></li>
+</ul>
+<h3 id="factor-correlations">Factor correlations</h3>
+<pre><code>
+ With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00</code></pre>
+<p>Depends on the analysis whether or not these are estimated.</p>
+<ul>
+<li><code>factor correlations</code>: the correlation matrix for the factors. <span class="math inline">\(\phi\)</span> (phi)</li>
+<li><code>Mean item complexity</code>: the mean of <code>com</code>.</li>
+</ul>
+<h3 id="test-results">Test results</h3>
+<pre><code>
+Test of the hypothesis that 2 factors are sufficient.
+
+The degrees of freedom for the null model are  45  and the objective function was  2.82 with Chi Square of  7880.99
+The degrees of freedom for the model are 26  and the objective function was  0.23 </code></pre>
+<ul>
+<li><code>null model</code>: The degrees of freedom for the null model that assumes no correlation structure.</li>
+<li><code>objective function</code>: The value of the function that is minimized by a specific procedure.</li>
+<li><code>model</code>: The one you’re actually interested in. Where p = Number of items, nf = number of factors then: degrees of freedom = <span class="math inline">\(p * (p-1)/2 - p * nf + nf*(nf-1)/2\)</span>. For the null model <span class="math inline">\(p * (p-1)/2\)</span>.</li>
+<li><code>Chi-square</code>: If <code>f</code> is the objective function value. Then <span class="math inline">\(\chi^2 = (n.obs - 1 - (2 * p + 5)/6 - (2 * nf)/3)) * f\)</span>. Strangely this is reported for the null but not the primary model result, which comes later.</li>
+</ul>
+<h3 id="number-of-observations">Number of observations</h3>
+<pre><code>
+The harmonic number of observations is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total number of observations was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 </code></pre>
+<ul>
+<li><code>total</code>: the number of rows in the data you supplied for analysis</li>
+<li><code>harmonic</code>: while one would assume it is the harmonic mean of the number of observations across items, it’s not this exactly, but is instead the harmonic mean of the pairwise counts (see <code>?pairwiseCount</code>).</li>
+</ul>
+<p>The <span class="math inline">\(\chi^2\)</span> reported here regards the primary model. So for your model you can report <code>model$STATISTIC</code>, <code>model$dof</code>, <code>model$PVAL</code>, which is what you see in the printed output for the total number of observations. The empirical chi-square is based on the harmonic number of pairwise observations. As this regards the residual correlation matrix, a smaller value is better, as in SEM.</p>
+<h3 id="fit-indices">Fit indices</h3>
+<pre><code>
+The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+...
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98</code></pre>
+<p>The nice thing about the psych package is that it reports SEM-style fit indices for standard factor analysis. You can find some more information via <code>?factor.stats</code>.</p>
+<ul>
+<li><code>TLI</code>: Generally want &gt; .9</li>
+<li><code>RMSEA</code>: Root mean square error of approximation. Also reported is the so-called ‘test of close fit’.</li>
+<li><code>RMSR</code>: The (standardized) root mean square of the residuals. Also provided is a ‘corrected’ version, but I doubt this is reported by many.</li>
+<li><code>Fit based upon off diagonal values</code>: This is not documented anywhere I can find. However, you can think of it as <code>1 - resid^2 / cor^2</code>, or a kind of <span class="math inline">\(R^2\)</span> applied to a correlation matrix instead of raw data. It is calculated via <span class="func" style="">factor.stats</span>.</li>
+<li><code>BIC</code>: Useful for model comparison purposes only.</li>
+</ul>
+<h3 id="measures-of-factor-score-adequacy">Measures of factor score adequacy</h3>
+<pre><code>
+Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+<p>Unfortunately these are named in such a way as to be nearly indistinguishable, but there is some documentation for them in <code>?factor.stats</code>. In general these tell us how representative the factor score estimates are of the underlying constructs, and can be called indeterminancy indices. Indeterminancy refers to the fact that an infinite number of factor scores can be derived that would be consistent with a given set of loadings. In Revelle’s text, <a href="http://www.personality-project.org/r/book/#chapter6">chapter 6.9</a> goes into detail, while Grice (2001) is a thorough review of the problem.</p>
+<ul>
+<li><code>Correlation of (regression) scores with factors</code>: square root of the <code>Multiple R square</code>. These can be seen as upper bounds of the determinancy of the factor score estimates that can be computed based on the model. It is essentially the (multiple) correlation of the factor and the observed data, as the name now more clearly suggests.</li>
+<li><code>Multiple R square...</code>: “The multiple R square between the factors and factor score estimates, if they were to be found. (From Grice, 2001).” Computationally, it is roughly <code>t(model$weights) %*% model$loadings</code>, where the weights are the factor score coefficients, and can be seen as the maximum proportion of determinancy (higher is better). One way you can think about this is as an <span class="math inline">\(R^2\)</span> for a regression model of the items predicting the estimated factor score.</li>
+<li><code>Minimum correlation...</code>: Not documented, and is only shown as part of the print method, as it is not calculated as part of the factor analysis. But it is <span class="math inline">\(2 \cdot R^2 - 1\)</span>, and so ranges from -1 to +1. If your <span class="math inline">\(R^2\)</span> is less than .5, it will be negative, which is not good.</li>
+</ul>
+<h3 id="miscellaneous-results">Miscellaneous results</h3>
+<p>There is a lot of other stuff in these objects, like a sample size corrected BIC, Grice’s validity coefficients, the actual residuals for the correlation matrix and more.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+str(test, 1)</code></pre>
+<pre><code>
+List of 51
+ $ residual     : num [1:10, 1:10] 0.8556 -0.0899 0.0122 0.0377 0.0573 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ dof          : num 26
+ $ chi          : num 397
+ $ nh           : num 2759
+ $ rms          : num 0.04
+ $ EPVAL        : num 5.71e-68
+ $ crms         : num 0.0526
+ $ EBIC         : num 191
+ $ ESABIC       : num 273
+ $ fit          : num 0.789
+ $ fit.off      : num 0.981
+ $ sd           : num 0.0382
+ $ factors      : num 2
+ $ complexity   : Named num [1:10] 1.09 1.01 1 1.02 1.08 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ n.obs        : int 2800
+ $ objective    : num 0.228
+ $ criteria     : Named num [1:3] 0.228 NA NA
+  ..- attr(*, &quot;names&quot;)= chr [1:3] &quot;objective&quot; &quot;&quot; &quot;&quot;
+ $ STATISTIC    : num 636
+ $ PVAL         : num 1.6e-117
+ $ Call         : language fa(r = bfi_trim, nfactors = 2)
+ $ null.model   : num 2.82
+ $ null.dof     : num 45
+ $ null.chisq   : num 7881
+ $ TLI          : num 0.865
+ $ RMSEA        : Named num [1:4] 0.0916 0.0855 0.0978 0.9
+  ..- attr(*, &quot;names&quot;)= chr [1:4] &quot;RMSEA&quot; &quot;lower&quot; &quot;upper&quot; &quot;confidence&quot;
+ $ BIC          : num 430
+ $ SABIC        : num 513
+ $ r.scores     : num [1:2, 1:2] 1 -0.227 -0.227 1
+ $ R2           : num [1:2] 0.842 0.768
+ $ valid        : num [1:2] 0.905 0.852
+ $ score.cor    : num [1:2, 1:2] 1 -0.185 -0.185 1
+ $ weights      : num [1:10, 1:2] 0.00559 0.00986 -0.00452 -0.01416 -0.03449 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ rotation     : chr &quot;oblimin&quot;
+ $ communality  : Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ communalities: Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ uniquenesses : Named num [1:10] 0.856 0.533 0.437 0.763 0.605 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ values       : num [1:10] 2.6714 1.5564 0.2727 0.1283 0.0455 ...
+ $ e.values     : num [1:10] 3.185 2.11 0.938 0.768 0.71 ...
+ $ loadings     : &#39;loadings&#39; num [1:10, 1:2] 0.0744 0.0541 0.0311 -0.0519 -0.1191 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ model        : num [1:10, 1:10] 0.144 -0.25 -0.277 -0.184 -0.239 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ fm           : chr &quot;minres&quot;
+ $ rot.mat      : num [1:2, 1:2] 0.857 0.549 -0.38 0.944
+ $ Phi          : num [1:2, 1:2] 1 -0.186 -0.186 1
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ Structure    : &#39;loadings&#39; num [1:10, 1:2] 0.1413 -0.0748 -0.1098 -0.1402 -0.23 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ method       : chr &quot;regression&quot;
+ $ scores       : num [1:2800, 1:2] -0.224 0.2186 0.532 -0.2429 -0.0564 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ R2.scores    : Named num [1:2] 0.842 0.768
+  ..- attr(*, &quot;names&quot;)= chr [1:2] &quot;MR1&quot; &quot;MR2&quot;
+ $ r            : num [1:10, 1:10] 1 -0.34 -0.265 -0.146 -0.181 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ np.obs       : num [1:10, 1:10] 2784 2757 2759 2767 2769 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ fn           : chr &quot;fa&quot;
+ $ Vaccounted   : num [1:5, 1:2] 2.443 0.244 0.244 0.578 0.578 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ - attr(*, &quot;class&quot;)= chr [1:2] &quot;psych&quot; &quot;fa&quot;</code></pre>
+</div>
+<p>In turn, these are:</p>
+<ul>
+<li><code>residual</code>: The residual correlation matrix</li>
+<li><code>dof</code>: The model degrees of freedom</li>
+<li><code>chi</code>: The empirical model <span class="math inline">\(X^2\)</span></li>
+<li><code>nh</code>: The harmonic sample size</li>
+<li><code>rms</code>: Root mean square residual</li>
+<li><code>EPVAL</code>: p-value for the empirical chi-square</li>
+<li><code>crms</code>: a ‘corrected’ rms</li>
+<li><code>EBIC</code>: BIC for the empirical model</li>
+<li><code>ESABIC</code>: sample-size corrected BIC for the empirical model</li>
+<li><code>fit</code>: Similar to <code>fit.off</code>. General fit index (how well is the observed correlation reproduced)</li>
+<li><code>fit.off</code>: Fit based on off diagonals. Reported in the output. See above.</li>
+<li><code>sd</code>: standard deviation of the off-diagonals of the residual correlation matrix.</li>
+<li><code>factors</code>: the number of factors</li>
+<li><code>complexity</code>: The complexity scores. See above.</li>
+<li><code>n.obs</code>: The number of observations (assuming complete data)</li>
+<li><code>objective</code>: The objective function for the model</li>
+<li><code>criteria</code>: Along with the objective function, additional fitting results</li>
+<li><code>STATISTIC</code>: The model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>PVAL</code>: The p-value for the model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>Call</code>: The function call</li>
+<li><code>null.model</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.dof</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.chisq</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>TLI</code>: Tucker-Lewis fit index</li>
+<li><code>RMSEA</code>: Root mean square error of approximation with upper and lower bounds</li>
+<li><code>BIC</code>: Bayesian Information Criterion for the model</li>
+<li><code>SABIC</code>: sample-size corrected BIC for the model</li>
+<li><code>r.scores</code>: The correlations of the factor score estimates using the specified model, if they were to be found. Comparing these correlations with that of the scores themselves will show, if an alternative estimate of factor scores is used (e.g., the tenBerge method), the problem of factor indeterminacy. For these correlations will not necessarily be the same.</li>
+<li><code>R2</code>: correlation of factors and estimated factor scores (squared)</li>
+<li><code>valid</code>: validity coefficients</li>
+<li><code>score.cor</code>: The correlation matrix of course coded (unit weighted) factor score estimates (i.e. sum scores), if they were to be found, based upon the loadings matrix rather than the weights matrix.</li>
+<li><code>weights</code>: weights used to construct factor scores</li>
+<li><code>rotation</code>: rotation used : chr “oblimin”</li>
+<li><code>communality</code>: communality scores <code>h2</code></li>
+<li><code>communalities</code>: So nice they put them twice (actually not entirely equal)</li>
+<li><code>uniquenesses</code>: Uniquenesses <code>u2</code></li>
+<li><code>values</code> eigenvalues of the model implied correlation matrix</li>
+<li><code>e.values</code>: eigenvalues of the correlation matrix</li>
+<li><code>loadings</code>: the factor loadings</li>
+<li><code>model</code>: the model-implied correlation matrix</li>
+<li><code>fm</code>: the estimation approach</li>
+<li><code>rot.mat</code>: matrix used in the rotated solution</li>
+<li><code>Phi</code>: factor score correlation matrix</li>
+<li><code>Structure</code>: this is just the loadings (pattern) matrix times the factor intercorrelation matrix (Phi).</li>
+<li><code>method</code>: method used to construct the factor scores</li>
+<li><code>scores</code>: estimated factor scores</li>
+<li><code>R2.scores</code>: estimated correlation of factor scores with the factor (squared)</li>
+<li><code>r</code>: the (possibly smoothed) correlation matrix of the observation</li>
+<li><code>np.obs</code>: pairwise sample sizes (used to get the harmonic mean)</li>
+<li><code>fn</code>: the function used</li>
+<li><code>Vaccounted</code>: the SS loadings output.</li>
+</ul>
+<h2 id="additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</h2>
+<p>Though rarely done, if you only provide a correlation matrix as your data you will not get a variety of metrics in the results.</p>
+<h2 id="alpha">Alpha</h2>
+<p>This is a quick reminder of the results of coefficient <span class="math inline">\(\alpha\)</span>. For this we’ll just use the agreeableness items to keep things succinct.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+agreeableness = bfi_trim[,1:5]
+
+# check.keys will rescale negatively scored items
+alpha_results = alpha(agreeableness, check.keys = TRUE, n.iter=10) 
+alpha_results</code></pre>
+<pre><code>
+Reliability analysis   
+Call: alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+
+  raw_alpha std.alpha G6(smc) average_r S/N   ase mean  sd median_r
+       0.7      0.71    0.68      0.33 2.5 0.009  4.7 0.9     0.34
+
+ lower alpha upper     95% confidence boundaries
+0.69 0.7 0.72 
+
+ lower median upper bootstrapped confidence intervals
+ 0.69 0.7 0.72
+ Reliability if an item is dropped:
+    raw_alpha std.alpha G6(smc) average_r S/N alpha se  var.r med.r
+A1-      0.72      0.73    0.67      0.40 2.6   0.0087 0.0065  0.38
+A2       0.62      0.63    0.58      0.29 1.7   0.0119 0.0169  0.29
+A3       0.60      0.61    0.56      0.28 1.6   0.0124 0.0094  0.32
+A4       0.69      0.69    0.65      0.36 2.3   0.0098 0.0159  0.37
+A5       0.64      0.66    0.61      0.32 1.9   0.0111 0.0126  0.34
+
+ Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58  0.57  0.38   0.31  4.6 1.4
+A2  2773  0.73  0.75  0.67   0.56  4.8 1.2
+A3  2774  0.76  0.77  0.71   0.59  4.6 1.3
+A4  2781  0.65  0.63  0.47   0.39  4.7 1.5
+A5  2784  0.69  0.70  0.60   0.49  4.6 1.3
+
+Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+</div>
+<ul>
+<li><code>raw_alpha</code>: Raw estimate of alpha (based on covariances)</li>
+<li><code>std.alpha</code>: Standardized estimate. This value is what is typically reported (though most applied researchers would probably not be able to tell you which they reported). Identical to raw if data is already standardized.</li>
+<li><code>G6 (smc)</code>: Guttman’s <span class="math inline">\(\lambda_6\)</span>, the amount of variance in each item that can be accounted for the linear regression of all of the other items</li>
+<li><code>average_r</code>: Average interitem correlation among the items.</li>
+<li><code>S/N</code>: Signal to noise ratio, <span class="math inline">\(n \cdot r/(1-r)\)</span> where r is the <code>average_r</code></li>
+<li><code>ase</code>: standard error for raw alpha (used for the confidence interval, bootstrapped would be better)</li>
+<li><code>mean</code>: the mean of the total/mean score of the items</li>
+<li><code>sd</code>: the standard deviation of the total/mean score of the items</li>
+<li><code>median_r</code>: median interitem correlation</li>
+</ul>
+<p>After the initial statistics, the same stats are reported but for a result where a specific item is dropped. For example, if your <span class="math inline">\(\alpha\)</span> goes up when an item is dropped, it probably isn’t a good item.</p>
+<p>Next we get the item statistics, they are as follows.</p>
+<pre><code>
+ Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58  0.57  0.38   0.31  4.6 1.4
+A2  2773  0.73  0.75  0.67   0.56  4.8 1.2
+A3  2774  0.76  0.77  0.71   0.59  4.6 1.3
+A4  2781  0.65  0.63  0.47   0.39  4.7 1.5
+A5  2784  0.69  0.70  0.60   0.49  4.6 1.3</code></pre>
+<ul>
+<li><code>n</code>: number of complete observations</li>
+<li><code>raw.r</code>: correlation of each item with the total score</li>
+<li><code>std.r</code>: correlation of each item with the total score if the items were all standardized</li>
+<li><code>r.cor</code>: item correlation corrected for item overlap and scale reliability</li>
+<li><code>r.drop</code> item correlation for this item against the scale without this item</li>
+<li><code>mean</code>: item mean</li>
+<li><code>sd</code>: item sd</li>
+</ul>
+<p>Finally we have information about the missingness of each item. The initial values show the proportion of each level observed, while the last column shows the percentage missing.</p>
+<pre><code>
+Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+<p>In addition to these we have a bit more from the output.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+str(alpha_results[5:length(alpha_results)])</code></pre>
+<pre><code>
+List of 10
+ $ keys   : Named num [1:5] -1 1 1 1 1
+  ..- attr(*, &quot;names&quot;)= chr [1:5] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ scores : Named num [1:2800] 4 4.2 3.8 4.6 4 4.6 4.6 2.6 3.6 5.4 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:2800] &quot;61617&quot; &quot;61618&quot; &quot;61620&quot; &quot;61621&quot; ...
+ $ nvar   : int 5
+ $ boot.ci: Named num [1:3] 0.685 0.702 0.719
+  ..- attr(*, &quot;names&quot;)= chr [1:3] &quot;2.5%&quot; &quot;50%&quot; &quot;97.5%&quot;
+ $ boot   : num [1:10, 1:10] 0.698 0.709 0.694 0.708 0.707 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:10] &quot;raw_alpha&quot; &quot;std.alpha&quot; &quot;G6(smc)&quot; &quot;average_r&quot; ...
+ $ Unidim :List of 1
+  ..$ Unidim: num 0.668
+ $ var.r  : num 0.0134
+ $ Fit    :List of 1
+  ..$ Fit.off: num 0.974
+ $ call   : language alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+ $ title  : NULL</code></pre>
+</div>
+<p>In turn these are:</p>
+<ul>
+<li><code>keys</code>: how the items are score (-1 if reverse scored)</li>
+<li><code>scores</code>: row means/sums depending on the <code>cumulative</code> argument</li>
+<li><code>nvar</code>: the number of variables/items</li>
+<li><code>boot.ci</code>: the bootstrapped confidence interval for <span class="math inline">\(\alpha\)</span> (if requested)</li>
+<li><code>boot</code>: the bootstrapped values of <span class="math inline">\(\alpha\)</span> and other statistics (if requested)</li>
+<li><code>Unidim</code>: index of unidimensionalty. <span class="math inline">\(\alpha\)</span> is a lower bound of a reliability estimate if the data is not unidimensional.</li>
+<li><code>var.r</code>: This is not actually documented anywhere, but it is depicted in the Reliability if item is dropped section. It is the variance of the values of the lower triangle of a correlation matrix.</li>
+<li><code>Fit</code>: see <code>Fit based upon off diagonal values</code> for the factor analysis section above.</li>
+<li><code>call</code>: the function call</li>
+<li><code>title</code>: title of the results (if requested)</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>The <span class="pack" style="">psych</span> package is very powerful and provides a lot of output from just a single line of code. However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided). Hopefully this saves others some time when they use it.</p>
+<!--radix_placeholder_article_footer-->
+<div class="article-footer">
+  <p class="social_footer">
+    <span class="article-sharing">
+      Share: &nbsp;
+      <a href="https://twitter.com/share?text=Factor%20Analysis%20with%20the%20psych%20package&amp;url=https%3A%2F%2Fm-clark.github.io%2Fposts%2F">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3A%2F%2Fm-clark.github.io%2Fposts%2F&amp;title=Factor%20Analysis%20with%20the%20psych%20package">
+        <i class="fab fa-linkedin"></i>
+      </a>
+      <a href="https://www.facebook.com/sharer/sharer.php?s=100&amp;p[url]=https%3A%2F%2Fm-clark.github.io%2Fposts%2F">
+        <i class="fab fa-facebook"></i>
+      </a>
+    </span>
+  </p>
+</div>
+<!--/radix_placeholder_article_footer-->
+</div>
+
+<div class="d-appendix">
+</div>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!--radix_placeholder_site_after_body-->
+<!--/radix_placeholder_site_after_body-->
+<!--radix_placeholder_appendices-->
+<div class="appendix-bottom">
+  <h3 id="updates-and-corrections">Corrections</h3>
+  <p>If you see mistakes or want to suggest changes, please <a href="https://github.com//m-clark/m-clark.github.io/issues/new">create an issue</a> on the source repository.</p>
+  <h3 id="reuse">Reuse</h3>
+  <p>Text and figures are licensed under Creative Commons Attribution <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Source code is available at <a href="https://github.com//m-clark/m-clark.github.io">https://github.com//m-clark/m-clark.github.io</a>, unless otherwise noted. The figures that have been reused from other sources don't fall under this license and can be recognized by a note in their caption: "Figure from ...".</p>
+  <h3 id="citation">Citation</h3>
+  <p>For attribution, please cite this work as</p>
+  <pre class="citation-appendix short">Clark (2020, April 10). Michael Clark: Factor Analysis with the psych package. Retrieved from https://m-clark.github.io/posts/</pre>
+  <p>BibTeX citation</p>
+  <pre class="citation-appendix long">@misc{clark2020factor,
+  author = {Clark, Michael},
+  title = {Michael Clark: Factor Analysis with the psych package},
+  url = {https://m-clark.github.io/posts/},
+  year = {2020}
+}</pre>
+</div>
+<!--/radix_placeholder_appendices-->
+<!--radix_placeholder_navigation_after_body-->
+<div class="distill-site-nav distill-site-footer">
+  <div>
+
+
+Michael Clark • 2019 •  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
+</div>
+</div>
+<!--/radix_placeholder_navigation_after_body-->
+
+
+</body>
+
+</html>

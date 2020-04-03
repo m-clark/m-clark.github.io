@@ -1,0 +1,51 @@
+---
+title: Getting started with pkgdown
+layout: post
+output:
+  md_document:
+    variant: markdown_github
+---
+
+I decided to write an actual post about something rather than just a site update.  This will regard pkgdown, an R package for creating a site for one's package.  As an example, you can check out the [pkgdown site](http://pkgdown.r-lib.org/), or any of the tidyverse, e.g. ggplot2.
+
+A quick glance at the pkgdown site will show that it's not very helpful (as of this writing).  About the only thing I found useful was the part about grouping functions.  The help files for the functions were... well let me put it this way. If you go to `?build_site`, it will tell you all about the YAML config, but it doesn't bother to tell you what the file should be named or where it should be for pkgdown to use it.  It talks about other things, which seem mostly as reminders to the author, because there is almost no context for someone using the package the first time.
+
+I wanted one thing primarily, customization, e.g. via the YAML or CSS, just like I do with standard R Markdown documents.  I started with the _pkgdown.yml file that's created when you use build_site.  That is the one mentioned in the help files, but if you try to change it, it will be overwritten when you build the site next.  There is an `override` argument in the the `build_site` function, but seems to be practically no documentation on what options you have, and beyond changing the output folder, it's not clear to me why you would use it beyond the YAML.  There is some detail about building your own template, but if you're not using the default bootswatch templates (like standard Rmd templates cerulean, yeti, sandstone etc.), you're unlikely to want to go this far for your first go around with pkgdown, or possibly ever.
+
+I had to look at several sites built with pkgdown, scan some blogs, read numerous SO entries etc., just to find out the following steps.
+
+1. Create your own `_pkgdown.yml` at the top level of your package folder.  Every example you see in the documentation regarding YAML will refer to this file. You probably want to add it to your `.Rbuildignore` or your `R CMD CHECK` will note it when you build your package.  I had to introduce errors into it before I could tell pkgdown was even using it, as many things I can change with standard R Markdown YAML configuration were ineffective.  It seems many things you could put here for standard R Markdown files for HTML, bookdown, etc., will likely be ignored (e.g. syntax highlighting), but it's worth a shot to try.
+
+2. Create a folder called `pkgdown`, and put your custom .css file there, and call it `extra.css`.  I never saw any `pkgdown` documentation on this, just came across a blog entry.  Again, you may want to add this to `.Rbuildignore`.
+
+3. If you want to use image files, it's suggested you put them in `man/figures/`, but you really just need to have the proper file location noted when you use them.  They still may not work for some pages beyond the index/home page.
+
+4. Create a NEWS.md file with `devtools::use_news_md` to create a section of your site that reflects the change log. Your markdown headings should look like the following or they won't work.  You can make them smaller headings if you want.
+
+```
+# packagename 1.0.0
+```
+
+
+
+That's all it takes to create a package site that looks [largely how you want](https://m-clark.github.io/tidyext).  Any more will likely require your own template.  In addition, you'll figure things out more easily by looking at [other people's YAML](https://github.com/tidyverse/ggplot2/blob/master/_pkgdown.yml) rather than the help files.  I found [this post](https://enpiar.com/2017/11/21/getting-down-with-pkgdown/) and its follow-up more useful than any of the documentation.
+
+
+
+Misc:
+
+When previewing your site, for non-home pages you will need to add the index.html file explicitly if *you* want to be able to see it.  Otherwise, it will just show the folder structure.
+
+```
+left:
+  - text: "Reference"
+    href: "reference/index.html"
+```
+
+Also, I found that a footer image will not show on anything other than the home page because it refers to a non-existent folder.  You can get around this by creating the top-level image folder in the same directories as the non-index pages.
+
+The package DESCRIPTION file will be the source for some of the info displayed, e.g. authors, maintainer, license.  You'll have to change your `Authors:` to the following style for it to work, but you can then override it in your YAML file also.
+
+```
+Authors@R: person("Michael", "Clark", role = c("aut", "cre"), email = "micl@umich.edu")
+```
