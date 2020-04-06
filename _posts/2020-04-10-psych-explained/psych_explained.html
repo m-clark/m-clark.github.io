@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+  <meta name="generator" content="distill" />
+
+  <style type="text/css">
+  /* Hide doc at startup (prevent jankiness while JS renders/transforms) */
+  body {
+    visibility: hidden;
+  }
+  </style>
+
+ <!--radix_placeholder_import_source-->
+ <!--/radix_placeholder_import_source-->
+
+  <!--radix_placeholder_meta_tags-->
+  <title>Factor Analysis with the psych package</title>
+  
+  <meta property="description" itemprop="description" content="Making sense of the results"/>
+  
+  
+  <!--  https://schema.org/Article -->
+  <meta property="article:published" itemprop="datePublished" content="2020-04-10"/>
+  <meta property="article:created" itemprop="dateCreated" content="2020-04-10"/>
+  <meta name="article:author" content="Michael Clark"/>
+  
+  <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
+  <meta property="og:title" content="Factor Analysis with the psych package"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:description" content="Making sense of the results"/>
+  <meta property="og:locale" content="en_US"/>
+  
+  <!--  https://dev.twitter.com/cards/types/summary -->
+  <meta property="twitter:card" content="summary"/>
+  <meta property="twitter:title" content="Factor Analysis with the psych package"/>
+  <meta property="twitter:description" content="Making sense of the results"/>
+  
+  <!--/radix_placeholder_meta_tags-->
+  <!--radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-rmarkdown-metadata">
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","tags","categories"]}},"value":[{"type":"character","attributes":{},"value":["Factor Analysis with the psych package"]},{"type":"character","attributes":{},"value":["Making sense of the results\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["2020-04-10"]},{"type":"character","attributes":{},"value":["../../img/covid_preview.gif"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css","code_folding"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css","../../css/misc.css"]},{"type":"character","attributes":{},"value":["hide"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["factor analysis","psych package","rmsea","TLI"]},{"type":"character","attributes":{},"value":["visualization"]}]}
+  </script>
+  <!--/radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-resource-manifest">
+  {"type":"character","attributes":{},"value":["psych_explained_files/bowser-1.9.3/bowser.min.js","psych_explained_files/distill-2.2.21/template.v2.js","psych_explained_files/figure-html5/omega-1.svg","psych_explained_files/jquery-1.11.3/jquery.min.js","psych_explained_files/webcomponents-2.0.0/webcomponents.js"]}
+  </script>
+  <!--radix_placeholder_navigation_in_header-->
+  <!--/radix_placeholder_navigation_in_header-->
+  <!--radix_placeholder_distill-->
+  
+  <style type="text/css">
+  
+  body {
+    background-color: white;
+  }
+  
+  .pandoc-table {
+    width: 100%;
+  }
+  
+  .pandoc-table>caption {
+    margin-bottom: 10px;
+  }
+  
+  .pandoc-table th:not([align]) {
+    text-align: left;
+  }
+  
+  .pagedtable-footer {
+    font-size: 15px;
+  }
+  
+  .html-widget {
+    margin-bottom: 2.0em;
+  }
+  
+  .l-screen-inset {
+    padding-right: 16px;
+  }
+  
+  .l-screen .caption {
+    margin-left: 10px;
+  }
+  
+  .shaded {
+    background: rgb(247, 247, 247);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .html-widget {
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .shaded-content {
+    background: white;
+  }
+  
+  .text-output {
+    margin-top: 0;
+    line-height: 1.5em;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  d-article {
+    padding-bottom: 30px;
+  }
+  
+  d-appendix {
+    padding-top: 30px;
+  }
+  
+  d-article>p>img {
+    width: 100%;
+  }
+  
+  d-article iframe {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 2.0em;
+    width: 100%;
+  }
+  
+  figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  /* CSS for table of contents */
+  
+  .d-toc {
+    color: rgba(0,0,0,0.8);
+    font-size: 0.8em;
+    line-height: 1em;
+  }
+  
+  .d-toc-header {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 1.3em;
+  }
+  
+  .d-toc a {
+    border-bottom: none;
+  }
+  
+  .d-toc ul {
+    padding-left: 0;
+  }
+  
+  .d-toc li>ul {
+    padding-top: 0.8em;
+    padding-left: 16px;
+    margin-bottom: 0.6em;
+  }
+  
+  .d-toc ul,
+  .d-toc li {
+    list-style-type: none;
+  }
+  
+  .d-toc li {
+    margin-bottom: 0.9em;
+  }
+  
+  .d-toc-separator {
+    margin-top: 20px;
+    margin-bottom: 2em;
+  }
+  
+  .d-article-with-toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  
+  
+  /* Tweak code blocks (note that this CSS is repeated above in an injection
+     into the d-code shadow dom) */
+  
+  d-code {
+    overflow-x: auto !important;
+  }
+  
+  pre.d-code code.d-code {
+    padding-left: 10px;
+    font-size: 12px;
+    border-left: 2px solid rgba(0,0,0,0.1);
+  }
+  
+  pre.text-output {
+  
+    font-size: 12px;
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  @media(min-width: 768px) {
+  
+  d-code {
+    overflow-x: visible !important;
+  }
+  
+  pre.d-code code.d-code  {
+      padding-left: 18px;
+      font-size: 14px;
+  }
+  pre.text-output {
+    font-size: 14px;
+  }
+  }
+  
+  /* Figure */
+  
+  .figure {
+    position: relative;
+    margin-bottom: 2.5em;
+    margin-top: 1.5em;
+  }
+  
+  .figure img {
+    width: 100%;
+  }
+  
+  .figure .caption {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.5em;
+  }
+  
+  .figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  .figure .caption a {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .figure .caption b,
+  .figure .caption strong, {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 1.0);
+  }
+  
+  
+  
+  /* Tweak 1000px media break to show more text */
+  
+  @media(min-width: 1000px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 50px [text-start kicker-end] 65px 65px 65px 65px 65px 65px 65px 65px [text-end gutter-start] 65px [middle-end] 65px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 16px;
+    }
+  
+    .grid {
+      grid-column-gap: 16px;
+    }
+  
+    d-article {
+      font-size: 1.06rem;
+      line-height: 1.7em;
+    }
+    figure .caption, .figure .caption, figure figcaption {
+      font-size: 13px;
+    }
+  }
+  
+  @media(min-width: 1180px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 60px [middle-start] 60px [text-start kicker-end] 60px 60px 60px 60px 60px 60px 60px 60px [text-end gutter-start] 60px [middle-end] 60px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 32px;
+    }
+  
+    .grid {
+      grid-column-gap: 32px;
+    }
+  }
+  
+  
+  /* Get the citation styles for the appendix (not auto-injected on render since
+     we do our own rendering of the citation appendix) */
+  
+  d-appendix .citation-appendix,
+  .d-appendix .citation-appendix {
+    font-size: 11px;
+    line-height: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    padding-left: 18px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px 18px;
+    border-radius: 3px;
+    color: rgba(150, 150, 150, 1);
+    overflow: hidden;
+    margin-top: -12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  
+  /* Social footer */
+  
+  .social_footer {
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.67);
+  }
+  
+  .disqus-comments {
+    margin-right: 30px;
+  }
+  
+  .disqus-comment-count {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  
+  #disqus_thread {
+    margin-top: 30px;
+  }
+  
+  .article-sharing a {
+    border-bottom: none;
+    margin-right: 8px;
+  }
+  
+  .article-sharing a:hover {
+    border-bottom: none;
+  }
+  
+  .sidebar-section.subscribe {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .subscribe p {
+    margin-bottom: 0.5em;
+  }
+  
+  
+  .article-footer .subscribe {
+    font-size: 15px;
+    margin-top: 45px;
+  }
+  
+  
+  /* Improve display for browsers without grid (IE/Edge <= 15) */
+  
+  .downlevel {
+    line-height: 1.6em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+  }
+  
+  .downlevel .d-title {
+    padding-top: 6rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .downlevel .d-title h1 {
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 1.1em;
+    margin: 0 0 0.5rem;
+  }
+  
+  .downlevel .d-title p {
+    font-weight: 300;
+    font-size: 1.2rem;
+    line-height: 1.55em;
+    margin-top: 0;
+  }
+  
+  .downlevel .d-byline {
+    padding-top: 0.8em;
+    padding-bottom: 0.8em;
+    font-size: 0.8rem;
+    line-height: 1.8em;
+  }
+  
+  .downlevel .section-separator {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .downlevel .d-article {
+    font-size: 1.06rem;
+    line-height: 1.7em;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  
+  
+  .downlevel .d-appendix {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+    font-size: 0.8em;
+    line-height: 1.7em;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.5);
+    padding-top: 40px;
+    padding-bottom: 48px;
+  }
+  
+  .downlevel .footnotes ol {
+    padding-left: 13px;
+  }
+  
+  .downlevel .base-grid,
+  .downlevel .distill-header,
+  .downlevel .d-title,
+  .downlevel .d-abstract,
+  .downlevel .d-article,
+  .downlevel .d-appendix,
+  .downlevel .distill-appendix,
+  .downlevel .d-byline,
+  .downlevel .d-footnote-list,
+  .downlevel .d-citation-list,
+  .downlevel .distill-footer,
+  .downlevel .appendix-bottom,
+  .downlevel .posts-container {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  
+  @media(min-width: 768px) {
+    .downlevel .base-grid,
+    .downlevel .distill-header,
+    .downlevel .d-title,
+    .downlevel .d-abstract,
+    .downlevel .d-article,
+    .downlevel .d-appendix,
+    .downlevel .distill-appendix,
+    .downlevel .d-byline,
+    .downlevel .d-footnote-list,
+    .downlevel .d-citation-list,
+    .downlevel .distill-footer,
+    .downlevel .appendix-bottom,
+    .downlevel .posts-container {
+    padding-left: 150px;
+    padding-right: 150px;
+    max-width: 900px;
+  }
+  }
+  
+  .downlevel pre code {
+    display: block;
+    border-left: 2px solid rgba(0, 0, 0, .1);
+    padding: 0 0 0 20px;
+    font-size: 14px;
+  }
+  
+  .downlevel code, .downlevel pre {
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  </style>
+  
+  <script type="application/javascript">
+  
+  function is_downlevel_browser() {
+    if (bowser.isUnsupportedBrowser({ msie: "12", msedge: "16"},
+                                   window.navigator.userAgent)) {
+      return true;
+    } else {
+      return window.load_distill_framework === undefined;
+    }
+  }
+  
+  // show body when load is complete
+  function on_load_complete() {
+  
+    // set body to visible
+    document.body.style.visibility = 'visible';
+  
+    // force redraw for leaflet widgets
+    if (window.HTMLWidgets) {
+      var maps = window.HTMLWidgets.findAll(".leaflet");
+      $.each(maps, function(i, el) {
+        var map = this.getMap();
+        map.invalidateSize();
+        map.eachLayer(function(layer) {
+          if (layer instanceof L.TileLayer)
+            layer.redraw();
+        });
+      });
+    }
+  
+    // trigger 'shown' so htmlwidgets resize
+    $('d-article').trigger('shown');
+  }
+  
+  function init_distill() {
+  
+    init_common();
+  
+    // create front matter
+    var front_matter = $('<d-front-matter></d-front-matter>');
+    $('#distill-front-matter').wrap(front_matter);
+  
+    // create d-title
+    $('.d-title').changeElementType('d-title');
+  
+    // create d-byline
+    var byline = $('<d-byline></d-byline>');
+    $('.d-byline').replaceWith(byline);
+  
+    // create d-article
+    var article = $('<d-article></d-article>');
+    $('.d-article').wrap(article).children().unwrap();
+  
+    // move posts container into article
+    $('.posts-container').appendTo($('d-article'));
+  
+    // create d-appendix
+    $('.d-appendix').changeElementType('d-appendix');
+  
+    // create d-bibliography
+    var bibliography = $('<d-bibliography></d-bibliography>');
+    $('#distill-bibliography').wrap(bibliography);
+  
+    // flag indicating that we have appendix items
+    var appendix = $('.appendix-bottom').children('h3').length > 0;
+  
+    // replace citations with <d-cite>
+    $('.citation').each(function(i, val) {
+      appendix = true;
+      var cites = $(this).attr('data-cites').split(" ");
+      var dt_cite = $('<d-cite></d-cite>');
+      dt_cite.attr('key', cites.join());
+      $(this).replaceWith(dt_cite);
+    });
+    // remove refs
+    $('#refs').remove();
+  
+    // replace footnotes with <d-footnote>
+    $('.footnote-ref').each(function(i, val) {
+      appendix = true;
+      var href = $(this).attr('href');
+      var id = href.replace('#', '');
+      var fn = $('#' + id);
+      var fn_p = $('#' + id + '>p');
+      fn_p.find('.footnote-back').remove();
+      var text = fn_p.html();
+      var dtfn = $('<d-footnote></d-footnote>');
+      dtfn.html(text);
+      $(this).replaceWith(dtfn);
+    });
+    // remove footnotes
+    $('.footnotes').remove();
+  
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      var id = $(this).attr('id');
+      $('.d-toc a[href="#' + id + '"]').parent().remove();
+      appendix = true;
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('d-appendix'));
+    });
+  
+    // show d-appendix if we have appendix content
+    $("d-appendix").css('display', appendix ? 'grid' : 'none');
+  
+    // replace code blocks with d-code
+    $('pre>code').each(function(i, val) {
+      var code = $(this);
+      var pre = code.parent();
+      var clz = "";
+      var language = pre.attr('class');
+      if (language) {
+        // map unknown languages to "clike" (without this they just dissapear)
+        if ($.inArray(language, ["bash", "clike", "css", "go", "html",
+                                 "javascript", "js", "julia", "lua", "markdown",
+                                 "markup", "mathml", "python", "svg", "xml"]) == -1)
+          language = "clike";
+        language = ' language="' + language + '"';
+        var dt_code = $('<d-code block' + language + clz + '></d-code>');
+        dt_code.text(code.text());
+        pre.replaceWith(dt_code);
+      } else {
+        code.addClass('text-output').unwrap().changeElementType('pre');
+      }
+    });
+  
+    // localize layout chunks to just output
+    $('.layout-chunk').each(function(i, val) {
+  
+      // capture layout
+      var layout = $(this).attr('data-layout');
+  
+      // apply layout to markdown level block elements
+      var elements = $(this).children().not('d-code, pre.text-output, script');
+      elements.each(function(i, el) {
+        var layout_div = $('<div class="' + layout + '"></div>');
+        if (layout_div.hasClass('shaded')) {
+          var shaded_content = $('<div class="shaded-content"></div>');
+          $(this).wrap(shaded_content);
+          $(this).parent().wrap(layout_div);
+        } else {
+          $(this).wrap(layout_div);
+        }
+      });
+  
+  
+      // unwrap the layout-chunk div
+      $(this).children().unwrap();
+    });
+  
+    // load distill framework
+    load_distill_framework();
+  
+    // wait for window.distillRunlevel == 4 to do post processing
+    function distill_post_process() {
+  
+      if (!window.distillRunlevel || window.distillRunlevel < 4)
+        return;
+  
+      // hide author/affiliations entirely if we have no authors
+      var front_matter = JSON.parse($("#distill-front-matter").html());
+      var have_authors = front_matter.authors && front_matter.authors.length > 0;
+      if (!have_authors)
+        $('d-byline').addClass('hidden');
+  
+      // table of contents
+      if (have_authors) // adjust border if we are in authors
+        $('.d-toc').parent().addClass('d-article-with-toc');
+  
+      // strip links that point to #
+      $('.authors-affiliations').find('a[href="#"]').removeAttr('href');
+  
+      // hide elements of author/affiliations grid that have no value
+      function hide_byline_column(caption) {
+        $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'hidden');
+      }
+  
+      // affiliations
+      var have_affiliations = false;
+      for (var i = 0; i<front_matter.authors.length; ++i) {
+        var author = front_matter.authors[i];
+        if (author.affiliation !== "&nbsp;") {
+          have_affiliations = true;
+          break;
+        }
+      }
+      if (!have_affiliations)
+        $('d-byline').find('h3:contains("Affiliations")').css('visibility', 'hidden');
+  
+      // published date
+      if (!front_matter.publishedDate)
+        hide_byline_column("Published");
+  
+      // document object identifier
+      var doi = $('d-byline').find('h3:contains("DOI")');
+      var doi_p = doi.next().empty();
+      if (!front_matter.doi) {
+        // if we have a citation and valid citationText then link to that
+        if ($('#citation').length > 0 && front_matter.citationText) {
+          doi.html('Citation');
+          $('<a href="#citation"></a>')
+            .text(front_matter.citationText)
+            .appendTo(doi_p);
+        } else {
+          hide_byline_column("DOI");
+        }
+      } else {
+        $('<a></a>')
+           .attr('href', "https://doi.org/" + front_matter.doi)
+           .html(front_matter.doi)
+           .appendTo(doi_p);
+      }
+  
+       // change plural form of authors/affiliations
+      if (front_matter.authors.length === 1) {
+        var grid = $('.authors-affiliations');
+        grid.children('h3:contains("Authors")').text('Author');
+        grid.children('h3:contains("Affiliations")').text('Affiliation');
+      }
+  
+      // inject pre code styles (can't do this with a global stylesheet b/c a shadow root is used)
+      $('d-code').each(function(i, val) {
+        var style = document.createElement('style');
+        style.innerHTML = 'pre code { padding-left: 10px; font-size: 12px; border-left: 2px solid rgba(0,0,0,0.1); } ' +
+                          '@media(min-width: 768px) { pre code { padding-left: 18px; font-size: 14px; } }';
+        if (this.shadowRoot)
+          this.shadowRoot.appendChild(style);
+      });
+  
+      // move appendix-bottom entries to the bottom
+      $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
+      $('.appendix-bottom').remove();
+  
+      // clear polling timer
+      clearInterval(tid);
+  
+      // show body now that everything is ready
+      on_load_complete();
+    }
+  
+    var tid = setInterval(distill_post_process, 50);
+    distill_post_process();
+  
+  }
+  
+  function init_downlevel() {
+  
+    init_common();
+  
+     // insert hr after d-title
+    $('.d-title').after($('<hr class="section-separator"/>'));
+  
+    // check if we have authors
+    var front_matter = JSON.parse($("#distill-front-matter").html());
+    var have_authors = front_matter.authors && front_matter.authors.length > 0;
+  
+    // manage byline/border
+    if (!have_authors)
+      $('.d-byline').remove();
+    $('.d-byline').after($('<hr class="section-separator"/>'));
+    $('.d-byline a').remove();
+  
+    // remove toc
+    $('.d-toc-header').remove();
+    $('.d-toc').remove();
+    $('.d-toc-separator').remove();
+  
+    // move appendix elements
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('.d-appendix'));
+    });
+  
+  
+    // inject headers into references and footnotes
+    var refs_header = $('<h3></h3>');
+    refs_header.text('References');
+    $('#refs').prepend(refs_header);
+  
+    var footnotes_header = $('<h3></h3');
+    footnotes_header.text('Footnotes');
+    $('.footnotes').children('hr').first().replaceWith(footnotes_header);
+  
+    // move appendix-bottom entries to the bottom
+    $('.appendix-bottom').appendTo('.d-appendix').children().unwrap();
+    $('.appendix-bottom').remove();
+  
+    // remove appendix if it's empty
+    if ($('.d-appendix').children().length === 0)
+      $('.d-appendix').remove();
+  
+    // prepend separator above appendix
+    $('.d-appendix').before($('<hr class="section-separator" style="clear: both"/>'));
+  
+    // trim code
+    $('pre>code').each(function(i, val) {
+      $(this).html($.trim($(this).html()));
+    });
+  
+    // move posts-container right before article
+    $('.posts-container').insertBefore($('.d-article'));
+  
+    $('body').addClass('downlevel');
+  
+    on_load_complete();
+  }
+  
+  
+  function init_common() {
+  
+    // jquery plugin to change element types
+    (function($) {
+      $.fn.changeElementType = function(newType) {
+        var attrs = {};
+  
+        $.each(this[0].attributes, function(idx, attr) {
+          attrs[attr.nodeName] = attr.nodeValue;
+        });
+  
+        this.replaceWith(function() {
+          return $("<" + newType + "/>", attrs).append($(this).contents());
+        });
+      };
+    })(jQuery);
+  
+    // prevent underline for linked images
+    $('a > img').parent().css({'border-bottom' : 'none'});
+  
+    // mark non-body figures created by knitr chunks as 100% width
+    $('.layout-chunk').each(function(i, val) {
+      var figures = $(this).find('img, .html-widget');
+      if ($(this).attr('data-layout') !== "l-body") {
+        figures.css('width', '100%');
+      } else {
+        figures.css('max-width', '100%');
+        figures.filter("[width]").each(function(i, val) {
+          var fig = $(this);
+          fig.css('width', fig.attr('width') + 'px');
+        });
+  
+      }
+    });
+  
+    // auto-append index.html to post-preview links in file: protocol
+    // and in rstudio ide preview
+    $('.post-preview').each(function(i, val) {
+      if (window.location.protocol === "file:")
+        $(this).attr('href', $(this).attr('href') + "index.html");
+    });
+  
+    // get rid of index.html references in header
+    if (window.location.protocol !== "file:") {
+      $('.distill-site-header a[href]').each(function(i,val) {
+        $(this).attr('href', $(this).attr('href').replace("index.html", "./"));
+      });
+    }
+  
+    // add class to pandoc style tables
+    $('tr.header').parent('thead').parent('table').addClass('pandoc-table');
+    $('.kable-table').children('table').addClass('pandoc-table');
+  
+    // add figcaption style to table captions
+    $('caption').parent('table').addClass("figcaption");
+  
+    // initialize posts list
+    if (window.init_posts_list)
+      window.init_posts_list();
+  
+    // implmement disqus comment link
+    $('.disqus-comment-count').click(function() {
+      window.headroom_prevent_pin = true;
+      $('#disqus_thread').toggleClass('hidden');
+      if (!$('#disqus_thread').hasClass('hidden')) {
+        var offset = $(this).offset();
+        $(window).resize();
+        $('html, body').animate({
+          scrollTop: offset.top - 35
+        });
+      }
+    });
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    if (is_downlevel_browser())
+      init_downlevel();
+    else
+      window.addEventListener('WebComponentsReady', init_distill);
+  });
+  
+  </script>
+  
+  <!--/radix_placeholder_distill-->
+  <script src="psych_explained_files/jquery-1.11.3/jquery.min.js"></script>
+  <script src="psych_explained_files/bowser-1.9.3/bowser.min.js"></script>
+  <script src="psych_explained_files/webcomponents-2.0.0/webcomponents.js"></script>
+  <script src="psych_explained_files/distill-2.2.21/template.v2.js"></script>
+  <!--radix_placeholder_site_in_header-->
+  <!--/radix_placeholder_site_in_header-->
+
+  <link rel="stylesheet" href="../../styles.css" type="text/css"/>
+  <link rel="stylesheet" href="../../css/misc.css" type="text/css"/>
+
+</head>
+
+<body>
+
+<!--radix_placeholder_front_matter-->
+
+<script id="distill-front-matter" type="text/json">
+{"title":"Factor Analysis with the psych package","description":"Making sense of the results","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2020-04-10T00:00:00.000-04:00","citationText":"Clark, 2020"}
+</script>
+
+<!--/radix_placeholder_front_matter-->
+<!--radix_placeholder_navigation_before_body-->
+<!--/radix_placeholder_navigation_before_body-->
+<!--radix_placeholder_site_before_body-->
+<!--/radix_placeholder_site_before_body-->
+
+<div class="d-title">
+<h1>Factor Analysis with the psych package</h1>
+<p><p>Making sense of the results</p></p>
+</div>
+
+<div class="d-byline">
+  Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
+  
+<br/>2020-04-10
+</div>
+
+<div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#demonstration">Demonstration</a><ul>
+<li><a href="#loadings">Loadings</a></li>
+<li><a href="#variance-accounted-for">Variance accounted for</a></li>
+<li><a href="#factor-correlations">Factor correlations</a></li>
+<li><a href="#model-test-results">Model test results</a></li>
+<li><a href="#number-of-observations">Number of observations</a></li>
+<li><a href="#fit-indices">Fit indices</a></li>
+<li><a href="#measures-of-factor-score-adequacy">Measures of factor score adequacy</a></li>
+<li><a href="#miscellaneous-results">Miscellaneous results</a></li>
+</ul></li>
+<li><a href="#additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</a></li>
+<li><a href="#other-metrics">Other Metrics</a><ul>
+<li><a href="#alpha">Alpha</a></li>
+<li><a href="#omega">Omega</a></li>
+<li><a href="#unidimensionality">Unidimensionality</a></li>
+</ul></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<aside>
+Last updated April 06, 2020.
+</aside>
+<p>Prerequisites: familiarity with <a href="https://m-clark.github.io/sem/">factor analysis</a></p>
+<h2 id="introduction">Introduction</h2>
+<p>The <span class="pack" style="">psych</span> package is a great tool for assessing underlying latent structure. It can provide reliability statistics, do cluster analysis, principal components analysis, medation models, and, of course factor analysis. However, it’s been around a very long time, and many things were added to, subtracted, renamed, etc. And while the package author and noted psychometrician William Revelle even provides a freely available book on the details, it can still be difficult for many to ‘jump right in’ with the package. This is because it provides so much more than other tools, which is great, but also can be overwhelming. Even I don’t recall what some of the output regards for factor analysis, and I use the package often. While a lot of it doesn’t matter for most use, it’d be nice to have a clean reference, so here it is.</p>
+<p>What follows is an explanation of the factor analysis results, but much of it carries over into printed results for principal components via <span class="func" style="">principal</span>, reliability via <span class="func" style="">omega</span>, very simple structure via <span class="func" style="">vss</span> and others.</p>
+<h2 id="demonstration">Demonstration</h2>
+<p>We will use the classic big-five personality measures, which comes with the package, but for our purposes, we’re just going to look at the agreeableness and neuroticism items. See <code>?bfi</code> for details. With data in place we run a standard factor analyis, in this case, assuming two factors.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(tidyverse)
+library(psych)
+
+data(bfi)
+
+bfi_trim = bfi %&gt;% select(matches(&#39;^A[1-5]|^N&#39;))
+
+model = fa(bfi_trim, 2)
+model</code></pre>
+<pre><code>
+Factor Analysis using method =  minres
+Call: fa(r = bfi_trim, nfactors = 2)
+Standardized loadings (pattern matrix) based upon correlation matrix
+     MR1   MR2   h2   u2 com
+A1  0.07 -0.36 0.14 0.86 1.1
+A2  0.05  0.69 0.47 0.53 1.0
+A3  0.03  0.76 0.56 0.44 1.0
+A4 -0.05  0.47 0.24 0.76 1.0
+A5 -0.12  0.60 0.39 0.61 1.1
+N1  0.78 -0.03 0.61 0.39 1.0
+N2  0.76 -0.02 0.58 0.42 1.0
+N3  0.77  0.05 0.58 0.42 1.0
+N4  0.58 -0.08 0.36 0.64 1.0
+N5  0.54  0.08 0.29 0.71 1.0
+
+                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00
+
+ With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00
+
+Mean item complexity =  1
+Test of the hypothesis that 2 factors are sufficient.
+
+The degrees of freedom for the null model are  45  and the objective function was  2.82 with Chi Square of  7880.99
+The degrees of freedom for the model are 26  and the objective function was  0.23 
+
+The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+The harmonic number of observations is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total number of observations was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98
+Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+</div>
+<h3 id="loadings">Loadings</h3>
+<p>That’s a lot of stuff to work though. Let’s go through each part of the printed output.</p>
+<ul>
+<li>What’s <code>MR</code>, <code>ML</code>, <code>PC</code> etc.? These are factors, and the name merely reflects the fitting method, e.g. minimum residual, maximum likelihood, principal components. The default is minimum residual, so in this case <code>MR</code>.</li>
+<li>Why are they ‘out of order’? the number assigned is arbitrary, but this has to do with a rotated solution. See the help file for more details, otherwise they are numbered in terms of variance accounted for.</li>
+<li><code>h2</code>: the amount of variance in the item/variable explained by the (retained) components. It is the sum of the squared loadings, a.k.a. communality.</li>
+<li><code>u2</code>: 1 - <code>h2</code>. residual variance, a.k.a. uniqueness</li>
+<li><code>com</code>: Item complexity. Specifically it is “Hoffman’s index of complexity for each item. This is just <span class="math inline">\({(Σ λ_i^2)^2}/{Σ λ_i^4}\)</span> where <span class="math inline">\(λ_i\)</span> is the factor loading on the i<sup>th</sup> factor. From Hofmann (1978), MBR. See also Pettersson and Turkheimer (2010).” It equals one if an item loads only on one factor, 2 if evenly loads on two factors, etc. Basically it tells you how much an item reflects a single construct. It will be lower for relatively lower loadings.</li>
+</ul>
+<h3 id="variance-accounted-for">Variance accounted for</h3>
+<pre><code>
+                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00</code></pre>
+<ul>
+<li><p><code>SS Loadings</code>: These are the eigenvalues, the sum of the squared loadings. In this case where we are using a correlation matrix, summing across all factors would equal the number of variables used in the analysis.</p></li>
+<li><p><code>Proportion Var</code>: tells us how much of the overall variance the factor accounts for out of all the variables.</p></li>
+<li><p><code>Cumulative Var</code>: the cumulative sum of <code>Proportion Var</code>.</p></li>
+<li><p><code>Proportion Explained</code>: The relative amount of variance explained- <code></code>Proportion Var<code>/sum(</code>Proportion Var<code>)</code>.</p></li>
+<li><p><code>Cumulative Proportion</code>: the cumulative sum of <code>Proportion Explained</code>.</p></li>
+</ul>
+<p>These are contained in <code>model$Vaccounted</code>.</p>
+<h3 id="factor-correlations">Factor correlations</h3>
+<pre><code>
+ With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00</code></pre>
+<p>Depends on the analysis whether or not these are estimated.</p>
+<ul>
+<li><code>factor correlations</code>: the correlation matrix for the factors. <span class="math inline">\(\phi\)</span> (phi)</li>
+<li><code>Mean item complexity</code>: the mean of <code>com</code>.</li>
+</ul>
+<p>These are contained in <code>model$Phi</code>.</p>
+<h3 id="model-test-results">Model test results</h3>
+<pre><code>
+Test of the hypothesis that 2 factors are sufficient.
+
+The degrees of freedom for the null model are  45  and the objective function was  2.82 with Chi Square of  7880.99
+The degrees of freedom for the model are 26  and the objective function was  0.23 </code></pre>
+<ul>
+<li><code>null model</code>: The degrees of freedom for the null model that assumes no correlation structure.</li>
+<li><code>objective function</code>: The value of the function that is minimized by a specific procedure.</li>
+<li><code>model</code>: The one you’re actually interested in. Where p = Number of items, nf = number of factors then: degrees of freedom = <span class="math inline">\(p * (p-1)/2 - p * nf + nf*(nf-1)/2\)</span>. For the null model <span class="math inline">\(p * (p-1)/2\)</span>.</li>
+<li><code>Chi-square</code>: If <code>f</code> is the objective function value. Then <span class="math inline">\(\chi^2 = (n.obs - 1 - (2 * p + 5)/6 - (2 * nf)/3)) * f\)</span>. Strangely this is reported for the null but not the primary model result, which comes later.</li>
+</ul>
+<h3 id="number-of-observations">Number of observations</h3>
+<pre><code>
+The harmonic number of observations is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total number of observations was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 </code></pre>
+<ul>
+<li><code>total</code>: the number of rows in the data you supplied for analysis</li>
+<li><code>harmonic</code>: while one would assume it is the harmonic mean of the number of observations across items, it’s not this exactly, but is instead the harmonic mean of all the pairwise counts (see <code>?pairwiseCount</code>).</li>
+</ul>
+<p>The <span class="math inline">\(\chi^2\)</span> reported here regards the primary model. So for your model you can report <code>model$STATISTIC</code>, <code>model$dof</code>, <code>model$PVAL</code>, which is what you see in the printed output for the total number of observations. As this regards the residual correlation matrix, a smaller value is better, as in SEM. The empirical chi-square is based on the harmonic sample size, so might be better, but I’ve never seen it reported.</p>
+<h3 id="fit-indices">Fit indices</h3>
+<pre><code>
+The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+...
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98</code></pre>
+<p>The nice thing about the psych package is that it reports SEM-style fit indices for standard factor analysis. You can find some more information via <code>?factor.stats</code>.</p>
+<ul>
+<li><code>TLI</code>: Generally want &gt; .9</li>
+<li><code>RMSEA</code>: Root mean square error of approximation. Also reported is the so-called ‘test of close fit’.</li>
+<li><code>RMSR</code>: The (standardized) root mean square of the residuals. Also provided is a ‘corrected’ version, but I doubt this is reported by many.</li>
+<li><code>Fit based upon off diagonal values</code>: This is not documented anywhere I can find. However, you can think of it as <code>1 - resid^2 / cor^2</code>, or a kind of <span class="math inline">\(R^2\)</span> applied to a correlation matrix instead of raw data. It is calculated via <span class="func" style="">factor.stats</span>.</li>
+<li><code>BIC</code>: Useful for model comparison purposes only.</li>
+</ul>
+<h3 id="measures-of-factor-score-adequacy">Measures of factor score adequacy</h3>
+<pre><code>
+Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+<p>Unfortunately these are named in such a way as to be nearly indistinguishable, but there is some documentation for them in <code>?factor.stats</code>. In general these tell us how representative the factor score estimates are of the underlying constructs, and can be called indeterminancy indices. Indeterminancy refers to the fact that an infinite number of factor scores can be derived that would be consistent with a given set of loadings. In Revelle’s text, <a href="http://www.personality-project.org/r/book/#chapter6">chapter 6.9</a> goes into detail, while Grice (2001) is a thorough review of the problem.</p>
+<ul>
+<li><code>Correlation of (regression) scores with factors</code>: square root of the <code>Multiple R square</code>. These can be seen as upper bounds of the determinancy of the factor score estimates that can be computed based on the model. It is essentially the (multiple) correlation of the factor and the observed data, as the name now more clearly suggests.</li>
+<li><code>Multiple R square...</code>: “The multiple R square between the factors and factor score estimates, if they were to be found. (From Grice, 2001).” Computationally, it is roughly <code>t(model$weights) %*% model$loadings</code>, where the weights are the factor score coefficients, and can be seen as the maximum proportion of determinancy (higher is better). One way you can think about this is as an <span class="math inline">\(R^2\)</span> for a regression model of the items predicting the estimated factor score.</li>
+<li><code>Minimum correlation...</code>: Not documented, and is only shown as part of the print method, as it is not calculated as part of the factor analysis. But it is <span class="math inline">\(2 \cdot R^2 - 1\)</span>, and so ranges from -1 to +1. If your <span class="math inline">\(R^2\)</span> is less than .5, it will be negative, which is not good.</li>
+</ul>
+<h3 id="miscellaneous-results">Miscellaneous results</h3>
+<p>There is a lot of other stuff in these objects, like a sample size corrected BIC, Grice’s validity coefficients, the actual residuals for the correlation matrix and more.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+str(model, 1)</code></pre>
+<pre><code>
+List of 51
+ $ residual     : num [1:10, 1:10] 0.8556 -0.0899 0.0122 0.0377 0.0573 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ dof          : num 26
+ $ chi          : num 397
+ $ nh           : num 2759
+ $ rms          : num 0.04
+ $ EPVAL        : num 5.71e-68
+ $ crms         : num 0.0526
+ $ EBIC         : num 191
+ $ ESABIC       : num 273
+ $ fit          : num 0.789
+ $ fit.off      : num 0.981
+ $ sd           : num 0.0382
+ $ factors      : num 2
+ $ complexity   : Named num [1:10] 1.09 1.01 1 1.02 1.08 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ n.obs        : int 2800
+ $ objective    : num 0.228
+ $ criteria     : Named num [1:3] 0.228 NA NA
+  ..- attr(*, &quot;names&quot;)= chr [1:3] &quot;objective&quot; &quot;&quot; &quot;&quot;
+ $ STATISTIC    : num 636
+ $ PVAL         : num 1.6e-117
+ $ Call         : language fa(r = bfi_trim, nfactors = 2)
+ $ null.model   : num 2.82
+ $ null.dof     : num 45
+ $ null.chisq   : num 7881
+ $ TLI          : num 0.865
+ $ RMSEA        : Named num [1:4] 0.0916 0.0855 0.0978 0.9
+  ..- attr(*, &quot;names&quot;)= chr [1:4] &quot;RMSEA&quot; &quot;lower&quot; &quot;upper&quot; &quot;confidence&quot;
+ $ BIC          : num 430
+ $ SABIC        : num 513
+ $ r.scores     : num [1:2, 1:2] 1 -0.227 -0.227 1
+ $ R2           : num [1:2] 0.842 0.768
+ $ valid        : num [1:2] 0.905 0.852
+ $ score.cor    : num [1:2, 1:2] 1 -0.185 -0.185 1
+ $ weights      : num [1:10, 1:2] 0.00559 0.00986 -0.00452 -0.01416 -0.03449 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ rotation     : chr &quot;oblimin&quot;
+ $ communality  : Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ communalities: Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ uniquenesses : Named num [1:10] 0.856 0.533 0.437 0.763 0.605 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:10] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ values       : num [1:10] 2.6714 1.5564 0.2727 0.1283 0.0455 ...
+ $ e.values     : num [1:10] 3.185 2.11 0.938 0.768 0.71 ...
+ $ loadings     : &#39;loadings&#39; num [1:10, 1:2] 0.0744 0.0541 0.0311 -0.0519 -0.1191 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ model        : num [1:10, 1:10] 0.144 -0.25 -0.277 -0.184 -0.239 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ fm           : chr &quot;minres&quot;
+ $ rot.mat      : num [1:2, 1:2] 0.857 0.549 -0.38 0.944
+ $ Phi          : num [1:2, 1:2] 1 -0.186 -0.186 1
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ Structure    : &#39;loadings&#39; num [1:10, 1:2] 0.1413 -0.0748 -0.1098 -0.1402 -0.23 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ method       : chr &quot;regression&quot;
+ $ scores       : num [1:2800, 1:2] -0.224 0.2186 0.532 -0.2429 -0.0564 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ R2.scores    : Named num [1:2] 0.842 0.768
+  ..- attr(*, &quot;names&quot;)= chr [1:2] &quot;MR1&quot; &quot;MR2&quot;
+ $ r            : num [1:10, 1:10] 1 -0.34 -0.265 -0.146 -0.181 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ np.obs       : num [1:10, 1:10] 2784 2757 2759 2767 2769 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ $ fn           : chr &quot;fa&quot;
+ $ Vaccounted   : num [1:5, 1:2] 2.443 0.244 0.244 0.578 0.578 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+ - attr(*, &quot;class&quot;)= chr [1:2] &quot;psych&quot; &quot;fa&quot;</code></pre>
+</div>
+<p>In turn, these are:</p>
+<ul>
+<li><code>residual</code>: The residual correlation matrix</li>
+<li><code>dof</code>: The model degrees of freedom</li>
+<li><code>chi</code>: The empirical model <span class="math inline">\(X^2\)</span></li>
+<li><code>nh</code>: The harmonic sample size</li>
+<li><code>rms</code>: Root mean square residual</li>
+<li><code>EPVAL</code>: p-value for the empirical chi-square</li>
+<li><code>crms</code>: a ‘corrected’ rms</li>
+<li><code>EBIC</code>: BIC for the empirical model</li>
+<li><code>ESABIC</code>: sample-size corrected BIC for the empirical model</li>
+<li><code>fit</code>: Similar to <code>fit.off</code>. General fit index (how well is the observed correlation reproduced)</li>
+<li><code>fit.off</code>: Fit based on off diagonals. Reported in the output. See above.</li>
+<li><code>sd</code>: standard deviation of the off-diagonals of the residual correlation matrix.</li>
+<li><code>factors</code>: the number of factors</li>
+<li><code>complexity</code>: The complexity scores. See above.</li>
+<li><code>n.obs</code>: The number of observations (assuming complete data)</li>
+<li><code>objective</code>: The objective function for the model</li>
+<li><code>criteria</code>: Along with the objective function, additional fitting results</li>
+<li><code>STATISTIC</code>: The model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>PVAL</code>: The p-value for the model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>Call</code>: The function call</li>
+<li><code>null.model</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.dof</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.chisq</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>TLI</code>: Tucker-Lewis fit index</li>
+<li><code>RMSEA</code>: Root mean square error of approximation with upper and lower bounds</li>
+<li><code>BIC</code>: Bayesian Information Criterion for the model</li>
+<li><code>SABIC</code>: sample-size corrected BIC for the model</li>
+<li><code>r.scores</code>: The correlations of the factor score estimates using the specified model, if they were to be found. Comparing these correlations with that of the scores themselves will show, if an alternative estimate of factor scores is used (e.g., the tenBerge method), the problem of factor indeterminacy. For these correlations will not necessarily be the same.</li>
+<li><code>R2</code>: correlation of factors and estimated factor scores (squared)</li>
+<li><code>valid</code>: validity coefficients</li>
+<li><code>score.cor</code>: The correlation matrix of course coded (unit weighted) factor score estimates (i.e. sum scores), if they were to be found, based upon the loadings matrix rather than the weights matrix.</li>
+<li><code>weights</code>: weights used to construct factor scores</li>
+<li><code>rotation</code>: rotation used : chr “oblimin”</li>
+<li><code>communality</code>: communality scores <code>h2</code></li>
+<li><code>communalities</code>: So nice they put them twice (actually not entirely equal)</li>
+<li><code>uniquenesses</code>: Uniquenesses <code>u2</code></li>
+<li><code>values</code> eigenvalues of the model implied correlation matrix</li>
+<li><code>e.values</code>: eigenvalues of the correlation matrix</li>
+<li><code>loadings</code>: the factor loadings</li>
+<li><code>model</code>: the model-implied correlation matrix</li>
+<li><code>fm</code>: the estimation approach</li>
+<li><code>rot.mat</code>: matrix used in the rotated solution</li>
+<li><code>Phi</code>: factor score correlation matrix</li>
+<li><code>Structure</code>: this is just the loadings (pattern) matrix times the factor intercorrelation matrix (Phi).</li>
+<li><code>method</code>: method used to construct the factor scores</li>
+<li><code>scores</code>: estimated factor scores</li>
+<li><code>R2.scores</code>: estimated correlation of factor scores with the factor (squared)</li>
+<li><code>r</code>: the (possibly smoothed) correlation matrix of the observation</li>
+<li><code>np.obs</code>: pairwise sample sizes (used to get the harmonic mean)</li>
+<li><code>fn</code>: the function used</li>
+<li><code>Vaccounted</code>: the SS loadings output.</li>
+</ul>
+<h2 id="additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</h2>
+<p>Most of the above would apply to other versions of <span class="func" style="">fa</span> and <span class="func" style="">principal</span> for principal components analysis.</p>
+<p>Though rarely done, if you only provide a correlation matrix as your data, you will not get a variety of metrics in the results, nor factor scores.</p>
+<p>Certain rotations will lead to differently named factors, and possibly lacking some output (e.g. varimax won’t have factor correlations).</p>
+<h2 id="other-metrics">Other Metrics</h2>
+<p>While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other functions that might be of interest. I’ll explain some of those here as interest and personal use dictates.</p>
+<h3 id="alpha">Alpha</h3>
+<p>This is a quick reminder of the results of coefficient <span class="math inline">\(\alpha\)</span>. For this we’ll just use the agreeableness items to keep things succinct.</p>
+<h4 id="basic-results">Basic Results</h4>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+agreeableness = bfi_trim[,1:5]
+
+# check.keys will rescale negatively scored items
+alpha_results = alpha(agreeableness, check.keys = TRUE, n.iter=10) 
+alpha_results</code></pre>
+<pre><code>
+Reliability analysis   
+Call: alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+
+  raw_alpha std.alpha G6(smc) average_r S/N   ase mean  sd median_r
+       0.7      0.71    0.68      0.33 2.5 0.009  4.7 0.9     0.34
+
+ lower alpha upper     95% confidence boundaries
+0.69 0.7 0.72 
+
+ lower median upper bootstrapped confidence intervals
+ 0.69 0.7 0.72
+ Reliability if an item is dropped:
+    raw_alpha std.alpha G6(smc) average_r S/N alpha se  var.r med.r
+A1-      0.72      0.73    0.67      0.40 2.6   0.0087 0.0065  0.38
+A2       0.62      0.63    0.58      0.29 1.7   0.0119 0.0169  0.29
+A3       0.60      0.61    0.56      0.28 1.6   0.0124 0.0094  0.32
+A4       0.69      0.69    0.65      0.36 2.3   0.0098 0.0159  0.37
+A5       0.64      0.66    0.61      0.32 1.9   0.0111 0.0126  0.34
+
+ Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58  0.57  0.38   0.31  4.6 1.4
+A2  2773  0.73  0.75  0.67   0.56  4.8 1.2
+A3  2774  0.76  0.77  0.71   0.59  4.6 1.3
+A4  2781  0.65  0.63  0.47   0.39  4.7 1.5
+A5  2784  0.69  0.70  0.60   0.49  4.6 1.3
+
+Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+</div>
+<ul>
+<li><code>raw_alpha</code>: Raw estimate of alpha (based on covariances)</li>
+<li><code>std.alpha</code>: Standardized estimate. This value is what is typically reported (though most applied researchers would probably not be able to tell you which they reported). Identical to raw if data is already standardized.</li>
+<li><code>G6 (smc)</code>: Guttman’s <span class="math inline">\(\lambda_6\)</span>, the amount of variance in each item that can be accounted for the linear regression of all of the other items</li>
+<li><code>average_r</code>: Average interitem correlation among the items.</li>
+<li><code>S/N</code>: Signal to noise ratio, <span class="math inline">\(n \cdot r/(1-r)\)</span> where r is the <code>average_r</code></li>
+<li><code>ase</code>: standard error for raw alpha (used for the confidence interval, bootstrapped would be better)</li>
+<li><code>mean</code>: the mean of the total/mean score of the items</li>
+<li><code>sd</code>: the standard deviation of the total/mean score of the items</li>
+<li><code>median_r</code>: median interitem correlation</li>
+</ul>
+<p>After the initial statistics, the same stats are reported but for a result where a specific item is dropped. For example, if your <span class="math inline">\(\alpha\)</span> goes up when an item is dropped, it probably isn’t a good item.</p>
+<h4 id="item-statistics">Item statistics</h4>
+<p>Next we get the item statistics, they are as follows.</p>
+<pre><code>
+ Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58  0.57  0.38   0.31  4.6 1.4
+A2  2773  0.73  0.75  0.67   0.56  4.8 1.2
+A3  2774  0.76  0.77  0.71   0.59  4.6 1.3
+A4  2781  0.65  0.63  0.47   0.39  4.7 1.5
+A5  2784  0.69  0.70  0.60   0.49  4.6 1.3</code></pre>
+<ul>
+<li><code>n</code>: number of complete observations</li>
+<li><code>raw.r</code>: correlation of each item with the total score</li>
+<li><code>std.r</code>: correlation of each item with the total score if the items were all standardized</li>
+<li><code>r.cor</code>: item correlation corrected for item overlap and scale reliability</li>
+<li><code>r.drop</code> item correlation for this item against the scale without this item</li>
+<li><code>mean</code>: item mean</li>
+<li><code>sd</code>: item sd</li>
+</ul>
+<h4 id="response-frequency">Response frequency</h4>
+<p>Finally we have information about the missingness of each item. The initial values show the proportion of each level observed, while the last column shows the percentage missing.</p>
+<pre><code>
+Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+<h4 id="other-output">Other Output</h4>
+<p>In addition to these we have a bit more from the output.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+str(alpha_results[5:length(alpha_results)])</code></pre>
+<pre><code>
+List of 10
+ $ keys   : Named num [1:5] -1 1 1 1 1
+  ..- attr(*, &quot;names&quot;)= chr [1:5] &quot;A1&quot; &quot;A2&quot; &quot;A3&quot; &quot;A4&quot; ...
+ $ scores : Named num [1:2800] 4 4.2 3.8 4.6 4 4.6 4.6 2.6 3.6 5.4 ...
+  ..- attr(*, &quot;names&quot;)= chr [1:2800] &quot;61617&quot; &quot;61618&quot; &quot;61620&quot; &quot;61621&quot; ...
+ $ nvar   : int 5
+ $ boot.ci: Named num [1:3] 0.689 0.702 0.721
+  ..- attr(*, &quot;names&quot;)= chr [1:3] &quot;2.5%&quot; &quot;50%&quot; &quot;97.5%&quot;
+ $ boot   : num [1:10, 1:10] 0.691 0.695 0.695 0.699 0.722 ...
+  ..- attr(*, &quot;dimnames&quot;)=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:10] &quot;raw_alpha&quot; &quot;std.alpha&quot; &quot;G6(smc)&quot; &quot;average_r&quot; ...
+ $ Unidim :List of 1
+  ..$ Unidim: num 0.668
+ $ var.r  : num 0.0134
+ $ Fit    :List of 1
+  ..$ Fit.off: num 0.974
+ $ call   : language alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+ $ title  : NULL</code></pre>
+</div>
+<p>In turn these are:</p>
+<ul>
+<li><code>keys</code>: how the items are score (-1 if reverse scored)</li>
+<li><code>scores</code>: row means/sums depending on the <code>cumulative</code> argument</li>
+<li><code>nvar</code>: the number of variables/items</li>
+<li><code>boot.ci</code>: the bootstrapped confidence interval for <span class="math inline">\(\alpha\)</span> (if requested)</li>
+<li><code>boot</code>: the bootstrapped values of <span class="math inline">\(\alpha\)</span> and other statistics (if requested)</li>
+<li><code>Unidim</code>: index of unidimensionalty. <span class="math inline">\(\alpha\)</span> is a lower bound of a reliability estimate if the data is not unidimensional. See <code>?unidim</code> for details.</li>
+<li><code>var.r</code>: This doesn’t appear to be documented anywhere, but it is depicted in the <code>Reliability if item is dropped</code> section. It is the variance of the values of the lower triangle of a correlation matrix.</li>
+<li><code>Fit</code>: see <code>Fit based upon off diagonal values</code> for the factor analysis section above.</li>
+<li><code>call</code>: the function call</li>
+<li><code>title</code>: title of the results (if requested)</li>
+</ul>
+<h3 id="omega">Omega</h3>
+<p>Omega is another reliability metric that finally has been catching on. The <span class="pack" style="">psych</span> function <span style="">omega</span> requires a factor analysis to be run called a bifactor model, so most of the output is the same there. In addition it also provides coefficient alpha and Guttmans <span class="math inline">\(\lambda_6\)</span> that were explained in the <a href="#alpha">alpha</a> section.</p>
+<p>However there is a little more to it, so we’ll explain those aspects. The key help files are <code>?omega</code> and <code>?schmid</code>.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+omega_result = omega(bfi[,1:15])</code></pre>
+<p><img src="psych_explained_files/figure-html5/omega-1.svg" width="624" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>
+omega_result</code></pre>
+<pre><code>
+Omega 
+Call: omegah(m = m, nfactors = nfactors, fm = fm, key = key, flip = flip, 
+    digits = digits, title = title, sl = sl, labels = labels, 
+    plot = plot, n.obs = n.obs, rotate = rotate, Phi = Phi, option = option, 
+    covar = covar)
+Alpha:                 0.81 
+G.6:                   0.83 
+Omega Hierarchical:    0.54 
+Omega H asymptotic:    0.64 
+Omega Total            0.85 
+
+Schmid Leiman Factor loadings greater than  0.2 
+        g   F1*   F2*   F3*   h2   u2   p2
+A1-  0.24              0.30 0.16 0.84 0.36
+A2   0.52              0.44 0.47 0.53 0.58
+A3   0.59              0.45 0.56 0.44 0.63
+A4   0.39              0.28 0.25 0.75 0.62
+A5   0.56              0.31 0.44 0.56 0.70
+C1               0.53       0.31 0.69 0.11
+C2   0.23        0.60       0.42 0.58 0.12
+C3   0.21        0.51       0.32 0.68 0.14
+C4-  0.25        0.59       0.41 0.59 0.15
+C5-  0.28        0.51       0.34 0.66 0.23
+E1-  0.37  0.47             0.37 0.63 0.38
+E2-  0.48  0.54             0.53 0.47 0.43
+E3   0.47  0.36             0.37 0.63 0.61
+E4   0.54  0.46             0.51 0.49 0.57
+E5   0.41  0.32  0.25       0.33 0.67 0.51
+
+With eigenvalues of:
+   g  F1*  F2*  F3* 
+2.47 1.03 1.60 0.69 
+
+general/max  1.54   max/min =   2.32
+mean percent general =  0.41    with sd =  0.21 and cv of  0.52 
+Explained Common Variance of the general factor =  0.43 
+
+The degrees of freedom are 63  and the fit is  0.34 
+The number of observations was  2800  with Chi Square =  961.82  with prob &lt;  6.4e-161
+The root mean square of the residuals is  0.04 
+The df corrected root mean square of the residuals is  0.05
+RMSEA index =  0.071  and the 10 % confidence intervals are  0.067 0.075
+BIC =  461.77
+
+Compare this with the adequacy of just a general factor and no group factors
+The degrees of freedom for just the general factor are 90  and the fit is  1.58 
+The number of observations was  2800  with Chi Square =  4407.94  with prob &lt;  0
+The root mean square of the residuals is  0.13 
+The df corrected root mean square of the residuals is  0.14 
+
+RMSEA index =  0.131  and the 10 % confidence intervals are  0.128 0.134
+BIC =  3693.57 
+
+Measures of factor score adequacy             
+                                                 g   F1*  F2*   F3*
+Correlation of scores with factors            0.78  0.70 0.82  0.60
+Multiple R square of scores with factors      0.61  0.49 0.68  0.36
+Minimum correlation of factor score estimates 0.22 -0.01 0.36 -0.28
+
+ Total, General and Subset omega for each subset
+                                                 g  F1*  F2*  F3*
+Omega total for total scores and subscales    0.85 0.77 0.73 0.73
+Omega general for total scores and subscales  0.54 0.40 0.11 0.46
+Omega group for total scores and subscales    0.25 0.36 0.62 0.27</code></pre>
+</div>
+<p>The bifactor model requires a single general factor and minimally three specific factors, as the plot shows. However, you can run it on single factor just to get the omega total statistic, but any less than three will produce a warning and some metrics will either be unavailable or not make much sense.</p>
+<h4 id="reliability">Reliability</h4>
+<pre><code>
+Alpha:                 0.81 
+G.6:                   0.83 
+Omega Hierarchical:    0.54 
+Omega H asymptotic:    0.64 
+Omega Total            0.85 
+```
+
+The first two are as in [alpha][alpha], the next regard omega specifically.  $\omega$ is basd on the squared factor loadings. $\omega_{hierarchical}$ regards just the loadings of the general factor. The asymptotic is the same for a &#39;test of infinite items&#39;, and so can be seen as an upper bound.  $\omega_{total}$ is based on all the general and specific factor loadings.  I personally like to think of the ratio of $\frac{\omega_{hier}}{\omega_{total}}$, which if very high, say .9 or so, may suggest unidimensionality.
+
+#### Loadings
+
+```
+Schmid Leiman Factor loadings greater than  0.2 
+        g   F1*   F2*   F3*   h2   u2   p2
+A1-  0.24              0.30 0.16 0.84 0.36
+A2   0.52              0.44 0.47 0.53 0.58
+A3   0.59              0.45 0.56 0.44 0.63
+A4   0.39              0.28 0.25 0.75 0.62
+A5   0.56              0.31 0.44 0.56 0.70
+C1               0.53       0.31 0.69 0.11
+C2   0.23        0.60       0.42 0.58 0.12
+C3   0.21        0.51       0.32 0.68 0.14
+C4-  0.25        0.59       0.41 0.59 0.15
+C5-  0.28        0.51       0.34 0.66 0.23
+E1-  0.37  0.47             0.37 0.63 0.38
+E2-  0.48  0.54             0.53 0.47 0.43
+E3   0.47  0.36             0.37 0.63 0.61
+E4   0.54  0.46             0.51 0.49 0.57
+E5   0.41  0.32  0.25       0.33 0.67 0.51
+
+With eigenvalues of:
+   g  F1*  F2*  F3* 
+2.47 1.03 1.60 0.69 
+
+general/max  1.54   max/min =   2.32
+mean percent general =  0.41    with sd =  0.21 and cv of  0.52 
+Explained Common Variance of the general factor =  0.43 
+```
+
+The loadings are for the general and specific factors are provided, as well as the communalities and uniquenesses.  In addition there is a column for `p2`, which is considered a diagnostic tool for the appropriateness of a hierarchical model.  It is defined as &quot;percent of the common variance for each variable that is general factor variance&quot;, which is just `g`^2^/`h2`.  The line of `mean percent general...` isn&#39;t documented and is a result of the unexported &lt;span class=&quot;func&quot; style = &quot;&quot;&gt;print.psych.omega&lt;/span&gt; function. It wasn&#39;t obvious to me, but these are merely statistics regarding the `p2` column (`cv` is the coefficient of variation).
+
+Next you get eigenvalue/variance accounted as in standard factor analysis.  Then `general/max` and `max/min` regard those ratios of the corresponding eigenvalues.  Explained common variance is the percent of variance attributable to the general factor (g/sum(all eigenvalues))
+
+#### Model test results &amp; fit
+
+```
+The degrees of freedom are 63  and the fit is  0.34 
+The number of observations was  2800  with Chi Square =  961.82  with prob &lt;  6.4e-161
+The root mean square of the residuals is  0.04 
+The df corrected root mean square of the residuals is  0.05
+RMSEA index =  0.071  and the 10 % confidence intervals are  0.067 0.075
+BIC =  461.77
+
+Compare this with the adequacy of just a general factor and no group factors
+The degrees of freedom for just the general factor are 90  and the fit is  1.58 
+The number of observations was  2800  with Chi Square =  4407.94  with prob &lt;  0
+The root mean square of the residuals is  0.13 
+The df corrected root mean square of the residuals is  0.14 
+
+RMSEA index =  0.131  and the 10 % confidence intervals are  0.128 0.134
+BIC =  3693.57 
+```
+
+The only thing different here relative to the standard factor analysis results is that there are two models considered- a model with general and specific factors and a model with no specific factors.
+
+#### Measures of factor score adequacy
+
+```
+Measures of factor score adequacy             
+                                                 g   F1*  F2*   F3*
+Correlation of scores with factors            0.78  0.70 0.82  0.60
+Multiple R square of scores with factors      0.61  0.49 0.68  0.36
+Minimum correlation of factor score estimates 0.22 -0.01 0.36 -0.28
+```
+
+This first part of the output is the same as standard factor analysis (see [above][Measures of factor score adequacy]).
+
+
+#### Variance accounted for by group and specific factors
+
+```
+ Total, General and Subset omega for each subset
+                                                 g  F1*  F2*  F3*
+Omega total for total scores and subscales    0.85 0.77 0.73 0.73
+Omega general for total scores and subscales  0.54 0.40 0.11 0.46
+Omega group for total scores and subscales    0.25 0.36 0.62 0.27
+```
+
+This part is explained in the `?omega` helpfile as:
+
+&gt;The notion of omega may be applied to the individual factors as well as the overall test. A typical use of omega is to identify subscales of a total inventory. Some of that variability is due to the general factor of the inventory, some to the specific variance of each subscale. Thus, we can find a number of different omega estimates: what percentage of the variance of the items identified with each subfactor is actually due to the general factor. What variance is common but unique to the subfactor, and what is the total reliable variance of each subfactor. These results are reported in omega.group object and in the last few lines of the normal output.
+
+As noted, this is contained in `omega_result$omega.group`.  For the unique factors, these sum very simply as total = general + group. The ones for unique factors pertain only to the loadings and part of the correlation matrix for those items specific to that factor. Take agreeableness for example, we are only concerned with the variance of those items. The &#39;general&#39; part regards the loadings of `g` for the agreeableness items, the `group` part the loadings of the agreeableness items, and the &#39;total&#39; is just their sum.
+
+The first column, `g`, just regurgitates $\omega$ and $\omega_h$ from the beginning for the first two values, and adds yet another statistic, based only on the sum of variance attributable to each unique factor.  Unlike the $\omega_{total}$, this calculation does not include off-loadings the unique factors have, only the items that are grouped with each factor. In pseudo-code: 
+
+```
+for (i in specific) {
+ specific_var[i] = sum(specific[i]$loadings[specific_items[i]])^2)
+}
+
+value = sum(specific_var) / total_var</code></pre>
+<p>That is the variance uniquely defined by the specific factors. Had it included all the loadings for each specific factor calculation, then <code>group + general = total</code> for <code>g</code> as well.</p>
+<h3 id="unidimensionality">Unidimensionality</h3>
+<p>Revelle provides an ‘exploratory’ statistics of unidimensionality, or how well a set of variables may be explained by one construct. In practice, you may find multiple factors fit better, e.g. via BIC, but the factor may be highly correlated, so you might still want to consider a single construct. Something like <span class="func" style="">unidim</span> will help make a decision on how viable using a sum score might be for regression or other models. It is explained in the help file as follows:</p>
+<blockquote>
+<p>The fit FF’ (model implied correlation matrix based on a one factor model) should be identical to the (observed) correlation matrix minus the uniquenesses. unidim is just the ratio of these two estimates. The higher it is, the more the evidence for unidimensionality.</p>
+</blockquote>
+<p>I’ll run it for both the case where there is only a single construct vs. two underlying constructs.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+unidim(bfi[,1:5])</code></pre>
+<pre><code>
+A measure of unidimensionality 
+ Call: unidim(x = bfi[, 1:5])
+
+Unidimensionality index = 
+     Raw Unidim Adjusted Fit1 alpha av.r original model adjusted model raw.total adjusted total
+[1,]       0.99        1 0.99  0.71 0.33           0.59           0.72      0.59           0.72
+
+unidim adjusted index reverses negatively scored items.
+alpha    Based upon reverse scoring some items.
+average correlations are based upon reversed scored items</code></pre>
+<pre class="r"><code>
+unidim(bfi_trim)</code></pre>
+<pre><code>
+A measure of unidimensionality 
+ Call: unidim(x = bfi_trim)
+
+Unidimensionality index = 
+     Raw Unidim Adjusted Fit1 alpha av.r original model adjusted model raw.total adjusted total
+[1,]       0.44     0.93 0.73  0.75 0.23           0.27           0.71      0.62           0.76
+
+unidim adjusted index reverses negatively scored items.
+alpha    Based upon reverse scoring some items.
+average correlations are based upon reversed scored items</code></pre>
+</div>
+<p>The values reported are as follows. In general, you’d pay attention to the <code>adjusted</code> results that are based on items reverse scored if needed. If there are no reverse scored items (which you generally should be doing), then these adjusted metrics will be identical to the raw metrics.</p>
+<ul>
+<li><code>Raw Unidim</code>: The raw value of the unidimensional criterion</li>
+<li><code>Adjusted</code>: The unidimensional criterion when items are keyed in positive direction.</li>
+<li><code>Fit1</code>: The off diagonal fit from <span class="func" style="">fa</span>. (<a href="#fit-indices">explained above</a>)</li>
+<li><code>alpha</code>: Standardized alpha of the keyed items (after appropriate reversals)</li>
+<li><code>av.r</code>: The average interitem correlation of the keyed items.</li>
+<li><code>original model</code>: The ratio of the FF’ (model implied correlation matrix based on the loadings) model to the sum(R).</li>
+<li><code>adjusted model</code>: The ratio of the FF’ model to the sum(R) when items are flipped.</li>
+<li><code>raw.total</code>: sum(R - uniqueness)/sum(R)</li>
+<li><code>adjusted total</code>: raw.total ratio with flipped items</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>The <span class="pack" style="">psych</span> package is very powerful and provides a lot of output from just a single line of code. However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided). Hopefully this saves others some time when they use it.</p>
+<!--radix_placeholder_article_footer-->
+<!--/radix_placeholder_article_footer-->
+</div>
+
+<div class="d-appendix">
+</div>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!--radix_placeholder_site_after_body-->
+<!--/radix_placeholder_site_after_body-->
+<!--radix_placeholder_appendices-->
+<div class="appendix-bottom"></div>
+<!--/radix_placeholder_appendices-->
+<!--radix_placeholder_navigation_after_body-->
+<!--/radix_placeholder_navigation_after_body-->
+
+</body>
+
+</html>

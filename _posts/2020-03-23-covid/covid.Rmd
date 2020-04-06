@@ -147,9 +147,9 @@ world_death_rates = world_totals %>%
     `Total Confirmed` = sum(total_confirmed),
     `Total Deaths`    = sum(total_deaths),
     `Death Rate`      = `Total Deaths` / `Total Confirmed`,
-    `Death Rate (minus Italy)` = 
-      sum(total_deaths[country_name != 'Italy']) / 
-      sum(total_confirmed[country_name != 'Italy'])
+    `Death Rate (minus Italy & Spain)` = 
+      sum(total_deaths[!country_name %in% c('Spain', 'Italy')]) / 
+      sum(total_confirmed[!country_name %in% c('Spain', 'Italy')])
   )
 
 
@@ -276,25 +276,6 @@ adding up all region-level values may not equal exactly to the reported
 country-level value.
 
 
-### U.S. State Totals
-
-Here is a data table for easy look-up of current U.S. 
-
-```{r us-current-state-lookup, echo=FALSE}
-us_current %>% 
-  mutate(
-    region_code = if_else(is.na(region_code), 'Total', region_code),
-    region_name = if_else(is.na(region_name), 'Total', region_name),
-  ) %>% 
-  select(-(latitude:population), -country_name, -country_code) %>% 
-  DT::datatable(
-    width = 800,
-    rownames = FALSE,
-    options = list(
-      scrollX = TRUE
-    )
-  )
-```
 
 
 ## Country Level Trends
@@ -606,6 +587,41 @@ p
 
 ## US Trends
 
+### State Totals
+
+Here is a data table for easy look-up of current U.S. 
+
+```{r us-current-state-lookup, echo=FALSE}
+us_current %>% 
+  mutate(
+    region_code = if_else(is.na(region_code), 'Total', region_code),
+    region_name = if_else(is.na(region_name), 'Total', region_name),
+  ) %>% 
+  select(-(latitude:population), -country_name, -country_code) %>% 
+  DT::datatable(
+    width = 800,
+    filter = "top",  # allows filtering on each column
+    extensions = c(
+      "Buttons",  # add download buttons, etc
+      "Scroller"  # for scrolling down the rows rather than pagination
+    ),
+    rownames = FALSE,
+    options = list(
+      dom = "Blrtip", 
+      pageLength = 20,
+      deferRender = TRUE,
+      scrollY = 300,
+      scrollX = '100px',
+      buttons = list(
+        # I("colvis"),  # turn columns on and off
+        "csv",   # download as .csv
+        "excel"  # download as .xlsx
+      )
+    )
+  )
+```
+
+
 ### Trends
 
 We can visualize the state level data in numerous ways.  Here is the world trend plot previously seen, now applied just to the U.S. 
@@ -707,7 +723,7 @@ us_current %>%
 
 ### Geofacet
 
-We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. As of late March, this is one of the scarier graphics, with no flattening in sight.
+We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. As of early April, this is one of the scarier graphics, with no flattening in sight at the state level.
 
 ```{r geo-facet-trends, layout='l-page'}
 library(geofacet)
@@ -918,7 +934,10 @@ get_county_data = function(
         'Virgin Islands',
         'Grand Princess',
         'Diamond Princess'
-      )
+      ),
+      # these counties have two entries for 3-22; the zero is dropped
+      !(state == 'District of Columbia' & confirmed == 0), 
+      !(state == 'Florida' & county == 'DeSoto' & confirmed == 0),
     ) %>% 
     select(date, everything()) %>% 
     mutate_at(vars(lat, long, confirmed), as.numeric) %>% 
@@ -1012,6 +1031,52 @@ anim_save('img/mi-county-trend.gif')
 ```{r  county-trend-animate-show, echo=FALSE, layout='l-body'}
 knitr::include_graphics('img/mi-county-trend.gif')
 ```
+
+We can also do the trend for Washtenaw county here by just filtering the county trends data. There is a note at the county website:
+
+> Most of the diagnoses in the 3/31 spike on the New COVID-19 Cases Reported per Day chart represent a backlog of labs that have been pending for 1-2 weeks. This means most of these individuals got sick and were tested at least a week ago, but are receiving test results now because labs are just now catching up on tests.
+
+```{r washtenaw-trend, echo=F}
+  # ggforce::geom_bspline(aes(), alpha = .8) +
+  # ggalt::geom_xspline(aes(), alpha = .8) +
+washtenaw_plot =  county_trends %>% 
+  filter(county == 'Washtenaw') %>% 
+  ggplot(aes(date, confirmed)) +
+  geom_path(aes(), alpha = .5, color = '#ff5500', size = 1) +
+  geom_point(
+    aes(color = 100 * (confirmed/lag(confirmed) - 1)),
+    size  = 5,
+    alpha = .5
+  ) +
+  geom_point(
+    aes(color = 100 * (confirmed/lag(confirmed) - 1)),
+    size  = 4,
+    alpha = 1
+  ) +
+  scico::scale_color_scico(
+    breaks = seq(10, 100, 10),
+    palette = 'acton',
+    direction = -1,
+    na.value = 'gray92'
+  ) + 
+  scale_x_date(
+    date_breaks = '2 days',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
+  guides(color = guide_legend(title = '% change')) +
+  labs(x='', y = '', subtitle = 'Confirmed Washtenaw Cases') +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(color = '#ff550040', size = .1),
+    legend.key.size = unit(.25, 'cm'),
+    legend.text     =  element_text(size = 6),
+    legend.title    = element_text(size = 6)
+  )
+
+washtenaw_plot
+```
+
 
 #### Interactive County Map
 
@@ -1271,6 +1336,10 @@ hcmap(
   ) %>% 
   hc_credits(enabled = FALSE)
 ```
+
+## Hospital Data
+
+I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/docs/covid_staffing/hospital_icu_covid.html).  The (stilly pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
 
 <!-- ## Model Country Trends -->
 
