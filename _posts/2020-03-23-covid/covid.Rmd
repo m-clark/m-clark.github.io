@@ -1341,11 +1341,204 @@ hcmap(
 
 I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/docs/covid_staffing/hospital_icu_covid.html).  The (stilly pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
 
-<!-- ## Model Country Trends -->
+## Models
 
-<!-- ```{r} -->
-<!-- # Model it ---------------------------------------------------------------- -->
+The following models U.S. state daily trends. First we'll download data from NY Times and add a bit of mild cleanup.  It seems to be cleaner than some other sources.
 
+### US State Trends
+
+```{r us-state-daily-model-data}
+us_states0 <- readr::read_csv(
+  "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv"
+)
+
+terr = c(
+  'Puerto Rico',
+  'Guam',
+  'Northern Mariana Islands',
+  'American Samoa'
+)
+
+us_for_model = us_states0 %>% 
+  filter(!state %in% terr) %>% 
+  arrange(state, date) %>% 
+  group_by(state) %>% 
+  mutate(
+    daily_cases = cases - lag(cases, default = NA),
+    daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+    date_num = as.numeric(date)
+  ) %>% 
+  ungroup() %>% 
+  left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+  mutate(state_abb = as.factor(state_abb))  # for mgcv
+
+# us_for_model %>% filter(state == 'Michigan')
+```
+
+To explore the trends, I will use a generalized additive model, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.
+
+```{r us-state-daily-model, cache=TRUE}
+library(mgcv)
+
+model_state = bam(
+  daily_cases ~ s(date_num, state_abb, bs = 'fs', k = 15),
+  family   = nb,
+  data     = us_for_model,
+  nthreads = 10
+)
+
+# summary(model_state)
+```
+
+```{r us-state-model-check, echo=FALSE, eval = FALSE}
+gam.check(model_state)
+visibly::plot_gam_check(model_state, kcheck = T)
+```
+
+We can visualize the estimated trends.  Looks to be fairly on point.
+
+```{r us-state-model-plot, echo = FALSE}
+library(lubridate)
+
+highlight = us_current %>% 
+  filter(!is.na(region_code)) %>% 
+  top_n(10, total_confirmed) %>% 
+  pull(region_name)
+
+highlight = us_for_model %>%
+  filter(state %in% highlight) %>%
+  pull(state_abb) %>% 
+  unique()
+
+visibly::plot_gam_by(
+  model_state,
+  date_num,
+  state_abb,
+  begin = .1,
+  end = .8,
+  alpha = .25
+  ) +
+  geom_text(
+    aes(label = state_abb),
+    size = 2,
+    vjust = -.75,
+    show.legend = FALSE,
+    data = . %>% filter(date_num == max(date_num) & state_abb %in% highlight)
+  ) +
+  guides(color = 'none')
+```
+
+The following plots the derivatives of each state curve. Each dot reflects a state's peak positive rate of change.  While most peaks are past, the expected trend is still positive for most states.
+
+```{r us-state-model-deriv, echo = F, cache=TRUE}
+library(gratia)
+
+deriv_dat_1 = derivatives(model_state, term = 'date_num')
+
+plot_dat = deriv_dat_1 %>%
+  mutate(
+    date = lubridate::as_date(data),
+    state_abb = str_remove_all(smooth, 's\\(date_num\\):state_abb'),
+    state_abb = fs_var
+  )
+
+plot_dat_peaks_valleys = plot_dat %>%
+  group_by(state_abb) %>%
+  slice(quantmod::findPeaks(derivative) - 1,
+        quantmod::findValleys(derivative) - 1)  # see helpfile for why -1
+```
+
+
+```{r us-state-model-deriv-plot, echo = F}
+library(ggrepel)
+
+plot_dat %>%
+  ggplot(aes(date, y = derivative)) +
+  # geom_ribbon(aes(ymin=lower, ymax=upper, group=state_abb), alpha = .02) +
+  geom_hline(yintercept = 0, color = 'gray92') +
+  geom_line(aes(color = state_abb), alpha = .25) +
+  geom_point(
+    aes(color = state_abb),
+    size = 4,
+    alpha = .5,
+    data = plot_dat_peaks_valleys %>% group_by(fs_var) %>% filter(derivative == max(derivative))
+  ) +
+  # geom_text_repel(
+  #   aes(label = as.character(date), color = state_abb),
+  #   size = 4,
+  #   alpha = .5,
+  #   data = plot_dat_peaks_valleys %>% filter(state_abb == 'NY')
+  # ) +
+  guides(color = 'none') +
+  labs(x = '') +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_y_continuous(breaks = 0) +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    legend.position = 'bottom',
+    )
+```
+
+The following predicts the next ten days for the ten states with the most confirmed cases.
+
+```{r us-state-model-predict, echo = F}
+start = as.numeric(Sys.Date())
+end = start + 10
+
+top_10_state = us_for_model %>% 
+  filter(
+    state_abb %in% unique(highlight)
+  ) %>% 
+  droplevels()
+
+nd = crossing(
+  date_num  = start:end,
+  state_abb = unique(top_10_state$state_abb)
+)
+
+pred_data = predict(model_state, newdata = nd, se = TRUE) %>% 
+  as_tibble() %>% 
+  mutate(
+    upper = fit + 1.96*se.fit,
+    lower = fit - 1.96*se.fit,
+    fit = exp(fit),
+    upper = exp(upper),
+    lower = exp(lower),
+  ) %>% 
+  bind_cols(nd) %>% 
+  mutate(date = as_date(date_num))
+```
+
+```{r us-state-model-predict-plot, echo=F}
+max_pred = max(pred_data$fit) + 5000 
+
+pred_data %>%
+  ggplot(aes(date, y = fit)) +
+  # geom_ribbon(aes(ymin = lower, ymax = upper, fill = state_abb), alpha = .05) +
+  geom_path(aes(color = state_abb)) +
+  geom_text_repel(
+    aes(label = state_abb, color = state_abb),
+    size = 4,
+    alpha = .5,
+    data = pred_data %>% filter(date == max(date))
+  ) +
+  guides(color = 'none') +
+  labs(x = '', y = '') +
+  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_y_continuous(breaks = seq(0, max_pred, by = 2500), trans = 'log') +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    legend.position = 'bottom',
+    panel.grid.major.y = element_line(color = scales::alpha('black', .025))
+  )
+```
+
+
+
+
+<!-- ```{r country-level-model} -->
 
 <!-- # plot doubling -->
 
@@ -1363,7 +1556,7 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 <!-- all_for_model = countries %>% -->
 <!--   mutate(country_code = factor(country_code), -->
 <!--          date_num = as.numeric(date)) %>% -->
-<!--   filter(is.na(region_code)) %>% -->
+<!--   filter(is.na(state_abb)) %>% -->
 <!--   select(-contains('region'), -latitude, -longitude) %>% -->
 <!--   group_by(country_name) %>% -->
 <!--   mutate(N = n(), total_confirmed_log = log(total_confirmed + 1)) %>% -->
@@ -1394,7 +1587,7 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 <!-- summary(mod) -->
 <!-- ``` -->
 
-<!-- ```{r} -->
+<!-- ```{r country-level-model-plot} -->
 <!-- highlight = all_for_model %>% -->
 <!--   filter(country_name %in% highlight) %>% -->
 <!--   pull(country_code) -->
@@ -1417,7 +1610,7 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 <!--   guides(color = 'none') -->
 <!-- ``` -->
 
-<!-- ```{r} -->
+<!-- ```{r country-level-model-deriv} -->
 <!-- library(gratia) -->
 
 <!-- deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250) -->
