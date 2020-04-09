@@ -1,0 +1,540 @@
+---
+title: "ICU Beds vs Covid-19 Cases"
+author: by MC
+output: 
+  flexdashboard::flex_dashboard:
+    theme: journal
+    social: [ "twitter", "facebook", "linkedin" ] #, 'weibo', 'wechat'
+    source_code: embed
+    css: styles.css
+---
+
+```{r setup, include = FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(leaflet)
+library(crosstalk)
+library(htmltools)
+```
+
+Column {.tabset data-width=400}
+-----------------------------------------------------------------------
+
+```{r nytimes, eval = F}
+us_counties0 <- readr::read_csv(
+  "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+)
+
+terr = c(
+  'Puerto Rico',
+  'Guam',
+  'Northern Mariana Islands',
+  'American Samoa'
+)
+
+
+county_trends = us_counties0 %>% 
+  filter(!state %in% terr) %>% 
+  arrange(state, county, date) %>% 
+  group_by(state, county) %>% 
+  mutate(
+    daily_cases = cases - lag(cases, default = NA),
+    daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+    date_num = as.numeric(date)
+  ) %>% 
+  ungroup() %>% 
+  left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+  mutate(state_abb = as.factor(state_abb)) %>% 
+  mutate_at(vars(county, state), tolower)
+
+```
+
+```{r prelim-county-data}
+
+# source('_posts/2020-03-23-covid/get_county_data.R')
+# 
+# county_trends = get_county_data(parallel = TRUE)
+# 
+# # for testing
+# save(county_trends, file = 'data/county_trends.RData')
+load('data/county_trends.RData')
+
+# remove clutter that isn't necessary for our purposes
+county_trends = county_trends %>% 
+  filter(!county %in% c('Unknown', 'Unassigned', 'Out-of-state')) %>% 
+  mutate_at(vars(county, state), tolower)
+
+# some counties will not have a hospital, many counties do not have a current
+# count, some counties from covid data don't have a fips, so this match could be better
+# county_trends = county_trends %>% 
+#   group_by(state, county) %>% 
+#   mutate(fips = ifelse(nchar(fips) == 4, paste0('0', fips), fips)) %>% 
+#   fill(fips, .direction = 'downup') 
+
+# county_current_counts = county_trends %>% 
+#   group_by(county) %>% 
+#   filter(date == max(date)) %>% 
+#   ungroup() %>% 
+#   mutate_at(vars(county, state), tolower)
+
+
+# we will define current as the number of new cases in the past two weeks;
+
+library(lubridate)
+county_current_counts = county_trends %>% 
+  arrange(state, county, date) %>% 
+  group_by(state, county) %>% 
+  filter(date == max(date) | (date == (max(date) - weeks(2)) | date == min(date)))
+
+# numerous issues with dplyr inability to handle basic logical operations. This is ugly but appears to work.
+county_current_counts = county_current_counts %>% 
+  group_by(state, county) %>% 
+  # because group by case_when is so very, very hard
+  summarise(
+    # N = n(), # for testing
+    confirmed_last_2wk = ifelse(
+      length(confirmed) == 1,
+      confirmed,
+      confirmed[length(confirmed)] - confirmed[length(confirmed)-1]),
+    confirmed = last(confirmed)
+  ) %>% 
+  ungroup() 
+
+# county_current_counts %>% count(state, county, sort=T) 
+```
+
+```{r data-processing}
+# hosp_data0 = read_csv('https://github.com/jsfenfen/covid_hospitals_demographics/raw/master/data/processed/hospital_data.csv') 
+# 
+# # get full state names
+# states = tibble(state_name = state.name, state = state.abb)
+# 
+# hosp_data = hosp_data0 %>%
+#   left_join(states) %>%
+#   rename(
+#     fips = statecountyfips,
+#     county = county_name
+#     ) %>%
+#   mutate(
+#     county = tolower(county),
+#     state_name = tolower(state_name)
+#   )
+# 
+# # for testing
+# save(hosp_data, file = 'data/hosp_data.RData')
+
+load('data/hosp_data.RData')
+
+current_hospital = hosp_data %>% 
+  left_join(county_current_counts, by = c('county', 'state_name' = 'state')) %>% 
+  mutate(
+    icu_ratio = confirmed_last_2wk/all_adult_icu_beds,
+    icu_ratio = if_else(is.infinite(icu_ratio), NA_real_, icu_ratio),
+    icu_bed_utilization = all_adult_icu_beds * all_adult_icu_utilization / 100,
+    hospital_name = str_to_title(hospital_name),
+    city = str_to_title(city),
+    county = str_to_title(county),
+    lab = glue::glue(
+      'Hospital: {hospital_name}<br>County confirmed cases: {confirmed}<br>ICU beds: {all_adult_icu_beds}'
+    ),
+    lab = map(lab, HTML),
+    size_for_leaflet = 1000 * log(icu_ratio + 1), ## because leaflet is so very stupid about point size
+  )
+
+# current_hospital_collapse = current_hospital %>% 
+#   group_by(county, state, state_name) %>% 
+#   summarise(
+#     confirmed = max(confirmed), 
+#     icu_beds = sum(all_adult_icu_beds, na.rm = T)
+#   ) %>% 
+#   ungroup() 
+
+
+
+```
+
+
+```{r create-shared-data}
+sd = current_hospital %>% 
+    select(
+      hospital_name,
+      lat,
+      lng,
+      city,
+      county,
+      state,
+      confirmed,
+      confirmed_last_2wk,
+      all_adult_icu_beds,
+      icu_bed_utilization,
+      icu_ratio,
+      interns_residents,
+      payroll_employees,
+      lab,
+      size_for_leaflet
+    ) %>% 
+    mutate(
+      has_icu = factor(if_else(all_adult_icu_beds > 0, 'Yes', 'No'))
+    ) %>% 
+    arrange(desc(confirmed))
+
+shared_data <- SharedData$new(sd)
+```
+
+
+
+### Number of total critical care beds vs. current confirmed C19 cases
+
+```{r nation-map}
+library(leaflet)
+
+# color palette
+pal <-
+  colorNumeric(
+    scico::scico(100, begin = .2, end = 1, palette = 'lajolla'),
+    0:max(current_hospital$icu_ratio, na.rm = T),
+    na.color = visibly::col2hex('gray85')
+  )
+
+
+
+# current_hospital_test = current_hospital %>%
+#   mutate(
+#     lab = glue::glue(
+#       'Hospital: {hospital_name}County confirmed cases: {confirmed}ICU beds: {all_adult_icu_beds}'
+#     ),
+#     lab = map(lab, HTML),
+#     size_for_leaflet = 1000 * log(icu_ratio + 1), ## because leaflet is so very stupid about point size
+#   )
+
+shared_data %>% 
+  leaflet() %>% 
+  addTiles() %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  setView(-83.7, 42.3, zoom = 6) %>% 
+  addCircles(
+    lat = ~ lat,
+    lng = ~ lng,
+    # radius =  ~ size_for_leaflet * 2.1,  # possibly easier to modify here.
+    radius =  6250,  # size in meters.
+    color = ~ pal(icu_ratio),
+    fillOpacity = .8,
+    stroke = FALSE,
+    label =  ~lab,
+    labelOptions = labelOptions(
+      direction = "bottom",
+      style = list(
+        "color" = "gray25",
+        "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
+        "font-size" = "14px",
+        "border-color" = "rgba(0,0,0,0.5)"
+      )
+    )
+  )
+
+```
+
+### Data
+
+Select rows to highlight those points on the map.  For more details on this data, see [the repository](https://github.com/jsfenfen/covid_hospitals_demographics).
+
+
+```{r county-data-table}
+shared_data %>% 
+  DT::datatable(
+    filter = "top",  # allows filtering on each column
+    extensions = c(
+      # "Buttons",  # add download buttons, etc
+      "Scroller"  # for scrolling down the rows rather than pagination
+    ),
+    rownames = FALSE,  # remove rownames
+    
+    # can rename cols here, but probably easier to do in creation of shared data
+    colnames = c(
+      'Hospital' = 'hospital_name',
+      'City' = 'city',
+      'County' = 'county',
+      'State' = 'state',
+      'Confirmed' = 'confirmed',
+      'Confirmed last 2 weeks' = 'confirmed_last_2wk',
+      'ICU Beds' = 'all_adult_icu_beds',
+      'Has ICU' = 'has_icu',
+      'ICU Utilization' = 'icu_bed_utilization',
+      'ICU Ratio' = 'icu_ratio',
+      'Residents/Interns' = 'interns_residents',
+      'Total Employ.' = 'payroll_employees'#,
+      # Confirmed = 8,
+    ),
+    style = "bootstrap",
+    class = "compact",
+    width = "75%",
+    # height = "25%",
+    options = list(
+      dom = "Blrtip",  # specify content (search box, etc)
+      pageLength = 20,
+      deferRender = TRUE,
+      scrollY = 300,
+      scrollX = '100px',
+      # scroller = TRUE,
+      columnDefs = list(
+        list(
+          visible = FALSE,
+          targets = c(1:2, 13:14)
+        )
+      )#,
+      # buttons = list(
+      #   I("colvis"),  # turn columns on and off
+      #   "csv",  # download as .csv
+      #   "excel"  # download as .xlsx
+      # )
+    ),
+  ) %>% 
+  DT::formatRound(~ `ICU Ratio` + `ICU Utilization`, digits = 1)
+```
+
+### Details
+
+Some specific columns are:
+
+- `Confirmed`: Total number of confirmed cases at the county level
+- `Confirmed last 2 weeks`: Total new cases over the last two weeks
+- `ICU Beds`: Number of beds with CMS codes 0800 00801 00802 00803 00804 00805 00806 00807 00808 00810 00820 00830 00850
+- `ICU Ratio`: Number of confirmed cases in the last 2 weeks to ICU beds 
+- `ICU Utilization`: Utilization rate, as a percent, is calculated for all_icu_beds and for subtotal_acute_beds. all adult icu_beds * all adult icu utilization / 100
+- `Residents/Interns`: total number of residents/interns  based on CMS documentation
+- `Total Employ`: Total employment
+
+Column {data-width=450}
+-----------------------------------------------------------------------
+
+
+
+
+```{r filters}
+
+bscols(
+  filter_select(
+    id = "hospital",
+    label = "Hospital",
+    sharedData = shared_data,
+    group = ~hospital_name
+  ),
+  filter_checkbox(
+    id = "has_icu",
+    label = "Has ICU?",
+    sharedData = shared_data,
+    group = ~has_icu,
+    columns = 2,
+    inline = TRUE
+  ),
+  widths = c(4, 2)
+)
+
+bscols(
+  filter_slider(
+    id     = "covid_cases",
+    label  = "Confirmed county-wide covid cases",
+    sharedData = shared_data,
+    column = ~confirmed,
+    step   = 10,
+    # max    = 1000,
+    round  = TRUE,
+    sep    = "",
+    ticks  = FALSE
+  ),
+  widths = c(5)
+)
+```
+
+
+
+
+### Something else?
+
+Or a long sentence moving at a certain pace down the page aiming for the
+bottom-if not the bottom of this page then some other page-where it can rest, or
+stop for a moment to think out the questions raised by its own (temporary)
+existence, which ends when the page is turned, or the sentence falls out of the
+mind that holds it (temporarily) in some kind of embrace, not necessarily an
+ardent one, but more perhaps the kind of embrace enjoyed (or endured), by a wife
+who has just waked up and is on her way to the bathroom in the morning to wash
+her hair, and is bumped into by her husband, who has been lounging at the
+breakfast table reading the newspaper, and doesn't see her coming out of the
+bedroom, but, when he bumps into her, or is bumped into by her, raises his hands
+to embrace her lightly, transiently, because he knows that if he gives her a
+real embrace so early in the morning, before she has properly shaken the dreams
+out of her head, and got her duds on, she won't respond, and may even become
+slightly angry, and say something wounding, and so the husband invests in this
+embrace not so much physical or emotional pressure as he might, because he
+doesn't want to waste anything-with this sort of feeling, then, the sentence
+passes through the mind more or less, and there is another way of describing the
+situation too, which is to say that the sentence crawls through the mind like
+something someone says to you while you are listening very hard to the FM radio,
+some rock group there, with its thrilling sound, and so, with your attention or
+the major part of it at least already rewarded, there is not much mind room you
+can give to the remark, especially considering that you have probably just
+quarreled with that person, the maker of the remark, over the radio being too
+loud, or something like that, and the view you take, of the remark, is that
+you'd really rather not hear it, but if you have to hear it, you want to listen
+to it for the smallest possible length of time, and during a commercial, because
+immediately after the commercial they're going to play a new rock song by your
+favorite group, a cut that has never been aired before, and you want to hear it
+and respond to it in a new way, a way that accords with whatever you're feeling
+at the moment, or might feel, if the threat of new experience could be
+(temporarily) overbalanced by the promise of possible positive benefits, or what
+the mind construes as such, remembering that these are often, really, disguised
+defeats (not that such defeats are not, at times, good for your character,
+teaching you that it is not by success alone that one surmounts life, but that
+setbacks, too, contribute to that roughening of the personality that, by
+providing a textured surface to place against that of life, enables you to leave
+slight traces, or smudges, on the face of human history-your mark) and after
+all, benefit-seeking always has something of the smell of raw vanity about it,
+as if you wished to decorate your own brow with laurel, or wear your medals to a
+cookout, when the invitation had said nothing about them, and although the ego
+is always hungry (we are told) it is well to remember that ongoing success is
+nearly as meaningless as ongoing lack of success, which can make you sick, and
+that it is good to leave a few crumbs on the table for the rest of your
+brethren, not to sweep it all into the little beaded purse of your soul but to
+allow others, too, part of the gratification, and if you share in this way you
+will find the clouds smiling on you, and the postman bringing you letters, and
+bicycles available when you want to rent them, and many other signs, however
+guarded and limited, of the community's (temporary) approval of you, or at least
+of it's willingness to let you believe (temporarily) that it finds you not so
+lacking in commendable virtues as it had previously allowed you to think, from
+its scorn of your merits, as it might be put, or anyway its consistent refusal
+to recognize your basic humanness and its secret blackball of the project of
+your remaining alive, made in executive session by its ruling bodies, which, as
+everyone knows, carry out concealed programs of reward and punishment, under the
+rose, causing faint alterations of the status quo, behind your back, at various
+points along the periphery of community life, together with other enterprises
+not dissimilar in tone, such as producing films that have special qualities, or
+attributes, such as a film where the second half of it is a holy mystery, and
+girls and women are not permitted to see it, or writing novels in which the
+final chapter is a plastic bag filled with water, which you can touch, but not
+drink: in this way, or ways, the underground mental life of the collectivity is
+botched, or denied, or turned into something else never imagined by the
+planners, who, returning from the latest seminar in crisis management and being
+asked what they have learned, say they have learned how to throw up their hands;
+the sentence meanwhile, although not insensible of these considerations, has a
+festering conscience of its own, which persuades it to follow its star, and to
+move with all deliberate speed from one place to another, without losing any of
+the "riders" it may have picked up just being there, on the page, and turning
+this way and that, to see what is over there, under that oddly-shaped tree, or
+over there, reflected in the rain barrel of the imagination, even though it is
+true that in our young manhood we were taught that short, punchy sentences were
+best (but what did he mean? doesn't "punchy" mean punch-drunk? I think he
+probably intended to say "short, punching sentences," meaning sentences that
+lashed out at you, bloodying your brain if possible, and looking up the word
+just now I came across the nearby "punkah," which is a large fan suspended from
+the ceiling in India, operated by an attendant pulling a rope-that is what I
+want for my sentence, to keep it cool!) we are mature enough now to stand the
+shock of learning that much of what we were taught in our youth was wrong, or
+improperly understood by those who were teaching it, or perhaps shaded a bit,
+the shading resulting from the personal needs of the teachers, who as human
+beings had a tendency to introduce some of their heart's blood into their work,
+and sometimes this may not have been of the first water, this heart's blood, and
+even if they thought they were moving the "knowledge" out, as the Board of
+Education had mandated, they could have noticed that their sentences weren't
+having the knockdown power of the new weapons whose bullets tumble end-over-end
+(but it is true that we didn't have these weapons at that time) and they might
+have taken into account the fundamental dubiousness of their project (but all
+the intelligently conceived projects have been eaten up already, like the moon
+and the stars) leaving us, in our best clothes, with only things to do like
+conducting vigorous wars of attrition against our wives, who have now thoroughly
+come awake, and slipped into their striped bells, and pulled sweaters over their
+torsi, and adamantly refused to wear any bras under the sweaters, carefully
+explaining the political significance of this refusal to anyone who will listen,
+or look, but not touch, because that has nothing to do with it, so they say;
+leaving us, as it were, with only things to do like floating sheets of Reynolds
+Wrap around the room, trying to find out how many we can keep in the air at the
+same time, which at least gives us a sense of participation, as though we were
+Buddha, looking down at the mystery of your smile, which needs to be
+investigated, and I think I'll do that right now, while there's still enough
+light, if you'll sit down over there, in the best chair, and take off all your
+clothes, and put your feet in that electric toe caddy (which prevents pneumonia)
+and slip into this permanent press hospital gown, to cover your nakedness-why,
+if you do all that, we'll be ready to begin! after I wash my hands, because you
+pick up an amazing amount of exuviae in this city, just by walking around in the
+open air, and nodding to acquaintances, and speaking to friends, and copulating
+with lovers, in the ordinary course (and death to our enemies! by and by)-but
+I'm getting a little uptight, just about washing my hands, because I can't find
+the soap, which somebody has used and not put back in the soap dish, all of
+which is extremely irritating, if you have a beautiful patient sitting in the
+examining room, naked inside her gown, and peering at her moles in the mirror,
+with her immense brown eyes following your every movement (when they are not
+watching the moles, expecting them, as in a Disney nature film, to exfoliate)
+and her immense brown head wondering what you're going to do to her, the pierced
+places in the head letting that question leak out, while the therapist decides
+just to wash his hands in plain water, and hang the soap! and does so, and then
+looks around for a towel, but all the towels have been collected by the towel
+service, and are not there, so he wipes his hands on his pants, in the back (so
+as to avoid suspicious stains on the front) thinking: what must she think of me?
+and, all this is very unprofessional and at-sea looking! trying to visualize the
+contretemps from her point of view, if she has one (but how can she? she is not
+in the washroom) and then stopping, because it is finally his own point of view
+that he cares about and not hers, and with this firmly in mind, and a light,
+confident step, such as you might find in the works of Bulwer-Lytton, he enters
+the space she occupies so prettily and, taking her by the hand, proceeds to tear
+off the stiff white hospital gown (but no, we cannot have that kind of
+pornographic merde in this majestic and high-minded sentence, which will
+probably end up in the Library of Congress) (that was just something that took
+place inside his consciousness, as he looked at her, and since we know that
+consciousness is always consciousness of something, she is not entirely without
+responsibility in the matter) so, then, taking her by the hand, he falls into
+the stupendous white puree of her abyss, no, I mean rather that he asks her how
+long it has been since her last visit, and she says a fortnight, and he
+shudders, and tells her that with a condition like hers (she is an immensely
+popular soldier, and her troops win all their battles by pretending to be
+forests, the enemy discovering, at the last moment, that those trees they have
+eaten their lunch under have eyes and swords) (which reminds me of the
+performance, in 1845, of Robert-Houdin, called The Fantastic Orange Tree,
+wherein Robert-Houdin borrowed a lady's handkerchief, rubbed it between his
+hands and passed it into the center of an egg, after which he passed the egg
+into the center of a lemon, after which he passed the lemon into the center of
+an orange, then pressed the orange between his hands, making it smaller and
+smaller, until only a powder remained, whereupon he asked for a small potted
+orange tree and sprinkled the powder thereupon, upon which the tree burst into
+blossom, the blossoms turning into oranges, the oranges turning into
+butterflies, and the butterflies turning into beautiful young ladies, who then
+married members of the audience), a condition so damaging to real-time social
+intercourse of any kind, the best thing she can do is give up, and lay down her
+arms, and he will lie down in them, and together they will permit themselves a
+bit of the old slap and tickle, she wearing only her Mr. Christopher medal, on
+its silver chain, and he (for such is the latitude granted the professional
+classes) worrying about the sentence, about its thin wires of dramatic tension,
+which have been omitted, about whether we should write down some natural events
+occurring in the sky (birds, lightning bolts), and about a possible coup d'etat
+within the sentence, whereby its chief verb would be-but at this moment a
+messenger rushes into the sentence, bleeding from a hat of thorns he's wearing,
+and cries out: "You don't know what you're doing! Stop making this sentence, and
+begin instead to make Moholy-Nagy cocktails, for those are what we really need,
+on the frontiers of bad behavior!" and then he falls to the floor, and a trap
+door opens under him, and he falls through that, into a damp pit where a blue
+narwhal waits, its horn poised (but maybe the weight of the messenger, falling
+from such a height, will break off the horn)-thus, considering everything very
+carefully, in the sweet light of the ceremonial axes, in the run-mad
+skimble-skamble of information sickness, we must make a decision as to whether
+we should proceed, or go back, in the latter case enjoying the pathos of
+eradication, in which the former case reading an erotic advertisement which
+begins, How to Make Your Mouth a Blowtorch of Excitement (but wouldn't that
+overtax our mouthwashes?) attempting, during the pause, while our burned mouths
+are being smeared with fat, to imagine a better sentence, worthier, more
+meaningful, like those in the Declaration of Independence, or a bank statement
+showing that you have seven thousand kroner more than you thought you had-a
+statement summing up the unreasonable demands that you make on life, and one
+that also asks the question, if you can imagine these demands, why are they not
+routinely met, tall fool? but of course it is not that query that this infected
+sentence has set out to answer (and hello! to our girl friend, Rosetta Stone,
+who has stuck by us through thick and thin) but some other query that we shall
+some day discover the nature of, and here comes Ludwig, the expert on sentence
+construction we have borrowed from the Bauhaus, who will-"Guten Tag,
+Ludwig!"-probably find a way to cure the sentence's sprawl, by using the
+improved way of thinking developed in Weimer-"I am sorry to inform you that the
+Bauhaus no longer exists, that all of the great masters who formerly thought
+there are either dead or retired, and that I myself have been reduced to
+constructing books on how to pass the examination for police sergeant"-and
+Ludwig falls through the Tugendhat House into the history of man-made objects; a
+disappointment, to be sure, but it reminds us that the sentence itself is a
+man-made object, not the one we wanted of course, but still a construction of
+man, a structure to be treasured for its weakness, as opposed to the strength of
+stones

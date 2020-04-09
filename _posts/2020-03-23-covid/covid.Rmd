@@ -14,7 +14,7 @@ output:
     css: [../../styles.css, ../../css/misc.css]
     code_folding: hide
 draft: false
-tags: [covid19, daily, total, world, u.s., michigan, washtenaw, wayne, detroit, sars, mers, h1n1]
+tags: [covid19, daily, total, world, u.s., michigan, washtenaw, wayne, detroit, sars, mers, h1n1, ggplot2, mgcv, gratia, gam, geofacet, geom_sf, statebins]
 categories:
   - visualization
 ---
@@ -36,6 +36,7 @@ knitr::opts_chunk$set(
 
 library(tidyverse)
 library(kableExtra)
+library(scico)
 
 kable_df <- function(..., digits=3) {
   kable(..., digits=digits) %>% 
@@ -78,13 +79,14 @@ read_covid_data <- function(
   current = FALSE,    # Only the current data
   totals  = FALSE     # Only totals (no regional)
 ) {
+  
   if (current) {
     data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv',
-                           col_types = 'Dccccciiddi')
+                           col_types = 'Dcccccddddd')
   }
   else {
     data = read_csv('https://open-covid-19.github.io/data/data.csv',
-                    col_types = 'Dccccciiddi')
+                    col_types = 'Dcccccddddd')
   }
   
   if (!is.null(country)) {
@@ -306,7 +308,6 @@ Now we can just do a basic plot.  I use <span class="pack" style = "">ggrepel</s
 
 ```{r country-trend-static}
 library(ggrepel)
-
 p = countries %>% 
   ggplot(aes(x = date, y = total_confirmed)) +
   geom_path(aes(group = country_code), alpha = .005) +
@@ -329,7 +330,7 @@ p = countries %>%
     data  = filter(countries, country_name %in% highlight, date == max(date)-1),
     show.legend = FALSE
   ) +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(
     date_breaks = '2 weeks',
     labels = function(x) format(x, format = "%m/%d")
@@ -459,7 +460,7 @@ plot_data %>%
     color = 'gray92',
     size  = .25
   ) +
-  scico::scale_fill_scico(
+  scale_fill_scico(
     end = .75,
     na.value = 'gray98',
     palette  = 'lajolla',
@@ -512,7 +513,7 @@ plot_data %>%
     color = 'gray92',
     size  = .25
   ) +
-  scico::scale_fill_scico(
+  scale_fill_scico(
     end = .75,
     na.value = 'gray98',
     palette  = 'lajolla',
@@ -553,7 +554,7 @@ p = countries_rate %>%
     data  = filter(countries_rate, date == max(date)-1),
     show.legend = FALSE
   ) +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(
     date_breaks = '2 weeks',
     labels = function(x) format(x, format = "%m/%d")
@@ -654,7 +655,7 @@ p = us %>%
     alpha = .85,
     data  = filter(us_current, region_name %in% highlight)
   ) +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(date_breaks = '2 weeks') +
   scale_y_continuous(
     position = "right",
@@ -778,7 +779,7 @@ plot_data %>%
     color = 'gray92',
     size  = .25
   ) +
-  scico::scale_fill_scico(
+  scale_fill_scico(
     end = .75,
     na.value = 'gray98',
     palette  = 'lajolla',
@@ -829,7 +830,7 @@ p = us_rate %>%
     data  = filter(us_rate, region_name %in% highlight, date == max(date)),
     show.legend = FALSE
   ) +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(
     date_breaks = '2 weeks',
     labels = function(x) format(x, format = "%m/%d")
@@ -981,7 +982,7 @@ mi_plot =  mi_counties_sf %>%
   coord_sf(xlim = c(-91,-82),
            ylim = c(41, 48.5),
            expand = FALSE) +
-  scico::scale_fill_scico(
+  scale_fill_scico(
     trans = 'log',
     breaks = c(1, 10, 50, 250, 1250, 5000),
     palette = 'lajolla',
@@ -1039,10 +1040,13 @@ We can also do the trend for Washtenaw county here by just filtering the county 
 ```{r washtenaw-trend, echo=F}
   # ggforce::geom_bspline(aes(), alpha = .8) +
   # ggalt::geom_xspline(aes(), alpha = .8) +
+
+acton = scico(1, begin = .5, palette = 'acton')
+
 washtenaw_plot =  county_trends %>% 
   filter(county == 'Washtenaw') %>% 
   ggplot(aes(date, confirmed)) +
-  geom_path(aes(), alpha = .5, color = '#ff5500', size = 1) +
+  geom_path(aes(), alpha = .5, color = acton, size = 1) +
   geom_point(
     aes(color = 100 * (confirmed/lag(confirmed) - 1)),
     size  = 5,
@@ -1053,7 +1057,7 @@ washtenaw_plot =  county_trends %>%
     size  = 4,
     alpha = 1
   ) +
-  scico::scale_color_scico(
+  scale_color_scico(
     breaks = seq(10, 100, 10),
     palette = 'acton',
     direction = -1,
@@ -1063,12 +1067,15 @@ washtenaw_plot =  county_trends %>%
     date_breaks = '2 days',
     labels = function(x) format(x, format = "%m/%d")
   ) +
+  scale_y_continuous(
+    breaks = seq(0, 1000, 100)
+  ) +
   guides(color = guide_legend(title = '% change')) +
   labs(x='', y = '', subtitle = 'Confirmed Washtenaw Cases') +
   visibly::theme_clean() +
   theme(
     axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(color = '#ff550040', size = .1),
+    panel.grid.major.y = element_line(color = scales::alpha(acton, .25), size = .1),
     legend.key.size = unit(.25, 'cm'),
     legend.text     =  element_text(size = 6),
     legend.title    = element_text(size = 6)
@@ -1101,7 +1108,7 @@ hcmap(
   hc_colorAxis(
     dataClasses = color_classes(
       c(0, 10, 100, 500, 1000, 2000, 5000),
-      colors = scico::scico(6, end = .9, palette = 'lajolla')
+      colors = scico(6, end = .9, palette = 'lajolla')
     )
   ) %>%
   hc_legend(
@@ -1156,7 +1163,7 @@ county_point_plot =
     alpha = .1,
     show.legend = F
   ) +
-  scico::scale_color_scico(
+  scale_color_scico(
     trans    = 'log',
     breaks   = c(1, 10, 50, 250, 1250, 5000),
     na.value = 'gray99'
@@ -1244,7 +1251,7 @@ county_point_plot =
     ),
     alpha = .2,
     show.legend = F) +
-  scico::scale_color_scico(
+  scale_color_scico(
     trans    = 'log',
     na.value = 'gray99'
   ) +
@@ -1324,7 +1331,7 @@ hcmap(
   hc_colorAxis(
     dataClasses = color_classes(
       c(0, sort(unlist(map(c(1, 5), function(x)  x * 10^(1:4))))),
-      colors = scico::scico(6, end = .9, palette = 'lajolla')
+      colors = scico(6, end = .9, palette = 'lajolla')
     )
   ) %>%
   hc_legend(
@@ -1346,6 +1353,10 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 The following models U.S. state daily trends. First we'll download data from NY Times and add a bit of mild cleanup.  It seems to be cleaner than some other sources.
 
 ### US State Trends
+
+```{r model-rebuild-flag, echo=FALSE}
+model_rebuild_flag = FALSE
+```
 
 ```{r us-state-daily-model-data}
 us_states0 <- readr::read_csv(
@@ -1375,9 +1386,11 @@ us_for_model = us_states0 %>%
 # us_for_model %>% filter(state == 'Michigan')
 ```
 
-To explore the trends, I will use a generalized additive model, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.
+To explore the trends, I will use a generalized additive model with <span class="pack" style = "">mgcv</span>, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.
 
-```{r us-state-daily-model, cache=TRUE}
+
+
+```{r us-state-daily-model, cache=TRUE, cache.rebuild=model_rebuild_flag}
 library(mgcv)
 
 model_state = bam(
@@ -1397,7 +1410,7 @@ visibly::plot_gam_check(model_state, kcheck = T)
 
 We can visualize the estimated trends.  Looks to be fairly on point.
 
-```{r us-state-model-plot, echo = FALSE}
+```{r us-state-model-plot, echo = FALSE, cache.rebuild=model_rebuild_flag}
 library(lubridate)
 
 highlight = us_current %>% 
@@ -1423,14 +1436,15 @@ visibly::plot_gam_by(
     size = 2,
     vjust = -.75,
     show.legend = FALSE,
+    alpha = 1,
     data = . %>% filter(date_num == max(date_num) & state_abb %in% highlight)
   ) +
   guides(color = 'none')
 ```
 
-The following plots the derivatives of each state curve. Each dot reflects a state's peak positive rate of change.  While most peaks are past, the expected trend is still positive for most states.
+The following plots the derivatives of each state curve using <span class="pack" style = "">gratia</span>. Each dot reflects a state's peak positive rate of change.  While most peaks are past, the expected trend is still positive for most states.
 
-```{r us-state-model-deriv, echo = F, cache=TRUE}
+```{r us-state-model-deriv, echo = F, cache=TRUE, cache.rebuild=model_rebuild_flag}
 library(gratia)
 
 deriv_dat_1 = derivatives(model_state, term = 'date_num')
@@ -1449,7 +1463,7 @@ plot_dat_peaks_valleys = plot_dat %>%
 ```
 
 
-```{r us-state-model-deriv-plot, echo = F}
+```{r us-state-model-deriv-plot, echo = F, cache.rebuild=model_rebuild_flag}
 library(ggrepel)
 
 plot_dat %>%
@@ -1471,7 +1485,7 @@ plot_dat %>%
   # ) +
   guides(color = 'none') +
   labs(x = '') +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
+  scale_color_scico_d(begin = .1, end = .9) +
   scale_y_continuous(breaks = 0) +
   visibly::theme_clean() +
   theme(
@@ -1480,11 +1494,11 @@ plot_dat %>%
     )
 ```
 
-The following predicts the next ten days for the ten states with the most confirmed cases.
 
-```{r us-state-model-predict, echo = F}
+```{r us-state-model-predict, echo = F, cache.rebuild=model_rebuild_flag}
+predict_days = 4
 start = as.numeric(Sys.Date())
-end = start + 10
+end = start + predict_days
 
 top_10_state = us_for_model %>% 
   filter(
@@ -1510,7 +1524,11 @@ pred_data = predict(model_state, newdata = nd, se = TRUE) %>%
   mutate(date = as_date(date_num))
 ```
 
-```{r us-state-model-predict-plot, echo=F}
+The following predicts the next `r predict_days` days for the ten states with the most confirmed cases.
+
+
+
+```{r us-state-model-predict-plot, echo=F, cache.rebuild=model_rebuild_flag}
 max_pred = max(pred_data$fit) + 5000 
 
 pred_data %>%
@@ -1520,18 +1538,22 @@ pred_data %>%
   geom_text_repel(
     aes(label = state_abb, color = state_abb),
     size = 4,
-    alpha = .5,
+    alpha = 1,
     data = pred_data %>% filter(date == max(date))
   ) +
   guides(color = 'none') +
   labs(x = '', y = '') +
-  scico::scale_color_scico_d(begin = .1, end = .9) +
-  scale_y_continuous(breaks = seq(0, max_pred, by = 2500), trans = 'log') +
+  scale_color_scico_d(begin = .1, end = .9) +
+  scale_y_continuous(
+    breaks = seq(0, max_pred, by = 1000),
+    # trans = 'log'
+    ) +
   visibly::theme_clean() +
   theme(
+    axis.text.y = element_text(color = 'gray50'),
     axis.ticks.y = element_blank(),
     legend.position = 'bottom',
-    panel.grid.major.y = element_line(color = scales::alpha('black', .025))
+    panel.grid.major.y = element_line(color = scales::alpha('black', .05))
   )
 ```
 
@@ -1654,7 +1676,7 @@ pred_data %>%
 <!--   ) + -->
 <!--   guides(color = 'none') + -->
 <!--   labs(x = '') + -->
-<!--   scico::scale_color_scico_d(begin = .25, end = .75) + -->
+<!--   scale_color_scico_d(begin = .25, end = .75) + -->
 <!--   visibly::theme_clean() + -->
 <!--   theme(legend.position = 'bottom') -->
 <!-- ``` -->
