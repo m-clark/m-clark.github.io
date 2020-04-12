@@ -6,15 +6,15 @@ author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: 2020-04-10
-preview: ../../img/covid_preview.gif   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: ../../img/factor_analysis.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
     toc: true
     css: [../../styles.css, ../../css/misc.css]
     code_folding: hide
-draft: true
-tags: [factor analysis, psych package, rmsea, TLI]
+draft: false
+tags: [factor analysis, psych package, rmsea, TLI, alpha, reliability, unidimensionality, sem, R]
 categories:
   - visualization
 ---
@@ -52,13 +52,13 @@ Prerequisites: familiarity with [factor analysis](https://m-clark.github.io/sem/
 
 ## Introduction
 
-The <span class="pack" style = "">psych</span> package is a great tool for assessing underlying latent structure.  It can provide reliability statistics, do cluster analysis, principal components analysis, medation models, and, of course factor analysis.  However, it's been around a very long time, and many things were added to, subtracted, renamed, etc. And while the package author and noted psychometrician William Revelle even provides a freely available book on the details, it can still be difficult for many to 'jump right in' with the package.  This is because it provides so much more than other tools, which is great, but also can be overwhelming. Even I don't recall what some of the output regards for factor analysis, and I use the package often. While a lot of it doesn't matter for most use, it'd be nice to have a clean reference, so here it is.
+The <span class="pack" style = "">psych</span> package is a great tool for assessing underlying latent structure.  It can provide reliability statistics, do cluster analysis, principal components analysis, mediation models, and, of course factor analysis.  However, it's been around a very long time, and many things have added to, subtracted, renamed, debugged, etc. And while the package author and noted psychometrician [William Revelle](https://www.psychology.northwestern.edu/people/faculty/core/profiles/william-revelle.html) even provides a [freely available book](http://www.personality-project.org/r/book/) on the details, it can still be difficult for many to 'jump right in' with the package.  This is because it provides so much more than other tools, which is great, but which also can be overwhelming. Even I don't recall what some of the output regards for factor analysis, and I use the package often. While a lot of it doesn't matter for most use, it'd be nice to have a clean reference, so here it is.
 
-What follows is an explanation of the factor analysis results, but much of it carries over into printed results for principal components via <span class="func" style = "">principal</span>, reliability via <span class="func" style = "">omega</span>, very simple structure via <span class="func" style = "">vss</span> and others.
+What follows is an explanation of the factor analysis results from the <span class="pack" style = "">psych</span> package, but much of it carries over into printed results for principal components via <span class="func" style = "">principal</span>, reliability via <span class="func" style = "">omega</span>, very simple structure via <span class="func" style = "">vss</span> and others.  Note that this is not an [introduction to factor analysis, reliability, and related](m-clark.github.io/sem).  It's assumed you are already familiar with the techniques to some extent, and are interested in using the package for those analyses.
 
 ## Demonstration
 
-We will use the classic big-five personality measures, which comes with the package, but for our purposes, we're just going to look at the agreeableness and neuroticism items.  See `?bfi` for details.  With data in place we run a standard factor analyis, in this case, assuming two factors.
+We will use the classic [big-five personality measures](https://en.wikipedia.org/wiki/Big_Five_personality_traits), which comes with the package, but for our purposes, we're just going to look at the agreeableness and neuroticism items.  See `?bfi` for details.  With data in place we run a standard factor analysis, in this case, assuming two factors.
 
 
 ```{r basic-fa}
@@ -79,8 +79,8 @@ That's a lot of stuff to work though.  Let's go through each part of the printed
 
 - What's `MR`, `ML`, `PC` etc.?  These are factors, and the name merely reflects the fitting method, e.g. minimum residual, maximum likelihood, principal components. The default is minimum residual, so in this case `MR`.
 - Why are they 'out of order'? the number assigned is arbitrary, but this has to do with a rotated solution. See the help file for more details, otherwise they are numbered in terms of variance accounted for.
-- `h2`: the amount of variance in the item/variable explained by the (retained) components. It is the sum of the squared loadings, a.k.a. communality.
-- `u2`: 1 - `h2`. residual variance, a.k.a. uniqueness
+- `h2`: the amount of variance in the item/variable explained by the (retained) factors. It is the sum of the squared loadings, a.k.a. *communality*.
+- `u2`: 1 - `h2`. residual variance, a.k.a. *uniqueness*
 - `com`: Item complexity. Specifically it is "Hoffman's index of complexity for each item. This is just ${(Σ λ_i^2)^2}/{Σ λ_i^4}$ where $λ_i$ is the factor loading on the i^th^ factor. From Hofmann (1978), MBR. See also Pettersson and Turkheimer (2010)." It equals one if an item loads only on one factor, 2 if evenly loads on two factors, etc. Basically it tells you how much an item reflects a single construct. It will  be lower for relatively lower loadings.
 
 ### Variance accounted for
@@ -94,15 +94,13 @@ Cumulative Var        0.24 0.42
 Proportion Explained  0.58 0.42
 Cumulative Proportion 0.58 1.00
 ```
+ 
+The variance accounted for portion of the output can be explained as follows:
 
-- `SS Loadings`: These are the eigenvalues, the sum of the squared loadings. In this case where we are using a correlation matrix, summing across all factors would equal the number of variables used in the analysis.
-
+- `SS loadings`: These are the eigenvalues, the sum of the squared loadings. In this case where we are using a correlation matrix, summing across all factors would equal the number of variables used in the analysis.
 - `Proportion Var`: tells us how much of the overall variance the factor accounts for out of all the variables.
-
 - `Cumulative Var`: the cumulative sum of `Proportion Var`.
-
 - `Proportion Explained`: The relative amount of variance explained- ` `Proportion Var`/sum(`Proportion Var`) `.
-
 - `Cumulative Proportion`: the cumulative sum of `Proportion Explained`.
 
 These are contained in `model$Vaccounted`.
@@ -118,12 +116,12 @@ MR1  1.00 -0.19
 MR2 -0.19  1.00
 ```
 
-Depends on the analysis whether or not these are estimated.
+Whether you get this part of the analysis depends on whether or not these are estimated. You have to have multiple factors and a rotation that allows for the correlations.
 
 - `factor correlations`: the correlation matrix for the factors. $\phi$ (phi)
 - `Mean item complexity`: the mean of `com`.
 
- These are contained in `model$Phi`.
+These are contained in `model$Phi`.
 
 
 ### Model test results
@@ -137,8 +135,12 @@ The degrees of freedom for the model are 26  and the objective function was  0.2
 
 - `null model`: The degrees of freedom for the null model that assumes no correlation structure.
 - `objective function`: The value of the function that is minimized by a specific procedure. 
-- `model`: The one you're actually interested in. Where p = Number of items, nf = number of factors then: degrees of freedom  = $p * (p-1)/2 - p * nf + nf*(nf-1)/2$. For the null model $p * (p-1)/2$.
-- `Chi-square`: If `f` is the objective function value. Then $\chi^2 = (n.obs - 1 - (2 * p + 5)/6 - (2 * nf)/3)) * f$.  Strangely this is reported for the null but not the primary model result, which comes later.
+- `model`: The one you're actually interested in. Where p = Number of items, nf = number of factors then: degrees of freedom  = 
+$$p * (p-1)/2 - p * nf + nf*(nf-1)/2$$ 
+For the null model this is $p * (p-1)/2$.
+- `Chi-square`: If `f` is the objective function value. Then 
+$$\chi^2 = (n.obs - 1 - (2 * p + 5)/6 - (2 * nf)/3)) * f$$  
+Strangely this is reported for the null but not the primary model result, which comes later.
 
 ### Number of observations
 
@@ -148,7 +150,7 @@ The total number of observations was  2800  with Likelihood Chi Square =  636.27
 ```
 
 - `total`: the number of rows in the data you supplied for analysis
-- `harmonic`: while one would assume it is the harmonic mean of the number of observations across items, it's not this exactly, but is instead the harmonic mean of all the pairwise counts (see `?pairwiseCount`).
+- `harmonic`: while one would assume it is the harmonic mean of the number of observations across items, it's not this exactly, but is instead the harmonic mean of all the pairwise counts of observations (see `?pairwiseCount`).
 
 The $\chi^2$ reported here regards the primary model.  So for your model you can report `model$STATISTIC`, `model$dof`, `model$PVAL`, which is what you see in the printed output for the total number of observations. As this regards the residual correlation matrix, a smaller value is better, as in SEM. The empirical chi-square is based on the harmonic sample size, so might be better, but I've never seen it reported. 
 
@@ -170,7 +172,7 @@ Fit based upon off diagonal values = 0.98
 
 The nice thing about the psych package is that it reports SEM-style fit indices for standard factor analysis. You can find some more information via `?factor.stats`.
 
-- `TLI`: Generally want > .9
+- `TLI`: Tucker Lewis fit index, typically reported in SEM. Generally want > .9
 - `RMSEA`: Root mean square error of approximation. Also reported is the so-called 'test of close fit'.
 - `RMSR`: The (standardized) root mean square of the residuals.  Also provided is a 'corrected' version, but I doubt this is reported by many.
 - `Fit based upon off diagonal values`: This is not documented anywhere I can find. However, you can think of it as `1 - resid^2 / cor^2`, or a kind of $R^2$ applied to a correlation matrix instead of raw data. It is calculated via <span class="func" style = "">factor.stats</span>.
@@ -186,7 +188,7 @@ Multiple R square of scores with factors          0.84 0.77
 Minimum correlation of possible factor scores     0.68 0.54
 ```
 
-Unfortunately these are named in such a way as to be nearly indistinguishable, but there is some documentation for them in `?factor.stats`. In general these tell us how representative the factor score estimates are of the underlying constructs, and can be called indeterminancy indices. Indeterminancy refers to the fact that an infinite number of factor scores can be derived that would be consistent with a given set of loadings. In Revelle's text, [chapter 6.9](http://www.personality-project.org/r/book/#chapter6) goes into detail, while Grice (2001) is a thorough review of the problem.
+Unfortunately these are named in such a way as to be nearly indistinguishable, but there is some documentation for them in `?factor.stats`. In general, these tell us how representative the factor score estimates are of the underlying constructs, and can be called indeterminancy indices. Indeterminancy refers to the fact that an infinite number of factor scores can be derived that would be consistent with a given set of loadings. In Revelle's text, [chapter 6.9](http://www.personality-project.org/r/book/#chapter6) goes into detail, while Grice (2001) is a thorough review of the problem.
 
 - `Correlation of (regression) scores with factors`: square root of the `Multiple R square`. These can be seen as upper bounds of the determinancy of the factor score estimates that can be computed based on the model. It is essentially the (multiple) correlation of the factor and the observed data, as the name now more clearly suggests.
 - `Multiple R square...`: "The multiple R square between the factors and factor score estimates, if they were to be found. (From Grice, 2001)." Computationally, it is roughly `t(model$weights) %*% model$loadings`, where the weights are the factor score coefficients, and can be seen as the maximum proportion of determinancy (higher is better). One way you can think about this is as an $R^2$ for a regression model of the items predicting the estimated factor score.
@@ -238,7 +240,7 @@ In turn, these are:
 - `valid`: validity coefficients
 - `score.cor`: The correlation matrix of course coded (unit weighted) factor score estimates (i.e. sum scores), if they were to be found, based upon the loadings matrix rather than the weights matrix. 
 - `weights`: weights used to construct factor scores
-- `rotation`: rotation used     : chr "oblimin"
+- `rotation`: rotation used
 - `communality`: communality scores `h2`
 - `communalities`: So nice they put them twice (actually not entirely equal)
 - `uniquenesses`: Uniquenesses `u2`
@@ -261,20 +263,20 @@ In turn, these are:
 
 ## Additional Notes for Factor Analysis
 
-Most of the above would apply to other versions of <span class="func" style = "">fa</span> and <span class="func" style = "">principal</span> for principal components analysis.
+- Most of the above would apply to other versions of <span class="func" style = "">fa</span> and <span class="func" style = "">principal</span> for principal components analysis.
 
-Though rarely done, if you only provide a correlation matrix as your data, you will not get a variety of metrics in the results, nor factor scores.
+- Though rarely done, if you only provide a correlation matrix as your data, you will not get a variety of metrics in the results, nor factor scores.
 
-Certain rotations will lead to differently named factors, and possibly lacking some output (e.g. varimax won't have factor correlations).
+- Certain rotations will lead to differently named factors, and possibly lacking some output (e.g. varimax won't have factor correlations).
 
 
 ## Other Metrics
 
-While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other functions that might be of interest. I'll explain some of those here as interest and personal use dictates.
+While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other package functions that might be of interest. I'll explain some of those here as interest and personal use dictates.
 
 ### Alpha
 
-This is a quick reminder of the results of coefficient $\alpha$. For this we'll just use the agreeableness items to keep things succinct.
+This is a quick reminder for the results of the reliability coefficient $\alpha$. For this we'll just use the agreeableness items to keep things succinct.
 
 #### Basic Results
 
@@ -289,14 +291,14 @@ alpha_results
 - `raw_alpha`: Raw estimate of alpha (based on covariances)
 - `std.alpha`: Standardized estimate. This value is what is typically reported (though most applied researchers would probably not be able to tell you which they reported). Identical to raw if data is already standardized.
 - `G6 (smc)`: Guttman's $\lambda_6$, the amount of variance in each item that can be accounted for the linear regression of all of the other items 
-- `average_r`: Average interitem correlation among the items.
+- `average_r`: Average inter-item correlation among the items.
 - `S/N`: Signal to noise ratio,  $n \cdot r/(1-r)$ where r is the `average_r`
-- `ase`: standard error for raw alpha (used for the confidence interval, bootstrapped would be better)
+- `ase`: standard error for raw $\alpha$ (used for the confidence interval, bootstrapped would be better)
 - `mean`: the mean of the total/mean score of the items
 - `sd`: the standard deviation of the total/mean score of the items
-- `median_r`: median interitem correlation
+- `median_r`: median inter-item correlation
 
-After the initial statistics, the same stats are reported but for a result where a specific item is dropped.  For example, if your $\alpha$ goes up when an item is dropped, it probably isn't a good item.
+After the initial statistics, the same stats are reported but for a result where a specific item is dropped.  For example, if your $\alpha$ goes up when an item is dropped, it probably isn't a good item.  In this case, the negatively scored item is probably worst, which isn't an uncommon result.
 
 #### Item statistics
 
@@ -318,7 +320,7 @@ A5  2784  0.69  0.70  0.60   0.49  4.6 1.3
 - `r.cor`: item correlation corrected for item overlap and scale reliability
 - `r.drop` item correlation for this item against the scale without this item
 - `mean`: item mean
-- `sd`: item sd
+- `sd`: item standard deviation
 
 #### Response frequency
 
@@ -360,7 +362,7 @@ In turn these are:
 
 ### Omega
 
-Omega is another reliability metric that finally has been catching on.  The <span class="pack" style = "">psych</span> function <span class="" style = "">omega</span> requires a factor analysis to be run called a bifactor model, so most of the output is the same there. In addition it also provides coefficient alpha and Guttmans $\lambda_6$ that were explained in the [alpha][alpha] section.
+Omega is another reliability metric that finally has been catching on.  The <span class="pack" style = "">psych</span> function <span class="" style = "">omega</span> requires a factor analysis to be run behind the scenes, specifically a *bifactor* model, so most of the output is the same as with other factor analysis.  In addition, the results also provide coefficient $\alpha$ and Guttman's $\lambda_6$ that were explained in the [alpha][alpha] section.
 
 However there is a little more to it, so we'll explain those aspects.  The key help files are `?omega` and `?schmid`.
 
@@ -369,11 +371,11 @@ omega_result = omega(bfi[,1:15])
 omega_result
 ```
 
-The bifactor model requires a single general factor and minimally three specific factors, as the plot shows.  However, you can run it on single factor just to get the omega total statistic, but any less than three will produce a warning and some metrics will either be unavailable or not make much sense.
+The bifactor model requires a single general factor and minimally three specific factors, as the plot shows.  However, you can run it on single factor just to get the omega total statistic, but any less than three factors will produce a warning and some metrics will either be unavailable or not make much sense.
 
 #### Reliability
 
-````
+```
 Alpha:                 0.81 
 G.6:                   0.83 
 Omega Hierarchical:    0.54 
@@ -381,7 +383,7 @@ Omega H asymptotic:    0.64
 Omega Total            0.85 
 ```
 
-The first two are as in [alpha][alpha], the next regard omega specifically.  $\omega$ is basd on the squared factor loadings. $\omega_{hierarchical}$ regards just the loadings of the general factor. The asymptotic is the same for a 'test of infinite items', and so can be seen as an upper bound.  $\omega_{total}$ is based on all the general and specific factor loadings.  I personally like to think of the ratio of $\frac{\omega_{hier}}{\omega_{total}}$, which if very high, say .9 or so, may suggest unidimensionality.
+The first two pieces of info are as in [alpha][alpha], the next regard $\omega$ specifically.  $\omega$ is based on the squared factor loadings. $\omega_{hierarchical}$ regards just the loadings of the general factor. The asymptotic is the same for a 'test of infinite items', and so can be seen as an upper bound.  $\omega_{total}$ is based on all the general and specific factor loadings.  I personally like to think of the ratio of $\frac{\omega_{hier}}{\omega_{total}}$, which if very high, say .9 or so, may suggest unidimensionality.
 
 #### Loadings
 
@@ -417,7 +419,9 @@ The loadings are for the general and specific factors are provided, as well as t
 
 Next you get eigenvalue/variance accounted as in standard factor analysis.  Then `general/max` and `max/min` regard those ratios of the corresponding eigenvalues.  Explained common variance is the percent of variance attributable to the general factor (g/sum(all eigenvalues))
 
+
 #### Model test results & fit
+
 
 ```
 The degrees of freedom are 63  and the fit is  0.34 
@@ -482,7 +486,7 @@ That is the variance uniquely defined by the specific factors.  Had it included 
 
 ### Unidimensionality
 
-Revelle provides an 'exploratory' statistics of unidimensionality, or how well a set of variables may be explained by one construct.  In practice, you may find multiple factors fit better, e.g. via BIC, but the factor may be highly correlated, so you might still want to consider a single construct.  Something like <span class="func" style = "">unidim</span> will help make a decision on how viable using a sum score might be for regression or other models.  It is explained in the help file as follows:
+Revelle provides an 'exploratory' statistic of *unidimensionality*, or how well a set of variables may be explained by one construct.  In practice, you may find multiple factors fit better, e.g. via BIC, but the resulting factors may be highly correlated, so you might still want to consider a single construct.  Something like <span class="func" style = "">unidim</span> will help make a decision on how viable using a sum score might be for regression or other models.  It is explained in the help file as follows:
 
 > The fit FF' (model implied correlation matrix based on a one factor model) should be identical to the (observed) correlation matrix minus the uniquenesses. unidim is just the ratio of these two estimates. The higher it is, the more the evidence for unidimensionality.
 
@@ -494,14 +498,14 @@ unidim(bfi[,1:5])
 unidim(bfi_trim)
 ```
 
-The values reported are as follows.  In general, you'd pay attention to the `adjusted` results that are based on items reverse scored if needed. If there are no reverse scored items (which you generally should be doing), then these adjusted metrics will be identical to the raw metrics.
+The values reported are as follows.  In general, you'd pay attention to the `adjusted` results that are based on items that are reverse scored if needed. If there are no reverse scored items (which you generally should be doing), then these adjusted metrics will be identical to the raw metrics.
 
 
 - `Raw Unidim`: The raw value of the unidimensional criterion
 - `Adjusted`: The unidimensional criterion when items are keyed in positive direction.
 - `Fit1`: The off diagonal fit from <span class="func" style = "">fa</span>. ([explained above][fit indices])
-- `alpha`: Standardized alpha of the keyed items (after appropriate reversals)
-- `av.r`: The average interitem correlation of the keyed items.
+- `alpha`: Standardized $\alpha$ of the keyed items (after appropriate reversals)
+- `av.r`: The average inter-item correlation of the keyed items.
 - `original model`: The ratio of the FF' (model implied correlation matrix based on the loadings) model to the sum(R).
 - `adjusted model`: The ratio of the FF' model to the sum(R) when items are flipped.
 - `raw.total`: sum(R - uniqueness)/sum(R)
@@ -510,7 +514,7 @@ The values reported are as follows.  In general, you'd pay attention to the `adj
 
 ## Conclusion
 
-The <span class="pack" style = "">psych</span> package is very powerful and provides a lot of output from just a single line of code.  However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided).  Hopefully this saves others some time when they use it.
+The <span class="pack" style = "">psych</span> package is very powerful and provides a lot of results from just a single line of code.  However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided).  Hopefully this saves others some time when they use it.  I may add some other functions to explain in time, so check back at some point.
 
 
 

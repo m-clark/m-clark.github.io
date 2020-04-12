@@ -13,6 +13,7 @@ output:
     toc: true
     css: [../../styles.css, ../../css/misc.css]
     code_folding: hide
+bibliography: covid.bib
 draft: false
 tags: [covid19, daily, total, world, u.s., michigan, washtenaw, wayne, detroit, sars, mers, h1n1, ggplot2, mgcv, gratia, gam, geofacet, geom_sf, statebins]
 categories:
@@ -60,14 +61,18 @@ I use some custom functions in the following, and I don't show every bit of code
 Resources:
 
 For the country level plots:
+
 - Open COVID-19: https://github.com/open-covid-19/data
 - Open COVID categorical data: https://open-covid-19.github.io/data/data_categories.csv
 
 For U.S. county level plots:
+
 - Johns Hopkins: https://github.com/CSSEGISandData/COVID-19
 - NY Times finally put their data up on March 27: https://github.com/nytimes/covid-19-data
 
-Check out CSCAR chum Alex Cao's more local efforts here: https://observablehq.com/@caocscar/covid-19-michigan-data
+Check out CSCAR chum Alex Cao's more local efforts here:
+
+- https://observablehq.com/@caocscar/covid-19-michigan-data
 
 ## Getting Started
 
@@ -229,10 +234,12 @@ washtenaw_cases = as_tibble(init[[1]])
 ```{r washtenaw-show, echo=FALSE}
 washtenaw_cases %>% 
   rename(
-    `Total Confirmed` = 1,
-    `Total Deaths` =  3
+    `Total Confirmed` = grep(colnames(washtenaw_cases), pattern = 'cases'),
+    `Total Deaths` =  grep(colnames(washtenaw_cases), pattern = 'Deaths'),
+    `Total Hospitalized` =  grep(colnames(washtenaw_cases), pattern = 'Hospitalization'),
+    `Total Recovered` =  grep(colnames(washtenaw_cases), pattern = 'Recovered'),
   ) %>% 
-  select(-`Total Hospitalizations`, -TotalRecovered) %>% 
+  select(`Total Confirmed`,`Total Hospitalized`, `Total Recovered`, `Total Deaths`) %>% 
   mutate(`Death Rate` = `Total Deaths`/`Total Confirmed`) %>%   
   mutate_at(vars(-contains('rate')), scales::comma) %>% 
   mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
@@ -248,7 +255,7 @@ washtenaw_cases %>%
 
 ## The Data
 
-The following is adapted from the ReadMe file at the open covid repo.
+The following is adapted from the ReadMe file at the open covid repo, and includes the generated columns.
 
 The columns of the main dataset are:
 
@@ -1346,7 +1353,7 @@ hcmap(
 
 ## Hospital Data
 
-I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/docs/covid_staffing/hospital_icu_covid.html).  The (stilly pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
+I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/_posts/2020-03-23-covid/hospital_demo.html).  The (stilly pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
 
 ## Models
 
@@ -1386,7 +1393,7 @@ us_for_model = us_states0 %>%
 # us_for_model %>% filter(state == 'Michigan')
 ```
 
-To explore the trends, I will use a generalized additive model with <span class="pack" style = "">mgcv</span>, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.
+To explore the trends, I will use a generalized additive model with <span class="pack" style = "">mgcv</span>, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.  This is a fairly naive model, and, as implemented, has no way to project the eventual downward trend. However it should be better than deterministic models for very short-term prediction.
 
 
 
@@ -1394,7 +1401,7 @@ To explore the trends, I will use a generalized additive model with <span class=
 library(mgcv)
 
 model_state = bam(
-  daily_cases ~ s(date_num, state_abb, bs = 'fs', k = 15),
+  daily_cases ~ s(date_num, state_abb, bs = 'fs'),
   family   = nb,
   data     = us_for_model,
   nthreads = 10
@@ -1527,7 +1534,6 @@ pred_data = predict(model_state, newdata = nd, se = TRUE) %>%
 The following predicts the next `r predict_days` days for the ten states with the most confirmed cases.
 
 
-
 ```{r us-state-model-predict-plot, echo=F, cache.rebuild=model_rebuild_flag}
 max_pred = max(pred_data$fit) + 5000 
 
@@ -1558,6 +1564,276 @@ pred_data %>%
 ```
 
 
+### A Bayesian SIR Model for Washtenaw County
+
+This is based on the article and code from[@CHATZILENA2019]:
+Contemporary statistical inference for infectious disease models using Stan
+Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019)
+
+The following is only a very slightly revised version of the code they made available in GitHub.
+
+```{r sir-model, eval=FALSE}
+functions {
+  real[] SIR(real t,  // time
+             real[] y,           // system state {susceptible,infected,recovered}
+             real[] theta,       // parameters
+             real[] x_r,
+             int[]  x_i) {
+    
+    real dy_dt[3];
+    
+    dy_dt[1] = -theta[1] * y[1] * y[2];                     // S
+    dy_dt[2] =  theta[1] * y[1] * y[2] - theta[2] * y[2];   // I
+    dy_dt[3] =                           theta[2] * y[2];   // R
+    
+    return dy_dt;
+  }
+}
+
+data {
+  int<lower = 1> n_obs;       // number of days observed
+  int<lower = 1> n_theta;     // number of model parameters
+  int<lower = 1> n_difeq;     // number of differential equations
+  int<lower = 1> n_pop;       // population 
+  int y[n_obs];           // data, total number of infected individuals each day
+  real t0;                // initial time point (zero)
+  real ts[n_obs];         // time points observed
+}
+
+transformed data {
+  real x_r[0];
+  int x_i[0];
+}
+
+parameters {
+  real<lower = 0> theta[n_theta]; // model parameters {beta,gamma}
+  real<lower = 0, upper = 1> S0;  // initial fraction of susceptible individuals
+}
+
+transformed parameters{
+  real y_hat[n_obs, n_difeq]; // solution from the ODE solver
+  real y_init[n_difeq];       // initial conditions for both fractions of S and I
+  
+  y_init[1] = S0;
+  y_init[2] = 1 - S0;
+  y_init[3] = 0;
+  
+  y_hat = integrate_ode_rk45(SIR, y_init, t0, ts, theta, x_r, x_i);
+}
+
+model {
+  real lambda[n_obs];      //poisson parameter
+  
+  //priors
+  theta[1] ~ lognormal(0,1);
+  theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
+  S0 ~ beta(0.5, 0.5);
+  
+  //likelihood
+  for (i in 1:n_obs) {
+    lambda[i] = y_hat[i, 2] * n_pop;
+  }
+  y ~ poisson(lambda);
+}
+
+generated quantities {
+  real R_0;      // Basic reproduction number
+  
+  R_0 = theta[1]/theta[2];
+```
+
+```{r stan_eval}
+stan_model_rebuild_flag = FALSE
+```
+
+```{r stan-string, echo = FALSE, eval=stan_model_rebuild_flag}
+sir_model_code <- "
+functions {
+  real[] SIR(real t,  // time
+             real[] y,           // system state {susceptible,infected,recovered}
+             real[] theta,       // parameters
+             real[] x_r,
+             int[]  x_i) {
+    
+    real dy_dt[3];
+    
+    dy_dt[1] = -theta[1] * y[1] * y[2];                     // S
+    dy_dt[2] =  theta[1] * y[1] * y[2] - theta[2] * y[2];   // I
+    dy_dt[3] =                           theta[2] * y[2];   // R
+    
+    return dy_dt;
+  }
+}
+
+data {
+  int<lower = 1> n_obs;       // number of days observed
+  int<lower = 1> n_theta;     // number of model parameters
+  int<lower = 1> n_difeq;     // number of differential equations
+  int<lower = 1> n_pop;       // population 
+  int y[n_obs];           // data, total number of infected individuals each day
+  real t0;                // initial time point (zero)
+  real ts[n_obs];         // time points observed
+}
+
+transformed data {
+  real x_r[0];
+  int  x_i[0];
+}
+
+parameters {
+  real<lower = 0> theta[n_theta]; // model parameters {beta,gamma}
+  real<lower = 0, upper = 1> S0;  // initial fraction of susceptible individuals
+}
+
+transformed parameters{
+  real y_hat[n_obs, n_difeq]; // solution from the ODE solver
+  real y_init[n_difeq];       // initial conditions for both fractions of S and I
+  
+  y_init[1] = S0;
+  y_init[2] = 1 - S0;
+  y_init[3] = 0;
+  
+  y_hat = integrate_ode_rk45(SIR, y_init, t0, ts, theta, x_r, x_i);
+}
+
+model {
+  real lambda[n_obs];      //poisson parameter
+  
+  //priors
+  theta[1] ~ lognormal(0,1);
+  theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
+  S0 ~ beta(99, 1);
+  
+  //likelihood
+  for (i in 1:n_obs) {
+    lambda[i] = y_hat[i, 2] * n_pop;
+  }
+  y ~ poisson(lambda);
+}
+
+generated quantities {
+  real R_0;      // Basic reproduction number
+  
+  R_0 = theta[1]/theta[2];
+}
+"
+```
+
+
+Here are the data steps.  For ease we grab county info from the NY Times database.  Beyond that we set things up for the Stan.
+
+```{r prep-stan-data}
+washtenaw <- readr::read_csv(
+  "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+) %>%
+  filter(county == 'Washtenaw')
+
+washtenaw = washtenaw %>% 
+  mutate(day = 0:(n()-1)) %>% 
+  rename(infected = cases)
+
+N = nrow(washtenaw)    # Number of days observed throughout the outbreak
+pop = 370963           # Population (from Wikipedia)
+sample_time = 1:N
+
+# Specify parameters to monitor
+parameters = c("y_hat", "y_init", "theta",  "R_0")  # SIR deterministic model parameters
+
+# Modify data into a form suitable for Stan
+covid_data = list(
+  n_obs = N,
+  n_theta = 2,
+  n_difeq = 3,
+  n_pop = pop,
+  y = washtenaw$infected,
+  t0 = 0,
+  ts = sample_time
+)
+
+
+# Set initial values:
+set.seed(123)
+
+initial_values = function() {
+  list(
+    theta = c(runif(1, .5, 5), runif(1, 0.2, 0.4)),
+       S0 = runif(1, (pop - 3) / pop, (pop - 1) / pop)
+    )
+}
+```
+
+```{r stan-run-model, eval=FALSE,echo=1:18}
+library(rstan)
+
+sir_model_fit = 
+  stan(
+    model_code = sir_model_code,
+    data   = covid_data,
+    pars   = parameters,
+    init   = initial_values,
+    cores  = 4,
+    warmup = 2000,
+    iter   = 4000,
+    thin   = 8,
+    seed   = 123,
+    control = list(
+      adapt_delta   = .95,
+      max_treedepth = 15
+    )
+)
+
+sir_model_fit = stan(
+  fit = sir_model_fit,
+  data   = covid_data,
+  pars   = parameters,
+  init   = initial_values,
+  cores  = 4,
+  warmup = 2000,
+  iter = 6000,
+  thin = 16,
+  control = list(
+    adapt_delta   = .95,
+    max_treedepth = 15
+  )
+)
+```
+
+
+Now we are ready to plot the result. The following uses <span class="pack" style = "">tidybayes</span> package for the visualization of the predictions.  We can see that even adding a probabilistic approach to this deterministic model, it miss the mark.  But in the end it does not miss it by much except in one crucial aspect- determining the drop off.  
+
+```{r stan-plot, echo=-(1:2)}
+sir_model_fit = read_rds('data/sir_model_fit.rds')
+# str(rstan::extract(sir_model_fit))
+library(tidybayes)
+
+sir_y_hat = gather_draws(sir_model_fit,  y_hat[day, type]) %>% 
+  ungroup() %>% 
+  mutate(type = factor(type, labels = c('S', 'I', 'R')))
+
+samples_infected = sir_y_hat %>% 
+  filter(type == 'I') %>% 
+  select(day, type, .draw, .value) %>% 
+  left_join(washtenaw %>% select(date, day)) %>% 
+  rename(prop_infected = .value)  
+
+bilbao = scico::scico(10)
+
+samples_infected %>% 
+  mutate(pred_infected = prop_infected*pop) %>% 
+  ggplot(aes(x = date, y = pred_infected)) +
+  stat_lineribbon(
+    aes(y = pred_infected),
+    color = bilbao[10],
+    size = 1,
+    .width = c(.99, .95, .8, .5),
+    alpha = 0.5
+  ) +
+  geom_point(aes(y = infected), data = washtenaw) +
+  labs(x = '', y = '', title = 'Bayesian SIR model for infected counts', subtitle = 'Washtenaw County') +
+  scico::scale_fill_scico_d(begin = .25, palette = "bilbao") +
+  scale_x_date(date_breaks = '3 days', date_labels = '%b-%d') +
+  visibly::theme_clean()
+```
 
 
 <!-- ```{r country-level-model} -->
