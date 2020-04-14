@@ -76,10 +76,43 @@ Check out CSCAR chum Alex Cao's more local efforts here:
 
 ## Getting Started
 
-The following is a fairly simple function for reading data from the GitHub repo. It has arguments for filtering to a specific country, whether or not you only wan the current numbers, 
+### Functions
 
-```{r read_covid_data}
-read_covid_data <- function(
+The following are functions that process the data from different sources.  I only show parts as they are a bit long, but they can be found [here](https://m-clark.github.io/scripts/covid_functions.R). They all require <span class="pack" style = "">tidyverse</span>, or at least <span class="pack" style = "">dplyr</span> and <span class="pack" style = "">readr</span>.
+
+#### Open-Covid Data
+
+The Open Covid was one of the more usable data sets early on.  A bonus with this data is that it already includes population, and as it's one source, the function doesn't take much code. The one drawback I've had with it was some unnecessary column changes, which effectively break the initial read as the function tries to verify column types.  Other issues include misspelled names and other minor things.
+
+```{r read_open_covid_data-show, eval=FALSE}
+read_open_covid_data <- function(
+  country = NULL,     # Filter to specific country
+  current = FALSE,    # Only the current data
+  totals  = FALSE     # Only totals (no regional)
+) {
+  
+  if (current) {
+    data = read_csv('https://open-covid-19.github.io/data/data_latest.csv',
+                    col_types = 'Dcccccddddd')
+  }
+  else {
+    data = read_csv('https://open-covid-19.github.io/data/data.csv',
+                    col_types = 'Dcccccddddd')
+  }
+  
+  if (!is.null(country)) {
+     data = filter(data, CountryCode == country | CountryName == country)
+  }
+  
+  .
+  .
+  .
+  
+```
+
+
+```{r read_open_covid_data, echo=FALSE}
+read_open_covid_data <- function(
   country = NULL,     # Filter to specific country
   current = FALSE,    # Only the current data
   totals  = FALSE     # Only totals (no regional)
@@ -103,19 +136,19 @@ read_covid_data <- function(
     rename(
       country_code = CountryCode,
       country_name = CountryName,
-      region_code = RegionCode,
-      region_name = RegionName,
+      region_code  = RegionCode,
+      region_name  = RegionName,
       total_confirmed = Confirmed,
-      total_deaths = Deaths
+      total_deaths    = Deaths
     ) %>% 
     rename_all(tolower) %>% 
     group_by(country_code, region_code) %>% 
     mutate(
-      total_deaths = ifelse(is.na(total_deaths), 0, total_deaths),
+      total_deaths    = ifelse(is.na(total_deaths), 0, total_deaths),
       daily_confirmed = total_confirmed - lag(total_confirmed),
-      daily_deaths = total_deaths - lag(total_deaths),
-      region_name  = if_else(region_name == 'South Caroline', 'South Carolina', region_name),
-      death_rate   = total_deaths/total_confirmed
+      daily_deaths    = total_deaths - lag(total_deaths),
+      region_name     = if_else(region_name == 'South Caroline', 'South Carolina', region_name),
+      death_rate      = total_deaths/total_confirmed
     ) %>% 
     mutate_at(vars(contains('daily')), function(x) ifelse(is.na(x), 0, x)) %>% 
     select(date:region_name, contains('daily'), contains('total'), death_rate, everything()) %>% 
@@ -127,50 +160,326 @@ read_covid_data <- function(
 }
 ```
 
+#### Johns Hopkins Data
+
+Here is the start of the function for the Johns Hopkins data. This data is presumably used for the website that is so popular, but there are issues.  For some bizarre reason, they appear to randomly *not* provide country totals for Australia, Canada and China, only the province level data, so for country totals this must be dealt with. In addition, confirmed cases, deaths, and recovered are needlessly separated.
+
+```{r read_jh_data_show, eval=FALSE}
+read_jh_covid_data <- function(
+  first_date = lubridate::mdy('01-22-2020'),
+  last_date  = Sys.Date() - 1,
+  country_state = NULL,     # country if global data, state if US
+  include_regions = FALSE,  # for world data, include province/state specific data?
+  us         = FALSE,
+  wider      = TRUE
+) {
+  
+  if (!us) {
+    cleanup_global = function(data) {
+    data = data %>% 
+      pivot_longer(
+        -c(`Province/State`, `Country/Region`, Lat, Long),
+        names_to = 'date',
+        values_to = 'count'
+      ) %>% 
+      mutate(date = lubridate::mdy(date)) %>%  
+      rename(
+        province_state = `Province/State`,
+        country_region = `Country/Region`,
+      ) %>% 
+      rename_all(tolower)
+  }
+    
+    init_confirmed = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+    init_deaths    = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+    init_recovered = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+    
+    .
+    .
+    .
+    
+```
+
+```{r read_jh_data, echo=F}
+read_jh_covid_data <- function(
+  first_date = lubridate::mdy('01-22-2020'),
+  last_date  = Sys.Date() - 1,
+  country_state = NULL,     # country if global data, state if US
+  include_regions = FALSE,  # for world data, include province/state specific data?
+  us         = FALSE,
+  wider      = TRUE
+) {
+  
+  if (!us) {
+    cleanup_global = function(data) {
+    data = data %>% 
+      pivot_longer(
+        -c(`Province/State`, `Country/Region`, Lat, Long),
+        names_to = 'date',
+        values_to = 'count'
+      ) %>% 
+      mutate(date = lubridate::mdy(date)) %>%  
+      rename(
+        province_state = `Province/State`,
+        country_region = `Country/Region`,
+      ) %>% 
+      rename_all(tolower)
+  }
+    
+    init_confirmed  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+    init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+    init_recovered  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
+    
+    data = map_df(list(init_confirmed, init_deaths, init_recovered),
+                  cleanup_global,
+                  .id = 'type') %>%
+      mutate(type = factor(type, labels = c('confirmed', 'deaths', 'recovered')))
+    
+    if (!is.null(country_state))
+      data = data %>% filter(country_region == country_state)
+    
+    if (!include_regions) {
+      
+      # fix can, chin, aus by creating an 'NA' for total counts
+      can_chin_aus = data %>% 
+        filter(country_region %in% c('Australia', 'Canada', 'China')) %>% 
+        group_by(type, country_region, date) %>% 
+        summarise(count = sum(count)) %>% 
+        mutate(lat = NA, long = NA)
+      
+      data = data %>% 
+        filter(is.na(province_state)) %>%
+        select(-province_state) %>% 
+        bind_rows(can_chin_aus)
+    }
+  }
+  
+  if (us) {
+    
+    cleanup_us = function(data) {
+      data = data %>% 
+        pivot_longer(
+          -c(UID:Combined_Key),
+          names_to = 'date',
+          values_to = 'count'
+        ) %>% 
+        mutate(date = lubridate::mdy(date)) %>%  
+        rename(
+          province_state = Province_State,
+          country_region = Country_Region,
+        ) %>% 
+        rename_all(tolower)
+    }
+    
+    init_confirmed  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv')
+    init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv')
+    
+    data = map_df(list(init_confirmed, init_deaths), cleanup_us, .id = 'type') %>%
+      mutate(type = factor(type, labels = c('confirmed', 'deaths')))
+    
+    data = data %>%  
+      rename(
+        county = admin2,
+        state  = province_state,
+        long   = long_
+      ) %>% 
+      filter(
+        country_region == 'US',
+        !state %in% c(
+          'Puerto Rico',
+          'Guam',
+          'Northern Mariana Islands',
+          'American Samoa',
+          'Wuhan Evacuee',
+          'Virgin Islands',
+          'Grand Princess',
+          'Diamond Princess'
+        )
+      )
+    
+    if (!is.null(country_state))
+      data = data %>% filter(state == country_state)
+  }
+  
+  if (wider) {
+    data = data %>%  
+      pivot_wider(values_from = count, names_from = type) 
+  }
+  
+  data
+}
+
+# debugonce(read_jh_covid_data)
+# test = read_jh_covid_data()
+# test = read_jh_covid_data(us = T, country_state = 'Michigan')
+```
+
+#### New York Times Data
+
+The NYT data is clean and 'tidy', and so a great resource for starting out. There are still some issues however (e.g. Georgia suddenly having fewer cumulative cases from one day to the next).
+
+```{r read_nyt_data-show, eval=F}
+read_nyt_data <- function(states = TRUE) {
+  if (states) {
+    us_states0 <- readr::read_csv(
+      "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv",
+      col_types = 'Dccdd'
+    )
+    
+    data = us_states0 %>%
+      filter(!state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'Virgin Islands',
+        'American Samoa')
+      ) %>% 
+      arrange(state, date) %>%
+      group_by(state) %>%
+      mutate(
+        daily_cases = cases - lag(cases, default = NA),
+        daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+        daily_deaths = deaths - lag(deaths, default = NA),
+        daily_deaths = if_else(is.na(daily_deaths), deaths, daily_deaths)
+      ) %>% 
+      ungroup() %>% 
+      left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+      mutate(state_abb = as.factor(state_abb))
+  }
+  .
+  .
+  .
+```
+
+```{r read_nyt_data, echo=F}
+read_nyt_data <- function(states = TRUE) {
+  if (states) {
+    us_states0 <- readr::read_csv(
+      "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv",
+      col_types = 'Dccdd'
+    )
+    
+    data = us_states0 %>%
+      filter(!state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'Virgin Islands',
+        'American Samoa')
+      ) %>% 
+      arrange(state, date) %>%
+      group_by(state) %>%
+      mutate(
+        daily_cases = cases - lag(cases, default = NA),
+        daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+        daily_deaths = deaths - lag(deaths, default = NA),
+        daily_deaths = if_else(is.na(daily_deaths), deaths, daily_deaths)
+      ) %>% 
+      ungroup() %>% 
+      left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+      mutate(state_abb = as.factor(state_abb))
+  }
+  else {
+    counties0 <- readr::read_csv(
+      "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv",
+      col_types = 'Dcccdd'
+    )
+    
+    data = counties0 %>%
+      filter(!state %in% c(
+        'Puerto Rico',
+        'Guam',
+        'Northern Mariana Islands',
+        'Virgin Islands',
+        'American Samoa')
+      ) %>% 
+      arrange(state, date) %>%
+      group_by(state, county) %>%
+      mutate(
+        daily_cases = cases - lag(cases, default = NA),
+        daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
+        daily_deaths = deaths - lag(deaths, default = NA),
+        daily_deaths = if_else(is.na(daily_deaths), deaths, daily_deaths)
+      ) %>% 
+      ungroup() %>% 
+      left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
+      mutate(state_abb = as.factor(state_abb))
+  }
+  
+  data
+}
+```
+
+### Read the data
+
+```{r read_data_old, echo = F, eval = F, cache.rebuild=F}
+library(tidyverse)  # required for function
+
+main = read_open_covid_data()  # all of the data
+
+world_totals = read_open_covid_data(current = TRUE, totals = TRUE)  # only country current totals
+
+countries = main %>% filter(is.na(region_code))   # country-level for all dates
+
+us = read_open_covid_data(country = 'US')  # all US data
+
+us_current = read_open_covid_data(country = 'US', current = TRUE) # only current US state totals
+```
 
 ```{r read_data, cache.rebuild=TRUE}
 library(tidyverse)  # required for function
 
-main = read_covid_data()  # all of the data
+countries =  read_jh_covid_data()    # country-level for all dates
 
-world_totals = read_covid_data(current = TRUE, totals = TRUE)  # only country current totals
+world_totals = countries %>% 
+  group_by(country_region) %>% 
+  filter(date == max(date))
 
-countries = main %>% filter(is.na(region_code))   # country-level for all dates
+us = read_nyt_data()  # all US data
 
-us = read_covid_data(country = 'US')  # all US data
+us_current = us %>% 
+  filter(date == max(date))  # only current US state totals
 
-us_current = read_covid_data(country = 'US', current = TRUE) # only current US state totals
+county_trends = read_nyt_data(states = FALSE)
 ```
 
 
 ```{r death-rates, echo=FALSE, cache.rebuild=TRUE}
-# current days data may not be complete, and Spain is always given an update before everyone. I do an initial check to see if there has been an update for the U.S. current date, otherwise Spain (and probably Italy) are a day ahead.
-
-world_death_rates = world_totals %>%
-  group_by(country_code) %>% 
+world_death_rates = countries %>%
+  group_by(country_region) %>% 
   filter(date == max(date)) %>% 
   ungroup() %>% 
+  drop_na() %>% 
   summarise(
-    `Total Confirmed` = sum(total_confirmed),
-    `Total Deaths`    = sum(total_deaths),
+    `Total Confirmed` = sum(confirmed),
+    `Total Deaths`    = sum(deaths),
     `Death Rate`      = `Total Deaths` / `Total Confirmed`,
     `Death Rate (minus Italy & Spain)` = 
-      sum(total_deaths[!country_name %in% c('Spain', 'Italy')]) / 
-      sum(total_confirmed[!country_name %in% c('Spain', 'Italy')])
+      sum(deaths[!country_region %in% c('Spain', 'Italy')]) / 
+      sum(confirmed[!country_region %in% c('Spain', 'Italy')])
   )
 
 
-us_death_rates = us_current %>% 
-  filter(is.na(region_name)) %>% 
-  select(matches('total|rate'))
+us_death_rates = countries %>%
+   filter(date == max(date), country_region == 'US') %>% 
+    summarise(
+    `Total Confirmed` = confirmed,
+    `Total Deaths`    = deaths,
+    `Death Rate`      = `Total Deaths` / `Total Confirmed`
+  )
 
 mi_death_rates = us_current %>% 
-  filter(region_code == 'MI') %>% 
-  select(matches('total|rate'))
+  filter(state == 'Michigan') %>% 
+    summarise(
+    `Total Confirmed` = cases,
+    `Total Deaths`    = deaths,
+    `Death Rate`      = `Total Deaths` / `Total Confirmed`
+  )
 ```
 
+## Initial Look
 
-#### World
+### World
 
 Now that we have the data, we can see what's going on.
 
@@ -186,7 +495,7 @@ world_death_rates %>%
   ) 
 ```
 
-#### United States
+### United States
 
 ```{r table-of-us-current-counts, echo=FALSE, cache=FALSE}
 us_death_rates %>% 
@@ -201,7 +510,7 @@ us_death_rates %>%
   )
 ```
 
-#### Michigan
+### Michigan
 
 ```{r table-of-michigan-current-counts, echo=FALSE, cache=FALSE}
 mi_death_rates %>% 
@@ -216,9 +525,9 @@ mi_death_rates %>%
   )
 ```
 
-#### Washtenaw County
+### Washtenaw County
 
-The following uses <span class="pack" style = "">rvest</span> to grab the current tally for this county from the county website. It is updated daily at noon.
+The following uses <span class="pack" style = "">rvest</span> to grab the current tally for this county from the county website.
 
 ```{r washtenaw}
 URL = 'https://www.washtenaw.org/3108/Cases'
@@ -253,36 +562,36 @@ washtenaw_cases %>%
 
 
 
-## The Data
+<!-- ## The Data -->
 
-The following is adapted from the ReadMe file at the open covid repo, and includes the generated columns.
+<!-- The following is adapted from the ReadMe file at the open covid repo, and includes the generated columns. -->
 
-The columns of the main dataset are:
+<!-- The columns of the main dataset are: -->
 
-| Name | Description | Example |
-| ---- | ----------- | ------- |
-| **date** | ISO 8601 date (YYYY-MM-DD) of the datapoint | 2020-03-21 |
-| **country_code** | ISO 3166-1 code of the country | CN |
-| **country_name** | American English name of the country | China |
-| **region_code** | (Optional) ISO 3166-2 code of the region | HB |
-| **region_name** | (Optional) American English name of the region | Hubei |
-| **total_confirmed** | Total number of cases confirmed after positive test | 67800 |
-| **total_deaths** | Total number of deaths from a positive COVID-19 case | 3139 |
-| **death_rate** | Rate of deaths from a positive COVID-19 case | 0.04629794 |
-| **daily_confirmed** | Daily number of cases confirmed after positive test | 0 |
-| **daily_deaths** | Daily number of deaths from a positive COVID-19 case | 6 |
-| **latitude** | Floating point representing the geographic coordinate | 30.9756 |
-| **longitude** | Floating point representing the geographic coordinate | 112.2707 |
-| **population** | Total count of humans living in the region | TODO |
+<!-- | Name | Description | Example | -->
+<!-- | ---- | ----------- | ------- | -->
+<!-- | **date** | ISO 8601 date (YYYY-MM-DD) of the datapoint | 2020-03-21 | -->
+<!-- | **country_code** | ISO 3166-1 code of the country | CN | -->
+<!-- | **country_name** | American English name of the country | China | -->
+<!-- | **region_code** | (Optional) ISO 3166-2 code of the region | HB | -->
+<!-- | **region_name** | (Optional) American English name of the region | Hubei | -->
+<!-- | **total_confirmed** | Total number of cases confirmed after positive test | 67800 | -->
+<!-- | **total_deaths** | Total number of deaths from a positive COVID-19 case | 3139 | -->
+<!-- | **death_rate** | Rate of deaths from a positive COVID-19 case | 0.04629794 | -->
+<!-- | **daily_confirmed** | Daily number of cases confirmed after positive test | 0 | -->
+<!-- | **daily_deaths** | Daily number of deaths from a positive COVID-19 case | 6 | -->
+<!-- | **latitude** | Floating point representing the geographic coordinate | 30.9756 | -->
+<!-- | **longitude** | Floating point representing the geographic coordinate | 112.2707 | -->
+<!-- | **population** | Total count of humans living in the region | TODO | -->
 
-<br>
+<!-- <br> -->
 
-For countries where both country-level and region-level data is available, the
-entry which has a null value for the `region_code` and `region_name` columns
-indicates country-level aggregation. Please note that, sometimes, the
-country-level data and the region-level data come from different sources so
-adding up all region-level values may not equal exactly to the reported
-country-level value.
+<!-- For countries where both country-level and region-level data is available, the -->
+<!-- entry which has a null value for the `region_code` and `region_name` columns -->
+<!-- indicates country-level aggregation. Please note that, sometimes, the -->
+<!-- country-level data and the region-level data come from different sources so -->
+<!-- adding up all region-level values may not equal exactly to the reported -->
+<!-- country-level value. -->
 
 
 
@@ -293,10 +602,10 @@ The following does some additional processing before going to a plot of the tren
 
 ```{r country-trend-static-proc}
 highlight = c(
-  'United States of America',
+  'US',
   'China',
   'Japan',
-  'South Korea',
+  'Korea, South',
   'Italy',
   'Iran',
   'United Kingdom',
@@ -306,9 +615,8 @@ highlight = c(
 )
 
 world = countries %>%
-  filter(date < Sys.Date() + 1) %>%
-  group_by(date) %>% 
-  summarise(total_confirmed = sum(total_confirmed))
+  group_by(date) %>%
+  summarise(confirmed = sum(confirmed, na.rm = T))
 ```
 
 Now we can just do a basic plot.  I use <span class="pack" style = "">ggrepel</span> to see more clearly where the highest cases are currently.
@@ -316,8 +624,8 @@ Now we can just do a basic plot.  I use <span class="pack" style = "">ggrepel</s
 ```{r country-trend-static}
 library(ggrepel)
 p = countries %>% 
-  ggplot(aes(x = date, y = total_confirmed)) +
-  geom_path(aes(group = country_code), alpha = .005) +
+  ggplot(aes(x = date, y = confirmed)) +
+  geom_path(aes(group = country_region), alpha = .005) +
   geom_point(
     aes(),
     size  = 5,
@@ -325,16 +633,16 @@ p = countries %>%
     data  = world
   ) +
   geom_point(
-    aes(color = country_code),
+    aes(color = country_region),
     size  = 1.5,
     alpha = .5,
-    data  = filter(countries, country_name %in% highlight, date < Sys.Date() + 1)
+    data  = filter(countries, country_region %in% highlight)
   ) +
   geom_text_repel(
-    aes(label = country_code, color = country_code),
+    aes(label = country_region, color = country_region),
     size  = 2,
     alpha = .85,
-    data  = filter(countries, country_name %in% highlight, date == max(date)-1),
+    data  = filter(countries, country_region %in% highlight, date == max(date)-1),
     show.legend = FALSE
   ) +
   scale_color_scico_d(begin = .1, end = .9) +
@@ -437,22 +745,28 @@ The following is similar to the plot shown on the [New York Times daily count](h
 
 ```{r nytimes-daily}
 # reduce to just the 20 countries with the most cases
-top_20 = world_totals %>% 
-  top_n(20, total_confirmed) %>% 
-  arrange(desc(total_confirmed))
+top_20 = world_totals  %>% 
+  ungroup() %>% 
+  top_n(20, confirmed) %>% 
+  arrange(desc(confirmed))
  
 # this is to create a ruled effect, not necessary
-plot_data = main %>%
-  filter(is.na(region_code)) %>%
-  filter(country_name %in% top_20$country_name) %>%
+plot_data = countries %>%
+  filter(country_region %in% top_20$country_region) %>%
+  group_by(country_region) %>% 
   mutate(
-    country_name   = ordered(country_name, levels = rev(top_20$country_name)),
-    line_positions = as.numeric(country_name) + .5,
+    daily_confirmed = confirmed - lag(confirmed),
+    daily_confirmed = if_else(is.na(daily_confirmed), confirmed, daily_confirmed)
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    country_region   = ordered(country_region, levels = rev(top_20$country_region)),
+    line_positions = as.numeric(country_region) + .5,
     line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
   ) 
   
 plot_data %>% 
-  ggplot(aes(x = date, y = country_name)) +
+  ggplot(aes(x = date, y = country_region)) +
   geom_tile(
     aes(
       fill   = daily_confirmed,
@@ -488,24 +802,23 @@ plot_data %>%
 The following shows the percentage increase in cases over the previous day (capped at 100 or greater).  Early on this isn't very useful (e.g. going from 5 to 10 is a 100% increase).  We can see that China and South Korea have minimal to no increase day to day at present, while other countries are continuing to see relatively large increases.
 
 ```{r percent-new-cases, echo = FALSE}
-plot_data = main %>%
-  filter(is.na(region_code)) %>%
-  filter(country_name %in% top_20$country_name) %>% 
-  group_by(country_code) %>% 
+plot_data = countries %>%
+  filter(country_region %in% top_20$country_region) %>%
+  group_by(country_region) %>% 
   mutate(
-    daily_perc = 100 * (total_confirmed / lag(total_confirmed) - 1), 
+    daily_perc = 100 * (confirmed / lag(confirmed) - 1), 
     daily_perc = ifelse(daily_perc > 100, 100, daily_perc)
   ) %>% 
   ungroup() %>% 
   mutate(
-    country_name   = ordered(country_name, levels = rev(top_20$country_name)),
-    line_positions = as.numeric(country_name) + .5,
+    country_region   = ordered(country_region, levels = rev(top_20$country_region)),
+    line_positions = as.numeric(country_region) + .5,
     line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
   ) 
   
 
 plot_data %>% 
-  ggplot(aes(x = date, y = country_name)) +
+  ggplot(aes(x = date, y = country_region)) +
   geom_tile(
     aes(
       fill   = daily_perc,
@@ -539,10 +852,20 @@ plot_data %>%
 
 ### Per Capita Country Trends
 
-The following shows the number of confirmed cases per 10000 people.  However, this obviously doesn't account for the lack of testing.  To keep things clean, we again focus on the twenty countries with the most cases.
+The following shows the number of confirmed cases per 10000 people using the Open Covid data, which includes population.  However, this obviously doesn't account for the lack of testing.  To keep things clean, we again focus on the twenty countries with the most cases.
 
-```{r world-top-20-per-capita, dpi = 320}
-countries_rate = countries %>% 
+```{r read-oc-data, echo=1}
+countries_oc = read_open_covid_data() %>% filter(is.na(region_code))
+
+top_20 = countries_oc  %>% 
+  filter(date == Sys.Date()-1) %>% 
+  top_n(20, total_confirmed) %>% 
+  arrange(desc(total_confirmed))
+```
+
+
+```{r world-top-20-per-capita, dpi = 320, echo=FALSE}
+countries_rate = countries_oc %>% 
   filter(country_code %in% top_20$country_code) %>% 
   mutate(rate = 10000*total_confirmed/population)
 
@@ -597,15 +920,10 @@ p
 
 ### State Totals
 
-Here is a data table for easy look-up of current U.S. 
+Here is a data table for easy look-up of current U.S. It is based on the New York Times database.
 
 ```{r us-current-state-lookup, echo=FALSE}
 us_current %>% 
-  mutate(
-    region_code = if_else(is.na(region_code), 'Total', region_code),
-    region_name = if_else(is.na(region_name), 'Total', region_name),
-  ) %>% 
-  select(-(latitude:population), -country_name, -country_code) %>% 
   DT::datatable(
     width = 800,
     filter = "top",  # allows filtering on each column
@@ -637,30 +955,29 @@ We can visualize the state level data in numerous ways.  Here is the world trend
 
 ```{r state_trends, cache.rebuild=F, layout='l-body-offset'}
 highlight = us_current %>% 
-  filter(!is.na(region_code)) %>% 
-  top_n(10, total_confirmed) %>% 
-  pull(region_name)
+  top_n(10, cases) %>% 
+  pull(state_abb)
 
 p = us %>% 
-  ggplot(aes(x = date, y = total_confirmed)) +
-  geom_path(aes(group = region_code), alpha = .01) +
+  ggplot(aes(x = date, y = cases)) +
+  geom_path(aes(group = state), alpha = .01) +
   geom_point(
     aes(),
     size  = 6,
     alpha = .1,
-    data  = filter(us, is.na(region_code))
+    data  = filter(us, is.na(state))
   ) +
   geom_point(
-    aes(color = region_code),
+    aes(color = state),
     size  = 1.5,
     alpha = .5,
-    data  = filter(us, region_name %in% highlight)
+    data  = filter(us, state_abb %in% highlight)
   ) +
   geom_text_repel(
-    aes(label = region_code, color = region_code),
+    aes(label = state, color = state),
     size  = 2,
     alpha = .85,
-    data  = filter(us_current, region_name %in% highlight)
+    data  = filter(us_current, state_abb %in% highlight)
   ) +
   scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(date_breaks = '2 weeks') +
@@ -707,10 +1024,10 @@ Here we look at counts and death rates via a 'binned' map.  There are numerous i
 library(statebins)
 
 us_current %>% 
-  filter(region_code != 'DC') %>%
+  filter(state != 'District of Columbia') %>%
   statebins(
-    state_col = 'region_name',
-    value_col = "log(total_confirmed)",
+    state_col = 'state',
+    value_col = "log(cases)",
     palette   = "OrRd", 
     direction = 1,
     name = "Covid Counts (log)"
@@ -718,9 +1035,9 @@ us_current %>%
   theme_statebins(base_size = 8)
 
 us_current %>% 
-  filter(!is.na(region_name)) %>% 
+  mutate(death_rate = deaths/cases) %>% 
   statebins(
-    state_col = 'region_name',
+    state_col = 'state',
     value_col = "death_rate",
     palette   = "OrRd", 
     direction = 1,
@@ -737,11 +1054,11 @@ We can plot trends in a map-like fashion too, and the following uses the <span c
 library(geofacet)
 
 us %>% 
-  filter(total_confirmed != 0, region_code != 'DC') %>%
-  ggplot(aes(date, total_confirmed, group = region_code)) +
+  filter(cases != 0, state != 'District of Columbia') %>%
+  ggplot(aes(date, cases, group = state)) +
   geom_path(color = '#ff550080') +
   labs(y = '', x = '') +
-  facet_geo(~region_code, scales = 'free') +
+  facet_geo(~state, scales = 'free') +
   visibly::theme_clean() +
   theme(
     axis.text.x  = element_blank(),
@@ -758,23 +1075,21 @@ We can do the daily counts as before.
 
 ```{r us-daily, dpi = 144, cache.rebuild=F}
 levs = us_current %>% 
-  filter(!is.na(region_name)) %>% 
-  arrange(total_confirmed) %>% 
-  pull(region_name)
+  arrange(cases) %>% 
+  pull(state)
 
 plot_data = us %>%
-  filter(!is.na(region_code)) %>%
   mutate(
-    region_name    = ordered(region_name, levels = levs),
-    line_positions = as.numeric(region_name) + .5,
+    state    = ordered(state, levels = levs),
+    line_positions = as.numeric(state) + .5,
     line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
   ) 
   
 plot_data %>% 
-  ggplot(aes(x = date, y = region_name)) +
+  ggplot(aes(x = date, y = state)) +
   geom_tile(
     aes(
-      fill   = daily_confirmed,
+      fill   = daily_cases,
       width  = .9,
       height = 0.5
     ),
@@ -812,35 +1127,33 @@ The following shows the number of confirmed cases per 10000 people.  Highlighted
 state_pop = readxl::read_xlsx('data/census-pop-2019.xlsx', col_names = T, skip = 1) %>% 
   select(region, `2019`) %>% 
   mutate(region = str_remove_all(region, '\\.')) %>% 
-  rename(region_name = region, population = `2019`)
+  rename(state = region, population = `2019`)
 
 us_rate = us %>% 
-  filter(!is.na(region_code)) %>% 
-  select(-population) %>% 
-  left_join(state_pop, by = 'region_name') %>% 
-  mutate(rate = 10000*total_confirmed/population)
+  left_join(state_pop, by = 'state') %>% 
+  mutate(rate = 10000*cases/population)
 
 
 p = us_rate %>% 
   ggplot(aes(x = date, y = rate)) +
-  geom_path(aes(group = region_code), alpha = .05) +
+  geom_path(aes(group = state), alpha = .05) +
   geom_point(
-    aes(color = region_code),
+    aes(color = state),
     size  = 1.5,
     alpha = .5,
-    data = filter(us_rate, region_name %in% highlight)
+    data = filter(us_rate, state_abb %in% highlight)
   ) +
   geom_text_repel(
-    aes(label = region_code, color = region_code),
+    aes(label = state_abb, color = state),
     size  = 2,
     alpha = 1,
-    data  = filter(us_rate, region_name %in% highlight, date == max(date)),
+    data  = filter(us_rate, state_abb %in% highlight, date == max(date)),
     show.legend = FALSE
   ) +
   scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(
     date_breaks = '2 weeks',
-    labels = function(x) format(x, format = "%m/%d")
+    labels = function(x) format(x, format = "%b %d")
   ) +
   scale_y_continuous(
     position = "right"
@@ -871,94 +1184,7 @@ p
 
 ## County Trends
 
-The following function gets county level data trends from the Johns Hopkins data base.  The format and collection of this data fundamentally changed on March 22, so we begin there.  You can modify this function to grab data from other countries, but the data sets do not match to those previous to that date.
-
-```{r get-county-data-function}
-get_county_data = function(
-  first_date = lubridate::mdy('03-22-2020'),
-  last_date  = Sys.Date() - 1,
-  parallel = FALSE
-) {
-  
-  base_url = 'https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_daily_reports/'
-  
-  dates = first_date:last_date
-  
-  if (parallel) {
-    library(future)
-    library(furrr)
-    
-    suppressWarnings({plan(multiprocess)})
-    
-    result = future_map_dfr(
-      dates, 
-      function(date)
-        suppressWarnings({
-          read_csv(
-            paste0(
-              base_url,
-              format(lubridate::as_date(date), format = '%m-%d-%Y'),
-              '.csv'
-            ),
-            col_types = c('cccccddd')
-          ) %>% mutate(date = lubridate::as_date(date))
-        })
-    )
-    
-    plan(sequential)
-  }
-  else {
-    result = map_df(
-      dates, 
-      function(date)
-        suppressWarnings({
-          read_csv(
-            paste0(
-              base_url,
-              format(lubridate::as_date(date), format = '%m-%d-%Y'),
-              '.csv'
-            ),
-            col_types = c('cccccddd')
-          ) %>% mutate(date = lubridate::as_date(date))
-        })
-      )
-  }
-  
-  result %>%  
-    rename_all(tolower) %>% 
-    rename(
-      county = admin2,
-      state  = province_state,
-      long   = long_
-    ) %>% 
-    filter(
-      country_region == 'US',
-      !state %in% c(
-        'Puerto Rico',
-        'Guam',
-        'Northern Mariana Islands',
-        'American Samoa',
-        'Wuhan Evacuee',
-        'Virgin Islands',
-        'Grand Princess',
-        'Diamond Princess'
-      ),
-      # these counties have two entries for 3-22; the zero is dropped
-      !(state == 'District of Columbia' & confirmed == 0), 
-      !(state == 'Florida' & county == 'DeSoto' & confirmed == 0),
-    ) %>% 
-    select(date, everything()) %>% 
-    mutate_at(vars(lat, long, confirmed), as.numeric) %>% 
-    mutate(last_update = lubridate::as_datetime(last_update))
-}
-```
-
-
-Now we can get the data. As time goes on, doing so in parallel will be quicker.
-
-```{r get-county-data}
-county_trends = get_county_data(parallel = TRUE)
-```
+Let's start to look at more specific results, such as county level counts.
 
 ### Michigan
 
@@ -968,24 +1194,27 @@ The following creates an animated plot of Michigan counties over time.
 library(sf)
 
 mi_counties = county_trends %>% 
-  filter(state == 'Michigan', date < '2020-04-01')
+  filter(state == 'Michigan')
 
 all_counties_sf = st_as_sf(maps::map("county", plot = FALSE, fill = TRUE))
 
 prep_counties = mi_counties %>% 
   mutate(county = str_remove(tolower(county), '[[:punct:]]'), 
          state = tolower(state)) %>% 
-  mutate(confirmed = if_else(is.na(confirmed), 0, confirmed))
+  droplevels() %>% 
+  arrange(county)
 
 mi_counties_sf = all_counties_sf %>% 
   filter(grepl("michigan", ID)) %>% 
   separate(ID, into = c('state', 'county'), remove = F, sep = ',') %>%
   select(-state) %>%
-  left_join(prep_counties)
+  left_join(prep_counties) %>% 
+  mutate(cases = if_else(is.na(cases), 0, cases))
 
 mi_plot =  mi_counties_sf %>% 
-  ggplot() +
-  geom_sf(aes(fill = confirmed), color = NA) +
+  arrange(date) %>% 
+  ggplot(aes(group=date)) +
+  geom_sf(aes(fill = cases), color = NA) +
   coord_sf(xlim = c(-91,-82),
            ylim = c(41, 48.5),
            expand = FALSE) +
@@ -1013,7 +1242,7 @@ library(gganimate)
 
 mi_plot_anim = mi_plot +
   labs(title = '{closest_state}') +
-  transition_states(date, wrap = FALSE) +
+  transition_states(date, transition_length = 2, state_length = 2) +
   theme(title = element_text(color ='gray50'))
 
 mi_plot_anim
@@ -1033,64 +1262,13 @@ animate(
   res    = 144
 )
 
-anim_save('img/mi-county-trend.gif')
+
+anim_save('_posts/2020-03-23-covid/img/mi-county-trend.gif')
 ```
 
 ```{r  county-trend-animate-show, echo=FALSE, layout='l-body'}
 knitr::include_graphics('img/mi-county-trend.gif')
 ```
-
-We can also do the trend for Washtenaw county here by just filtering the county trends data. There is a note at the county website:
-
-> Most of the diagnoses in the 3/31 spike on the New COVID-19 Cases Reported per Day chart represent a backlog of labs that have been pending for 1-2 weeks. This means most of these individuals got sick and were tested at least a week ago, but are receiving test results now because labs are just now catching up on tests.
-
-```{r washtenaw-trend, echo=F}
-  # ggforce::geom_bspline(aes(), alpha = .8) +
-  # ggalt::geom_xspline(aes(), alpha = .8) +
-
-acton = scico(1, begin = .5, palette = 'acton')
-
-washtenaw_plot =  county_trends %>% 
-  filter(county == 'Washtenaw') %>% 
-  ggplot(aes(date, confirmed)) +
-  geom_path(aes(), alpha = .5, color = acton, size = 1) +
-  geom_point(
-    aes(color = 100 * (confirmed/lag(confirmed) - 1)),
-    size  = 5,
-    alpha = .5
-  ) +
-  geom_point(
-    aes(color = 100 * (confirmed/lag(confirmed) - 1)),
-    size  = 4,
-    alpha = 1
-  ) +
-  scale_color_scico(
-    breaks = seq(10, 100, 10),
-    palette = 'acton',
-    direction = -1,
-    na.value = 'gray92'
-  ) + 
-  scale_x_date(
-    date_breaks = '2 days',
-    labels = function(x) format(x, format = "%m/%d")
-  ) +
-  scale_y_continuous(
-    breaks = seq(0, 1000, 100)
-  ) +
-  guides(color = guide_legend(title = '% change')) +
-  labs(x='', y = '', subtitle = 'Confirmed Washtenaw Cases') +
-  visibly::theme_clean() +
-  theme(
-    axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(color = scales::alpha(acton, .25), size = .1),
-    legend.key.size = unit(.25, 'cm'),
-    legend.text     =  element_text(size = 6),
-    legend.title    = element_text(size = 6)
-  )
-
-washtenaw_plot
-```
-
 
 #### Interactive County Map
 
@@ -1107,14 +1285,14 @@ hcmap(
   "countries/us/us-mi-all",
   data = plot_data,
   name = "Michigan",
-  value = "confirmed",
+  value = "cases",
   joinBy = c("hc-key", "code"),
   borderColor = "#fffff8",
   borderWidth = .1
 ) %>%
   hc_colorAxis(
     dataClasses = color_classes(
-      c(0, 10, 100, 500, 1000, 2000, 5000),
+      c(0, 10, 100, 500, 1000, 2000, 5000, 1e4, 2e4),
       colors = scico(6, end = .9, palette = 'lajolla')
     )
   ) %>%
@@ -1128,6 +1306,61 @@ hcmap(
   hc_credits(enabled = FALSE)
 ```
 
+#### Washtenaw County
+
+We can also do the trend for Washtenaw county here by just filtering the county trends data. There is a note at the county website:
+
+> Most of the diagnoses in the 3/31 spike on the New COVID-19 Cases Reported per Day chart represent a backlog of labs that have been pending for 1-2 weeks. This means most of these individuals got sick and were tested at least a week ago, but are receiving test results now because labs are just now catching up on tests.
+
+```{r washtenaw-trend, echo=F}
+  # ggforce::geom_bspline(aes(), alpha = .8) +
+  # ggalt::geom_xspline(aes(), alpha = .8) +
+
+acton = scico(1, begin = .5, palette = 'acton')
+
+washtenaw_plot =  county_trends %>% 
+  filter(county == 'Washtenaw') %>% 
+  ggplot(aes(date, cases)) +
+  geom_path(aes(), alpha = .5, color = acton, size = 1) +
+  geom_point(
+    aes(color = 100 * (cases/lag(cases) - 1)),
+    size  = 5,
+    alpha = .5
+  ) +
+  geom_point(
+    aes(color = 100 * (cases/lag(cases) - 1)),
+    size  = 4,
+    alpha = 1
+  ) +
+  scale_color_scico(
+    breaks = seq(10, 100, 10),
+    palette = 'acton',
+    direction = -1,
+    na.value = 'gray92'
+  ) + 
+  scale_x_date(
+    date_breaks = '2 days',
+    labels = function(x) format(x, format = "%m/%d")
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 1000, 100)
+  ) +
+  guides(color = guide_legend(title = '% change'), x = guide_axis(n.dodge = 2)) +
+  labs(x='', y = '', subtitle = 'Confirmed Washtenaw Cases') +
+  visibly::theme_clean() +
+  theme(
+    axis.ticks.y = element_blank(),
+    panel.grid.major.y = element_line(color = scales::alpha(acton, .25), size = .1),
+    legend.key.size = unit(.25, 'cm'),
+    legend.text     =  element_text(size = 6),
+    legend.title    = element_text(size = 6)
+  )
+
+washtenaw_plot
+```
+
+
+
 
 ### US
 
@@ -1140,7 +1373,7 @@ prep_counties = county_trends %>%
   mutate(
     county = str_remove(tolower(county), '[[:punct:]]'),
     state  = tolower(state),
-    confirmed = if_else(is.na(confirmed), 0, confirmed)
+    cases = if_else(is.na(cases), 0, cases)
   ) %>% 
   filter(
     !state %in% c(
@@ -1159,15 +1392,11 @@ county_point_plot =
   geom_sf(fill = 'gray99', color = 'gray97', size = .1) +
   geom_sf(
     aes(
-      color = confirmed,
-      size  = confirmed
+      color = cases,
+      size  = cases
     ),
-    data = st_as_sf(
-      prep_counties %>% drop_na(lat, long) %>% filter(lat > 0),
-      coords = c('long', 'lat'),
-      crs = '+proj=longlat'
-    ),
-    alpha = .1,
+    data = st_centroid(all_counties_sf2),
+    alpha = .05,
     show.legend = F
   ) +
   scale_color_scico(
@@ -1224,10 +1453,10 @@ prep_counties = county_trends %>%
   mutate(
     county = str_remove(tolower(county), '[[:punct:]]'),
     state  = tolower(state),
-    confirmed = if_else(is.na(confirmed), 0, confirmed)
-  ) %>% 
+    # confirmed = if_else(is.na(confirmed), 0, confirmed)
+  ) %>%
   rename(population = estimate) %>% 
-  mutate(rate = 10000*confirmed/population) %>% 
+  mutate(rate = 10000*cases/population) %>% 
   filter(
     !state %in% c(
       'alaska',
@@ -1251,19 +1480,16 @@ county_point_plot =
       color = rate,
       size  = rate
     ),
-    data = st_as_sf(
-      prep_counties %>% drop_na(lat, long) %>% filter(lat > 0),
-      coords = c('long', 'lat'),
-      crs = '+proj=longlat'
-    ),
-    alpha = .2,
-    show.legend = F) +
+    data = st_centroid(all_counties_sf2),
+    alpha = .1,
+    show.legend = F
+  ) +
   scale_color_scico(
     trans    = 'log',
     na.value = 'gray99'
   ) +
-  scale_size_continuous(range =  c(.1, 10)) +
-  labs(title = 'Cases per 10000', subtitle = 'Top 20 most populous counties not considered') +
+  scale_size_continuous(range =  c(.1, 5)) +
+  labs(title = 'Cases per 10000', subtitle = 'Top 20 most populous counties not included') +
   theme_void() +
   theme(title = element_text(color = 'gray50'))
 
@@ -1313,7 +1539,6 @@ If you do want an actual county map, here is an interactive one as before.  To m
 states = tibble(state = state.name, state_abb = state.abb)
 
 plot_data = county_trends %>%
-  mutate(confirmed = if_else(is.na(confirmed), 0, confirmed)) %>% 
   filter(date == max(date)) %>% 
   left_join(states) %>% 
   mutate(
@@ -1329,7 +1554,7 @@ hcmap(
   "countries/us/us-all-all",
   data = plot_data,
   name = "Confirmed cases:",
-  value = "confirmed",
+  value = "cases",
   joinBy = c("hc-key", "code"),
   borderColor = "#fffff8",
   borderWidth = .1,
@@ -1357,43 +1582,31 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 
 ## Models
 
-The following models U.S. state daily trends. First we'll download data from NY Times and add a bit of mild cleanup.  It seems to be cleaner than some other sources.
+The following models U.S. state daily trends. First we'll use data from NY Times, which seems to be cleaner than some other sources, but there are still random issues (e.g. Georgia suddenly having fewer cumulative cases from one day to the next). I add a bit of mild cleanup to provide each state a common starting point at the beginning of March, and do some other things specific to package requirements.  When I first started preliminary models, South Dakota, whose data starts in mid-
 
 ### US State Trends
 
-```{r model-rebuild-flag, echo=FALSE}
+```{r model-rebuild-flag, echo=FALSE, cache=FALSE}
 model_rebuild_flag = FALSE
 ```
 
-```{r us-state-daily-model-data}
-us_states0 <- readr::read_csv(
-  "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv"
-)
-
-terr = c(
-  'Puerto Rico',
-  'Guam',
-  'Northern Mariana Islands',
-  'American Samoa'
-)
-
-us_for_model = us_states0 %>% 
-  filter(!state %in% terr) %>% 
+```{r us-state-daily-model-data, cache.rebuild=model_rebuild_flag}
+us_for_model = us %>% 
+  expand(date, state) %>% 
+  filter(date >= '2020-03-01') %>% 
+  left_join(us) %>% 
   arrange(state, date) %>% 
   group_by(state) %>% 
-  mutate(
-    daily_cases = cases - lag(cases, default = NA),
-    daily_cases = if_else(is.na(daily_cases), cases, daily_cases),
-    date_num = as.numeric(date)
-  ) %>% 
+  fill(fips, state_abb, .direction = 'up')  %>% 
+  mutate_at(vars(cases:daily_deaths), function(x) ifelse(is.na(x), 0, x)) %>% 
   ungroup() %>% 
-  left_join(tibble(state = state.name, state_abb = state.abb)) %>% 
-  mutate(state_abb = as.factor(state_abb))  # for mgcv
+  mutate(state_abb = fct_explicit_na(state_abb, na_level = 'DC')) %>% 
+  filter(daily_cases >= 0)  # because some states evidently can't count
 
-# us_for_model %>% filter(state == 'Michigan')
+# us_for_model %>% filter(state == 'Michigan')  # check
 ```
 
-To explore the trends, I will use a generalized additive model with <span class="pack" style = "">mgcv</span>, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.  This is a fairly naive model, and, as implemented, has no way to project the eventual downward trend. However it should be better than deterministic models for very short-term prediction.
+To explore the trends, I will use a generalized additive model with <span class="pack" style = "">mgcv</span>, with a separate smooth for each state.  It's not clear to me whether a specific count distribution is really required given the very high number of daily counts, but we'll go ahead and use the negative binomial.  I also use a specific function to speed up processing, but this is not required for those willing to wait.  This is a fairly naive model, and, as implemented, has no natural way to project the eventual downward trend to zero. However it should be better than deterministic models for very short-term prediction.
 
 
 
@@ -1420,10 +1633,9 @@ We can visualize the estimated trends.  Looks to be fairly on point.
 ```{r us-state-model-plot, echo = FALSE, cache.rebuild=model_rebuild_flag}
 library(lubridate)
 
-highlight = us_current %>% 
-  filter(!is.na(region_code)) %>% 
-  top_n(10, total_confirmed) %>% 
-  pull(region_name)
+highlight = us_current %>%  
+  top_n(10, cases) %>% 
+  pull(state)
 
 highlight = us_for_model %>%
   filter(state %in% highlight) %>%
@@ -1504,8 +1716,8 @@ plot_dat %>%
 
 ```{r us-state-model-predict, echo = F, cache.rebuild=model_rebuild_flag}
 predict_days = 4
-start = as.numeric(Sys.Date())
-end = start + predict_days
+start = as.numeric(Sys.Date()) - predict_days
+end   = as.numeric(Sys.Date()) + predict_days
 
 top_10_state = us_for_model %>% 
   filter(
@@ -1537,10 +1749,14 @@ The following predicts the next `r predict_days` days for the ten states with th
 ```{r us-state-model-predict-plot, echo=F, cache.rebuild=model_rebuild_flag}
 max_pred = max(pred_data$fit) + 5000 
 
+point_data = model_state$model %>% 
+  filter(date_num >= start, state_abb %in% pred_data$state_abb)
+
 pred_data %>%
   ggplot(aes(date, y = fit)) +
   # geom_ribbon(aes(ymin = lower, ymax = upper, fill = state_abb), alpha = .05) +
   geom_path(aes(color = state_abb)) +
+  geom_point(aes(color = state_abb), data = left_join(point_data, pred_data)) +
   geom_text_repel(
     aes(label = state_abb, color = state_abb),
     size = 4,
@@ -1567,8 +1783,8 @@ pred_data %>%
 ### A Bayesian SIR Model for Washtenaw County
 
 This is based on the article and code from[@CHATZILENA2019]:
-Contemporary statistical inference for infectious disease models using Stan
-Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019)
+
+Contemporary statistical inference for infectious disease models using Stan. Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019)
 
 The following is only a very slightly revised version of the code they made available in GitHub.
 
@@ -1606,7 +1822,7 @@ transformed data {
 }
 
 parameters {
-  real<lower = 0> theta[n_theta]; // model parameters {beta,gamma}
+  real<lower = 0> theta[n_theta]; // model parameters {beta, gamma}
   real<lower = 0, upper = 1> S0;  // initial fraction of susceptible individuals
 }
 
@@ -1627,7 +1843,7 @@ model {
   //priors
   theta[1] ~ lognormal(0,1);
   theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
-  S0 ~ beta(0.5, 0.5);
+  S0 ~ beta(99, 1);
   
   //likelihood
   for (i in 1:n_obs) {
@@ -1756,8 +1972,8 @@ set.seed(123)
 
 initial_values = function() {
   list(
-    theta = c(runif(1, .5, 5), runif(1, 0.2, 0.4)),
-       S0 = runif(1, (pop - 3) / pop, (pop - 1) / pop)
+    theta = c(runif(1, .5, 1), runif(1, 0.1, 0.4)),
+    S0    = runif(1, (pop - 3) / pop, (pop - 1) / pop)
     )
 }
 ```
@@ -1777,7 +1993,7 @@ sir_model_fit =
     thin   = 8,
     seed   = 123,
     control = list(
-      adapt_delta   = .95,
+      adapt_delta   = .99,
       max_treedepth = 15
     )
 )
@@ -1799,7 +2015,7 @@ sir_model_fit = stan(
 ```
 
 
-Now we are ready to plot the result. The following uses <span class="pack" style = "">tidybayes</span> package for the visualization of the predictions.  We can see that even adding a probabilistic approach to this deterministic model, it miss the mark.  But in the end it does not miss it by much except in one crucial aspect- determining the drop off.  
+Now we are ready to plot the result. The following uses <span class="pack" style = "">tidybayes</span> package for the visualization of the predictions.  We can see that even adding a probabilistic approach to this deterministic model, it misses the mark, and notably undercounted some dates.  But in the end it does not miss it by too much except in one crucial aspect- determining the drop off.  
 
 ```{r stan-plot, echo=-(1:2)}
 sir_model_fit = read_rds('data/sir_model_fit.rds')
@@ -1826,9 +2042,10 @@ samples_infected %>%
     color = bilbao[10],
     size = 1,
     .width = c(.99, .95, .8, .5),
-    alpha = 0.5
+    alpha = 0.25
   ) +
-  geom_point(aes(y = infected), data = washtenaw) +
+  geom_point(aes(y = infected), color = bilbao[10], alpha=.5, data = washtenaw) +
+  guides(x = guide_axis(n.dodge = 2)) +
   labs(x = '', y = '', title = 'Bayesian SIR model for infected counts', subtitle = 'Washtenaw County') +
   scico::scale_fill_scico_d(begin = .25, palette = "bilbao") +
   scale_x_date(date_breaks = '3 days', date_labels = '%b-%d') +
