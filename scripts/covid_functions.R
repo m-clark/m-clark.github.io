@@ -11,7 +11,7 @@ read_open_covid_data <- function(
 ) {
   
   if (current) {
-    data = read_csv('https://open-covid-19.github.io/data/data_latest.csv',
+    data = readr::read_csv('https://open-covid-19.github.io/data/data_latest.csv',
                            col_types = 'Dcccccddddd')
   }
   else {
@@ -68,7 +68,11 @@ read_jh_covid_data <- function(
           names_to = 'date',
           values_to = 'count'
         ) %>% 
-        mutate(date = lubridate::mdy(date)) %>%  
+        mutate(
+          date = lubridate::mdy(date),
+          Lat = round(Lat, 4),
+          Long = round(Long, 4),   # because of odd insertion of extreme decimal values for some places (e.g. UK)
+        ) %>%  
         rename(
           province_state = `Province/State`,
           country_region = `Country/Region`,
@@ -80,10 +84,20 @@ read_jh_covid_data <- function(
     init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
     init_recovered  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
     
-    data = map_df(list(init_confirmed, init_deaths, init_recovered),
-                  cleanup_global,
-                  .id = 'type') %>%
-      mutate(type = factor(type, labels = c('confirmed', 'deaths', 'recovered')))
+    data = map_df(
+      list(
+        init_confirmed, 
+        init_deaths, 
+        init_recovered
+      ),
+      cleanup_global,
+      .id = 'type') %>% 
+      mutate(type = factor(type, 
+                           labels = c(
+                             'confirmed', 
+                             'deaths', 
+                             'recovered'
+                           )))
     
     if (!is.null(country_state))
       data = data %>% filter(country_region == country_state)

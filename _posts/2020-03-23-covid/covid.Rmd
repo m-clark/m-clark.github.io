@@ -54,7 +54,7 @@ rnd = tidyext::rnd
 
 This is some code to get processed data and visualizations regarding the COVID-19 outbreak.   The goal here is just to present some code that I'm playing with that may also make it easier for others to get their hands dirty. In other words, this is for enabling others to play with the data as well, while presenting some clean code and data. There are actually already some R packages doing some of this, but they are currently (in my opinion) problematic, slow to update, and or don't really offer much than what you could just do yourself, as demonstrated below.  I'll likely be updating this daily for the time being.
 
-I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I settled on Open Covid, but may revisit JH after their changes take place, as they will also have U.S. county level counts.
+I actually started scraping Wikipedia's WHO incidence report tables, but any cursory glance showed numerous issues and lots of cleaning, coupled with a format that changed almost daily.  I then started playing with the data behind the [Johns Hopkins dashboard](https://coronavirus.jhu.edu/map.html), which was notably better, but didn't have some info and there are issues there as well. I then settled on Open Covid, but now just use whatever source works easiest for a situation.
 
 I use some custom functions in the following, and I don't show every bit of code, but most of these cases are inconsequential.  The bulk of this code should be usable by anyone pretty easily if they are familiar with the <span class="pack" style = "">tidyverse</span>.
 
@@ -78,11 +78,11 @@ Check out CSCAR chum Alex Cao's more local efforts here:
 
 ### Functions
 
-The following are functions that process the data from different sources.  I only show parts as they are a bit long, but they can be found [here](https://m-clark.github.io/scripts/covid_functions.R). They all require <span class="pack" style = "">tidyverse</span>, or at least <span class="pack" style = "">dplyr</span> and <span class="pack" style = "">readr</span>.
+The following are functions that process the data from different sources.  I only show parts as they are a bit long[^distill], but they can be found [here](https://m-clark.github.io/scripts/covid_functions.R). They all require <span class="pack" style = "">tidyverse</span>, or at least <span class="pack" style = "">dplyr</span> and <span class="pack" style = "">readr</span>.
 
 #### Open-Covid Data
 
-The Open Covid was one of the more usable data sets early on.  A bonus with this data is that it already includes population, and as it's one source, the function doesn't take much code. The one drawback I've had with it was some unnecessary column changes, which effectively break the initial read as the function tries to verify column types.  Other issues include misspelled names and other minor things.
+The Open Covid was one of the more usable data sets early on.  A bonus with this data is that it already includes population, and as it's one source, the function doesn't take much code. The one drawback I've had with it was some unnecessary column changes, which effectively break the initial read as the function tries to verify column types.  Other issues include misspelled names and other minor things. [Full code](https://m-clark.github.io/scripts/covid_functions.R).
 
 ```{r read_open_covid_data-show, eval=FALSE}
 read_open_covid_data <- function(
@@ -162,7 +162,7 @@ read_open_covid_data <- function(
 
 #### Johns Hopkins Data
 
-Here is the start of the function for the Johns Hopkins data. This data is presumably used for the website that is so popular, but there are issues.  For some bizarre reason, they appear to randomly *not* provide country totals for Australia, Canada and China, only the province level data, so for country totals this must be dealt with. In addition, confirmed cases, deaths, and recovered are needlessly separated.
+Here is the start of the function for the Johns Hopkins data. This data is presumably used for the website that is so popular, but there are issues.  For some bizarre reason, they appear to randomly *not* provide country totals for Australia, Canada and China, only the province level data, so for country totals this must be dealt with. In addition, confirmed cases, deaths, and recovered are needlessly separated. [Full code](https://m-clark.github.io/scripts/covid_functions.R).
 
 ```{r read_jh_data_show, eval=FALSE}
 read_jh_covid_data <- function(
@@ -218,7 +218,11 @@ read_jh_covid_data <- function(
         names_to = 'date',
         values_to = 'count'
       ) %>% 
-      mutate(date = lubridate::mdy(date)) %>%  
+      mutate(
+        date = lubridate::mdy(date),
+        Lat = round(Lat, 4),
+        Long = round(Long, 4),   # because of odd insertion of extreme decimal values for some places (e.g. UK)
+        ) %>%  
       rename(
         province_state = `Province/State`,
         country_region = `Country/Region`,
@@ -230,10 +234,20 @@ read_jh_covid_data <- function(
     init_deaths  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
     init_recovered  = readr::read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
     
-    data = map_df(list(init_confirmed, init_deaths, init_recovered),
-                  cleanup_global,
-                  .id = 'type') %>%
-      mutate(type = factor(type, labels = c('confirmed', 'deaths', 'recovered')))
+    data = map_df(
+      list(
+        init_confirmed, 
+        init_deaths, 
+        init_recovered
+      ),
+      cleanup_global,
+      .id = 'type') %>% 
+      mutate(type = factor(type, 
+                           labels = c(
+                             'confirmed', 
+                             'deaths', 
+                             'recovered'
+                             )))
     
     if (!is.null(country_state))
       data = data %>% filter(country_region == country_state)
@@ -308,15 +322,11 @@ read_jh_covid_data <- function(
   
   data
 }
-
-# debugonce(read_jh_covid_data)
-# test = read_jh_covid_data()
-# test = read_jh_covid_data(us = T, country_state = 'Michigan')
 ```
 
 #### New York Times Data
 
-The NYT data is clean and 'tidy', and so a great resource for starting out. There are still some issues however (e.g. Georgia suddenly having fewer cumulative cases from one day to the next).
+The NYT data is clean and 'tidy', and so a great resource for starting out. There are still some issues however (e.g. Georgia suddenly having fewer cumulative cases from one day to the next).  [Full code](https://m-clark.github.io/scripts/covid_functions.R).
 
 ```{r read_nyt_data-show, eval=F}
 read_nyt_data <- function(states = TRUE) {
@@ -741,9 +751,9 @@ knitr::include_graphics('img/covid.gif')
 
 ### NY Times-style Daily Count
 
-The following is similar to the plot shown on the [New York Times daily count](https://www.nytimes.com/interactive/2020/world/coronavirus-maps.html), just without the unnecessary discretizing of the color (the legend already does that for you).  I chose what I thought was a similar palette, but obviously you can play around with that.
+The following is similar to the plot shown on the [New York Times daily count](https://www.nytimes.com/interactive/2020/world/coronavirus-maps.html), just without the unnecessary discretizing of the color (the legend already does that for you).  I chose what I thought was a similar palette, but obviously you can play around with that.  Here is the <span class="pack" style = "">ggplot</span> code, but I show an interactive result via <span class="pack" style = "">highcharter</span>.
 
-```{r nytimes-daily}
+```{r nytimes-daily, echo = TRUE, eval = FALSE}
 # reduce to just the 20 countries with the most cases
 top_20 = world_totals  %>% 
   ungroup() %>% 
@@ -796,6 +806,99 @@ plot_data %>%
     legend.text  = element_text(size = 6),
     legend.title = element_text(size = 10)
   )
+```
+
+```{r nytimes-daily-interactive, echo = FALSE, eval = TRUE}
+library(highcharter)
+
+top_20 = world_totals  %>% 
+  ungroup() %>% 
+  top_n(20, confirmed) %>% 
+  arrange(desc(confirmed))
+ 
+# this is to create a ruled effect, not necessary
+plot_data = countries %>%
+  filter(country_region %in% top_20$country_region) %>%
+  group_by(country_region) %>% 
+  mutate(
+    daily_confirmed = confirmed - lag(confirmed),
+    daily_confirmed = if_else(is.na(daily_confirmed), confirmed, daily_confirmed)
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    country_region   = ordered(country_region, levels = rev(top_20$country_region)),
+    line_positions = as.numeric(country_region) + .5,
+    line_positions = ifelse(line_positions == max(line_positions), NA, line_positions)
+  ) 
+
+pal = scico::scico(500, palette = 'lajolla')
+
+fntltp <- JS(
+  "function(){
+  return this.point.x + ' ' +  this.series.yAxis.categories[this.point.y] + ':<br>' +
+  Highcharts.numberFormat(this.point.value, 2);
+}"
+)
+
+plotline <- list(
+  color = "#fde725",
+  value = 1963,
+  width = 2,
+  zIndex = 5,
+  label = list(
+    text = "Vaccine Intoduced",
+    verticalAlign = "top",
+    style = list(color = "#606060"),
+    textAlign = "left",
+    rotation = -45,
+    y = -5
+  )
+)
+
+plot_data %>% 
+  mutate(date = str_sub(date, start = 6)) %>% 
+  filter(confirmed > 0) %>% 
+  hchart(
+    "heatmap",
+    hcaes(x = date, y = country_region, value = confirmed),
+    borderWidth = .25,
+    borderColor = '#fff') %>%
+  hc_colorAxis(
+    stops = color_stops(100, pal),
+    type = "logarithmic",
+    max = 1e5
+  ) %>%
+  hc_yAxis(
+    # reversed = TRUE,
+    offset = 10,
+    tickLength = 0,  # tick stuff mostly ignored
+    lineWidth = 0,   # the axis line
+    gridLineWidth = 1,
+    minorGridLineWidth = 0,
+    height = 500,
+    min.padding = .5,  # ignored
+    title = list(text = F),
+    labels = list(style = list(fontSize = "8px"))
+  ) %>% 
+  hc_xAxis(    
+    # reversed = TRUE,
+    # offset = 10,
+    tickLength = 0,
+    lineWidth = 0,
+    gridLineWidth = 0,
+    minorGridLineWidth = 0,
+    title = list(text = F),
+    labels = list(style = list(fontSize = "8px"), rotation = 45)
+  ) %>%
+  hc_tooltip(formatter = fntltp) %>% 
+  hc_title(text = "") %>%
+  hc_legend(
+    layout = "vertical",
+    verticalAlign = "middle",
+    align = "right",
+    valueDecimals = 0
+  ) %>% 
+  hc_size(height = 600)
 ```
 
 
@@ -852,7 +955,7 @@ plot_data %>%
 
 ### Per Capita Country Trends
 
-The following shows the number of confirmed cases per 10000 people using the Open Covid data, which includes population.  However, this obviously doesn't account for the lack of testing.  To keep things clean, we again focus on the twenty countries with the most cases.
+The following shows the number of confirmed cases per 10000 people using the Open Covid data, which includes population.  However, this obviously doesn't account for the lack of testing, country ineptitude in counting, country discretion in counting, and many other things.  To keep things clean, we again focus on the twenty countries with the most cases.
 
 ```{r read-oc-data, echo=1}
 countries_oc = read_open_covid_data() %>% filter(is.na(region_code))
@@ -950,13 +1053,17 @@ us_current %>%
 
 ### Trends
 
-We can visualize the state level data in numerous ways.  Here is the world trend plot previously seen, now applied just to the U.S. 
+We can visualize the state level data in numerous ways.  Here is the world trend plot previously seen, now applied just to the U.S. I used <span class="pack" style = "">plotly</span> to make it interactive.
 
 
 ```{r state_trends, cache.rebuild=F, layout='l-body-offset'}
 highlight = us_current %>% 
   top_n(10, cases) %>% 
   pull(state_abb)
+
+us_total = countries %>% 
+  filter(country_region == 'US') %>% 
+  rename(cases = confirmed)
 
 p = us %>% 
   ggplot(aes(x = date, y = cases)) +
@@ -965,7 +1072,7 @@ p = us %>%
     aes(),
     size  = 6,
     alpha = .1,
-    data  = filter(us, is.na(state))
+    data  = us_total
   ) +
   geom_point(
     aes(color = state),
@@ -974,7 +1081,7 @@ p = us %>%
     data  = filter(us, state_abb %in% highlight)
   ) +
   geom_text_repel(
-    aes(label = state, color = state),
+    aes(label = state_abb, color = state),
     size  = 2,
     alpha = .85,
     data  = filter(us_current, state_abb %in% highlight)
@@ -1007,13 +1114,70 @@ p = us %>%
     legend.position = 'left',
     title = element_text(size = 12)
   )
-
-p
 ```
-
 ```{r trends-us-save, echo=FALSE}
 ggsave('img/covid_us.svg')
 ```
+
+```{r trends-us-plotly, echo=FALSE}
+p = us %>% 
+  ggplot(aes(x = date, y = cases)) +
+  geom_path(aes(group = state), alpha = .01) +
+  geom_point(
+    aes(),
+    size  = 6,
+    alpha = .1,
+    data  = us_total
+  ) +
+  geom_point(
+    aes(color = state),
+    size  = 1.5,
+    alpha = .5,
+    data  = filter(us, state_abb %in% highlight)
+  ) +
+  geom_text(
+    aes(label = state_abb, color = state),
+    size  = 2,
+    alpha = .85,
+    nudge_x = 3,
+    nudge_y = .1,
+    # position = position_nudgedodge(width = 10),
+    data  = filter(us_current, state_abb %in% highlight)
+  ) +
+  scale_color_scico_d(begin = .1, end = .9) +
+  scale_x_date(date_breaks = '2 weeks') +
+  scale_y_continuous(
+    position = "right",
+    trans    = 'log',
+    breaks   = c(50, unlist(map(c(1,5), function(x) x*10^(2:6)))), 
+    labels   = scales::comma
+    ) +
+  visibly::theme_clean() + 
+  labs(
+    x = '', 
+    y = '',
+    subtitle =  'Total Confirmed Cases',
+    caption = 'Dark large dot is U.S. total'
+    ) +
+  theme(
+    axis.text.x  = element_text(size = 6),
+    axis.text.y  = element_text(size = 6),
+    axis.title.y = element_text(size = 6),
+    axis.ticks.y = element_blank(),
+    legend.title       = element_blank(),
+    legend.key.size    = unit(.25, 'cm'),
+    legend.text        = element_text(size = 6),
+    legend.box.spacing = unit(0, 'mm'),
+    legend.box.margin  = margin(0),
+    legend.position = 'left',
+    title = element_text(size = 12)
+  )
+
+plotly::ggplotly(p) %>% 
+  visibly::theme_plotly()
+```
+
+
 
 ### State Bins
 
@@ -1366,7 +1530,7 @@ washtenaw_plot
 
 For the following map of the whole US, I wanted to do a point plot since counties are arbitrarily shaped, making it easy to think things are going weird in random places. We can use the county centroid locations, make very faint the county lines, and [not use a ridiculous point range size](https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html) to get a better sense of the overall pattern.  I'm not used to the <span class="pack" style = "">sf</span> package, so it took a while to get what I wanted beyond a simple county map.  Adding points was not very intuitive, but I got it sorted out in the end, so you get the benefit of the cleaned up code.
 
-```{r us-county-map, layout='l-page'}
+```{r us-county-map, layout='l-body-outset', cache=TRUE}
 library(sf)
 
 prep_counties = county_trends %>% 
@@ -1444,7 +1608,7 @@ plan(sequential)
 write_csv(pop, 'data/census-county-population.csv')
 ```
 
-```{r county-rates, layout='l-page', echo=FALSE}
+```{r county-rates, layout='l-body-outset', echo=FALSE, cache=TRUE}
 pop = read_csv('data/census-county-population.csv')
 
 prep_counties = county_trends %>% 
@@ -1481,7 +1645,7 @@ county_point_plot =
       size  = rate
     ),
     data = st_centroid(all_counties_sf2),
-    alpha = .1,
+    alpha = .2,
     show.legend = F
   ) +
   scale_color_scico(
@@ -1582,7 +1746,7 @@ I've started playing with some [hospital data for a dashboard](https://m-clark.g
 
 ## Models
 
-The following models U.S. state daily trends. First we'll use data from NY Times, which seems to be cleaner than some other sources, but there are still random issues (e.g. Georgia suddenly having fewer cumulative cases from one day to the next). I add a bit of mild cleanup to provide each state a common starting point at the beginning of March, and do some other things specific to package requirements.  When I first started preliminary models, South Dakota, whose data starts in mid-
+The following models U.S. state daily trends. First we'll use data from NY Times, which seems to be cleaner than some other sources, but there are still random issues (e.g. Georgia suddenly having fewer cumulative cases from one day to the next). I add a bit of mild cleanup to provide each state a common starting point at the beginning of March, and do some other things specific to package requirements.
 
 ### US State Trends
 
@@ -1593,14 +1757,17 @@ model_rebuild_flag = FALSE
 ```{r us-state-daily-model-data, cache.rebuild=model_rebuild_flag}
 us_for_model = us %>% 
   expand(date, state) %>% 
-  filter(date >= '2020-03-01') %>% 
+  filter(date >= '2020-02-14') %>% 
   left_join(us) %>% 
   arrange(state, date) %>% 
   group_by(state) %>% 
   fill(fips, state_abb, .direction = 'up')  %>% 
   mutate_at(vars(cases:daily_deaths), function(x) ifelse(is.na(x), 0, x)) %>% 
   ungroup() %>% 
-  mutate(state_abb = fct_explicit_na(state_abb, na_level = 'DC')) %>% 
+  mutate(
+    state_abb = fct_explicit_na(state_abb, na_level = 'DC'),
+    date_num  = as.numeric(date)
+    ) %>% 
   filter(daily_cases >= 0)  # because some states evidently can't count
 
 # us_for_model %>% filter(state == 'Michigan')  # check
@@ -1610,7 +1777,8 @@ To explore the trends, I will use a generalized additive model with <span class=
 
 
 
-```{r us-state-daily-model, cache=TRUE, cache.rebuild=model_rebuild_flag}
+```{r us-state-daily-model, echo=-1, cache=TRUE, cache.rebuild=model_rebuild_flag}
+set.seed(1234)
 library(mgcv)
 
 model_state = bam(
@@ -1630,7 +1798,7 @@ visibly::plot_gam_check(model_state, kcheck = T)
 
 We can visualize the estimated trends.  Looks to be fairly on point.
 
-```{r us-state-model-plot, echo = FALSE, cache.rebuild=model_rebuild_flag}
+```{r us-state-model-plot, echo = FALSE}
 library(lubridate)
 
 highlight = us_current %>%  
@@ -1642,14 +1810,19 @@ highlight = us_for_model %>%
   pull(state_abb) %>% 
   unique()
 
-visibly::plot_gam_by(
+init = visibly::plot_gam_by(
   model_state,
   date_num,
   state_abb,
   begin = .1,
   end = .8,
   alpha = .25
-  ) +
+  )
+
+# trying to create a transformation scale was an exercise in futility and lack of documentation
+init$data$date_num = as_date(init$data$date_num)
+
+init +
   geom_text(
     aes(label = state_abb),
     size = 2,
@@ -1658,10 +1831,10 @@ visibly::plot_gam_by(
     alpha = 1,
     data = . %>% filter(date_num == max(date_num) & state_abb %in% highlight)
   ) +
-  guides(color = 'none')
+  guides(color = 'none') # labels = as_date(unique(init$data$date_num))
 ```
 
-The following plots the derivatives of each state curve using <span class="pack" style = "">gratia</span>. Each dot reflects a state's peak positive rate of change.  While most peaks are past, the expected trend is still positive for most states.
+The following plots the derivatives of each state curve using <span class="pack" style = "">gratia</span>. Each dot reflects a state's peak positive rate of change.  Most peaks are past at this point.  You can double click on a state in the legend to focus on that state.
 
 ```{r us-state-model-deriv, echo = F, cache=TRUE, cache.rebuild=model_rebuild_flag}
 library(gratia)
@@ -1678,6 +1851,7 @@ plot_dat = deriv_dat_1 %>%
 plot_dat_peaks_valleys = plot_dat %>%
   group_by(state_abb) %>%
   slice(quantmod::findPeaks(derivative) - 1,
+        which.max(derivative),
         quantmod::findValleys(derivative) - 1)  # see helpfile for why -1
 ```
 
@@ -1685,7 +1859,7 @@ plot_dat_peaks_valleys = plot_dat %>%
 ```{r us-state-model-deriv-plot, echo = F, cache.rebuild=model_rebuild_flag}
 library(ggrepel)
 
-plot_dat %>%
+p = plot_dat %>%
   ggplot(aes(date, y = derivative)) +
   # geom_ribbon(aes(ymin=lower, ymax=upper, group=state_abb), alpha = .02) +
   geom_hline(yintercept = 0, color = 'gray92') +
@@ -1703,7 +1877,7 @@ plot_dat %>%
   #   data = plot_dat_peaks_valleys %>% filter(state_abb == 'NY')
   # ) +
   guides(color = 'none') +
-  labs(x = '') +
+  labs(x = '', y = '') +
   scale_color_scico_d(begin = .1, end = .9) +
   scale_y_continuous(breaks = 0) +
   visibly::theme_clean() +
@@ -1711,6 +1885,9 @@ plot_dat %>%
     axis.ticks.y = element_blank(),
     legend.position = 'bottom',
     )
+
+plotly::ggplotly(p) %>% 
+  visibly::theme_plotly() 
 ```
 
 
@@ -1752,7 +1929,7 @@ max_pred = max(pred_data$fit) + 5000
 point_data = model_state$model %>% 
   filter(date_num >= start, state_abb %in% pred_data$state_abb)
 
-pred_data %>%
+p = pred_data %>%
   ggplot(aes(date, y = fit)) +
   # geom_ribbon(aes(ymin = lower, ymax = upper, fill = state_abb), alpha = .05) +
   geom_path(aes(color = state_abb)) +
@@ -1777,22 +1954,24 @@ pred_data %>%
     legend.position = 'bottom',
     panel.grid.major.y = element_line(color = scales::alpha('black', .05))
   )
+
+p
 ```
 
 
 ### A Bayesian SIR Model for Washtenaw County
 
-This is based on the article and code from[@CHATZILENA2019]:
+This model is based on the article and code from:
 
-Contemporary statistical inference for infectious disease models using Stan. Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019)
+Contemporary statistical inference for infectious disease models using Stan. Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019) [@chatzilena2019]
 
-The following is only a very slightly revised version of the code they made available in GitHub.
+The following is only a very slightly revised version of the code they made available in GitHub. In essence it is a standard [SIR epidemiological model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), put into a probabilistic framework.  They have code for another more complicated model, but it's been taking a lot of work to get that to converge.
 
 ```{r sir-model, eval=FALSE}
 functions {
   real[] SIR(real t,  // time
-             real[] y,           // system state {susceptible,infected,recovered}
-             real[] theta,       // parameters
+             real[] y,            // system state {susceptible,infected,recovered}
+             real[] theta,        // parameters
              real[] x_r,
              int[]  x_i) {
     
@@ -1807,13 +1986,13 @@ functions {
 }
 
 data {
-  int<lower = 1> n_obs;       // number of days observed
-  int<lower = 1> n_theta;     // number of model parameters
-  int<lower = 1> n_difeq;     // number of differential equations
-  int<lower = 1> n_pop;       // population 
-  int y[n_obs];           // data, total number of infected individuals each day
-  real t0;                // initial time point (zero)
-  real ts[n_obs];         // time points observed
+  int<lower = 1> n_obs;           // number of days observed
+  int<lower = 1> n_theta;         // number of model parameters
+  int<lower = 1> n_difeq;         // number of differential equations
+  int<lower = 1> n_pop;           // population 
+  int y[n_obs];                   // data, total number of infected individuals each day
+  real t0;                        // initial time point (zero)
+  real ts[n_obs];                 // time points observed
 }
 
 transformed data {
@@ -1827,8 +2006,8 @@ parameters {
 }
 
 transformed parameters{
-  real y_hat[n_obs, n_difeq]; // solution from the ODE solver
-  real y_init[n_difeq];       // initial conditions for both fractions of S and I
+  real y_hat[n_obs, n_difeq];     // solution from the ODE solver
+  real y_init[n_difeq];           // initial conditions for both fractions of S and I
   
   y_init[1] = S0;
   y_init[2] = 1 - S0;
@@ -1838,11 +2017,11 @@ transformed parameters{
 }
 
 model {
-  real lambda[n_obs];      //poisson parameter
+  real lambda[n_obs];             // poisson parameter
   
   //priors
   theta[1] ~ lognormal(0,1);
-  theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
+  theta[2] ~ gamma(0.004, 0.02);  // Assume mean infectious period = 5 days 
   S0 ~ beta(99, 1);
   
   //likelihood
@@ -1853,12 +2032,12 @@ model {
 }
 
 generated quantities {
-  real R_0;      // Basic reproduction number
+  real R_0;                       // Basic reproduction number
   
   R_0 = theta[1]/theta[2];
 ```
 
-```{r stan_eval}
+```{r stan_eval, echo=FALSE}
 stan_model_rebuild_flag = FALSE
 ```
 
@@ -1957,13 +2136,13 @@ parameters = c("y_hat", "y_init", "theta",  "R_0")  # SIR deterministic model pa
 
 # Modify data into a form suitable for Stan
 covid_data = list(
-  n_obs = N,
+  n_obs   = N,
   n_theta = 2,
   n_difeq = 3,
-  n_pop = pop,
-  y = washtenaw$infected,
-  t0 = 0,
-  ts = sample_time
+  n_pop   = pop,
+  y       = washtenaw$infected,
+  t0      = 0,
+  ts      = sample_time
 )
 
 
@@ -1978,40 +2157,43 @@ initial_values = function() {
 }
 ```
 
-```{r stan-run-model, eval=FALSE,echo=1:18}
+```{r stan-run-model, eval=FALSE, echo=1:18}
 library(rstan)
 
 sir_model_fit = 
   stan(
     model_code = sir_model_code,
-    data   = covid_data,
-    pars   = parameters,
-    init   = initial_values,
-    cores  = 4,
-    warmup = 2000,
-    iter   = 4000,
-    thin   = 8,
-    seed   = 123,
-    control = list(
+    data       = covid_data,
+    pars       = parameters,
+    init       = initial_values,
+    cores      = 4,
+    warmup     = 2000,
+    iter       = 4000,
+    thin       = 8,
+    seed       = 123,
+    control    = list(
       adapt_delta   = .99,
       max_treedepth = 15
     )
 )
 
-sir_model_fit = stan(
-  fit = sir_model_fit,
-  data   = covid_data,
-  pars   = parameters,
-  init   = initial_values,
-  cores  = 4,
-  warmup = 2000,
-  iter = 6000,
-  thin = 16,
-  control = list(
-    adapt_delta   = .95,
-    max_treedepth = 15
-  )
-)
+
+saveRDS(sir_model_fit, 'data/sir_model_fit.rds')
+# # if necessary
+# sir_model_fit = stan(
+#   fit = sir_model_fit,
+#   data   = covid_data,
+#   pars   = parameters,
+#   init   = initial_values,
+#   cores  = 4,
+#   warmup = 2000,
+#   iter = 6000,
+#   thin = 16,
+#   control = list(
+#     adapt_delta   = .95,
+#     max_treedepth = 15
+#   )
+# )
 ```
 
 
@@ -2174,3 +2356,4 @@ samples_infected %>%
 <!--   theme(legend.position = 'bottom') -->
 <!-- ``` -->
 
+[^distill]: I use Distill for this website, and strangely it does not have basic code folding.
