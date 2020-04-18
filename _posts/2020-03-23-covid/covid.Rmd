@@ -491,7 +491,7 @@ mi_death_rates = us_current %>%
 
 ### World
 
-Now that we have the data, we can see what's going on.
+Now that we have the data, we can see what's going on. These are posted as of `r lubridate::as_datetime(Sys.time())` UTC.
 
 ```{r table-of-world-current-counts, echo=FALSE, cache=FALSE}
 world_death_rates %>% 
@@ -1582,7 +1582,7 @@ What's interesting is if we do a similar plot, but actually look for more anomal
 I grabbed population values with <span class="pack" style = "">tidycensus</span> (not shown), then removed the top 20 most populated counties from consideration.  You can get the data [here](https://github.com/m-clark/m-clark.github.io/raw/master/data/census-county-population.csv). 
 
 
-The visualization shows numerous hotspots across the deep south, and others not considered in the midwest, e.g. the Indianapolis area, Rocky Mountain areas, and more.  It definitely makes the spread more apparent than the simple counts might suggest.
+The visualization shows numerous hotspots across the deep south, and others not considered in the Midwest, e.g. the Indianapolis area, Rocky Mountain areas, and more.  It definitely makes the spread more apparent than the simple counts might suggest.
 
 ```{r get-county-census-pop, eval=FALSE, echo=FALSE}
 state_codes = state.abb
@@ -1742,7 +1742,7 @@ hcmap(
 
 ## Hospital Data
 
-I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/_posts/2020-03-23-covid/hospital_demo.html).  The (stilly pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
+I've started playing with some [hospital data for a dashboard](https://m-clark.github.io/_posts/2020-03-23-covid/hospital_demo.html).  The (still pretty messy) source code is available on a link there as well, so feel free to play with it for your own needs.
 
 ## Models
 
@@ -1965,7 +1965,7 @@ This model is based on the article and code from:
 
 Contemporary statistical inference for infectious disease models using Stan. Chatzilenaa, van Leeuwen,Ratmann, Baguelin, & Demiris (2019) [@chatzilena2019]
 
-The following is only a very slightly revised version of the code they made available in GitHub. In essence it is a standard [SIR epidemiological model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), put into a probabilistic framework.  They have code for another more complicated model, but it's been taking a lot of work to get that to converge.
+The following is only a very slightly revised version of the code they made available in GitHub. In essence it is a standard [SIR epidemiological model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology), put into a probabilistic framework, to model infections.  They have code for another more complicated model, but I've had trouble getting that to converge.
 
 ```{r sir-model, eval=FALSE}
 functions {
@@ -2097,7 +2097,7 @@ model {
   //priors
   theta[1] ~ lognormal(0,1);
   theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
-  S0 ~ beta(99, 1);
+  S0 ~ beta(.5, .5);
   
   //likelihood
   for (i in 1:n_obs) {
@@ -2117,7 +2117,7 @@ generated quantities {
 
 Here are the data steps.  For ease we grab county info from the NY Times database.  Beyond that we set things up for the Stan.
 
-```{r prep-stan-data}
+```{r prep-stan-data, eval=FALSE}
 washtenaw <- readr::read_csv(
   "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
 ) %>%
@@ -2125,7 +2125,8 @@ washtenaw <- readr::read_csv(
 
 washtenaw = washtenaw %>% 
   mutate(day = 0:(n()-1)) %>% 
-  rename(infected = cases)
+  mutate(infected = cases - lag(cases),
+         infected = ifelse(is.na(infected), 0, infected))
 
 N = nrow(washtenaw)    # Number of days observed throughout the outbreak
 pop = 370963           # Population (from Wikipedia)
@@ -2151,7 +2152,7 @@ set.seed(123)
 
 initial_values = function() {
   list(
-    theta = c(runif(1, .5, 1), runif(1, 0.1, 0.4)),
+    theta = c(runif(1, 0, 5), runif(1, 0.2, 0.4)),
     S0    = runif(1, (pop - 3) / pop, (pop - 1) / pop)
     )
 }
@@ -2178,7 +2179,9 @@ sir_model_fit =
 )
 
 
-saveRDS(sir_model_fit, 'data/sir_model_fit.rds')
+
+R0 = summary(sir_model_fit, pars = 'R_0')$summary[1,'mean']
+save(sir_model_fit, washtenaw, R0, pop, file = 'data/sir_model_fit.RData')
 # # if necessary
 # sir_model_fit = stan(
 #   fit = sir_model_fit,
@@ -2196,11 +2199,16 @@ saveRDS(sir_model_fit, 'data/sir_model_fit.rds')
 # )
 ```
 
+```{r stan-load-model, echo=FALSE}
+load('data/sir_model_fit.RData')
+```
 
-Now we are ready to plot the result. The following uses <span class="pack" style = "">tidybayes</span> package for the visualization of the predictions.  We can see that even adding a probabilistic approach to this deterministic model, it misses the mark, and notably undercounted some dates.  But in the end it does not miss it by too much except in one crucial aspect- determining the drop off.  
 
-```{r stan-plot, echo=-(1:2)}
-sir_model_fit = read_rds('data/sir_model_fit.rds')
+The current $R_0$ produced by the model is `r rnd(R0, 2)`, which would suggest we're getting close to a good state in this county (negative $R_0$ would suggest the infection is no longer spreading).  However, given that there is no vaccine, almost the entire population is still at risk and susceptible to the disease.
+
+Now we are ready to plot the result. The following uses <span class="pack" style = "">tidybayes</span> package for the visualization of the predictions.  We can see that even adding a probabilistic approach to this deterministic model, it misses the mark, and notably undercounted some dates[^march31].  But in the end it does not miss it by too much except in one crucial aspect- determining the drop off.  
+
+```{r stan-plot, echo=-1}
 # str(rstan::extract(sir_model_fit))
 library(tidybayes)
 
@@ -2228,132 +2236,36 @@ samples_infected %>%
   ) +
   geom_point(aes(y = infected), color = bilbao[10], alpha=.5, data = washtenaw) +
   guides(x = guide_axis(n.dodge = 2)) +
-  labs(x = '', y = '', title = 'Bayesian SIR model for infected counts', subtitle = 'Washtenaw County') +
+  labs(x = '', y = '', title = 'Bayesian SIR model for daily infected counts', subtitle = 'Washtenaw County') +
   scico::scale_fill_scico_d(begin = .25, palette = "bilbao") +
   scale_x_date(date_breaks = '3 days', date_labels = '%b-%d') +
   visibly::theme_clean()
 ```
 
 
-<!-- ```{r country-level-model} -->
+We can do a posterior predictive check of our expected vs. observed counts.  Not perfect, but not too bad I suppose.
 
-<!-- # plot doubling -->
+```{r stan-pp_check, echo=FALSE}
+pp = samples_infected %>% 
+  mutate(pred_infected = prop_infected*pop) %>% 
+  left_join(washtenaw)
 
-<!-- countries %>% -->
-<!--   qplot( -->
-<!--   data = ., -->
-<!--   x = date, -->
-<!--   y = total_confirmed, -->
-<!--   geom = 'path', -->
-<!--   color = country_code, -->
-<!--   show.legend = F -->
-<!-- ) -->
+yrep =  rstan::extract(sir_model_fit, pars = 'y_hat')$y_hat[1:50, , 2] * pop
 
-<!-- # plot derivs -->
-<!-- all_for_model = countries %>% -->
-<!--   mutate(country_code = factor(country_code), -->
-<!--          date_num = as.numeric(date)) %>% -->
-<!--   filter(is.na(state_abb)) %>% -->
-<!--   select(-contains('region'), -latitude, -longitude) %>% -->
-<!--   group_by(country_name) %>% -->
-<!--   mutate(N = n(), total_confirmed_log = log(total_confirmed + 1)) %>% -->
-<!--   ungroup() %>% -->
-<!--   filter( -->
-<!--     (country_name %in% highlight | -->
-<!--        N >= 40 -->
-<!--     ) & -->
-<!--       date >= '2020-02-01' -->
-<!--   ) %>% -->
-<!--   droplevels() -->
+library(bayesplot)
+
+pp_check(
+  washtenaw$infected,
+  yrep = yrep,
+  fun  = ppc_dens_overlay
+) +
+  # scale_color_manual(values = 'red') +
+  labs(x = 'Infected Counts') +
+  visibly::theme_clean()
+```
 
 
-<!-- library(lubridate) -->
-
-<!-- library(mgcv) -->
-
-<!-- mod = bam( -->
-<!--   total_confirmed ~ s(date_num, country_code, bs = 'fs', k = 5), -->
-<!--   # family = ziP(), -->
-<!--   # family = Gamma(link = 'log'), -->
-<!--   family = gaussian(link = 'log'), -->
-<!--   data = all_for_model, -->
-<!--   # nthreads = 10, -->
-<!--   discrete = FALSE -->
-<!-- ) -->
-
-<!-- summary(mod) -->
-<!-- ``` -->
-
-<!-- ```{r country-level-model-plot} -->
-<!-- highlight = all_for_model %>% -->
-<!--   filter(country_name %in% highlight) %>% -->
-<!--   pull(country_code) -->
-
-<!-- visibly::plot_gam_by( -->
-<!--   mod, -->
-<!--   date_num, -->
-<!--   country_code, -->
-<!--   begin = .1, -->
-<!--   end = .8, -->
-<!--   alpha = .25 -->
-<!--   ) + -->
-<!--   geom_text( -->
-<!--     aes(label = country_code), -->
-<!--     size = 2, -->
-<!--     vjust = -.75, -->
-<!--     show.legend = FALSE, -->
-<!--     data = . %>% filter(date_num == max(date_num) & country_code %in% highlight) -->
-<!--   ) + -->
-<!--   guides(color = 'none') -->
-<!-- ``` -->
-
-<!-- ```{r country-level-model-deriv} -->
-<!-- library(gratia) -->
-
-<!-- deriv_dat_1 = derivatives(mod, term = 'date_num', n = 250) -->
-
-<!-- plot_dat = deriv_dat_1 %>% -->
-<!--   mutate( -->
-<!--     date = lubridate::as_date(data), -->
-<!--     country_code = str_remove_all(smooth, 's\\(date_num\\):country_code'), -->
-<!--     country_code = fs_var -->
-<!--   ) -->
-
-
-<!-- plot_dat_peaks_valleys = plot_dat %>% -->
-<!--   group_by(country_code) %>% -->
-<!--   slice(quantmod::findPeaks(derivative) - 1, -->
-<!--         quantmod::findValleys(derivative) - 1)  # see helpfile for why -1 -->
-
-<!-- library(ggrepel) -->
-
-<!-- plot_dat %>% -->
-<!--   ggplot(aes(date, y = derivative)) + -->
-<!--   # geom_ribbon(aes(ymin=lower, ymax=upper, group=country_code), alpha = .02) + -->
-<!--   geom_hline(yintercept = 0, color = 'gray92') + -->
-<!--   geom_line(aes(color = country_code), alpha = .5) + -->
-<!--   # geom_point( -->
-<!--   #   aes(color = country_code), -->
-<!--   #   size = 2, -->
-<!--   #   data = plot_dat_peaks_valleys %>% filter(country_code == 'CN') -->
-<!--   # ) + -->
-<!--   # geom_text_repel( -->
-<!--   #   aes(label = as.character(date), color = country_code), -->
-<!--   #   size = 2, -->
-<!--   #   alpha = .5, -->
-<!--   #   data = plot_dat_peaks_valleys %>% filter(country_code == 'CN') -->
-<!--   # ) + -->
-<!--   geom_text_repel( -->
-<!--     aes(label = country_code), -->
-<!--     size = 2, -->
-<!--     alpha = .5, -->
-<!--     data = plot_dat %>% filter(date == max(date) & derivative > 1000) -->
-<!--   ) + -->
-<!--   guides(color = 'none') + -->
-<!--   labs(x = '') + -->
-<!--   scale_color_scico_d(begin = .25, end = .75) + -->
-<!--   visibly::theme_clean() + -->
-<!--   theme(legend.position = 'bottom') -->
-<!-- ``` -->
 
 [^distill]: I use Distill for this website, and strangely it does not have basic code folding.
+
+[^march31]: There was a backlog of tests that came through on April 1st, so I don't fault the model for missing that outlier.
