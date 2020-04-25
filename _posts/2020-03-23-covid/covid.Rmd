@@ -547,11 +547,12 @@ library(rvest)
 init = read_html(URL) %>% 
   html_table()
 
-washtenaw_cases = as_tibble(init[[1]])
+washtenaw_cases = as_tibble(init[[1]], .name_repair = 'unique')
 ```
 
 ```{r washtenaw-show, echo=FALSE}
 washtenaw_cases %>% 
+  slice(1) %>% 
   rename(
     `Total Confirmed` = grep(colnames(washtenaw_cases), pattern = 'cases'),
     `Total Deaths` =  grep(colnames(washtenaw_cases), pattern = 'Deaths'),
@@ -569,40 +570,6 @@ washtenaw_cases %>%
     table.attr='class="covid-table"'
   )
 ```
-
-
-
-<!-- ## The Data -->
-
-<!-- The following is adapted from the ReadMe file at the open covid repo, and includes the generated columns. -->
-
-<!-- The columns of the main dataset are: -->
-
-<!-- | Name | Description | Example | -->
-<!-- | ---- | ----------- | ------- | -->
-<!-- | **date** | ISO 8601 date (YYYY-MM-DD) of the datapoint | 2020-03-21 | -->
-<!-- | **country_code** | ISO 3166-1 code of the country | CN | -->
-<!-- | **country_name** | American English name of the country | China | -->
-<!-- | **region_code** | (Optional) ISO 3166-2 code of the region | HB | -->
-<!-- | **region_name** | (Optional) American English name of the region | Hubei | -->
-<!-- | **total_confirmed** | Total number of cases confirmed after positive test | 67800 | -->
-<!-- | **total_deaths** | Total number of deaths from a positive COVID-19 case | 3139 | -->
-<!-- | **death_rate** | Rate of deaths from a positive COVID-19 case | 0.04629794 | -->
-<!-- | **daily_confirmed** | Daily number of cases confirmed after positive test | 0 | -->
-<!-- | **daily_deaths** | Daily number of deaths from a positive COVID-19 case | 6 | -->
-<!-- | **latitude** | Floating point representing the geographic coordinate | 30.9756 | -->
-<!-- | **longitude** | Floating point representing the geographic coordinate | 112.2707 | -->
-<!-- | **population** | Total count of humans living in the region | TODO | -->
-
-<!-- <br> -->
-
-<!-- For countries where both country-level and region-level data is available, the -->
-<!-- entry which has a null value for the `region_code` and `region_name` columns -->
-<!-- indicates country-level aggregation. Please note that, sometimes, the -->
-<!-- country-level data and the region-level data come from different sources so -->
-<!-- adding up all region-level values may not equal exactly to the reported -->
-<!-- country-level value. -->
-
 
 
 
@@ -2098,7 +2065,7 @@ model {
   //priors
   theta[1] ~ lognormal(0,1);
   theta[2] ~ gamma(0.004, 0.02);  //Assume mean infectious period = 5 days 
-  S0 ~ beta(.5, .5);
+  S0 ~ beta(99, 1);
   
   //likelihood
   for (i in 1:n_obs) {
@@ -2130,7 +2097,7 @@ washtenaw = washtenaw %>%
          infected = ifelse(is.na(infected), 0, infected))
 
 N = nrow(washtenaw)    # Number of days observed throughout the outbreak
-pop = 370963           # Population (from Wikipedia)
+pop = 370963           # Population (from Census/Wikipedia)
 sample_time = 1:N
 
 # Specify parameters to monitor
@@ -2153,7 +2120,7 @@ set.seed(123)
 
 initial_values = function() {
   list(
-    theta = c(runif(1, 0, 5), runif(1, 0.2, 0.4)),
+    theta = c(runif(1, .5, 3), runif(1, 0.2, 0.4)),
     S0    = runif(1, (pop - 3) / pop, (pop - 1) / pop)
     )
 }

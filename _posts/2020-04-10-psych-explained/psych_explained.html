@@ -49,7 +49,7 @@
   <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"character","attributes":{},"value":["psych_explained_files/bowser-1.9.3/bowser.min.js","psych_explained_files/distill-2.2.21/template.v2.js","psych_explained_files/figure-html5/omega-1.svg","psych_explained_files/jquery-1.11.3/jquery.min.js","psych_explained_files/webcomponents-2.0.0/webcomponents.js"]}
+  {"type":"character","attributes":{},"value":["psych_explained_files/bowser-1.9.3/bowser.min.js","psych_explained_files/distill-2.2.21/template.v2.js","psych_explained_files/figure-html5/mediate-diagram-1.svg","psych_explained_files/figure-html5/omega-1.svg","psych_explained_files/jquery-1.11.3/jquery.min.js","psych_explained_files/webcomponents-2.0.0/webcomponents.js"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
   <!--/radix_placeholder_navigation_in_header-->
@@ -980,17 +980,18 @@
 <li><a href="#miscellaneous-results">Miscellaneous results</a></li>
 </ul></li>
 <li><a href="#additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</a></li>
-<li><a href="#other-metrics">Other Metrics</a><ul>
+<li><a href="#other-functions">Other Functions</a><ul>
 <li><a href="#alpha">Alpha</a></li>
 <li><a href="#omega">Omega</a></li>
 <li><a href="#unidimensionality">Unidimensionality</a></li>
+<li><a href="#mediate">Mediate</a></li>
 </ul></li>
 <li><a href="#conclusion">Conclusion</a></li>
 </ul>
 </nav>
 <hr class="d-toc-separator"/>
 <aside>
-Last updated April 11, 2020.
+Last updated April 24, 2020.
 </aside>
 <p>Prerequisites: familiarity with <a href="https://m-clark.github.io/sem/">factor analysis</a></p>
 <h2 id="introduction">Introduction</h2>
@@ -1288,7 +1289,7 @@ List of 51
 <li><p>Though rarely done, if you only provide a correlation matrix as your data, you will not get a variety of metrics in the results, nor factor scores.</p></li>
 <li><p>Certain rotations will lead to differently named factors, and possibly lacking some output (e.g. varimax won’t have factor correlations).</p></li>
 </ul>
-<h2 id="other-metrics">Other Metrics</h2>
+<h2 id="other-functions">Other Functions</h2>
 <p>While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other package functions that might be of interest. I’ll explain some of those here as interest and personal use dictates.</p>
 <h3 id="alpha">Alpha</h3>
 <p>This is a quick reminder for the results of the reliability coefficient <span class="math inline">\(\alpha\)</span>. For this we’ll just use the agreeableness items to keep things succinct.</p>
@@ -1311,7 +1312,7 @@ Call: alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
 0.69 0.7 0.72 
 
  lower median upper bootstrapped confidence intervals
- 0.7 0.71 0.72
+ 0.69 0.7 0.72
  Reliability if an item is dropped:
     raw_alpha std.alpha G6(smc) average_r S/N alpha se  var.r med.r
 A1-      0.72      0.73    0.67      0.40 2.6   0.0087 0.0065  0.38
@@ -1389,9 +1390,9 @@ List of 10
  $ scores : Named num [1:2800] 4 4.2 3.8 4.6 4 4.6 4.6 2.6 3.6 5.4 ...
   ..- attr(*, &quot;names&quot;)= chr [1:2800] &quot;61617&quot; &quot;61618&quot; &quot;61620&quot; &quot;61621&quot; ...
  $ nvar   : int 5
- $ boot.ci: Named num [1:3] 0.698 0.708 0.717
+ $ boot.ci: Named num [1:3] 0.686 0.703 0.719
   ..- attr(*, &quot;names&quot;)= chr [1:3] &quot;2.5%&quot; &quot;50%&quot; &quot;97.5%&quot;
- $ boot   : num [1:10, 1:10] 0.709 0.705 0.707 0.713 0.712 ...
+ $ boot   : num [1:10, 1:10] 0.706 0.72 0.693 0.705 0.705 ...
   ..- attr(*, &quot;dimnames&quot;)=List of 2
   .. ..$ : NULL
   .. ..$ : chr [1:10] &quot;raw_alpha&quot; &quot;std.alpha&quot; &quot;G6(smc)&quot; &quot;average_r&quot; ...
@@ -1621,6 +1622,143 @@ average correlations are based upon reversed scored items</code></pre>
 <li><code>raw.total</code>: sum(R - uniqueness)/sum(R)</li>
 <li><code>adjusted total</code>: raw.total ratio with flipped items</li>
 </ul>
+<h3 id="mediate">Mediate</h3>
+<p>The <span class="pack" style="">psych</span> makes even somewhat complicated mediation models about as easily conducted as they can be, assuming you are only dealing with fully observed (no latent) variables and linear models with continuous endogenous variables that are assumed to be normally distributed. Though the output should be straightforward if one understands basic regression as well as the basics of mediation, we demonstrate it here.</p>
+<h4 id="initial-model">Initial Model</h4>
+<p>Garcia, Schmitt, Branscome, and Ellemers (2010) report data for 129 subjects on the effects of perceived sexism on anger and liking of women’s reactions to in-group members who protest discrimination. We will predict liking (how much the individual liked the target) while using protest (<code>prot2</code> yes or no) and sexism (a scale score based on multiple items) as predictors, and a scaled score of the appropriateness of the target’s response as the mediator (<code>respappr</code>).</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+data(GSBE)   # The Garcia et al data set; see ?GSBE for details
+
+model &lt;- mediate(
+  liking ~  sexism + prot2 + (respappr),
+  data   = Garcia,
+  n.iter = 500,
+  plot   = FALSE
+)   </code></pre>
+</div>
+<h4 id="visual-results">Visual Results</h4>
+<p>To start, most of the output of <span class="pack" style="">psych</span> is straightforward if you understand what mediation is, as it follows the same depiction and even uses the same labels as most initial demonstrations of mediation I’ve come across. So if it’s confusing, you probably need to review what such models are attempting to accomplish. The visualization it automatically produces is even clearer for storytelling. I reserved plotting for display here so as to make it easier to compare to the printed output.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+mediate.diagram(model, digits = 3)</code></pre>
+<p><img src="psych_explained_files/figure-html5/mediate-diagram-1.svg" width="624" style="display: block; margin: auto;" /></p>
+</div>
+<p>We see the original effects of <code>sexism</code> and <code>prot2</code> as <code>c</code>, and what they are after including the mediator <code>c'</code>, where the difference between those values is equivalent to <code>a * b</code>, i.e. the indirect effect (<code>a</code> is the coefficient from the predictor to mediator, <code>b</code> is from the mediator to the outcome). The rest are standard path/regression coefficients as well.</p>
+<h4 id="statistical-results">Statistical Results</h4>
+<p>Now we will just print the result.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+print(model, digits = 3)</code></pre>
+<pre><code>
+Mediation/Moderation Analysis 
+Call: mediate(y = liking ~ sexism + prot2 + (respappr), data = Garcia, 
+    n.iter = 500, plot = FALSE)
+
+The DV (Y) was  liking . The IV (X) was  sexism prot2 . The mediating variable(s) =  respappr .
+
+Total effect(c) of  sexism  on  liking  =  0.111   S.E. =  0.116  t  =  0.96  df=  127   with p =  0.339
+Direct effect (c&#39;) of  sexism  on  liking  removing  respappr  =  0.096   S.E. =  0.603  t  =  5.421  df=  125   with p =  2.94e-07
+Indirect effect (ab) of  sexism  on  liking  through  respappr   =  0.015 
+Mean bootstrapped indirect effect =  0.013  with standard error =  0.055  Lower CI =  -0.099    Upper CI =  0.126
+
+Total effect(c) of  prot2  on  liking  =  0.471   S.E. =  0.194  t  =  2.427  df=  127   with p =  0.0166
+Direct effect (c&#39;) of  prot2  on  liking  removing  respappr  =  -0.105   S.E. =  0.104  t  =  0.923  df=  125   with p =  0.358
+Indirect effect (ab) of  prot2  on  liking  through  respappr   =  0.576 
+Mean bootstrapped indirect effect =  0.582  with standard error =  0.151  Lower CI =  0.31    Upper CI =  0.885
+R = 0.501 R2 = 0.251   F = 13.967 on 3 and 125 DF   p-value:  1.903e-09 
+
+ To see the longer output, specify short = FALSE in the print statement or ask for the summary</code></pre>
+</div>
+<p>The output simply shows the same results as the graph. The <span class="emph" style="">total effect</span> is the effect of a covariate on the outcome, without the mediator. For example, the effect of sexism on liking without the mediation is 0.111. We can reproduce it as follows. The statistical result is identical to the <code>lm</code> output.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+summary(lm(liking ~  sexism + prot2, data = Garcia))</code></pre>
+<pre><code>
+Call:
+lm(formula = liking ~ sexism + prot2, data = Garcia)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.3857 -0.6246  0.0599  0.7754  1.7954 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   4.7468     0.6110   7.768 2.41e-12 ***
+sexism        0.1111     0.1162   0.956   0.3410    
+prot2         0.4711     0.1949   2.417   0.0171 *  
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 1.03 on 126 degrees of freedom
+Multiple R-squared:  0.0523,    Adjusted R-squared:  0.03726 
+F-statistic: 3.477 on 2 and 126 DF,  p-value: 0.03391</code></pre>
+</div>
+<p>The <span class="emph" style="">direct effect</span> is the effect of sexism with the mediator in the model. We can reproduce the effect here. However this version of the model printout currently has a bug where, after the coefficient, it is reporting SE t etc. from the intercept. If you do a <code>summary(model)</code>, as we will shortly, you’ll get the correct statistical test until it is fixed.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+summary(lm(liking ~  sexism + prot2 + respappr, data = Garcia))</code></pre>
+<pre><code>
+Call:
+lm(formula = liking ~ sexism + prot2 + respappr, data = Garcia)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.0210 -0.5337  0.0874  0.6591  2.6760 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  3.26766    0.60281   5.421 2.94e-07 ***
+sexism       0.09584    0.10379   0.923    0.358    
+prot2       -0.10482    0.20065  -0.522    0.602    
+respappr     0.40075    0.06958   5.760 6.18e-08 ***
+---
+Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+
+Residual standard error: 0.9193 on 125 degrees of freedom
+Multiple R-squared:  0.2511,    Adjusted R-squared:  0.2331 
+F-statistic: 13.97 on 3 and 125 DF,  p-value: 6.545e-08</code></pre>
+</div>
+<p>The <span class="emph" style="">indirect effect</span> coefficient is the product of the <code>a</code> and <code>b</code> paths: 0.038 <code>*</code> 0.401. Along with this, the bootstrapped interval estimate is provided (you can ignore the <code>mean bootstrapped effect</code>, which is equal to the effect with enough iterations). There is no p-value, but it’s not needed anyway for any of these results.</p>
+<p>After that, the same results are provided for the <code>prot2</code> predictor. Finally, the <span class="math inline">\(R^2\)</span> and F test for the overall model are reported, which are identical to the <code>lm</code> summary results that include all effects. I would suggest reporting the adjusted <span class="math inline">\(R^2\)</span> from that instead.</p>
+<p>A much cleaner result that incorporates the <code>lm</code> results we did can be obtained by summarizing instead of printing the fitted model. All of this output is available as elements of the model object itself.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+summary(model)</code></pre>
+<pre><code>
+Call: mediate(y = liking ~ sexism + prot2 + (respappr), data = Garcia, 
+    n.iter = 500, plot = FALSE)
+
+Direct effect estimates (traditional regression)    (c&#39;) 
+          liking   se     t  df     Prob
+Intercept   3.27 0.60  5.42 125 2.94e-07
+sexism      0.10 0.10  0.92 125 3.58e-01
+prot2      -0.10 0.20 -0.52 125 6.02e-01
+respappr    0.40 0.07  5.76 125 6.18e-08
+
+R = 0.5 R2 = 0.25   F = 13.97 on 3 and 125 DF   p-value:  6.54e-08 
+
+ Total effect estimates (c) 
+       liking   se    t  df   Prob
+sexism   0.11 0.12 0.96 127 0.3390
+prot2    0.47 0.19 2.43 127 0.0166
+
+ &#39;a&#39;  effect estimates 
+          respappr   se    t  df     Prob
+Intercept     3.69 0.70 5.29 126 5.33e-07
+sexism        0.04 0.13 0.29 126 7.75e-01
+prot2         1.44 0.22 6.45 126 2.15e-09
+
+ &#39;b&#39;  effect estimates 
+         liking   se    t  df     Prob
+respappr    0.4 0.07 5.78 126 5.47e-08
+
+ &#39;ab&#39;  effect estimates (through mediators)
+       liking boot   sd lower upper
+sexism   0.02 0.01 0.05 -0.10  0.13
+prot2    0.58 0.58 0.15  0.31  0.88</code></pre>
+</div>
+<p>If you are doing mediation with linear models only, you would be hard-pressed to find an easier tool to use than the <span class="pack" style="">psych</span> package. It can incorporate multiple mediators and so-called ‘moderated mediation’ as well. However, just because it is easy to do a mediation model, doesn’t mean you should.</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>The <span class="pack" style="">psych</span> package is very powerful and provides a lot of results from just a single line of code. However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided). Hopefully this saves others some time when they use it. I may add some other functions to explain in time, so check back at some point.</p>
 <!--radix_placeholder_article_footer-->

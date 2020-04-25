@@ -270,7 +270,7 @@ In turn, these are:
 - Certain rotations will lead to differently named factors, and possibly lacking some output (e.g. varimax won't have factor correlations).
 
 
-## Other Metrics
+## Other Functions
 
 While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other package functions that might be of interest. I'll explain some of those here as interest and personal use dictates.
 
@@ -510,6 +510,73 @@ The values reported are as follows.  In general, you'd pay attention to the `adj
 - `adjusted model`: The ratio of the FF' model to the sum(R) when items are flipped.
 - `raw.total`: sum(R - uniqueness)/sum(R)
 - `adjusted total`: raw.total ratio with flipped items
+
+
+### Mediate
+
+The <span class="pack" style = "">psych</span> makes even somewhat complicated mediation models about as easily conducted as they can be, assuming you are only dealing with fully observed (no latent) variables and linear models with continuous endogenous variables that are assumed to be normally distributed.  Though the output should be straightforward if one understands basic regression as well as the basics of mediation, we demonstrate it here.
+
+#### Initial Model
+
+Garcia, Schmitt, Branscome, and Ellemers (2010) report data for 129 subjects on the effects of perceived sexism on anger and liking of women's reactions to in-group members who protest discrimination.  We will predict liking (how much the individual liked the target) while using protest (`prot2` yes or no) and sexism (a scale score based on multiple items) as predictors, and a scaled score of the appropriateness of the target's response as the mediator (`respappr`).
+
+
+```{r mediate}
+data(GSBE)   # The Garcia et al data set; see ?GSBE for details
+
+model <- mediate(
+  liking ~  sexism + prot2 + (respappr),
+  data   = Garcia,
+  n.iter = 500,
+  plot   = FALSE
+)   
+```
+
+#### Visual Results
+
+To start, most of the output of <span class="pack" style = "">psych</span> is straightforward if you understand what mediation is, as it follows the same depiction and even uses the same labels as most initial demonstrations of mediation I've come across.  So if it's confusing, you probably need to review what such models are attempting to accomplish.  The visualization it automatically produces is even clearer for storytelling.  I reserved plotting for display here so as to make it easier to compare to the printed output.
+
+```{r mediate-diagram}
+mediate.diagram(model, digits = 3)
+```
+
+
+
+We see the original effects of `sexism` and `prot2` as `c`, and what they are after including the mediator `c'`, where the difference between those values is equivalent to `a * b`, i.e. the indirect effect (`a` is the coefficient from the predictor to mediator, `b` is from the mediator to the outcome).  The rest are standard path/regression coefficients as well.
+
+
+
+#### Statistical Results
+
+Now we will just print the result.
+
+```{r mediate-results}
+print(model, digits = 3)
+```
+
+The output simply shows the same results as the graph. The <span class="emph" style = "">total effect</span> is the effect of a covariate on the outcome, without the mediator.  For example, the effect of sexism on liking without the mediation is `r rnd(model$c[1])`.  We can reproduce it as follows. The statistical result is identical to the `lm` output.
+
+```{r mediate-total}
+summary(lm(liking ~  sexism + prot2, data = Garcia))
+```
+
+The <span class="emph" style = "">direct effect</span> is the effect of sexism with the mediator in the model.  We can reproduce the effect here.  However this version of the model printout currently has a bug where, after the coefficient, it is reporting SE t etc. from the intercept.  If you do a `summary(model)`, as we will shortly, you'll get the correct statistical test until it is fixed.
+
+```{r mediate-direct}
+summary(lm(liking ~  sexism + prot2 + respappr, data = Garcia))
+```
+
+The <span class="emph" style = "">indirect effect</span> coefficient is the product of the `a` and `b` paths: `r rnd(model$a[1])` * `r rnd(model$b[1])`.  Along with this, the bootstrapped interval estimate is provided (you can ignore the `mean bootstrapped effect`, which is equal to the effect with enough iterations).  There is no p-value, but it's not needed anyway for any of these results.
+
+After that, the same results are provided for the `prot2` predictor.  Finally, the $R^2$ and F test for the overall model are reported, which are identical to the `lm` summary results that include all effects.  I would suggest reporting the adjusted $R^2$ from that instead.
+
+A much cleaner result that incorporates the `lm` results we did can be obtained by summarizing instead of printing the fitted model.  All of this output is available as elements of the model object itself.
+
+```{r mediate-summary}
+summary(model)
+```
+
+If you are doing mediation with linear models only, you would be hard-pressed to find an easier tool to use than the <span class="pack" style = "">psych</span> package.  It can incorporate multiple mediators and so-called 'moderated mediation' as well.  However, just because it is easy to do a mediation model, doesn't mean you should.
 
 
 ## Conclusion
