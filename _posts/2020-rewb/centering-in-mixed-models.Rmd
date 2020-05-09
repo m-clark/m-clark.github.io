@@ -13,7 +13,7 @@ output:
     toc: true
     css: [../../styles.css, ../../css/misc.css]
     code_folding: hide
-bibliography: covid.bib
+bibliography: ../../bibs/mixed.bib
 draft: true
 tags: [mixed models, group centering, grand mean centering]
 categories:
@@ -51,9 +51,102 @@ rnd = tidyext::rnd
 
 ## Introduction
 
-Extending Bell's articles
+This post is an attempt to discuss and extend some of  Bell et al.'s articles[@bell2015explaining][@bell2019fixed][@bell2018understanding] advocating mixed models with random effects over  so-called 'fixed-effects' models.  The gist of the results were that a specific style of random effects model had multiple advantages and no disadvantages relative to the FE models. As Mundlak put it 40+ years ago:
 
-## Data Example
+>... the question is why would a uniform approach lead to two competing estimators, the coefficients which do not vary over individuals. That brings us to the second point which can be stated very simply: when the model is properly specified, the GLSE (i.e. RE) is identical to the "within" (i.e. FE) estimator. Thus there is only one estimator. The whole literature which has been based on an imaginary difference between the two estimators... is based on an incorrect specification which ignores the correlation between the effects and the explanatory variables. It is thus argued that there is a uniform approach and a unique estimator.[@mundlak1978]
+
+As I have never had interest in, nor found a compelling reason to use fixed-effects models[^nofe], and the referenced articles give plenty of reasons not to use them to go along with the quote above, I won't discuss them further. In this case, I am interested in some scenarios not covered in previous simulations, namely those with larger data and non-hierarchical structure.
+
+
+### The model
+
+Similar to Bell & Jones (2015), the underlying model is as follows. Here the $x$ represent within cluster/group varying covariates, while the $c$ are group level (i.e. constant within group) covariates. For example, the $x$ could represent individual level values some variables while the $c$ could represent geographic level variables.   Along with these we have a group random effect $u$, and the usual observation observation level noise $\epsilon$.
+
+$$y \sim \beta_0 +\beta_1\cdot x_1 + \beta_2\cdot x_2 + \beta_3\cdot c_1 + \beta_4\cdot c_2 + u_{grp} + \epsilon$$
+In this particular case, $c_1$ is the group mean value of $x_1$. 
+
+$$c_1 = \bar{x}_{1_{grp}}$$
+If we were run that model as a standard mixed model, i.e. including the group level mean of $x_1$, it is identical to Mundlak's model, which has in various places unfortunately been named the *within-between* or *hybrid* models.  We can distinguish Mundlak's model from the 'within-between' model of Bell as follows:
+
+
+$$\textrm{Mundlak}: y \sim \beta_0 +\beta_1\cdot x_1 + \beta_2\cdot x_2 + \beta_3\cdot c_1 + \beta_4\cdot c_2 + u_{grp} + \epsilon$$
+$$\textrm{Within-Between}:  y \sim \beta_0 +\beta_1\cdot x_{within} + \beta_2\cdot x_2 + \beta_{3b}\cdot c_1 + \beta_4\cdot c_2 + u_{grp} + \epsilon$$
+In this case, $x_{within}$ is a group centered covariate, $x_1$.
+
+$$x_{within} = (x_1-\bar{x}_{grp})$$
+If we go back to the Mundlak model we can express it as follows.
+
+$$\textrm{Mundlak}: y \sim \beta_0 +\beta_1\cdot x_1 + \beta_2\cdot x_2 + (\beta_{3b}-\beta_1)\cdot c_1 + \beta_4\cdot c_2 + u_{grp} + \epsilon$$
+
+Which means:
+
+$$\beta_3 = \beta_{3b} - \beta_1$$
+In either case we are interested in a *contextual effect* by adding the group mean covariate.  In these models, the effect of $\beta_3$ is the difference between what is typically called the 'within' and 'between' effects, but are more generally observation-level (or lower-level) vs. group-level effects.  If there is no contextual effect, $\beta_3$ would be zero and $\beta_{3b}$ converges to $\beta_1$.
+
+The primary issue is what happens when there is a contextual effect[^econfe]. In a standard mixed model with no contextual covariates, the effect of $x1$ cannot disambiguate the two.  If we are only interested in the 'within' effect, it will be 'biased', which we will see later.  
+
+### Summary of Bell & Jones
+
+
+Only partial results are shown in Bell & Jones (2015). These are the full results.  Large credit to them for making code and data publicly available.
+
+```{r bell-fig, echo=FALSE}
+bell_sim_results = haven::read_dta('data/bell_sim/simscollapsedALLall.dta')
+
+# bell_sim_results %>% tidyext::describe_all()
+
+# contextual is the effect of the aggregate variable, i.e. B3
+# L2corX5 is unclear. The values are -1:3 and presumably it is the correlation between z3j and uj in the text
+# L2var is level 2 variance is the group variance and constant at 4 (although expressed as standard deviation in text)
+# L1var is residual variance and constant at 3 (although expressed as standard deviation in text)
+
+
+re_results = bell_sim_results %>% 
+  select(
+    N,
+    n,
+    Contextual,
+    balanced,
+    L2corX5,
+    L2Var,
+    L1Var,
+    matches('RE$|REWB$')
+  )
+
+# bias, not including 3b which is not estimated by RE model
+re_bias = re_results %>%
+  filter(L2corX5 == 0) %>%
+  select(-L2Var,-L1Var,-L2corX5,-matches('opt|RMSE|3B')) %>%
+  pivot_longer(
+    -(N:balanced),
+    names_to = c('param', 'model'),
+    names_prefix = 'MBias',
+    names_pat = '(B[0-9])([A-Z]+)'
+  ) 
+
+re_bias %>%
+  mutate(N = factor(N), n = factor(n, labels = paste0('n per grp = ', unique(n)))) %>%
+  rename(`# of groups` = N) %>%
+  ggplot(aes(x = Contextual, y = value)) +
+  geom_hline(aes(yintercept = 1), color = '#99002440') +
+  geom_point(aes(
+    color = model,
+    size = abs(value - 1),
+    shape = `# of groups`
+  ), alpha = .25) +
+  # lims(y = c(.93, 1.04)) +
+  scico::scale_color_scico_d(end = .5) +
+  guides(size = 'none') +
+  # facet_wrap(param + n ~ model, ncol = 4) +
+  facet_grid(rows = vars(param, n), cols = vars(model)) +
+  visibly::theme_clean()
+```
+
+### Our situation
+
+My data is often not hierarchical, might contain hundreds to thousands of clusters, and may have (unbalanced) groups of 1 to possibly hundreds of observations, and may have little cluster level variance. These situations are largely unexplored in what I've read, so that's where we are for this post.  I was also curious about the extent of the bias, as the Bell & Jones results didn't seem very profound except in the most extreme settings.
+
+The other thing is that I approach mixed models as I would any other.  What goes into the model is substantively driven.  I would add group level covariates to explain the otherwise latent group effects. In some cases that could be largely undertaken without any group averaged effects.  In other cases the group averaged effect would possibly not be very meaningful (e.g. an average age), or would actually be constant, i.e. controlled for, in a balanced design. Also, if we are concerned more with prediction, bias is less of a concern, and in fact would normally be introduced to a model explicitly (e.g. typical regularized regression approaches).  As such, one should think hard about whether this concern is really applicable to their situation.  On the other hand, it is trivial to simply add such effects to the model.
 
 
 ## Simulation
@@ -61,23 +154,50 @@ Extending Bell's articles
 ### Setup
 
 Model:
-- y continuous vs. binary  (binary only after continuous is complete)
-- level 1: x with mildly correlated q
-- level 2: avg x with std coef 0, .1, .25; some other mildly correlated cluster level covariate
+
+- y continuous vs. binary
+- level 1: primary covariate x1 with additional covariate x2 
+- level 2: c1 the group mean value of x1 plus additional binary covariate c2
 
 
 Considerations: 
-- n-per-group  5, 20, 100,
-- n-groups  doesn't appear to matter, but maybe do very large 500, 1000, since no one else appears to
+
+- n-per-group  5, 20, 100
+- n-groups: 500, 1000
 - icc: 50% vs. 10%
 
-```{r}
-ng = 500
-npg = 5
+For these models I used standardized data to produce the X variables and the total residual variance (i.e. cluster and observation level) totals 1.  In this case, something like .25 would be at least a moderate effect for the covariates. We set the coefficients as follows:
 
 
-x = rnorm(1000)
-```
+- Intercept = .25
+- x1 = .5
+- x2 = .1
+- c1 = [-.50, -.25, 0, .25, .50]
+- c2 = .1
 
+I did not explore correlations of c2 with the random effects.  In the above, we have a relatively strong effect for x1, and c1 runs the gammut of no effect to very strong.
+
+
+
+Equations 11 and 12 above will be identical to that obtained by FE, as Mundlak (1978a,
+70) stated clearly: When the model is properly specified, the GLSE [that is RE] is identical to the ‘within’ [that is, the FE] estimator. Thus there is only one estimator. The whole literature which has been based on an imaginary difference between the two estimators is based on an incorrect specification which ignores the correlation between the effects and the explanatory variables.
 
 ### Results
+
+
+
+
+
+## Supplemental
+
+Scripts for the above:
+
+Simple Random Intercepts
+Crossed Random Effects
+
+Bell & Jones (2015) [Supplemental Materials on Dataverse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/23415)
+
+
+[^nofe]: I'm always interested in contextual effects, not simply controlling for them.
+
+[^econfe]: This effect is essentially what the economists were concerned with regarding the correlation of within variables and the random effects.  Their solution with FE models was essentially overkill.
