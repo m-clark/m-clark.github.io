@@ -14,7 +14,7 @@ source('code/mixed_models/sim_ranef_crossed.R')
 # library(lme4)
 # library(mixedup)
 # 
-# test = sim_re_crossed(N = 10000, sd_g_a = .5, sd_g_b = .5, sigma = sqrt(1.5-sqrt(.5^2 + .5^2)))
+# test = sim_re_crossed_single_x1(N = 10000, sd_g_a = .5, sd_g_b = .5, sigma = sqrt(1.5-sqrt(.5^2 + .5^2)))
 # 
 # 
 # mod_test = lmer(y ~ x1_a + x1_b + x2 + c2_a + c2_b + (1 | grp_a) + (1 | grp_b), test)
@@ -72,12 +72,12 @@ library(furrr)         # for parallelization
 plan(multiprocess)
 
 system.time({
-  results_rewb_full_raw <- 
+  results_rewb_2win_raw <- 
     future_map(1:500, function(i) {
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_re_crossed(
+          ~ sim_re_crossed_single_x1(
             N        = .x$N,
             n_gprs_a = .x$n_gprs_a,
             n_gprs_b = .x$n_gprs_b,
@@ -116,7 +116,7 @@ system.time({
 })
 
 # should be same nrow as test_grid*term
-results_rewb_full_avg = results_rewb_full_raw2 %>% 
+results_rewb_2win_avg = results_rewb_2win_raw %>% 
   select(-t, -p_value) %>% 
   mutate(bias        = value - truth,
          bias_ratio  = value / truth,
@@ -134,9 +134,10 @@ results_rewb_full_avg = results_rewb_full_raw2 %>%
   ungroup() %>% 
   select(N:icc_b, value, se, sd, bias:rmse, opt)
 
-results_rewb_full_avg
+results_rewb_2win_avg
 
-
+source('code/mixed_models//plot_results_crossed.R')
+plot_results_crossed(results_rewb_2win_avg)
 
 plan(sequential)
 
@@ -146,12 +147,12 @@ plan(sequential)
 # plan(multiprocess)
 
 system.time({
-  results_rewb_half_raw <- 
+  results_rewb_1win_raw <- 
     future_map(1:500, function(i) {
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_re_crossed(
+          ~ sim_re_crossed_single_x1(
             N        = .x$N,
             n_gprs_a = .x$n_gprs_a,
             n_gprs_b = .x$n_gprs_b,
@@ -163,12 +164,12 @@ system.time({
             c2_b     = .x$c2_b,
             sigma    = .x$sigma
           ) %>% 
-            lmer(y ~ x_win_a + x1_b + x2 + c1_a + c2_a + c2_b + 
+            lmer(y ~ x_win  + x2 + c1_a + c1_b  + c2_a + c2_b + 
                    (1 | grp_a) + (1 | grp_b), 
                  data = .) %>% 
             extract_fixed_effects(ci_level = 0) %>% 
             mutate(
-              truth    = c(0, .5, .5, .1, .x$c1_a + .5, .x$c2_a, .x$c2_b),  
+              truth    = c(0, .5, .1, .x$c1_a + .5, .x$c1_b + .5, .x$c2_a, .x$c2_b),  
               sim      = i,
               N        = .x$N,
               n_gprs_a = .x$n_gprs_a,
@@ -189,8 +190,9 @@ system.time({
     map_df(bind_rows)
 })
 
+# note thazt using win_a or win_b would be the same 'bias' as the previous setup
 
-results_rewb_half_avg = results_rewb_half_raw %>% 
+results_rewb_1win_avg = results_rewb_1win_raw %>% 
   select(-t, -p_value) %>% 
   mutate(
     bias       = value - truth,
@@ -210,9 +212,9 @@ results_rewb_half_avg = results_rewb_half_raw %>%
   ungroup() %>% 
   select(N:icc_b, value, se, sd, bias:rmse, opt)
 
-results_rewb_half_avg
+results_rewb_1win_avg
 
-plot_results_crossed(results_rewb_half_avg)
+plot_results_crossed(results_rewb_1win_avg)
 
 plan(sequential)
 
@@ -229,7 +231,7 @@ system.time({
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_re_crossed(
+          ~ sim_re_crossed_single_x1(
             N         = .x$N,
             n_gprs_a  = .x$n_gprs_a,
             n_gprs_b  = .x$n_gprs_b,
@@ -241,10 +243,10 @@ system.time({
             c2_b      = .x$c2_b,
             sigma     = .x$sigma
           ) %>% 
-            lmer(y ~ x1_a + x1_b + x2 + c2_a + c2_b + (1 | grp_a) + (1 | grp_b), data = .) %>% 
+            lmer(y ~ x1 + x2 + c2_a + c2_b + (1 | grp_a) + (1 | grp_b), data = .) %>% 
             extract_fixed_effects(ci_level = 0) %>% 
             mutate(
-              truth    = c(0, .5, .5, .1, .x$c2_a, .x$c2_b),  
+              truth    = c(0, .5, .1, .x$c2_a, .x$c2_b),  
               sim      = i,
               N        = .x$N,
               n_gprs_a = .x$n_gprs_a,
@@ -307,7 +309,7 @@ system.time({
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_re_crossed(
+          ~ sim_re_crossed_single_x1(
             N        = .x$N,
             n_gprs_a = .x$n_gprs_a,
             n_gprs_b = .x$n_gprs_b,
@@ -319,12 +321,12 @@ system.time({
             c2_b     = .x$c2_b,
             sigma    = .x$sigma
           ) %>% 
-            lmer(y ~  x1_a + x1_b + x2 + c1_a + c1_b  + c2_a + c2_b + 
+            lmer(y ~  x1 + x2 + c1_a + c1_b  + c2_a + c2_b + 
                    (1 | grp_a) + (1 | grp_b), 
                  data = .) %>% 
             extract_fixed_effects(ci_level = 0) %>% 
             mutate(
-              truth    = c(0, .5, .5, .1, .x$c1_a, .x$c1_b, .x$c2_a, .x$c2_b),  
+              truth    = c(0, .5, .1, .x$c1_a, .x$c1_b, .x$c2_a, .x$c2_b),  
               sim      = i,
               N        = .x$N,
               n_gprs_a = .x$n_gprs_a,
@@ -345,7 +347,7 @@ system.time({
     map_df(bind_rows)
 })
 
-# should be same nrow as test_grid*term
+
 results_mundlak_avg = results_mundlak_raw %>% 
   select(-t, -p_value) %>% 
   mutate(bias        = value - truth,
@@ -371,12 +373,20 @@ plot_results_crossed(results_mundlak_avg)
 
 # Save results ------------------------------------------------------------
 
+
 save(
-  results_rewb_full_avg,
-  results_rewb_half_avg,
-  results_re_avg,
-  results_mundlak_avg,
-  file = 'data/bell_sim/sim_ranef_crossed_balanced.RData'
+  results_rewb_1win_raw,
+  results_rewb_2win_raw,
+  results_re_raw,
+  results_mundlak_raw,
+  file = 'data/bell_sim/sim_ranef_crossed_single_x1_balanced_raw.RData'
 )
 
+save(
+  results_rewb_1win_avg,
+  results_rewb_2win_avg,
+  results_re_avg,
+  results_mundlak_avg,
+  file = 'data/bell_sim/sim_ranef_crossed_single_x1_balanced.RData'
+)
 

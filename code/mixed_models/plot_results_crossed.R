@@ -9,6 +9,8 @@ plot_results_crossed = function(data, stat = 'bias') {
     mutate(term = factor(
       term,
       levels = c(
+        'x1',
+        'x_win',
         'x1_a',
         'x_win_a',
         'x1_b',
