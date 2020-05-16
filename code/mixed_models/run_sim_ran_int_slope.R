@@ -9,7 +9,8 @@ library(tidyverse)
 # pure contextual effect for assessment of bias, etc. (commented).
 
 
-source('code/mixed_models/sim_ran_int_basic.R')
+source('code/mixed_models/sim_ran_int_slope.R')
+source('code/mixed_models/plot_results_basic.R')
 
 # Create test grid --------------------------------------------------------
 
@@ -19,28 +20,19 @@ source('code/mixed_models/sim_ran_int_basic.R')
 test_grid = expand_grid(
   n_grps    = c(500, 1000),
   n_per_grp = c(5, 20, 100),
-  sd_g      = c(sqrt(.1), sqrt(.5)),
+  re_cor = c(-.1, 0, .1),
   c1        = c(-.5, -.25, 0, .25, .5)
 )
 
 test_grid = test_grid %>%
-  mutate(
-    var_g    = sd_g ^ 2,
-    sigma_sq = c(.9, .5)[factor(var_g)],
-    icc      = var_g / (var_g + sigma_sq)
-  ) %>%
   unite(
     col = 'setting',
     n_grps,
     n_per_grp,
-    icc,
-    var_g,
+    re_cor,
     c1,
     remove = F
-  ) %>%
-  select(setting, icc) %>%
-  mutate(sigma = sqrt(c(.9, .5))[factor(icc)]) %>%
-  bind_cols(test_grid)
+  ) 
 
 
 # REWB model --------------------------------------------------------------
@@ -53,43 +45,39 @@ plan(multiprocess)
 
 system.time({
   results_rewb_raw <- 
-    future_map(1:8 function(i) {
+    future_map(1:500, function(i) {
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_ran_ints(
+          ~ sim_ran_int_slope(
             n_grps    = .x$n_grps,
             n_per_grp = .x$n_per_grp,
-            sd_g      = .x$sd_g,
-            sigma     = .x$sigma,
+            re_cor    = .x$re_cor,
             c1        = .x$c1
           ) %>% 
-            lmer(y ~ x_win + x2 + c1 + c2 + (1 | grp), data = .) 
-          # results_rewb_fe =  model %>% 
-          #   extract_fixed_effects(ci_level = 0) %>% 
-          #   mutate(
-          #     truth     = c(.25, .5, .1, .x$c1 + .5, .1),   # B3 = B4 (c1)  - B1 (.5)
-          #     sim       = i,
-          #     n_grps    = .x$n_grps,
-          #     n_per_grp = .x$n_per_grp,
-          #     sd_g      = .x$sd_g,
-          #     icc       = .x$icc,
-          #     c1        = .x$c1
-          #   ),
-          # keep = TRUE
+            lmer(y ~ x_win + x2 + c1 + c2 + (1 | grp), data = .) %>% 
+            extract_fixed_effects(ci_level = 0) %>% 
+            mutate(
+              truth     = c(.25, .5, .1, .x$c1+.5, .1),   # B3 = B4 (c1)  - B1 (.5)
+              sim       = i,
+              n_grps    = .x$n_grps,
+              n_per_grp = .x$n_per_grp,
+              re_cor    = .x$re_cor,
+              c1        = .x$c1
+            ),
+          keep = TRUE
         )
     },
-    .progress = TRUE
-    ) %>% 
+    .progress = TRUE) %>% 
     map_df(bind_rows)
 })
 
 # should be same nrow as test_grid*n coef
 results_rewb_avg = results_rewb_raw %>% 
-  select(-t, -p_value, -sd_g) %>% 
+  select(-t, -p_value) %>% 
   mutate(bias        = value - truth,
          bias_ratio  = value / truth) %>%  # description in article is truth/value, but their code is this way
-  group_by(n_grps, n_per_grp, icc, term, c1) %>% 
+  group_by(n_grps, n_per_grp, re_cor, term, c1) %>% 
   summarise(
     sd         = sd(value),
     opt        = sqrt(sum((value - mean(value))^2)) / sqrt(sum(se^2)),
@@ -103,6 +91,11 @@ results_rewb_avg = results_rewb_raw %>%
   select(n_grps:c1, value, se, sd, bias:rmse, opt)
 
 results_rewb_avg
+
+
+
+plot_results_ran_slope(results_rewb_avg)
+
 
 # plan(sequential)
 
@@ -118,37 +111,36 @@ system.time({
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_ran_ints(
+          ~ sim_ran_int_slope(
             n_grps    = .x$n_grps,
             n_per_grp = .x$n_per_grp,
-            sd_g      = .x$sd_g,
-            sigma     = .x$sigma,
+            re_cor    = .x$re_cor,
             c1        = .x$c1
           ) %>% 
-            lmer(y ~ x1 + x2 + c2 + (1 | grp), data = .) %>% 
+            lmer(y ~ x1 + x2 + c2 + (1 + x1 | grp), data = .) %>% 
             extract_fixed_effects(ci_level = 0) %>% 
             mutate(
-              truth     = c(1, .5, .1, .1),
+              truth     = c(.25, .5, .1, .1),  
               sim       = i,
               n_grps    = .x$n_grps,
               n_per_grp = .x$n_per_grp,
-              sd_g      = .x$sd_g,
-              icc       = .x$icc,
+              re_cor    = .x$re_cor,
               c1        = .x$c1
             ),
           keep = TRUE
         )
-    }
-    ) %>% 
+    },
+    .progress = TRUE
+    ) %>%  
     map_df(bind_rows)
 })
 
 
 results_re_avg = results_re_raw %>% 
-  select(-t, -p_value, -sd_g) %>% 
+  select(-t, -p_value) %>% 
   mutate(bias = value - truth,
          bias_ratio  = truth/value) %>% 
-  group_by(n_grps, n_per_grp, icc, term, c1) %>% 
+  group_by(n_grps, n_per_grp, re_cor, term, c1) %>% 
   summarise(
     sd         = sd(value),
     opt        = sqrt(sum((value - mean(value))^2)) / sqrt(sum(se^2)),
@@ -162,6 +154,9 @@ results_re_avg = results_re_raw %>%
   select(n_grps:c1, value, se, sd, bias:rmse, opt)
 
 results_re_avg
+
+plot_results_ran_slope(results_re_avg)
+
 
 # plan(sequential)
 
@@ -179,37 +174,36 @@ system.time({
       test_grid %>% 
         group_by(setting) %>% 
         group_map(
-          ~ sim_ran_ints(
+          ~ sim_ran_int_slope(
             n_grps    = .x$n_grps,
             n_per_grp = .x$n_per_grp,
-            sd_g      = .x$sd_g,
-            sigma     = .x$sigma,
+            re_cor    = .x$re_cor,
             c1        = .x$c1
           ) %>% 
             lmer(y ~ x1 + x2 + c1 + c2 + (1 | grp), data = .) %>% 
             extract_fixed_effects(ci_level = 0) %>% 
             mutate(
-              truth     = c(.25, .5, .1, .x$c1, .1),   
+              truth     = c(.25, .5, .1, .x$c1, .1),   # B3 = B4 (c1)  - B1 (.5)
               sim       = i,
               n_grps    = .x$n_grps,
               n_per_grp = .x$n_per_grp,
-              sd_g      = .x$sd_g,
-              icc       = .x$icc,
+              re_cor    = .x$re_cor,
               c1        = .x$c1
             ),
           keep = TRUE
         )
-    }
-    ) %>% 
+    },
+    .progress = TRUE
+    ) %>%  
     map_df(bind_rows)
 })
 
 
 results_mundlak_avg = results_mundlak_raw %>% 
-  select(-t, -p_value, -sd_g) %>% 
+  select(-t, -p_value) %>% 
   mutate(bias = value - truth,
          bias_ratio  = truth/value) %>% 
-  group_by(n_grps, n_per_grp, icc, term, c1) %>% 
+  group_by(n_grps, n_per_grp, re_cor, term, c1) %>% 
   summarise(
     sd         = sd(value),
     opt        = sqrt(sum((value - mean(value))^2)) / sqrt(sum(se^2)),
@@ -231,7 +225,7 @@ save(
   results_re_avg,
   results_rewb_avg,
   results_mundlak_avg, 
-  file = 'data/bell_sim/sim_ran_int_balanced.RData'
+  file = 'data/bell_sim/sim_ran_int_slope_balanced.RData'
 )
 
 
