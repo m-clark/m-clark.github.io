@@ -4,8 +4,8 @@ library(tidyverse)
 
 sim_re_crossed <- function(
   N = 5000,
-  n_gprs_a    = 500,
-  n_gprs_b    = 500,
+  n_grps_a    = 500,
+  n_grps_b    = 500,
   unbalanced_fraction = 0,
   seed   = NULL,
   sd_g_a = .5,
@@ -24,8 +24,8 @@ sim_re_crossed <- function(
   if (!is.null(seed))
     set.seed(seed)
   
-  g1 = rep(1:n_gprs_a, each = N/n_gprs_a)  # group ids 1
-  g2 = rep(1:n_gprs_b, each = N/n_gprs_b)  # group ids 2
+  g1 = rep(1:n_grps_a, each = N/n_grps_a)  # group ids 1
+  g2 = rep(1:n_grps_b, each = N/n_grps_b)  # group ids 2
   
   d = data.frame(grp_a = g1, grp_b = g2)
   
@@ -78,8 +78,8 @@ sim_re_crossed <- function(
 
 sim_re_crossed_single_x1 <- function(
   N = 5000,
-  n_gprs_a    = 500,
-  n_gprs_b    = 500,
+  n_grps_a    = 500,
+  n_grps_b    = 500,
   unbalanced_fraction = 0,
   seed   = NULL,
   sd_g_a = .5,
@@ -97,8 +97,8 @@ sim_re_crossed_single_x1 <- function(
   if (!is.null(seed))
     set.seed(seed)
   
-  g1 = rep(1:n_gprs_a, each = N/n_gprs_a)  # group ids 1
-  g2 = rep(1:n_gprs_b, each = N/n_gprs_b)  # group ids 2
+  g1 = rep(1:n_grps_a, each = N/n_grps_a)  # group ids 1
+  g2 = rep(1:n_grps_b, each = N/n_grps_b)  # group ids 2
   
   d = data.frame(grp_a = g1, grp_b = g2)
   
