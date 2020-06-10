@@ -463,10 +463,7 @@ world_death_rates = countries %>%
   summarise(
     `Total Confirmed` = sum(confirmed),
     `Total Deaths`    = sum(deaths),
-    `Death Rate`      = `Total Deaths` / `Total Confirmed`,
-    `Death Rate (minus Italy & Spain)` = 
-      sum(deaths[!country_region %in% c('Spain', 'Italy')]) / 
-      sum(confirmed[!country_region %in% c('Spain', 'Italy')])
+    `Death Rate`      = `Total Deaths` / `Total Confirmed`
   )
 
 
@@ -494,15 +491,14 @@ mi_death_rates = us_current %>%
 Now that we have the data, we can see what's going on. These are posted as of `r lubridate::as_datetime(Sys.time())` UTC.
 
 ```{r table-of-world-current-counts, echo=FALSE, cache=FALSE}
-world_death_rates %>% 
-  mutate_at(vars(-contains('rate')), scales::comma) %>% 
-  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>% 
-  mutate_all(function(x) cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>% 
-  kable_df(
-    escape = FALSE,
-    align = 'c', 
-    table.attr='class="covid-table"'
-  ) 
+world_death_rates %>%
+  mutate_at(vars(-contains('rate')), scales::comma) %>%
+  mutate_at(vars(contains('rate')), scales::percent, accuracy = .1) %>%
+  mutate_all(function(x)
+    cell_spec(x, "html", color = '#ff5500', font_size = 36)) %>%
+  kable_df(escape = FALSE,
+           align = 'c',
+           table.attr = 'class="covid-table"') 
 ```
 
 ### United States
@@ -617,7 +613,7 @@ p = countries %>%
   ) +
   geom_point(
     aes(color = country_region),
-    size  = 1.5,
+    size  = 1,
     alpha = .5,
     data  = filter(countries, country_region %in% highlight)
   ) +
@@ -928,21 +924,22 @@ plot_data %>%
 
 ### Per Capita Country Trends
 
-The following shows the number of confirmed cases per 10000 people using the Open Covid data, which includes population.  However, this obviously doesn't account for the lack of testing, country ineptitude in counting, country discretion in counting, and many other things.  To keep things clean, we again focus on the twenty countries with the most cases.
+The following shows the number of confirmed cases per 10000 people using the Open Covid data, which includes population.  However, this obviously doesn't account for the lack of testing, country ineptitude in counting, country discretion in counting, and many other things.  To keep things clean, we focus on the ten countries with the most cases.
 
 ```{r read-oc-data, echo=1}
-countries_oc = read_open_covid_data() %>% filter(is.na(region_code))
+countries_oc = read_open_covid_data() %>% 
+  filter(is.na(region_code))
 
-top_20 = countries_oc  %>% 
-  filter(date == Sys.Date()-1) %>% 
-  top_n(20, total_confirmed) %>% 
+top_10 = countries_oc  %>% 
+  filter(date == Sys.Date()-2) %>% 
+  top_n(10, total_confirmed) %>% 
   arrange(desc(total_confirmed))
 ```
 
 
-```{r world-top-20-per-capita, dpi = 320, echo=FALSE}
+```{r world-top-10-per-capita, dpi = 320, echo=FALSE}
 countries_rate = countries_oc %>% 
-  filter(country_code %in% top_20$country_code) %>% 
+  filter(country_code %in% top_10$country_code) %>% 
   mutate(rate = 10000*total_confirmed/population)
 
 p = countries_rate %>% 
@@ -957,7 +954,7 @@ p = countries_rate %>%
     aes(label = country_code, color = country_code),
     size  = 2,
     alpha = 1,
-    data  = filter(countries_rate, date == max(date)-1),
+    data  = filter(countries_rate, date == max(date)-2),
     show.legend = FALSE
   ) +
   scale_color_scico_d(begin = .1, end = .9) +
@@ -1050,7 +1047,7 @@ p = us %>%
   ) +
   geom_point(
     aes(color = state),
-    size  = 1.5,
+    size  = .5,
     alpha = .5,
     data  = filter(us, state_abb %in% highlight)
   ) +
@@ -1105,7 +1102,7 @@ p = us %>%
   ) +
   geom_point(
     aes(color = state),
-    size  = 1.5,
+    size  = .5,
     alpha = .5,
     data  = filter(us, state_abb %in% highlight)
   ) +
@@ -1186,7 +1183,7 @@ us_current %>%
 
 ### Geofacet
 
-We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. As of early April, this is one of the scarier graphics, with no flattening in sight at the state level.
+We can plot trends in a map-like fashion too, and the following uses the <span class="pack" style = "">geofacet</span> package. In early April, this is one of the scarier graphics, with no flattening in sight at the state level. By June, you can see the upticks in various states due to repopening.
 
 ```{r geo-facet-trends, layout='l-page'}
 library(geofacet)
@@ -1285,9 +1282,9 @@ p = us_rate %>%
   geom_path(aes(group = state), alpha = .05) +
   geom_point(
     aes(color = state),
-    size  = 1.5,
+    size  = .5,
     alpha = .5,
-    data = filter(us_rate, state_abb %in% highlight)
+    data  = filter(us_rate, state_abb %in% highlight)
   ) +
   geom_text_repel(
     aes(label = state_abb, color = state),
@@ -1330,22 +1327,34 @@ p
 
 #### Trends since May
 
-Since states began opening in May we can look at what's happened from that point on. Highlighted are the 10 states with the largest percentage increase since the beginning of May.
+Since states began opening in May we can look at what's happened from that point on. Highlighted are the 10 states with the largest and smallest percentage increase since the beginning of May.
 
 ```{r us-top-20-per-capita-since-may, echo = F, dpi = 320}
-
 us_rate = us %>% 
   left_join(state_pop, by = 'state') %>% 
   mutate(rate = 10000*cases/population)
 
-highlight = us_rate %>% 
+highlight_high = us_rate %>% 
   filter(date > '2020-04-30') %>%
   group_by(state) %>% 
   mutate(perc_inc = last(cases)/first(cases)) %>% 
   filter(date == last(date)) %>% 
   ungroup() %>% 
-  top_n(perc_inc, n = 10) %>% 
-  pull(state_abb)
+  mutate(perc_inc_grp = 'Largest increases') %>% 
+  top_n(perc_inc, n = 10)
+
+highlight_low = us_rate %>% 
+  filter(date > '2020-04-30') %>%
+  group_by(state) %>% 
+  mutate(perc_inc = last(cases)/first(cases)) %>% 
+  filter(date == last(date)) %>% 
+  ungroup() %>% 
+  mutate(perc_inc_grp = 'Smallest increases') %>% 
+  top_n(perc_inc, n = -10)
+
+highlight = bind_rows(highlight_high, highlight_low)
+
+
 
 us_recent = us %>% 
   filter(date >= '2020-04-30') %>%
@@ -1355,7 +1364,8 @@ us_recent = us %>%
     daily_cases = cases - lag(cases)
   ) %>% 
   ungroup() %>% 
-  filter(date > '2020-04-30')
+  filter(date > '2020-04-30') %>% 
+  left_join(highlight %>% select(state_abb, perc_inc_grp))
 
 us_recent %>% 
   ggplot(aes(x = date, y = cases)) +
@@ -1367,19 +1377,22 @@ us_recent %>%
   #   data  = us_total
   # ) +
   geom_point(
-    aes(color = state),
-    size  = 1.5,
+    aes(color = perc_inc_grp),
+    size  = .5,
     alpha = .5,
-    data  = filter(us_recent, state_abb %in% highlight)
+    data  = filter(us_recent, state_abb %in% highlight$state_abb)
   ) +
   geom_text_repel(
-    aes(label = state_abb, color = state),
+    aes(label = state_abb, color = perc_inc_grp),
     size  = 2,
     alpha = 1,
     nudge_x = .3,
     nudge_y = 0,
+    show.legend = F,
     # position = position_nudgedodge(width = 10),
-    data  = filter(us_recent, state_abb %in% highlight, date == last(date))
+    data  = filter(us_recent,
+                   state_abb %in% highlight$state_abb,
+                   date == last(date))
   ) +
   scale_color_scico_d(begin = .1, end = .9) +
   scale_x_date(date_breaks = '1 weeks') +
@@ -1393,8 +1406,7 @@ us_recent %>%
   labs(
     x = '', 
     y = '',
-    subtitle =  'Total Confirmed Cases',
-    caption = 'Dark large dot is U.S. total'
+    subtitle =  'Total Confirmed Cases'
   ) +
   theme(
     axis.text.x  = element_text(size = 6),
@@ -1446,15 +1458,15 @@ mi_counties_sf = all_counties_sf %>%
 
 mi_plot =  mi_counties_sf %>% 
   arrange(date) %>% 
-  ggplot(aes(group=date)) +
+  ggplot(aes(group = date)) +
   geom_sf(aes(fill = cases), color = NA) +
-  coord_sf(xlim = c(-91,-82),
-           ylim = c(41, 48.5),
+  coord_sf(xlim   = c(-91,-82),
+           ylim   = c(41, 48.5),
            expand = FALSE) +
   scale_fill_scico(
-    trans = 'log',
-    breaks = c(1, 10, 50, 250, 1250, 5000),
-    palette = 'lajolla',
+    trans    = 'log',
+    breaks   = c(1, 10, 50, 250, 1250, 5000),
+    palette  = 'lajolla',
     na.value = 'gray95'
   ) +
   guides(fill = guide_legend(title = '')) +
@@ -1475,7 +1487,7 @@ library(gganimate)
 
 mi_plot_anim = mi_plot +
   labs(title = '{closest_state}') +
-  transition_states(date, transition_length = 2, state_length = 2) +
+  transition_states(date, transition_length = 2) +
   theme(title = element_text(color ='gray50'))
 
 mi_plot_anim
@@ -1525,7 +1537,7 @@ hcmap(
 ) %>%
   hc_colorAxis(
     dataClasses = color_classes(
-      c(0, 10, 100, 500, 1000, 2000, 5000, 1e4, 2e4),
+      c(0, 10, 100, 500, 1000, 2000, 5000, 1e4, 2e4, 5e4),
       colors = scico(6, end = .9, palette = 'lajolla')
     )
   ) %>%
@@ -1544,6 +1556,8 @@ hcmap(
 We can also do the trend for Washtenaw county here by just filtering the county trends data. There is a note at the county website:
 
 > Most of the diagnoses in the 3/31 spike on the New COVID-19 Cases Reported per Day chart represent a backlog of labs that have been pending for 1-2 weeks. This means most of these individuals got sick and were tested at least a week ago, but are receiving test results now because labs are just now catching up on tests.
+
+Note the error in the NY Times data base starting in June (as of June 10th).  It's not clear why or how they would have gotten this from any county or state source, but they added a couple hundred cases for Washtenaw.
 
 ```{r washtenaw-trend, echo=F}
   # ggforce::geom_bspline(aes(), alpha = .8) +
@@ -1572,7 +1586,7 @@ washtenaw_plot =  county_trends %>%
     na.value = 'gray92'
   ) + 
   scale_x_date(
-    date_breaks = '2 days',
+    date_breaks = '7 days',
     labels = function(x) format(x, format = "%m/%d")
   ) +
   scale_y_continuous(
@@ -1584,7 +1598,7 @@ washtenaw_plot =  county_trends %>%
   theme(
     axis.text.x = element_text(size = 6),
     axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_line(color = scales::alpha(acton, .25), size = .1),
+    panel.grid.major.y = element_line(color = scales::alpha(acton, .25), size = .1), 
     legend.key.size = unit(.25, 'cm'),
     legend.text     =  element_text(size = 6),
     legend.title    = element_text(size = 6)
@@ -1796,7 +1810,7 @@ hcmap(
 ) %>%
   hc_colorAxis(
     dataClasses = color_classes(
-      c(0, sort(unlist(map(c(1, 5), function(x)  x * 10^(1:4))))),
+      c(0, sort(unlist(map(c(1, 5), function(x)  x * 10^(1:5))))),
       colors = scico(6, end = .9, palette = 'lajolla')
     )
   ) %>%
@@ -1826,7 +1840,7 @@ model_rebuild_flag = FALSE
 
 ```{r us-state-daily-model-data, cache.rebuild=model_rebuild_flag}
 us_for_model = us %>% 
-  expand(date, state) %>% 
+  tidyr::expand(date, state) %>% 
   filter(date >= '2020-02-14') %>% 
   left_join(us) %>% 
   arrange(state, date) %>% 
