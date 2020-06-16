@@ -972,41 +972,49 @@
 <li><a href="#get-some-data">Get some data</a></li>
 <li><a href="#model">Model</a></li>
 <li><a href="#emmeans">emmeans</a></li>
-<li><a href="#basic-margins">Basic margins</a><ul>
-<li><a href="#in-r">In R</a></li>
-</ul></li>
-<li><a href="#stata-over">Stata over</a><ul>
+<li><a href="#stata-basic-margins">Stata: basic margins</a><ul>
 <li><a href="#r-by-hand">R by hand</a></li>
 <li><a href="#emmeans-1">emmeans</a></li>
+<li><a href="#margins">margins</a></li>
 </ul></li>
-<li><a href="#aside-dydx">Aside: dydx</a><ul>
+<li><a href="#stata-over">Stata: over</a><ul>
+<li><a href="#r-by-hand-1">R by hand</a></li>
+<li><a href="#emmeans-2">emmeans</a></li>
+<li><a href="#margins-1">margins</a></li>
+</ul></li>
+<li><a href="#stata-dydx">Stata: dydx</a><ul>
+<li><a href="#categorical-covariate">Categorical Covariate</a></li>
 <li><a href="#continuous-predictor">Continuous predictor</a></li>
+<li><a href="#r-by-hand-2">R by hand</a></li>
+<li><a href="#emmeans-3">emmeans</a></li>
+<li><a href="#margins-2">margins</a></li>
 </ul></li>
 <li><a href="#other-complications">Other complications</a></li>
-<li><a href="#alternatives">Alternatives</a></li>
+<li><a href="#r-packages">R Packages</a></li>
 <li><a href="#summary">Summary</a></li>
 <li><a href="#resources">Resources</a><ul>
+<li><a href="#reference">Reference</a></li>
 <li><a href="#notes">Notes</a></li>
-<li><a href="#packages">Packages</a></li>
 </ul></li>
 </ul>
 </nav>
 <hr class="d-toc-separator"/>
 <h2 id="introduction">Introduction</h2>
-<p>Getting predictions in R is and always has been pretty easy for the vast majority of modeling packages, as they provide a <span class="func" style="">predict</span> method for their models. For those in the Stata world, they typically use <code>margins</code>, but when they come to R, there is no obvious option of how to go about it<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, although a little digging will reveal <a href="#packages">many packages</a> that will provide the same sort of thing.</p>
-<p>There are numerous resources for both R and Stata for getting marginal results (i.e. predictions), but here we note the issues when models regard an <em>offset</em>, which is commonly used to model rates when the target variable is a count . The Stata <a href="https://www.stata.com/manuals/rmargins.pdf">documentation for the margins command</a> offers no specific details if or whether the offset/exposure is treated in any particular fashion, and some R packages appear not to know what to do with it, or offer few options to deal with it. Here we’ll try to sort some of this out.</p>
+<p>Getting predictions in R is and always has been pretty easy for the vast majority of modeling functions packages, as they provide a <span class="func" style="">predict</span> method for their models. For those in the Stata world, they typically use <code>margins</code> for this, but when they come to R, there is no obvious option of how to go about it<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Likewise, some in the R world catch a whiff of Stata’s margins and would likewise want something similar.</p>
+<p>A little digging will reveal there are actually <a href="#r-packages">many packages</a> that will provide the same sort of thing. Likewise there are numerous <a href="#resources">resources</a> for both R and Stata for getting marginal results (i.e. predictions), but here we note the issues when models regard an <em>offset</em>. Offsets are commonly used to model rates when the target variable is a count, but are used in other contexts as well. The Stata <a href="https://www.stata.com/manuals/rmargins.pdf">documentation for the margins command</a> offers no specific details of how the offset/exposure is treated, and some R packages appear not to know what to do with it, or offer few options to deal with it. So even when the models are identical, marginal estimates might be different in R and Stata. Here we’ll try to sort some of this out.</p>
 <h2 id="get-some-data">Get some data</h2>
 <p>We will use the <span class="objclass" style="">Insurance</span> data from the <span class="pack" style="">MASS</span> package which most with R will have access to. From the helpfile:</p>
 <blockquote>
 <p>The data given in data frame Insurance consist of the numbers of policyholders of an insurance company who were exposed to risk, and the numbers of car insurance claims made by those policyholders.</p>
 </blockquote>
 <ul>
-<li><em>District</em>: district of residence of policyholder (1 to 4): 4 is major cities.</li>
-<li><em>Group</em>: group of car with levels &lt;1 litre, 1–1.5 litre, 1.5–2 litre, &gt;2 litre</li>
-<li><em>Age</em>: the age of the insured in 4 groups labelled &lt;25, 25–29, 30–35, &gt;35</li>
-<li><em>Holders</em>: number of policyholders</li>
-<li><em>Claims</em>: number of claims</li>
+<li><strong>District</strong>: district of residence of policyholder (1 to 4): 4 is major cities.</li>
+<li><strong>Group</strong>: group of car with levels &lt;1 litre, 1–1.5 litre, 1.5–2 litre, &gt;2 litre</li>
+<li><strong>Age</strong>: the age of the insured in 4 groups labelled &lt;25, 25–29, 30–35, &gt;35</li>
+<li><strong>Holders</strong>: number of policyholders</li>
+<li><strong>Claims</strong>: number of claims</li>
 </ul>
+<p>We do a bit of minor processing, and I save the data as a <a href="https://github.com/m-clark/m-clark.github.io/raw/master/data/insurance.dta">Stata file</a> in case anyone wants to play with it in that realm.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 library(tidyverse)
@@ -1016,35 +1024,33 @@ set.seed(123)
 insurance = MASS::Insurance %&gt;%
   rename_all(tolower) %&gt;%
   mutate(
-    # create standard factors for typical output
-    age = factor(
-      age,
-      levels = c(&#39;&lt;25&#39;, &#39;25-29&#39;, &#39;30-35&#39;, &#39;&gt;35&#39;),
-      ordered = FALSE
-    ),
-    group = factor(
-      group,
-      levels = c(&#39;&lt;1l&#39;, &#39;1-1.5l&#39;, &#39;1.5-2l&#39;, &#39;&gt;2l&#39;),
-      ordered = FALSE
-    ),
-    # create a numeric age for later
+    # create standard rather than ordered factors for typical output
+    age   = factor(age, ordered = FALSE),
+    group = factor(group, ordered = FALSE),
+    
+    # create a numeric age covariate for later
     age_num = case_when(
       age == &#39;&lt;25&#39;   ~ sample(18:25, n(), replace = T),
       age == &#39;25-29&#39; ~ sample(25:29, n(), replace = T),
       age == &#39;30-35&#39; ~ sample(30:35, n(), replace = T),
-      age == &#39;&gt;35&#39;   ~ sample(35:75, n(), replace = T),
+      age == &#39;&gt;35&#39;   ~ sample(36:75, n(), replace = T),
     ),
+    
     # for stata consistency
     ln_holders = log(holders)
   )
 
-tidyext::describe_all(insurance)</code></pre>
+
+haven::write_dta(insurance, &#39;data/insurance.dta&#39;)</code></pre>
+</div>
+<p>Let’s take a quick peek to get our bearings.</p>
+<div class="layout-chunk" data-layout="l-body">
 <pre><code>
 $`Numeric Variables`
     Variable  N   Mean     SD  Min    Q1 Median     Q3     Max Missing
 1    holders 64 364.98 622.77  3.0 46.75 136.00 327.50 3582.00       0
 2     claims 64  49.23  71.16  0.0  9.50  22.00  55.50  400.00       0
-3    age_num 64  34.06  13.97 18.0 25.00  29.50  35.75   75.00       0
+3    age_num 64  35.23  15.83 18.0 25.00  29.50  35.50   75.00       0
 4 ln_holders 64   4.90   1.48  1.1  3.84   4.91   5.79    8.18       0
 
 $`Categorical Variables`
@@ -1063,11 +1069,9 @@ $`Categorical Variables`
 10 age      &gt;35           16    25
 11 age      25-29         16    25
 12 age      30-35         16    25</code></pre>
-<pre class="r"><code>
-haven::write_dta(insurance, &#39;data/insurance.dta&#39;)</code></pre>
 </div>
 <h2 id="model">Model</h2>
-<p>For demonstration, we run a model in as simple a form as possible. I use just a standard negative binomial with a single covariate <code>age</code>, so we can clearly see how the ouptut is being produced.</p>
+<p>Starting out, we run a model in as simple a form as possible. I use just a standard negative binomial with a single covariate <code>age</code>, so we can clearly see how the ouptut is being produced. Note that age has four categories as seen above.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 nb_glm_offset = MASS::glm.nb(claims ~  age + offset(ln_holders), data = insurance)
@@ -1104,32 +1108,37 @@ Number of Fisher Scoring iterations: 1
 
  2 x log-likelihood:  -434.385 </code></pre>
 </div>
-<p>We get the same result in Stata. So this means we can’t get different predictions if we do the same thing in either R or Stata.</p>
+<p>Now we run it with Stata. We get the same result, so this means we can’t get different predictions if we do the same thing in either R or Stata<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
 use &quot;data/insurance.dta&quot;
-nbreg claims age, offset(ln_holders) nolog</code></pre>
+
+nbreg claims i.age, offset(ln_holders) nolog</code></pre>
 <pre><code>
 Negative binomial regression                    Number of obs     =         64
-                                                LR chi2(1)        =      15.64
-Dispersion     = mean                           Prob &gt; chi2       =     0.0001
-Log likelihood = -217.23894                     Pseudo R2         =     0.0347
+                                                LR chi2(3)        =      15.73
+Dispersion     = mean                           Prob &gt; chi2       =     0.0013
+Log likelihood =  -217.1925                     Pseudo R2         =     0.0349
 
 ------------------------------------------------------------------------------
       claims |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
 -------------+----------------------------------------------------------------
-         age |  -.1412682   .0321781    -4.39   0.000    -.2043361   -.0782004
-       _cons |  -1.439259   .0990785   -14.53   0.000    -1.633449   -1.245068
+         age |
+      25-29  |  -.1269666   .1182871    -1.07   0.283    -.3588049    .1048718
+      30-35  |  -.2533991    .116535    -2.17   0.030    -.4818034   -.0249948
+        &gt;35  |  -.4193953   .1068907    -3.92   0.000    -.6288973   -.2098933
+             |
+       _cons |  -1.592325   .0913742   -17.43   0.000    -1.771415   -1.413235
   ln_holders |          1  (offset)
 -------------+----------------------------------------------------------------
-    /lnalpha |  -3.342332    .353636                     -4.035446   -2.649218
+    /lnalpha |  -3.346431   .3544212                     -4.041084   -2.651778
 -------------+----------------------------------------------------------------
-       alpha |   .0353544   .0125026                      .0176778    .0707065
+       alpha |   .0352098   .0124791                      .0175784    .0705257
 ------------------------------------------------------------------------------
-LR test of alpha=0: chibar2(01) = 38.85                Prob &gt;= chibar2 = 0.000</code></pre>
+LR test of alpha=0: chibar2(01) = 38.33                Prob &gt;= chibar2 = 0.000</code></pre>
 </div>
 <h2 id="emmeans">emmeans</h2>
-<p>First let’s use basic <span class="pack" style="">emmeans</span>, a very popular package for getting <em>estimated marginal means</em>, to get the age group predicted counts.</p>
+<p>First let’s use basic <span class="pack" style="">emmeans</span>, a very popular package for getting <em>estimated marginal means</em>, to get the predicted counts for each age group.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 library(emmeans)
@@ -1249,7 +1258,7 @@ Inf
 </tbody>
 </table>
 </div>
-<p>How is this result obtained? It is just the prediction at each value of the covariate with the offset held at its mean. We can duplicate by using the predict method and specifying a data frame with the values of interest.</p>
+<p>How is this result obtained? It is just the prediction at each value of the covariate with the offset held at its mean. We can duplicate by using the <span class="func" style="">predict</span> method and specifying a data frame with the values of interest.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 nd = data.frame(
@@ -1298,8 +1307,8 @@ prediction
 </div>
 <p>As an explicit comparison, the intercept represents group ‘&lt;25’, and if we exponentiate and add the offset we get:</p>
 <p><span class="math inline">\(exp(Intercept + \overline{ln\_holders}) = e^{-1.59+4.90} = \qquad\)</span> 27.437</p>
-<h2 id="basic-margins">Basic margins</h2>
-<p>Now let’s look at Stata. First we want just the basic margins output (similar to <code>at =</code> for the continuous case).</p>
+<h2 id="stata-basic-margins">Stata: basic margins</h2>
+<p>Now let’s look at Stata. First we want just the basic margins output.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
 margins age </code></pre>
@@ -1321,8 +1330,8 @@ Expression   : Predicted number of events, predict()
 ------------------------------------------------------------------------------</code></pre>
 </div>
 <p>These values, while consistent in pattern, are much different than the <code>emmeans</code> output, so what is going on?</p>
-<h3 id="in-r">In R</h3>
-<p>In this model, we only have the <code>age</code> covariate and the offset, so there really isn’t much to focus on besides the latter. To replicate the Stata output in R, we will use <em>all</em> values of the offset for <em>every</em> level of <code>age</code>, and subsequently get an average prediction for each age group. First we create a data frame for prediction using <code>expand.grid</code>, get the predictions for all those values, then get means per group.</p>
+<h3 id="r-by-hand">R by hand</h3>
+<p>In this model, we only have the <code>age</code> covariate and the offset, so there really isn’t much to focus on besides the latter. To replicate the Stata output in R, we will use <em>all</em> values of the offset for <em>every</em> level of <code>age</code>, and subsequently get an average prediction for each age group. First we create a data frame for prediction using <code>expand.grid</code>, get the predictions for all those values, then get mean prediction per group.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 predictions = 
@@ -1382,7 +1391,94 @@ avg_prediction
 </tbody>
 </table>
 </div>
-<h2 id="stata-over">Stata over</h2>
+<h3 id="emmeans-1">emmeans</h3>
+<p><span class="pack" style="">emmeans</span> doesn’t allow one to provide all values of the offset, as adding additional values just applies them to each group and then recycles. In this case, it would just use the first four values of <code>ln_holders</code> for each age group respectively, which is not what we want.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+emmeans(
+  nb_glm_offset,
+  ~ age,
+  type = &quot;response&quot;,
+  offset = insurance$ln_holders
+)</code></pre>
+<pre><code>
+ age   response    SE  df asymp.LCL asymp.UCL
+ &lt;25       40.1  3.64 Inf      33.6      47.9
+ 25-29     47.3  3.53 Inf      40.9      54.8
+ 30-35     38.8  2.78 Inf      33.8      44.7
+ &gt;35      224.7 12.25 Inf     201.9     250.0
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+<pre class="r"><code>
+insurance$ln_holders[1:4]</code></pre>
+<pre><code>
+[1] 5.283204 5.575949 5.505332 7.426549</code></pre>
+</div>
+<p>If we add the offset to the <code>spec</code> argument, it still just fixes it at the mean. So at least using the standard approaches with this model will not give you the same thing as Stata.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+emmeans(
+  nb_glm_offset,
+  ~ age + offset(ln_holders),
+  type = &quot;response&quot;
+)</code></pre>
+<pre><code>
+ age   ln_holders response    SE  df asymp.LCL asymp.UCL
+ &lt;25          4.9     27.4 2.489 Inf      23.0      32.8
+ 25-29        4.9     24.2 1.802 Inf      20.9      28.0
+ 30-35        4.9     21.3 1.525 Inf      18.5      24.5
+ &gt;35          4.9     18.0 0.983 Inf      16.2      20.1
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+</div>
+<h3 id="margins">margins</h3>
+<p>The <span class="pack" style="">margins</span> package attempts to duplicate Stata’s margins, be we can see it has an issue with the offset.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(margins)
+
+margins(
+  nb_glm_offset,
+  variables = &#39;age&#39;,
+  type = &quot;response&quot;  # default
+)</code></pre>
+<pre><code>
+Error in offset(ln_holders): could not find function &quot;offset&quot;</code></pre>
+</div>
+<p>The offset function is part of the stats package of the base R installation, so I tried rerunning the model using <code>stats::offset</code>, but this did not lead to a result I could duplicate in an obvious way. However, in the end I think it is something about the way the <span class="objclass" style="">negbin</span> class is not handled (which isn’t explicitly supported by margins, though it is also <span class="objclass" style="">glm</span> class which is supported). Changing the model to poisson actually produces the dydx result we’d get in Stata.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+pois_glm_offset = glm(claims ~  age + stats::offset(ln_holders), data = insurance, family = &#39;poisson&#39;)
+
+margins(
+  pois_glm_offset,
+  variables = &#39;age&#39;,
+  type = &quot;response&quot;  # default
+)</code></pre>
+<pre><code>
+ age25-29 age30-35 age&gt;35
+   -3.981   -9.395 -8.486</code></pre>
+<pre class="r"><code>
+expand.grid(
+    age        = levels(insurance$age), 
+    ln_holders = insurance$ln_holders
+  ) %&gt;% 
+  mutate(prediction = predict(pois_glm_offset, newdata = ., type = &#39;response&#39;)) %&gt;% 
+  group_by(age) %&gt;% 
+  summarise(avg_prediction = mean(prediction)) %&gt;% 
+  mutate(diff = avg_prediction - avg_prediction[1]) </code></pre>
+<pre><code>
+# A tibble: 4 x 3
+  age   avg_prediction  diff
+  &lt;fct&gt;          &lt;dbl&gt; &lt;dbl&gt;
+1 &lt;25             56.8  0   
+2 25-29           52.8 -3.98
+3 30-35           47.4 -9.39
+4 &gt;35             48.3 -8.49</code></pre>
+</div>
+<h2 id="stata-over">Stata: over</h2>
 <p>In Stata, with categorical values we can also use the <code>over</code> approach. What do we get in this case?</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
@@ -1406,7 +1502,7 @@ over         : age
 ------------------------------------------------------------------------------</code></pre>
 </div>
 <p>These are very different from our previous results for Stata, so what’s happening here?</p>
-<h3 id="r-by-hand">R by hand</h3>
+<h3 id="r-by-hand-1">R by hand</h3>
 <p>This can be duplicated with the <span class="func" style="">predict</span> function as follows. While similar to the previous approach, here <em>only the observed values of the offset are used</em>. We then make predictions for all values of the data and average them by group.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
@@ -1415,7 +1511,8 @@ predictions_over = insurance %&gt;%
   group_modify(
     function(x, ...)
       data.frame(
-        prediction = mean(predict(nb_glm_offset, newdata = x, type = &#39;response&#39;))),
+        prediction = mean(predict(nb_glm_offset, newdata = x, type = &#39;response&#39;))
+      ),
     keep = TRUE
   ) </code></pre>
 </div>
@@ -1468,17 +1565,19 @@ prediction
 </table>
 </div>
 <p>The pattern is actually in the opposite direction, which is unexpected, but probably just reflects the fact that we just don’t have much data. However, it’s good to note that these respective approaches would not necessarily tell you the same thing.</p>
-<h3 id="emmeans-1">emmeans</h3>
-<p>I currently don’t know of an equivalence for <code>emmeans</code> in this offset case, but I kind of thought that was why people used it, so maybe it’s possible. Some initial searches didn’t turn up much, though it is hard to distinguish specific ‘average predictions’ from many other similar scenarios.</p>
+<h3 id="emmeans-2">emmeans</h3>
+<p>I currently don’t know of an equivalence for <span class="pack" style="">emmeans</span> in this offset case, and initial searches didn’t turn up much, though it is hard to distinguish specific ‘average predictions’ from many other similar scenarios. I attempted the following, which keeps the values of <code>ln_holders</code>, but it only keeps unique ones, and it’s not reproducing what I would expect, although it implies that it is averaging over the offset values.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
-emmeans(
-  nb_glm_offset2,
-  specs = ~ age,
-  type = &quot;response&quot;
-)</code></pre>
+rg = ref_grid(nb_glm_offset, cov.keep = c(&#39;ln_holders&#39;))
+
+em_over = emmeans(rg, ~age, type = &#39;response&#39;)
+exp(data.frame(em_over)$emmean)</code></pre>
 </div>
-<h2 id="aside-dydx">Aside: dydx</h2>
+<h3 id="margins-1">margins</h3>
+<p>Likewise I could find no specific documentation for the over approach for the <span class="pack" style="">margins</span> package.</p>
+<h2 id="stata-dydx">Stata: dydx</h2>
+<h3 id="categorical-covariate">Categorical Covariate</h3>
 <p>Sometimes people want differences as you move from one level to the next for some covariate, the ‘average marginal effect’.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
@@ -1571,42 +1670,28 @@ dydx
 </table>
 </div>
 <h3 id="continuous-predictor">Continuous predictor</h3>
-<p>Here we’ll just focus on a simple example for the continuous covariate case. We rerun the model with the same variable, just numeric rather than binned ages<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, but otherwise nothing really changes. For comparison we’ll set the numeric age values at roughly the midpoint of the binned categories.</p>
+<p>Now we’ll consider a continuous covariate. Here we’ll first just focus on a simple example where we rerun the model with the same variable, just numeric rather than binned ages<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, but otherwise nothing really changes. For comparison we’ll set the numeric age values at roughly the midpoint of the binned categories. First we can get predictions at specific values of the covariate.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="stata"><code>
-margins
 margins, at(age_num = (21, 27, 32, 50))</code></pre>
 <pre><code>
 Negative binomial regression                    Number of obs     =         64
-                                                LR chi2(1)        =      11.58
-Dispersion     = mean                           Prob &gt; chi2       =     0.0007
-Log likelihood = -219.26599                     Pseudo R2         =     0.0257
+                                                LR chi2(1)        =      12.58
+Dispersion     = mean                           Prob &gt; chi2       =     0.0004
+Log likelihood = -218.76542                     Pseudo R2         =     0.0280
 
 ------------------------------------------------------------------------------
       claims |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
 -------------+----------------------------------------------------------------
-     age_num |  -.0086592   .0023732    -3.65   0.000    -.0133107   -.0040078
-       _cons |  -1.506628   .0994308   -15.15   0.000    -1.701509   -1.311748
+     age_num |  -.0079258   .0020657    -3.84   0.000    -.0119746   -.0038771
+       _cons |  -1.521278   .0919801   -16.54   0.000    -1.701556   -1.341001
   ln_holders |          1  (offset)
 -------------+----------------------------------------------------------------
-    /lnalpha |  -3.141819   .3112304                      -3.75182   -2.531819
+    /lnalpha |  -3.191873   .3194707                     -3.818025   -2.565722
 -------------+----------------------------------------------------------------
-       alpha |   .0432041   .0134464                       .023475    .0795143
+       alpha |   .0410948   .0131286                      .0219712    .0768636
 ------------------------------------------------------------------------------
-LR test of alpha=0: chibar2(01) = 73.97                Prob &gt;= chibar2 = 0.000
-
-
-Predictive margins                              Number of obs     =         64
-Model VCE    : OIM
-
-Expression   : Predicted number of events, predict()
-
-------------------------------------------------------------------------------
-             |            Delta-method
-             |     Margin   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
--------------+----------------------------------------------------------------
-       _cons |   53.75832   2.266597    23.72   0.000     49.31587    58.20077
-------------------------------------------------------------------------------
+LR test of alpha=0: chibar2(01) = 69.85                Prob &gt;= chibar2 = 0.000
 
 
 Adjusted predictions                            Number of obs     =         64
@@ -1627,10 +1712,10 @@ Expression   : Predicted number of events, predict()
              |     Margin   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
 -------------+----------------------------------------------------------------
          _at |
-          1  |   67.44968   3.830308    17.61   0.000     59.94242    74.95695
-          2  |   64.03478   3.026573    21.16   0.000     58.10281    69.96676
-          3  |   61.32148   2.541668    24.13   0.000      56.3399    66.30306
-          4  |   52.47116    2.45675    21.36   0.000     47.65602     57.2863
+          1  |   67.50043     3.7343    18.08   0.000     60.18133    74.81952
+          2  |   64.36558   3.025254    21.28   0.000     58.43619    70.29497
+          3  |   61.86471     2.5763    24.01   0.000     56.81526    66.91417
+          4  |   53.63947   2.270244    23.63   0.000     49.18988    58.08907
 ------------------------------------------------------------------------------</code></pre>
 </div>
 <p>Again, we can duplicate this with the basic <span class="func" style="">predict</span> function. We just predict at that value of the covariate for all values of the offset, and get the average prediction as we did before.</p>
@@ -1670,7 +1755,7 @@ average_prediction
 21
 </td>
 <td style="text-align:right;">
-67.450
+67.500
 </td>
 </tr>
 <tr>
@@ -1678,7 +1763,7 @@ average_prediction
 27
 </td>
 <td style="text-align:right;">
-64.035
+64.366
 </td>
 </tr>
 <tr>
@@ -1686,7 +1771,7 @@ average_prediction
 32
 </td>
 <td style="text-align:right;">
-61.321
+61.865
 </td>
 </tr>
 <tr>
@@ -1694,15 +1779,113 @@ average_prediction
 50
 </td>
 <td style="text-align:right;">
-52.471
+53.639
 </td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>We can also get the <code>dydx</code> for the continuous covariate, which is the derivative of the target with respect to the covariate. In linear models, this is just the regression coefficient, but here we have to do things a little differently.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="stata"><code>
+margins, dydx(age_num)</code></pre>
+<pre><code>
+Negative binomial regression                    Number of obs     =         64
+                                                LR chi2(1)        =      12.58
+Dispersion     = mean                           Prob &gt; chi2       =     0.0004
+Log likelihood = -218.76542                     Pseudo R2         =     0.0280
+
+------------------------------------------------------------------------------
+      claims |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     age_num |  -.0079258   .0020657    -3.84   0.000    -.0119746   -.0038771
+       _cons |  -1.521278   .0919801   -16.54   0.000    -1.701556   -1.341001
+  ln_holders |          1  (offset)
+-------------+----------------------------------------------------------------
+    /lnalpha |  -3.191873   .3194707                     -3.818025   -2.565722
+-------------+----------------------------------------------------------------
+       alpha |   .0410948   .0131286                      .0219712    .0768636
+------------------------------------------------------------------------------
+LR test of alpha=0: chibar2(01) = 69.85                Prob &gt;= chibar2 = 0.000
+
+
+Average marginal effects                        Number of obs     =         64
+Model VCE    : OIM
+
+Expression   : Predicted number of events, predict()
+dy/dx w.r.t. : age_num
+
+------------------------------------------------------------------------------
+             |            Delta-method
+             |      dy/dx   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+-------------+----------------------------------------------------------------
+     age_num |  -.4255242   .1050737    -4.05   0.000    -.6314649   -.2195836
+------------------------------------------------------------------------------</code></pre>
+</div>
+<p>As noted for the categorical case, this value is the <em>average marginal effect</em>. As the Stata reference describes:</p>
+<blockquote>
+<p>It is not necessarily true that dydx() = 0.5 means that “y increases by 0.5 if x increases by 1”. It is true that “y increases with x at a rate such that, if the rate were constant, y would increase by 0.5 if x increased by 1”</p>
+</blockquote>
+<p>As the rate is not constant in this case, this may not be of much value in some contexts, but we can still see what Stata is doing.</p>
+<h3 id="r-by-hand-2">R by hand</h3>
+<p>For <code>dydx</code>, when it comes to continuous covariates, there isn’t an obvious change in the covariate to use (i.e. the <code>dx</code>), as is the case with categorical variables. So what we do is use a small arbitrary difference for the covariate (<span class="math inline">\(\epsilon\)</span>), get the predictions for the values of age that create that difference, and then average those differences in predicted values. For comparison to Stata I set <span class="math inline">\(\epsilon\)</span> to the value used by <code>margins</code>. Note that we are only using the observed values for the offset.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+h = function(x, epsilon = 1e-5) max(abs(x), 1) * sqrt(epsilon)
+
+age_dx_plus = insurance %&gt;% 
+  select(age_num, ln_holders) %&gt;% 
+  mutate(age_num = age_num + h(age_num))
+
+age_dx_minus = insurance %&gt;% 
+  select(age_num, ln_holders) %&gt;% 
+  mutate(age_num = age_num - h(age_num))
+
+preds = 
+  tibble(
+    dy = 
+      predict(nb_glm_offset_cont, age_dx_plus,  type = &#39;response&#39;) -
+      predict(nb_glm_offset_cont, age_dx_minus, type = &#39;response&#39;), 
+    dx   = age_dx_plus$age_num - age_dx_minus$age_num,
+    dydx = dy/dx
+  )
+
+# summarise(preds, ame = mean(dydx)) </code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+ame
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+-0.426
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>So we just get predictions for a small difference in age for each value of age, and average that difference in predictions.</p>
+<h3 id="emmeans-3">emmeans</h3>
+<p>The emmeans package is primarily geared toward factor variables, but does have support for numeric variables interacting with factors. However, this isn’t what we’re really looking for here.</p>
+<h3 id="margins-2">margins</h3>
+<p>We can however use the <span class="pack" style="">margins</span> package for this, and it provides the same result as before.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+margins::dydx(insurance, nb_glm_offset_cont, variable = &#39;age_num&#39;, eps = 1e-5) %&gt;% 
+  summarise(avg_slope = mean(dydx_age_num))</code></pre>
+<pre><code>
+   avg_slope
+1 -0.4255244</code></pre>
+</div>
 <p>For more on the <code>dydx</code> case for continuous variables in general, see the resources.</p>
 <h2 id="other-complications">Other complications</h2>
-<p>Obviously models will have more than one covariate, and in the particular case that was brought to my attention, there were also random effects. I may explore more in the future, but the general result should hold in those circumstances. As a quick example<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, we can get the same age results for both, by getting the age group predictions with all values of the dataset (not just the offset).</p>
+<p>Obviously models will have more than one covariate, and in the particular case that was brought to my attention, there were also random effects. I may explore more in the future, but the general result should hold in those circumstances. As a quick example<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>, we can get the same age results for both, by getting the age group predictions with all values of the dataset (not just the offset).</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 nb_glm_offset_full = MASS::glm.nb(
@@ -1864,38 +2047,33 @@ avg_prediction
 <div class="layout-chunk" data-layout="l-body">
 
 </div>
-<h2 id="alternatives">Alternatives</h2>
-<ul>
-<li><span class="pack" style="">margins</span>: explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn’t appear to be documentation on how the offset is dealt with.</li>
-<li><span class="pack" style="">emmeans</span>: provides many predictions of the sort discussed here, in a nice format and with plotting capabilities.</li>
-<li><span class="pack" style="">ggpredict</span>: uses <span class="func" style="">predict</span> and <code>emmeans</code> under the hood, so offers a nice way to do the same thing with a more viable plot as a result.</li>
-</ul>
+<h2 id="r-packages">R Packages</h2>
+<p>To summarize R’s capabilities with Stata-like margins with models using an offset, we have a few options we can note. First, we can get the values using the <span class="pack" style="">predict</span> method. Then there are the packages to help with getting these types of predictions. <span class="pack" style="">margins</span> explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn’t appear to be documentation on how the offset is dealt with by default. As we have seen, <span class="pack" style="">emmeans</span> provides many predictions of the sort discussed here, in a nice format and with plotting capabilities. Likewise <span class="pack" style="">ggpredict</span> uses <span class="func" style="">predict</span> and <code>emmeans</code> under the hood, so offers a nice way to do the same thing with a more viable plot as a result. Other packages and functions are available for specific settings. For example, <span class="func" style="">conditional_effects</span> in the <span class="pack" style="">brms</span> package provides predictions and visualization for the bayesian setting.</p>
 <h2 id="summary">Summary</h2>
-<p>Honestly, I pretty much always use the <span class="func" style="">predict</span> function with my specified data values because I know what it’s doing and I can understand the results without hesitation. Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. Just getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting <em>average</em> effects often also can be hard to interpret (e.g. nonlinear relationships).</p>
-<p>One thing you don’t get with averaged predictions using the <span class="func" style="">predict</span> function are interval estimates, but this could be obtained via bootstrapping. Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g. <code>se.fit = TRUE</code>).</p>
-<p>As a final note, this was a lot of wasted time for something that should be clearly documented. Furthermore, it’s a bit odd one can’t control what Stata’s offset value is, since it’s treated like any other covariate.</p>
+<p>Honestly, I pretty much always use the <span class="func" style="">predict</span> function with my specified data values because I know what it’s doing and I can understand the results without hesitation regardless of model. Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. Getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting <em>average</em> effects often also can be hard to interpret (e.g. nonlinear relationships).</p>
+<p>One thing you don’t get with some of the averaged predictions depicted using the <span class="func" style="">predict</span> function are interval estimates, but this could be obtained via bootstrapping. Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g. <code>se.fit = TRUE</code>), so if you getting predictions at key values of the variables it is trivial to get the interval estimate.</p>
+<p>Hopefully this will clarify the discrepancies between R and Stata with models using an offset. Perhaps in the future Stata will add some specific information about the offset in its documentation, as well as allow one to control its value like other variables.</p>
 <h2 id="resources">Resources</h2>
+<h3 id="reference">Reference</h3>
+<p><a href="https://www.stata.com/manuals/rmargins.pdf">Stata reference for margins</a></p>
+<p><a href="https://cran.r-project.org/web/packages/emmeans/index.html">emmeans</a></p>
+<p><a href="https://cloud.r-project.org/web/packages/margins/vignettes/Introduction.html">margins</a></p>
+<p><a href="https://strengejacke.github.io/ggeffects">ggeffects</a></p>
 <h3 id="notes">Notes</h3>
 <p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins01.pdf">Marginal Effects- Rich Williams notes- 1</a></p>
 <p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins02.pdf">Marginal Effects- Rich Williams notes- 2</a></p>
 <p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins03.pdf">Marginal Effects- Rich Williams notes- 3</a></p>
 <p><a href="https://www.stata-journal.com/article.html?article=st0260">Marginal Effects Stata Article by Rich Williams</a></p>
 <p><a href="https://errickson.net/marginsnotes/">Josh Errickson’s comparisons of Stata, emmeans, and ggeffects</a></p>
-<p><a href="https://stats.idre.ucla.edu/stata/faq/">UCLA FAQ (Margins command section)</a></p>
-<p>[Stata FAQ (based on old mfx command)][<a href="https://www.stata.com/support/faqs/statistics/marginal-effects-after-offset/" class="uri">https://www.stata.com/support/faqs/statistics/marginal-effects-after-offset/</a>]</p>
-<p><a href="https://www.stata.com/manuals/rmargins.pdf">Stata reference for margins</a></p>
-<h3 id="packages">Packages</h3>
-<ul>
-<li><code>emmeans</code></li>
-<li><code>ggeffects</code></li>
-<li><code>margins</code></li>
-</ul>
+<p><a href="https://stats.idre.ucla.edu/stata/faq/">UCLA IDRE FAQ (Margins command section)</a></p>
+<p><a href="https://www.stata.com/support/faqs/statistics/marginal-effects-after-offset/">Stata FAQ (based on old mfx command)</a></p>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1" role="doc-endnote"><p>Not the least of which is that most don’t call predictions <em>margins</em>, since these days we aren’t adding results to the margin of a hand-written table.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>There is never a justifiable reason to discretize age as near as I can tell.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3" role="doc-endnote"><p>There is a weird print issue where the Stata output isn’t showing the coefficient for one of the levels of <code>group</code>, but the model is correct and was verified directly using Stata.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Not the least of which is that most outside of econometrics don’t call predictions <em>margins</em>, since these days we aren’t adding results to the margin of a hand-written table.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Stata’s alpha is 1/theta from R’s output.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>There is rarely a justifiable reason to discretize age as near as I can tell, and doing so inevitably results in less satisfying and less reliable conclusions.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p>There is a weird print issue where the Stata output isn’t showing the coefficient for one of the levels of <code>group</code>, but the model is correct and was verified directly using Stata.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 <!--radix_placeholder_article_footer-->
