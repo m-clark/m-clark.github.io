@@ -13,12 +13,12 @@ output:
     toc: true
     css: ../../styles.css
 draft: true
-# bibliography: conv_references.bib
 # nocite is ignored issue #83
 nocite:  | 
-tags: [stata, margins, prediction, average marginal effects, marginal effects at means, estimated marginal means, regression, glm]
+tags: [stata, margins, prediction, average marginal effects, marginal effects at means, estimated marginal means, offset, emmeans, ggeffects, regression, glm]
 categories:
   - regression
+  - GLM
 ---
 
 ```{r setup, include=FALSE}
@@ -59,9 +59,9 @@ rnd = tidyext::rnd
 
 ## Introduction
 
-Getting predictions in R is and always has been pretty easy for the vast majority of modeling functions packages, as they provide a <span class="func" style = "">predict</span> method for their models.  For those in the Stata world, they typically use `margins` for this, but when they come to R, there is no obvious option of how to go about it[^etymology].  Likewise, some in the R world catch a whiff of Stata's margins and would likewise want something similar.
+Getting predictions in R is and always has been pretty easy for the vast majority of packages providing modeling functions, as they also provide a <span class="func" style = "">predict</span> method for the model objects.  For those in the Stata world, they typically use `margins` for this, but when they come to R, there is no obvious option of how to go about it[^etymology].  Likewise, some in the R world catch a whiff of Stata's margins and would want something similar, but may not be sure where to turn.
 
-A little digging will reveal there are actually [many packages][r packages] that will provide the same sort of thing.  Likewise there are numerous [resources][resources] for both R and Stata for getting marginal results (i.e. predictions), but here we note the issues when models regard an *offset*.  Offsets are commonly used to model rates when the target variable is a count, but are used in other contexts as well.  The Stata [documentation for the margins command](https://www.stata.com/manuals/rmargins.pdf) offers no specific details of how the offset/exposure is treated, and some R packages appear not to know what to do with it, or offer few options to deal with it.  So even when the models are identical, marginal estimates might be different in R and Stata.  Here we'll try to sort some of this out.
+A little digging will reveal there are actually [many packages][r packages] that will provide the same sort of thing.  In addition, there are numerous [resources][resources] for both R and Stata for getting marginal results (i.e. predictions).  However, here we note the issues that arise when models include an *offset*.  Offsets are commonly used to model rates when the target variable is a count, but are used in other contexts as well.  The Stata [documentation for the margins command](https://www.stata.com/manuals/rmargins.pdf) offers no specific details of how the offset/exposure is treated, and some R packages appear not to know what to do with it, or offer few options to deal with it.  So even when the models are identical, marginal estimates might be different in R and Stata.  Here we'll try to sort some of this out.
 
 
 ## Get some data
@@ -134,7 +134,7 @@ nbreg claims i.age, offset(ln_holders) nolog
 
 ## emmeans
 
-First let's use basic <span class="pack" style = "">emmeans</span>, a very popular package for getting *estimated marginal means*, to get the predicted counts for each age group. 
+First let's use <span class="pack" style = "">emmeans</span>, a very popular package for getting *estimated marginal means*, to get the predicted counts for each age group. 
 
 ```{r emmeans, eval=FALSE}
 library(emmeans)
@@ -206,12 +206,12 @@ qui nbreg claims i.age, offset(ln_holders) nolog
 margins age 
 ```
 
-These values, while consistent in pattern, are much different than the `emmeans` output, so what is going on?
+These values, while consistent in pattern, are much different than the <span class="pack" style = "">emmeans</span> output, so what is going on?
 
 
 ### R by hand
 
-In this model, we only have the `age` covariate and the offset, so there really isn't much to focus on besides the latter. To replicate the Stata output in R, we will use *all* values of the offset for *every* level of `age`, and subsequently get an average prediction for each age group.  First we create a data frame for prediction using `expand.grid`, get the predictions for all those values, then get mean prediction per group.
+In this model, we only have the `age` covariate and the offset, so there really isn't much to focus on besides the latter. To replicate the Stata output in R, we will use *all* values of the offset for *every* level of `age`, and subsequently get an average prediction for each age group.  First we create a data frame for prediction using <span class="func" style = "">expand.grid</span>, get the predictions for all those values, then get mean prediction per group.
 
 ```{r margins-at}
 predictions = 
@@ -243,7 +243,7 @@ emmeans(
 insurance$ln_holders[1:4]
 ```
 
-If we add the offset to the `spec` argument, it still just fixes it at the mean.  So at least using the standard approaches with this model will not give you the same thing as Stata.
+If we add the offset to the `spec` argument, it still just fixes it at the mean.  So at least using the standard approaches with this model does not appear to give you the same thing as Stata.
 
 ```{r emmeans-offset-in-spec}
 emmeans(
@@ -254,9 +254,20 @@ emmeans(
 ```
 
 
+Unfortunately Stata has the opposite issue. Trying to set the offset to the mean results in an error, and using `atmeans` doesn't change the previous result.
+
+```{stata margins-fix-offset, engine.path=stataexe, echo=-(1:2), consolelog=F}
+use "data/insurance.dta"
+qui nbreg claims i.age, offset(ln_holders) nolog
+margins age, atmeans
+margins age, at(ln_holders = 10.27)
+```
+
+
+
 ### margins
 
-The <span class="pack" style = "">margins</span> package attempts to duplicate Stata's margins, be we can see it has an issue with the offset.
+The <span class="pack" style = "">margins</span> package explicitly attempts to duplicate Stata's margins, but here we can see it has an issue with the offset.
 
 ```{r margins-dupe-margins}
 library(margins)
@@ -268,10 +279,14 @@ margins(
 )
 ```
 
-The offset function is part of the stats package of the base R installation, so I tried rerunning the model using `stats::offset`, but this did not lead to a result I could duplicate in an obvious way.  However, in the end I think it is something about the way the <span class="objclass" style = "">negbin</span> class is not handled (which isn't explicitly supported by margins, though it is also <span class="objclass" style = "">glm</span> class which is supported).  Changing the model to poisson actually produces the dydx result we'd get in Stata.
+The offset function is part of the stats package of the base R installation, so I tried rerunning the model using `stats::offset`, but this did not lead to a result I could duplicate in an obvious way.  However, in the end I think it is something about the way the <span class="objclass" style = "">negbin</span> class is not handled (which isn't explicitly supported by <span class="pack" style = "">margins</span>, though it is also <span class="objclass" style = "">glm</span> class, which *is* supported).  Changing the model to poisson actually produces the results for the differences in predictions for each group from the reference group.  We'll come back to this type of result later.
 
 ```{r margins-poisson}
-pois_glm_offset = glm(claims ~  age + stats::offset(ln_holders), data = insurance, family = 'poisson')
+pois_glm_offset = glm(
+  claims ~  age + stats::offset(ln_holders),
+  data = insurance,
+  family = 'poisson'
+)
 
 margins(
   pois_glm_offset,
@@ -304,15 +319,16 @@ These are very different from our previous results for Stata, so what's happenin
 
 ### R by hand
 
-This can be duplicated with the <span class="func" style = "">predict</span> function as follows.  While similar to the previous approach, here *only the observed values of the offset are used*. We then make predictions for all values of the data and average them by group.
+This can be duplicated with the <span class="func" style = "">predict</span> function as follows.  While similar to the previous approach, here *only the observed values of the offset for each group are used*. We then make predictions for all values of the data and average them by group.
 
 ```{r r-over}
 predictions_over = insurance %>%
   group_by(age) %>%
   group_modify(
-    function(x, ...)
-      data.frame(
-        prediction = mean(predict(nb_glm_offset, newdata = x, type = 'response'))
+    ~ data.frame(
+        prediction = mean(
+          predict(nb_glm_offset, newdata = ., type = 'response')
+        )
       ),
     keep = TRUE
   ) 
@@ -329,23 +345,37 @@ The pattern is actually in the opposite direction, which is unexpected, but prob
 
 I currently don't know of an equivalence for <span class="pack" style = "">emmeans</span> in this offset case, and initial searches didn't turn up much, though it is hard to distinguish specific 'average predictions' from many other similar scenarios. I attempted the following, which keeps the values of `ln_holders`, but it only keeps unique ones, and it's not reproducing what I would expect, although it implies that it is averaging over the offset values. 
 
-```{r emmeans-no-over, eval=FALSE}
+```{r emmeans-no-over, eval=T}
 rg = ref_grid(nb_glm_offset, cov.keep = c('ln_holders'))
 
-em_over = emmeans(rg, ~age, type = 'response')
-exp(data.frame(em_over)$emmean)
+# type is ignored for some reason, so we exponentiate after
+em_over = emmeans(rg, ~age, type = 'response')  
+
+data.frame(em_over) %>% 
+  mutate(count = exp(emmean))
 ```
 
 ### margins
 
-Likewise I could find no specific documentation for the over approach for the <span class="pack" style = "">margins</span> package.
+The over approach for the <span class="pack" style = "">margins</span> package. The package author states:
+
+>At present, margins() does not implement the over option. The reason for this is also simple: R already makes data subsetting operations quite simple using simple `[` extraction. If, for example, one wanted to calculate marginal effects on subsets of a data frame, those subsets can be passed directly to margins() via the data argument (as in a call to prediction()).
+
+It would look something like the following, but we still have the offset warning, so I don't show the result.
+
+```{r margins-pack-over,eval=FALSE}
+insurance %>% 
+  group_by(age) %>% 
+  group_map(~margins(nb_glm_offset, .), keep = TRUE) %>% 
+  bind_rows()
+```
 
 
 ## Stata: dydx
 
 ### Categorical Covariate
 
-Sometimes people want differences as you move from one level to the next for some covariate, the 'average marginal effect'.  
+Sometimes people want differences as you move from one level to the next for some covariate, the 'average marginal effect'.  In Stata this is obtained with the `dydx` option.
 
 ```{stata dydx, engine.path=stataexe, collectCode=TRUE, cleanlog=T, echo = -(1:2)}
 use "data/insurance.dta"
@@ -353,7 +383,7 @@ qui nbreg claims i.age, offset(ln_holders) nolog
 margins, dydx(age)
 ```
 
-We can get this from our initial predictions that used all offset values by just taking the differences in the predicted values.
+In R, we can get this from our initial predictions that used all offset values by just taking the differences in the predicted values.
 
 ```{r r-dydx-cat, eval=FALSE}
 predictions %>% 
@@ -369,7 +399,7 @@ predictions %>%
 
 ### Continuous predictor
 
-Now we'll consider a continuous covariate. Here we'll first just focus on a simple example where we rerun the model with the same variable, just numeric rather than binned ages[^dontbin], but otherwise nothing really changes.  For comparison we'll set the numeric age values at roughly the midpoint of the binned categories.  First we can get predictions at specific values of the covariate.
+Now we'll consider a continuous covariate. Here we'll again just focus on a simple example where we rerun the model, but with age as numeric rather than binned[^dontbin].  For comparison we'll set the numeric age values at roughly the midpoint of the binned categories.  We can do this using the `at` option.
 
 ```{stata cont, engine.path=stataexe, collectCode=TRUE, cleanlog=T, echo = -(1:2)}
 use "data/insurance.dta"
@@ -413,11 +443,11 @@ As noted for the categorical case, this value is the *average marginal effect*. 
 
 > It is not necessarily  true  that dydx() = 0.5 means that "y increases by 0.5 if x increases by  1".  It is true that  "y increases with x at a rate such that, if the rate were constant, y would increase by 0.5 if x increased by 1"
 
-As the rate is not constant in this case, this may not be of much value in some contexts, but we can still see what Stata is doing.
+This qualified interpretation may not be of much value in contexts where the rate is not constant, but we can still see what Stata is doing.
 
 ### R by hand
 
-For `dydx`, when it comes to continuous covariates, there isn't an obvious change in the covariate to use (i.e. the `dx`), as is the case with categorical variables. So what we do is use a small arbitrary difference for the covariate ($\epsilon$), get the predictions for the values of age that create that difference, and then average those differences in predicted values.  For comparison to Stata I set $\epsilon$ to the value used by `margins`.  Note that we are only using the observed values for the offset.
+For `dydx`, when it comes to continuous covariates, there isn't an obvious change in the covariate to use (i.e. the `dx`) to evaluate at each point, as is the case with categorical variables, which can use a reference group. So what we do is use a small arbitrary difference ($\epsilon$) for the covariate at its observed values, get the predictions for the values above and below the observed value, and then average those differences in predicted values.  For comparison to Stata, I set $\epsilon$ to the value used by the `margins` command.  Note that we are only using the observed values for the offset.
 
 ```{r r-dydx}
 h = function(x, epsilon = 1e-5) max(abs(x), 1) * sqrt(epsilon)
@@ -430,7 +460,7 @@ age_dx_minus = insurance %>%
   select(age_num, ln_holders) %>% 
   mutate(age_num = age_num - h(age_num))
 
-preds = 
+predictions_dydx = 
   tibble(
     dy = 
       predict(nb_glm_offset_cont, age_dx_plus,  type = 'response') -
@@ -439,13 +469,13 @@ preds =
     dydx = dy/dx
   )
 
-# summarise(preds, ame = mean(dydx)) 
+# summarise(predictions_dydx, ame = mean(dydx))
 ```
 
 
 ```{r r-dydx-show, echo = F}
-summarise(preds, ame = mean(dydx)) %>% 
-  kable_df()
+summarise(predictions_dydx, ame = mean(dydx)) %>% 
+  kable_df(digits = 5)
 ```
 
 So we just get predictions for a small difference in age for each value of age, and average that difference in predictions.
@@ -457,14 +487,27 @@ The emmeans package is primarily geared toward factor variables, but does have s
 
 ### margins
 
-We can however use the <span class="pack" style = "">margins</span> package for this, and it provides the same result as before.
+We can however use the <span class="pack" style = "">margins</span> package for this, and it provides the same result as before.  For whatever reason, it doesn't have an issue with the offset now.
 
-```{r dydx-margins}
-margins::dydx(insurance, nb_glm_offset_cont, variable = 'age_num', eps = 1e-5) %>% 
-  summarise(avg_slope = mean(dydx_age_num))
+```{r dydx-margins, eval = F}
+dydx(
+  insurance,
+  nb_glm_offset_cont,
+  variable = 'age_num',
+  eps = 1e-5
+) %>%
+  summarise(ame = mean(dydx_age_num))
 ```
-
-
+```{r dydx-margins-show, echo = F}
+dydx(
+  insurance,
+  nb_glm_offset_cont,
+  variable = 'age_num',
+  eps = 1e-5
+) %>%
+  summarise(ame = mean(dydx_age_num)) %>% 
+  kable_df(digits = 5)
+```
 
 For more on the `dydx` case for continuous variables in general, see the resources.
 
@@ -488,10 +531,10 @@ nbreg claims i.age i.group i.district, offset(ln_holders) nolog
 margins age
 ```
 
-To do this with predict, we basically create a copy of all the data for each level of age, make our predictions, then average them, just like we did with just the offset before.
+To do this with predict, we make predictions for all observed values as if they were at each level of age.  Then we average them for each age group, just like we did before.
 
 ```{r r-model-full-at-ref}
-predictions =  
+predictions_full_model =  
   map_df(1:4, function(i) mutate(insurance, age = levels(age)[i])) %>% 
   mutate(
     age = factor(age, levels(insurance$age)),   # convert back to factor
@@ -502,7 +545,7 @@ predictions =
 ```
 
 ```{r margins-full-show, echo=FALSE}
-kable_df(predictions)
+kable_df(predictions_full_model)
 ```
 
 ```{r matrix-result, echo=FALSE, eval=FALSE}
@@ -517,18 +560,17 @@ mean(exp((mm %*% coefs)[,1] + insurance$ln_holders))
 
 ## R Packages
 
-To summarize R's capabilities with Stata-like margins with models using an offset, we have a few options we can note. First, we can get the values using the <span class="pack" style = "">predict</span> method. Then there are the packages to help with getting these types of predictions. <span class="pack" style = "">margins</span> explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn't appear to be documentation on how the offset is dealt with by default. As we have seen, <span class="pack" style = "">emmeans</span> provides many predictions of the sort discussed here, in a nice format and with plotting capabilities. Likewise <span class="pack" style = "">ggpredict</span> uses <span class="func" style = "">predict</span> and `emmeans` under the hood, so offers a nice way to do the same thing with a more viable plot as a result.  Other packages and functions are available for specific settings.  For example, <span class="func" style = "">conditional_effects</span> in the <span class="pack" style = "">brms</span> package provides predictions and visualization for the bayesian setting.
+To summarize R's capabilities with Stata-like margins with models using an offset, we have a few options we can note. First, we can get the values using the <span class="func" style = "">predict</span> method. Then there are the packages to help with getting these types of predictions. <span class="pack" style = "">margins</span> explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn't appear to be documentation on how the offset is dealt with by default.  Furthermore, care must be taken if it isn't an explicitly supported model. As we have seen, <span class="pack" style = "">emmeans</span> provides many predictions of the sort discussed here, supports many more models, produces results in a nice format, and has plotting capabilities. Beyond those, <span class="pack" style = "">ggeffects</span> uses <span class="func" style = "">predict</span> and <span class="pack" style = "">emmeans</span> under the hood, so offers a nice way to do the same sorts of things, but with a more viable plot as a result.  Other packages and functions are available for specific settings.  For example, <span class="func" style = "">conditional_effects</span> in the <span class="pack" style = "">brms</span> package provides predictions and visualization for the bayesian setting.
 
 
 
 ## Summary
 
-Honestly, I pretty much always use the <span class="func" style = "">predict</span> function with my specified data values because I know what it's doing and I can understand the results without hesitation regardless of model.  Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. Getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting *average* effects often also can be hard to interpret (e.g. nonlinear relationships).    
+Hopefully this will clarify the discrepancies between R and Stata with models using an offset. Honestly, I pretty much always use the <span class="func" style = "">predict</span> function with my specified data values because I know what it's doing and I can understand the results without hesitation regardless of model or package used.  Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. On the other hand, getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting *average* effects often also can be hard to interpret (e.g. nonlinear relationships).    
 
-One thing you don't get with some of the averaged predictions depicted using the <span class="func" style = "">predict</span> function are interval estimates, but this could be obtained via bootstrapping.  Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g. `se.fit = TRUE`), so if you getting predictions at key values of the variables it is trivial to get the interval estimate.
+One thing you don't get with some of the averaged predictions using the <span class="func" style = "">predict</span> function are interval estimates, but this could be obtained via bootstrapping.  Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g. `se.fit = TRUE`), so if you getting predictions at key values of the variables it is trivial to get the interval estimate.  In general, most R packages are just using predict under the hood, so being familiar with it will likely get you what you need on its own.
 
-Hopefully this will clarify the discrepancies between R and Stata with models using an offset.  Perhaps in the future Stata will add some specific information about the offset in its documentation, as well as allow one to control its value like other variables.
-
+ 
 
 ## Resources
 
