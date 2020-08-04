@@ -56,6 +56,19 @@ summary(model_sem, rsq=T)  # compare with ACME in mediation
 
 
 
+# piecewiseSEM package ----------------------------------------------------
+
+library(piecewiseSEM)
+
+model_mediator <- lm(job_seek ~ treat + econ_hard + sex + age, data = jobs)
+model_outcome  <- lm(depress2 ~ treat + econ_hard + sex + age + job_seek, data = jobs)
+
+mediation_result <-  psem(model_mediator, model_outcome, data = jobs)
+
+summary(mediation_result)
+
+
+
 # psych package -----------------------------------------------------------
 
 library(psych)
