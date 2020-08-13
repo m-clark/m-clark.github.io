@@ -402,6 +402,16 @@
   }
   
   
+  .sidebar-section.custom {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .custom p {
+    margin-bottom: 0.5em;
+  }
+  
+  
   /* Improve display for browsers without grid (IE/Edge <= 15) */
   
   .downlevel {
@@ -935,7 +945,7 @@
   <!--radix_placeholder_site_in_header-->
   <!--/radix_placeholder_site_in_header-->
 
-  <link rel="stylesheet" href="..\..\styles.css" type="text/css"/>
+  <link rel="stylesheet" href="../../styles.css" type="text/css"/>
 
 </head>
 
@@ -972,7 +982,10 @@
 <li><a href="#multiple-group-analysis">Multiple group analysis</a></li>
 <li><a href="#latent-variable-intercepts">Latent variable intercepts</a></li>
 <li><a href="#observed-variable-group-differences">Observed variable group differences</a></li>
-<li><a href="#structural-model">Structural model</a></li>
+<li><a href="#structural-model">Structural model</a><ul>
+<li><a href="#multigroup-as-the-structural-model">Multigroup as the structural model</a></li>
+<li><a href="#group-difference-as-an-indirect-effect">Group difference as an indirect effect</a></li>
+</ul></li>
 <li><a href="#more-structural-models">More structural models</a></li>
 <li><a href="#sumfactor-score">Sum/Factor score</a></li>
 <li><a href="#summary-of-differences">Summary of differences</a></li>
@@ -1014,30 +1027,30 @@ fit_baseline &lt;- cfa(
 
 summary(fit_baseline)  </code></pre>
 <pre><code>
-lavaan 0.6-4 ended normally after 57 iterations
-
-  Optimization method                           NLMINB
-  Number of free parameters                         60
-
-  Number of observations per group         
-  Pasteur                                          156
-  Grant-White                                      145
+lavaan 0.6-7 ended normally after 57 iterations
 
   Estimator                                         ML
-  Model Fit Test Statistic                     115.851
+  Optimization method                           NLMINB
+  Number of free parameters                         60
+                                                      
+  Number of observations per group:                   
+    Pasteur                                        156
+    Grant-White                                    145
+                                                      
+Model Test User Model:
+                                                      
+  Test statistic                               115.851
   Degrees of freedom                                48
   P-value (Chi-square)                           0.000
-
-Chi-square for each group:
-
-  Pasteur                                       64.309
-  Grant-White                                   51.542
+  Test statistic for each group:
+    Pasteur                                     64.309
+    Grant-White                                 51.542
 
 Parameter Estimates:
 
+  Standard errors                             Standard
   Information                                 Expected
   Information saturated (h1) model          Structured
-  Standard Errors                             Standard
 
 
 Group 1 [Pasteur]:
@@ -1189,9 +1202,9 @@ summary(fit_1, header=F, nd=2)</code></pre>
 <pre><code>
 Parameter Estimates:
 
+  Standard errors                             Standard
   Information                                 Expected
   Information saturated (h1) model          Structured
-  Standard Errors                             Standard
 
 
 Group 1 [Pasteur]:
@@ -1864,7 +1877,7 @@ fit_3
 </table>
 </div>
 <h2 id="structural-model">Structural model</h2>
-<p>In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor. We can do that here.</p>
+<p>In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor. For lack of a better name, I’ll just call this a structural model in the sense we have an explicit regression model. We can do that here.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 # standard cfa with school predicting visual
@@ -1881,23 +1894,25 @@ hs_model_4a &lt;- &#39;
 fit_4a = sem(hs_model_4a, data=HolzingerSwineford1939, meanstructure=T)
 summary(fit_4a)</code></pre>
 <pre><code>
-lavaan 0.6-4 ended normally after 49 iterations
-
-  Optimization method                           NLMINB
-  Number of free parameters                         31
-
-  Number of observations                           301
+lavaan 0.6-7 ended normally after 49 iterations
 
   Estimator                                         ML
-  Model Fit Test Statistic                     161.444
+  Optimization method                           NLMINB
+  Number of free parameters                         31
+                                                      
+  Number of observations                           301
+                                                      
+Model Test User Model:
+                                                      
+  Test statistic                               161.444
   Degrees of freedom                                32
   P-value (Chi-square)                           0.000
 
 Parameter Estimates:
 
+  Standard errors                             Standard
   Information                                 Expected
   Information saturated (h1) model          Structured
-  Standard Errors                             Standard
 
 Latent Variables:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
@@ -2040,6 +2055,7 @@ fit_baseline
 </tbody>
 </table>
 </div>
+<h4 id="structural-model-as-multigroup">Structural model as multigroup</h4>
 <p>However, we can recover the previous multigroup results by regressing the other observed variables on school as well. This leaves the only group effect remaining to be the effect on <code>x1</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
@@ -2231,15 +2247,181 @@ conf.high
 0.134
 </td>
 <td style="text-align:right;">
--0.252
+NA
 </td>
 <td style="text-align:right;">
-0.275
+NA
 </td>
 </tr>
 </tbody>
 </table>
 </div>
+<h3 id="multigroup-as-the-structural-model">Multigroup as the structural model</h3>
+<p>Let’s see if we can get the structural model result from our multigroup approach. In fact we can. The following produces the same coefficient by summing the differences on the observed items. As we will see later, the statistical result is essentially what we’d get by using a linear regression on a sum score of visual items.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+hs_model_baseline_2 &lt;- &#39; 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+  
+  x1 ~ c(a1, a2)*1
+  x2 ~ c(b1, b2)*1
+  x3 ~ c(c1, c2)*1
+  
+  diff := (a1 - a2) + (b1 - b2) + (c1 - c2)
+&#39;
+
+fit_baseline_2 &lt;- cfa(
+  hs_model_baseline_2, 
+  data = HolzingerSwineford1939, 
+  group = &quot;school&quot;
+)
+
+summary(fit_baseline_2)</code></pre>
+<pre><code>
+lavaan 0.6-7 ended normally after 57 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of free parameters                         60
+                                                      
+  Number of observations per group:                   
+    Pasteur                                        156
+    Grant-White                                    145
+                                                      
+Model Test User Model:
+                                                      
+  Test statistic                               115.851
+  Degrees of freedom                                48
+  P-value (Chi-square)                           0.000
+  Test statistic for each group:
+    Pasteur                                     64.309
+    Grant-White                                 51.542
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.394    0.122    3.220    0.001
+    x3                0.570    0.140    4.076    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                1.183    0.102   11.613    0.000
+    x6                0.875    0.077   11.421    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.125    0.277    4.057    0.000
+    x9                0.922    0.225    4.104    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.479    0.106    4.531    0.000
+    speed             0.185    0.077    2.397    0.017
+  verbal ~~                                           
+    speed             0.182    0.069    2.628    0.009
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1        (a1)    4.941    0.095   52.249    0.000
+   .x2        (b1)    5.984    0.098   60.949    0.000
+   .x3        (c1)    2.487    0.093   26.778    0.000
+   .x4                2.823    0.092   30.689    0.000
+   .x5                3.995    0.105   38.183    0.000
+   .x6                1.922    0.079   24.321    0.000
+   .x7                4.432    0.087   51.181    0.000
+   .x8                5.563    0.078   71.214    0.000
+   .x9                5.418    0.079   68.440    0.000
+    visual            0.000                           
+    verbal            0.000                           
+    speed             0.000                           
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.298    0.232    1.286    0.198
+   .x2                1.334    0.158    8.464    0.000
+   .x3                0.989    0.136    7.271    0.000
+   .x4                0.425    0.069    6.138    0.000
+   .x5                0.456    0.086    5.292    0.000
+   .x6                0.290    0.050    5.780    0.000
+   .x7                0.820    0.125    6.580    0.000
+   .x8                0.510    0.116    4.406    0.000
+   .x9                0.680    0.104    6.516    0.000
+    visual            1.097    0.276    3.967    0.000
+    verbal            0.894    0.150    5.963    0.000
+    speed             0.350    0.126    2.778    0.005
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.736    0.155    4.760    0.000
+    x3                0.925    0.166    5.583    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                0.990    0.087   11.418    0.000
+    x6                0.963    0.085   11.377    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.226    0.187    6.569    0.000
+    x9                1.058    0.165    6.429    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.408    0.098    4.153    0.000
+    speed             0.276    0.076    3.639    0.000
+  verbal ~~                                           
+    speed             0.222    0.073    3.022    0.003
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1        (a2)    4.930    0.095   51.696    0.000
+   .x2        (b2)    6.200    0.092   67.416    0.000
+   .x3        (c2)    1.996    0.086   23.195    0.000
+   .x4                3.317    0.093   35.625    0.000
+   .x5                4.712    0.096   48.986    0.000
+   .x6                2.469    0.094   26.277    0.000
+   .x7                3.921    0.086   45.819    0.000
+   .x8                5.488    0.087   63.174    0.000
+   .x9                5.327    0.085   62.571    0.000
+    visual            0.000                           
+    verbal            0.000                           
+    speed             0.000                           
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.715    0.126    5.676    0.000
+   .x2                0.899    0.123    7.339    0.000
+   .x3                0.557    0.103    5.409    0.000
+   .x4                0.315    0.065    4.870    0.000
+   .x5                0.419    0.072    5.812    0.000
+   .x6                0.406    0.069    5.880    0.000
+   .x7                0.600    0.091    6.584    0.000
+   .x8                0.401    0.094    4.249    0.000
+   .x9                0.535    0.089    6.010    0.000
+    visual            0.604    0.160    3.762    0.000
+    verbal            0.942    0.152    6.177    0.000
+    speed             0.461    0.118    3.910    0.000
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+    diff              0.287    0.297    0.965    0.335</code></pre>
+</div>
+<h3 id="group-difference-as-an-indirect-effect">Group difference as an indirect effect</h3>
 <p>Going back to the first structural model <code>hs_model_4a</code>, it might be interesting to some to see that the group difference <em>still</em> regards a difference on the observed <code>x1</code> observed variable. We can see this more clearly if we set the <code>x1</code> loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la <a href="">mediation</a>) to estimate the group difference.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
@@ -2412,9 +2594,9 @@ summary(fit_4d, header=F, nd=2)</code></pre>
 <pre><code>
 Parameter Estimates:
 
+  Standard errors                             Standard
   Information                                 Expected
   Information saturated (h1) model          Structured
-  Standard Errors                             Standard
 
 
 Group 1 [Pasteur]:
@@ -2637,10 +2819,10 @@ conf.high
 0.134
 </td>
 <td style="text-align:right;">
--0.252
+NA
 </td>
 <td style="text-align:right;">
-0.275
+NA
 </td>
 </tr>
 <tr grouplength="4">
@@ -2693,10 +2875,10 @@ conf.high
 0.122
 </td>
 <td style="text-align:right;">
--0.091
+NA
 </td>
 <td style="text-align:right;">
-0.387
+NA
 </td>
 </tr>
 <tr>
@@ -2710,10 +2892,10 @@ conf.high
 0.122
 </td>
 <td style="text-align:right;">
--0.092
+NA
 </td>
 <td style="text-align:right;">
-0.386
+NA
 </td>
 </tr>
 </tbody>
@@ -2760,12 +2942,17 @@ hs_model_5b &lt;- &#39;
   speed  =~ x7 + l3*x8 + l3*x9 
 &#39;
 
-fit_5b = cfa(hs_model_5b, data = HolzingerSwineford1939, meanstructure=T)
+fit_5b = cfa(hs_model_5b,
+             data = lavaan::HolzingerSwineford1939,
+             meanstructure = T)
 
-HolzingerSwineford1939 = HolzingerSwineford1939 %&gt;% 
-  mutate(visual = lavPredict(fit_5b)[,&#39;visual&#39;],
-         verbal = lavPredict(fit_5b)[,&#39;verbal&#39;],
-         speed  = lavPredict(fit_5b)[,&#39;speed&#39;])
+HolzingerSwineford1939 = HolzingerSwineford1939 %&gt;%
+  mutate(
+    visual = lavPredict(fit_5b)[, &#39;visual&#39;],
+    verbal = lavPredict(fit_5b)[, &#39;verbal&#39;],
+    speed  = lavPredict(fit_5b)[, &#39;speed&#39;]
+  )
+
 lm_2 = lm(visual ~ school, data = HolzingerSwineford1939)
 coef(lm_2)  # same as x1 diffs</code></pre>
 <pre><code>
@@ -2787,13 +2974,17 @@ coef(lm_3)</code></pre>
 <p>Now lets do a sum score. It may not be obvious, but a sum score can be seen as assuming a latent variable model where there is only a single construct and loadings and variances are equal for each item. As such, it is a natural substitute for a latent variable if we don’t want to use SEM, especially if we’re dealing with a notably reliable measure.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
-HolzingerSwineford1939 = HolzingerSwineford1939 %&gt;% 
-  rowwise() %&gt;% 
-  mutate(visual_sum = sum(x1, x2, x3),
-         verbal_sum = sum(x4, x5, x6),
-         speed_sum  = sum(x7, x8, x9)) %&gt;% 
+HolzingerSwineford1939 = HolzingerSwineford1939 %&gt;%
+  rowwise() %&gt;%
+  mutate(
+    visual_sum = sum(x1, x2, x3),
+    verbal_sum = sum(x4, x5, x6),
+    speed_sum  = sum(x7, x8, x9)
+  ) %&gt;%
   ungroup()
+
 lm_sum = lm(visual_sum ~ school, HolzingerSwineford1939)
+
 coef(lm_sum)  # same as structural diffs</code></pre>
 <pre><code>
   (Intercept) schoolPasteur 
@@ -2817,10 +3008,13 @@ hs_model_4 &lt;- &#39;
 
 semTools::measurementInvariance(
   model = hs_model_4, 
-  data = HolzingerSwineford1939, 
+  data  = HolzingerSwineford1939, 
   group = &quot;school&quot;
 )</code></pre>
-<pre><code>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+cat(&quot;
 Measurement invariance models:
 
 Model 1 : fit.configural
@@ -2828,7 +3022,7 @@ Model 2 : fit.loadings
 Model 3 : fit.intercepts
 Model 4 : fit.means
 
-Chi Square Difference Test
+Chi-Squared Difference Test
 
                Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
 fit.configural 48 7484.4 7706.8 115.85                                  
@@ -2836,7 +3030,7 @@ fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244
 fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
 fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
 ---
-Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 
 Fit measures:
@@ -2845,7 +3039,35 @@ Fit measures:
 fit.configural 0.923 0.097        NA          NA
 fit.loadings   0.921 0.093     0.002       0.004
 fit.intercepts 0.882 0.107     0.038       0.015
-fit.means      0.840 0.122     0.042       0.015</code></pre>
+fit.means      0.840 0.122     0.042       0.015
+    &quot;)</code></pre>
+<pre><code>
+Measurement invariance models:
+
+Model 1 : fit.configural
+Model 2 : fit.loadings
+Model 3 : fit.intercepts
+Model 4 : fit.means
+
+Chi-Squared Difference Test
+
+               Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
+fit.configural 48 7484.4 7706.8 115.85                                  
+fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244    
+fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
+fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Fit measures:
+
+                 cfi rmsea cfi.delta rmsea.delta
+fit.configural 0.923 0.097        NA          NA
+fit.loadings   0.921 0.093     0.002       0.004
+fit.intercepts 0.882 0.107     0.038       0.015
+fit.means      0.840 0.122     0.042       0.015
+    </code></pre>
 </div>
 <p>Now for the new approach. From a single line of code, we now have to do the following to produce the same result. Great if you need that additional functionality, not so much if you don’t. If you look at the visual latent variable intercepts model , their difference would equal that seen in models <code>4d/e</code>.</p>
 <div class="layout-chunk" data-layout="l-body">
@@ -2866,7 +3088,7 @@ for (i in 0:length(test.seq)) {
   meq.list[[meq.label]] &lt;- 
     semTools::measEq.syntax(
       configural.model = hs_model_baseline,
-      data = HolzingerSwineford1939,
+      data = lavaan::HolzingerSwineford1939,
       ID.fac = &quot;auto.fix.first&quot;,
       group = &quot;school&quot;,
       group.equal = group.equal,
@@ -2877,33 +3099,33 @@ for (i in 0:length(test.seq)) {
 semTools::compareFit(meq.list)</code></pre>
 <pre><code>
 ################### Nested Model Comparison #########################
-Chi Square Difference Test
+Chi-Squared Difference Test
 
-           Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
-configural 48 7484.4 7706.8 115.85                                  
-loadings   54 7480.6 7680.8 124.04      8.192       6    0.22436    
-intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
-means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
-residuals  72 7541.9 7675.3 221.34     16.730       9    0.05312 .  
+                    Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
+meq.list.configural 48 7484.4 7706.8 115.85                                  
+meq.list.loadings   54 7480.6 7680.8 124.04      8.192       6    0.22436    
+meq.list.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
+meq.list.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
+meq.list.residuals  72 7541.9 7675.3 221.34     16.730       9    0.05312 .  
 ---
 Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 
 ####################### Model Fit Indices ###########################
-              chisq df pvalue   cfi   tli       aic       bic rmsea  srmr
-configural 115.851† 48   .000 .923† .885  7484.395  7706.822  .097  .068†
-loadings   124.044  54   .000 .921  .895† 7480.587† 7680.771  .093† .072 
-intercepts 164.103  60   .000 .882  .859  7508.647  7686.588  .107  .082 
-means      204.605  63   .000 .840  .817  7543.149  7709.969  .122  .109 
-residuals  221.335  72   .000 .831  .831  7541.879  7675.335† .117  .114 
+                       chisq df pvalue   cfi   tli       aic       bic rmsea  srmr
+meq.list.configural 115.851† 48   .000 .923† .885  7484.395  7706.822  .097  .068†
+meq.list.loadings   124.044  54   .000 .921  .895† 7480.587† 7680.771  .093† .072 
+meq.list.intercepts 164.103  60   .000 .882  .859  7508.647  7686.588  .107  .082 
+meq.list.means      204.605  63   .000 .840  .817  7543.149  7709.969  .122  .109 
+meq.list.residuals  221.335  72   .000 .831  .831  7541.879  7675.335† .117  .114 
 
 ################## Differences in Fit Indices #######################
-                      df    cfi    tli    aic     bic  rmsea  srmr
-loadings - configural  6 -0.002  0.009 -3.808 -26.050 -0.004 0.004
-intercepts - loadings  6 -0.038 -0.036 28.059   5.817  0.015 0.011
-means - intercepts     3 -0.042 -0.042 34.502  23.381  0.015 0.026
-residuals - residuals  9 -0.009  0.014 -1.270 -34.634 -0.005 0.005</code></pre>
+                                        df    cfi    tli    aic     bic  rmsea  srmr
+meq.list.loadings - meq.list.configural  6 -0.002  0.009 -3.808 -26.050 -0.004 0.004
+meq.list.intercepts - meq.list.loadings  6 -0.038 -0.036 28.059   5.817  0.015 0.011
+meq.list.means - meq.list.intercepts     3 -0.042 -0.042 34.502  23.381  0.015 0.026
+meq.list.residuals - meq.list.means      9 -0.009  0.014 -1.270 -34.634 -0.005 0.005</code></pre>
 </div>
-This last one just compares the means. We see that the
+<p>This last one just compares the means. We see that assuming no group difference results in a worse model all around.</p>
 <div class="layout-chunk" data-layout="l-body">
 <pre class="r"><code>
 # means_only
@@ -2923,7 +3145,7 @@ for (i in 0:length(test.seq)) {
   meq.list[[meq.label]] &lt;- 
     semTools::measEq.syntax(
       configural.model = hs_model_baseline,
-      data = HolzingerSwineford1939,
+      data = lavaan::HolzingerSwineford1939,
       ID.fac = &quot;auto.fix.first&quot;,
       group = &quot;school&quot;,
       group.equal = group.equal,
@@ -2934,22 +3156,22 @@ for (i in 0:length(test.seq)) {
 semTools::compareFit(meq.list)</code></pre>
 <pre><code>
 ################### Nested Model Comparison #########################
-Chi Square Difference Test
+Chi-Squared Difference Test
 
-           Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
-configural 48 7484.4 7706.8 115.85                                  
-means      51 7515.7 7727.0 153.19     37.343       3  3.893e-08 ***
+                    Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
+meq.list.configural 48 7484.4 7706.8 115.85                                  
+meq.list.means      51 7515.7 7727.0 153.19     37.343       3  3.893e-08 ***
 ---
 Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 
 ####################### Model Fit Indices ###########################
-              chisq df pvalue   cfi   tli       aic       bic rmsea  srmr
-configural 115.851† 48   .000 .923† .885† 7484.395† 7706.822† .097† .068†
-means      153.195  51   .000 .885  .837  7515.738  7727.044  .115  .089 
+                       chisq df pvalue   cfi   tli       aic       bic rmsea  srmr
+meq.list.configural 115.851† 48   .000 .923† .885† 7484.395† 7706.822† .097† .068†
+meq.list.means      153.195  51   .000 .885  .837  7515.738  7727.044  .115  .089 
 
 ################## Differences in Fit Indices #######################
-              df    cfi    tli    aic    bic rmsea  srmr
-means - means  3 -0.039 -0.048 31.343 20.222 0.018 0.021</code></pre>
+                                     df    cfi    tli    aic    bic rmsea  srmr
+meq.list.means - meq.list.configural  3 -0.039 -0.048 31.343 20.222 0.018 0.021</code></pre>
 </div>
 <div class="layout-chunk" data-layout="l-body">
 
@@ -2957,7 +3179,7 @@ means - means  3 -0.039 -0.048 31.343 20.222 0.018 0.021</code></pre>
 <section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1" role="doc-endnote"><p>Note that lavaan allows one to take this two step approach while estimating proper standard errors given the measurement error associated with the latent variable scores. The function is <span class="func">fsr</span>, but as of this writing, it is undergoing development, has been hidden from the user, and was not working.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>Note that lavaan allows one to take this two step approach while estimating proper standard errors given the measurement error associated with the latent variable scores. The function is <span class="func">fsr</span>, but as of this writing, it is undergoing development, has been hidden from the user, and was not working.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 <!--radix_placeholder_article_footer-->

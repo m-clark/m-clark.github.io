@@ -138,7 +138,7 @@ summary(fit_1, header=F, nd=2)
 For clearer presentation, we'll look at a table of the specific parameter estimates.
 
 ```{r hs_model_1_table, echo=FALSE}
-coef_1 = broom::tidy(fit_1) %>% 
+coef_1 = broom::tidy(fit_1, conf.int = T) %>% 
   filter(label != '')
 
 coef_1 %>% kable_df()
@@ -170,7 +170,7 @@ fit_2 <- cfa(hs_model_2,
 ```
 
 ```{r, hs_model_2_table, echo=FALSE}
-coef_2 = broom::tidy(fit_2) %>% 
+coef_2 = broom::tidy(fit_2, conf.int = T) %>% 
   filter(label != '')
 
 coef_2 %>% kable_df()
@@ -205,7 +205,7 @@ fit_3 <- cfa(hs_model_3,
 A comparison of all three shows the same results, but that the third model has fewer parameters, as the loadings and latent variable variances are not changing across groups.
 
 ```{r compare_123_data, echo=FALSE}
-coef_3 = broom::tidy(fit_3)
+coef_3 = broom::tidy(fit_3, conf.int = T)
 
 list(
   fit_1 = coef_1 %>% filter(label == 'diff'),
@@ -235,7 +235,7 @@ model_list %>%
 
 ## Structural model
 
-In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor.  We can do that here.
+In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor. For lack of a better name, I'll just call this a structural model in the sense we have an explicit regression model. We can do that here.
 
 ```{r hs_model_4a}
 # standard cfa with school predicting visual
@@ -265,6 +265,8 @@ model_list %>%
   map_df(function(x) length(coef(x))) %>% 
   kable_df()
 ```
+
+#### Structural model as multigroup
 
 However, we can recover the previous multigroup results by regressing the other observed variables on school as well. This leaves the only group effect remaining to be the effect on `x1`.
 
@@ -306,6 +308,36 @@ bind_rows(
   kable_df()
 ```
 
+
+### Multigroup as the structural model
+
+Let's see if we can get the structural model result from our multigroup approach. In fact we can. The following produces the same coefficient by summing the differences on the observed items. As we will see later, the statistical result is essentially what we'd get by using a linear regression on a sum score of visual items.
+
+```{r multigroup-to-structural}
+hs_model_baseline_2 <- ' 
+  visual =~ x1 + x2 + x3
+  verbal =~ x4 + x5 + x6
+  speed  =~ x7 + x8 + x9 
+  
+  x1 ~ c(a1, a2)*1
+  x2 ~ c(b1, b2)*1
+  x3 ~ c(c1, c2)*1
+  
+  diff := (a1 - a2) + (b1 - b2) + (c1 - c2)
+'
+
+fit_baseline_2 <- cfa(
+  hs_model_baseline_2, 
+  data = HolzingerSwineford1939, 
+  group = "school"
+)
+
+summary(fit_baseline_2)
+```
+
+
+### Group difference as an indirect effect
+
 Going back to the first structural model `hs_model_4a`, it might be interesting to some to see that the group difference *still* regards a difference on the observed `x1` observed variable.  We can see this more clearly if we set the `x1` loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la [mediation]()) to estimate the group difference.
 
 ```{r hs_model_4c}
@@ -326,8 +358,8 @@ fit_4c = cfa(hs_model_4c, data = HolzingerSwineford1939, meanstructure=T)
 ```
 
 ```{r hs_model_4c_table, echo=FALSE}
-coef_4c = broom::tidy(fit_4c) %>% filter(label=='diff') 
-coef_4a = broom::tidy(fit_4a) %>% filter(label=='diff') 
+coef_4c = broom::tidy(fit_4c, conf.int = T) %>% filter(label=='diff') 
+coef_4a = broom::tidy(fit_4a, conf.int = T) %>% filter(label=='diff') 
 
 bind_rows(coef_4a, coef_4c) %>% 
   mutate(model = c('4a', '4c')) %>% 
@@ -484,12 +516,17 @@ hs_model_5b <- '
   speed  =~ x7 + l3*x8 + l3*x9 
 '
 
-fit_5b = cfa(hs_model_5b, data = HolzingerSwineford1939, meanstructure=T)
+fit_5b = cfa(hs_model_5b,
+             data = lavaan::HolzingerSwineford1939,
+             meanstructure = T)
 
-HolzingerSwineford1939 = HolzingerSwineford1939 %>% 
-  mutate(visual = lavPredict(fit_5b)[,'visual'],
-         verbal = lavPredict(fit_5b)[,'verbal'],
-         speed  = lavPredict(fit_5b)[,'speed'])
+HolzingerSwineford1939 = HolzingerSwineford1939 %>%
+  mutate(
+    visual = lavPredict(fit_5b)[, 'visual'],
+    verbal = lavPredict(fit_5b)[, 'verbal'],
+    speed  = lavPredict(fit_5b)[, 'speed']
+  )
+
 lm_2 = lm(visual ~ school, data = HolzingerSwineford1939)
 coef(lm_2)  # same as x1 diffs
 
@@ -527,13 +564,17 @@ Now lets do a sum score. It may not be obvious, but a sum score can be seen as a
 
 
 ```{r sum_score}
-HolzingerSwineford1939 = HolzingerSwineford1939 %>% 
-  rowwise() %>% 
-  mutate(visual_sum = sum(x1, x2, x3),
-         verbal_sum = sum(x4, x5, x6),
-         speed_sum  = sum(x7, x8, x9)) %>% 
+HolzingerSwineford1939 = HolzingerSwineford1939 %>%
+  rowwise() %>%
+  mutate(
+    visual_sum = sum(x1, x2, x3),
+    verbal_sum = sum(x4, x5, x6),
+    speed_sum  = sum(x7, x8, x9)
+  ) %>%
   ungroup()
+
 lm_sum = lm(visual_sum ~ school, HolzingerSwineford1939)
+
 coef(lm_sum)  # same as structural diffs
 ```
 
@@ -556,7 +597,7 @@ Aside from general problems of 'accepting the null hypothesis', the basic idea i
 
 I find in consulting and in published reports that researchers think that because they are interested in group differences that they are required to take a measurement invariance approach.  This is not the case at all, as our previous models have shown.  However, below is a demonstration using <span class="pack">semTools</span>.  The package used to have a simple function that did exactly what most users want in a way easier than any other SEM package I've come across. In an effort to add flexibility and accommodate other data scenarios, they've made it much more complicated to do the default scenario, and have unfortunately deprecated the simple approach.  I demonstrate both below.
 
-```{r measurement_invariance}
+```{r measurement_invariance, eval=FALSE}
 hs_model_4 <- ' 
   visual  =~ x1 + x2 + x3
   verbal  =~ x4 + x5 + x6
@@ -565,10 +606,42 @@ hs_model_4 <- '
 
 semTools::measurementInvariance(
   model = hs_model_4, 
-  data = HolzingerSwineford1939, 
+  data  = HolzingerSwineford1939, 
   group = "school"
 )
 ```
+
+```{r mi-show, echo=-1}
+# because of the silliness going on with this function generally, this is just easier
+cat("
+Measurement invariance models:
+
+Model 1 : fit.configural
+Model 2 : fit.loadings
+Model 3 : fit.intercepts
+Model 4 : fit.means
+
+Chi-Squared Difference Test
+
+               Df    AIC    BIC  Chisq Chisq diff Df diff Pr(>Chisq)    
+fit.configural 48 7484.4 7706.8 115.85                                  
+fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244    
+fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
+fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Fit measures:
+
+                 cfi rmsea cfi.delta rmsea.delta
+fit.configural 0.923 0.097        NA          NA
+fit.loadings   0.921 0.093     0.002       0.004
+fit.intercepts 0.882 0.107     0.038       0.015
+fit.means      0.840 0.122     0.042       0.015
+    ")
+```
+
 
 Now for the new approach.  From a single line of code, we now have to do the following to produce the same result. Great if you need that additional functionality, not so much if you don't. If you look at the visual latent variable intercepts model , their difference would equal that seen in models `4d/e`.
 
@@ -589,7 +662,7 @@ for (i in 0:length(test.seq)) {
   meq.list[[meq.label]] <- 
     semTools::measEq.syntax(
       configural.model = hs_model_baseline,
-      data = HolzingerSwineford1939,
+      data = lavaan::HolzingerSwineford1939,
       ID.fac = "auto.fix.first",
       group = "school",
       group.equal = group.equal,
@@ -600,7 +673,9 @@ for (i in 0:length(test.seq)) {
 semTools::compareFit(meq.list)
 ```
 
-This last one just compares the means.  We see that the 
+This last one just compares the means.  We see that assuming no group difference results in a worse model all around.
+
+
 ```{r measurement_invariance_means_only}
 # means_only
 test.seq <- c("means")
@@ -619,7 +694,7 @@ for (i in 0:length(test.seq)) {
   meq.list[[meq.label]] <- 
     semTools::measEq.syntax(
       configural.model = hs_model_baseline,
-      data = HolzingerSwineford1939,
+      data = lavaan::HolzingerSwineford1939,
       ID.fac = "auto.fix.first",
       group = "school",
       group.equal = group.equal,
