@@ -334,6 +334,39 @@ fit_baseline_2 <- cfa(
 
 summary(fit_baseline_2)
 ```
+```{r multigroup-to-structural-tests, eval=F, echo=FALSE}
+hs_model_baseline_2 <- ' 
+  visual =~ lv1*x1 + lv2*x2 + lv3*x3
+  verbal =~ lve1*x4 + lve2*x5 + lve3*x6
+  speed  =~ ls1*x7 + ls2*x8 + ls3*x9 
+  
+  x1 ~ c(a1, a2)*1
+  x2 ~ c(b1, b2)*1
+  x3 ~ c(c1, c2)*1
+
+  x1 ~~ x1v*x1
+  x2 ~~ x2v*x2
+  x3 ~~ x3v*x3
+
+  visual ~~ varvis*visual
+  verbal ~~ varverb*verbal
+  speed ~~ varspd*speed
+
+  visual ~~ vvcor*verbal
+  visual ~~ vspdcor*speed
+  verbal ~~ verbspdcor*speed
+
+  diff := (a1 - a2) + (b1 - b2) + (c1 - c2)
+'
+
+fit_baseline_2 <- cfa(
+  hs_model_baseline_2, 
+  data = HolzingerSwineford1939, 
+  group = "school"
+)
+
+summary(fit_baseline_2)
+```
 
 
 ### Group difference as an indirect effect
