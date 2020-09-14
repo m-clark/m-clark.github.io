@@ -162,12 +162,12 @@ I've only used Stan with Linux in a cluster computing environment. Applied users
 
 ### Other programming languages besides R
 
-If you're using Stan with Python, Stata, Julia, etc., then you're coding Stan directly, and you're likely very familiar with the forums and dealing with a variety of issues.  That's not to say that you might not find something useful here, it's just that I have nothing to offer you regarding those platforms specifically.
+If you're using Stan with Python, Stata, Julia, etc., then you're coding Stan directly, and you're likely very familiar with the forums and dealing with a variety of issues.  That's not to say that you won't find something useful here, it's just that I have nothing to offer you regarding those platforms specifically.
 
 
 ## Example data
 
-To start out, I'm going to create some data for us to run some basic models with.
+To start out, I'm going to create some data for us to run some basic models with. To make things interesting, the true underlying model has categorical and continuous covariates, interactions, nonlinear relationships, random effects (observations are clustered in groups), and some variables are collinear.  You can skip these details if uninterested, but note that we will be purposely using under- and over-fitted models relative to this one to see what happens.
 
 ```{r create-data-setup}
 library(tidyverse)
@@ -182,7 +182,9 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
     # a relatively rare categorical
     binary_2 = sample(0:1, N, replace = TRUE, prob = c(.05, .95)),  
     # two partly collinear numeric
-    mvtnorm::rmvnorm(N, mean = rep(0,3), sigma = lazerhawk::create_corr(runif(3, max = .6)))
+    mvtnorm::rmvnorm(N,
+                     mean = rep(0, 3),
+                     sigma = lazerhawk::create_corr(runif(3, max = .6)))
   )
   
   X_mm = cbind(
@@ -226,13 +228,12 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
   )
   
   # create target variable/linear predictor
-  
   y = X_mm %*% beta
   
   # add random effect
-  
   groups = sort(sample(1:ng, N, replace = T))
-  re = rnorm(ng, sd = .5)[groups]
+  
+  re = rnorm(ng, sd = .5)[groups]  # re sd = .5
   
   # add re and residual noise
   y = y + re + rnorm(N)
@@ -243,20 +244,20 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
 }
 ```
 
+If you want to check that  the parameters are recovered, run the following.
 
 ```{r create-data-test}
 dat = create_data(N = 10000)
-
-glimpse(dat)
 
 mod = lme4::lmer(y ~ . -group + (1|group), data.frame(dat[,-1]))
 
 mixedup::summarise_model(mod, ci = FALSE)
 ```
 
+We do not need as much data for our purposes so we'll set the total sample size to 1000.  We'll also make our binary covariates explicit factors, which will make things easier when want to visualize grouped effects later.
 
 ```{r create-data}
-# create a realistic data frame
+# create the primary data frame
 
 main_df = 
   create_data(N = 1000) %>% 
@@ -272,30 +273,55 @@ main_df =
 
 
 
-## Traditional steps
+## Basic Steps for Practical Modeling
 
-- Use standard/default priors for the model
-    - for standard models, normal or student t for the (fixed effect) coefficients
-    - (half) student-t for variances
-    - Otherwise, look at the [recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations)
-    
-    
-- Build models in increasing complexity
-    - Never start with the final model
+Once data is in hand there are basic steps for practical modeling with Stan tools.
 
-- Examine convergence via Rhat, ESS, visualization
-    - If you are okay here with no warnings or messages, you are okay for practical purposes. Any remaining issues, e.g. poor prediction, are likely to not have obvious solutions other than things like getting better data, revising theory, etc.
 
-- Examine fit visually with pp_check, tidybayes, etc.
-- Compare models using loo, posterior probabilities of models
-  - For technical reasons, avoid using bayes factors
+##### Use standard/default priors for the model
 
-```{r model-start-100}
-# no priors, no complexity, all default settings
+- For common regression models, normal or student t for the (fixed effect) coefficients. You will have to set this!
+- (half) student-t for variances. Defaults are usually fine.
+- Otherwise, look at the [recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations)
+
+##### Build models in increasing complexity
+
+- Never start with the 'final' model, if the fitting has issues with simpler models, things will only get worse with more complex models.
+- Getting model settings squared away earlier (e.g. setting number of iterations, other options) will save time later.
+
+##### Examine convergence via Rhat, ESS, visualization
+
+- If you are okay here with no warnings or messages, you are okay to proceed for practical purposes. Any remaining issues, e.g. poor prediction, are likely to not have obvious solutions other than things like getting better data, revising theory, etc.
+
+##### Examine fit visually  
+
+- <span class="func" style = "">pp_check</span>, tidybayes, etc.
+
+##### Compare models using loo, posterior probabilities of models
+
+- For technical reasons, avoid using bayes factors
+
+Assuming you have no problems in the above process, you have more or less fulfilled the basic requirements to do more standard analyses in Bayesian form.  Great! 
+
+
+
+## Warnings, What They Are, and What to do About Them
+
+Of course, if it was always that easy, we wouldn't be posting this. There are a few warnings that you're bound to come across at some point in modeling with the Stan ecosystem.  We'll cover these, as well as the most common solutions.  
+
+Primary reference: [Brief Guide to Stan’s Warnings](https://mc-stan.org/misc/warnings.html)
+
+
+### Rhat & Effective Sample Size
+
+We will start with a simple standard regression model that we know is not adequate.  We will use default priors and run very few iterations. 
+
+```{r model-start-100, message=TRUE}
+# no priors, no complexity, all default settings, few iterations
 library(brms)
 
 model_start_100 = brm(
-  y ~ b1 + b2 + x1 + x2 + x3, 
+  y ~ b1 + b2 + x1 + x2, 
   data = main_df,
   iter = 100
 )
@@ -304,22 +330,16 @@ summary(model_start_100)
 ```
 
 
-## Warnings, What They Are, and What to do About Them
-
-https://mc-stan.org/misc/warnings.html
-
-
-### Rhat & Effective Sample Size
-
-
-The warnings about Rhat and effective sample size (ESS) are likely to pop up if you use default iterations for more complex models.  The fix for these is usually simple, just let it run longer.  The default is 2000 iterations with warmup half of that.
+The warnings about Rhat and effective sample size (ESS) are likely to pop up if you use default iterations for more complex models.  They mostly regard the efficiency of the sampling process, and whether you have enough samples to have stable parameter estimates.  The fix for these warnings is usually simple, just let the model run for more iterations.  The default is 2000 iterations with warmup half of that.  Warmup iterations are not used in calculation of parameter estimates, so you can just adjust iterations relative to the warmup.
 
 As an example we can look at our short run model. If we plot the estimated values across each iteration for each chain, we can see that the chains could be mixing better, but only if you are used to looking at these things.  
 
 
 ```{r model-start-x1}
-plot(model_start_100, par = 'x1')
-mcmc_plot(model_start_100, type = 'trace')
+color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direction = -1))
+# plot(model_start_100, par = 'x1') # examine specific parameters
+mcmc_plot(model_start_100, type = 'combo')
+mcmc_plot(model_start_100, type = 'areas')
 ```
 
 To see what you would expect, just plot a series from a normal distribution.
@@ -330,34 +350,59 @@ ggplot2::qplot(x = 1:1000,
                geom = 'line')
 ```
 
+While things seem okay, what happens if we single out a particular chain, we may see otherwise.  In this case, the intercept and b2 coefficients may be problematic.
 
-Some suggest to look at rank plots instead of traditional traceplots.  Really, all we've changed is looking for something 'fuzzy' to looking for 'approximately uniform', so my opinion is that it's not much of an improvement visually or intuitively.  In general, histograms, which are variants of bar charts, are pretty much never an improvement on any visualization I've come across.  If you do use it, you can use an overlay approach to see if the ranks are mixing.  Looks a lot like what I'd be looking for from a traceplot.
+```{r trace-highlight}
+mcmc_plot(model_start_100, highlight = 1, type = 'trace_highlight')
+```
 
 
+
+Some suggest to look at rank plots instead of traditional traceplots.  Really, all we've changed is looking for something 'fuzzy' to looking for 'approximately uniform', so my opinion is that it's not much of an improvement visually or intuitively.  In general, histograms, which are variants of bar charts, are rarely an improvement on any visualization I've come across.  If you do use it, you can use an overlay approach to see if the ranks are mixing, but this looks a lot like what I'd be looking for from a traceplot.
 
 ```{r rank-plots}
 mcmc_plot(model_start_100, type = 'rank_hist')
 mcmc_plot(model_start_100, type = 'rank_overlay')
 ```
 
+#### Some technical details
 
-- **Rhat**: The Rhat statistic measures  the ratio of the average variance of samples within each chain to the variance of the pooled samples across chains; if all chains are at equilibrium, these will be the same and Rhat will be one. If the chains have not converged to a common distribution, the Rhat statistic will be greater than one. 
 
-- **ESS** is an estimate of the effective number of independent draws from the posterior distribution of the estimand of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will be smaller than the total number of iterations. 
-    - Bulk ESS: ESS for the mean
-    - Tail ESS: ESS for the 5% and 95% quantiles. Tail-ESS can help diagnosing problems due to different scales of the chains and slow mixing in the tails.
+##### Rhat
 
-- **Trace plot**: Shows the estimated parameter values at each iteration.  In general you would like a random bouncing around an average value.  
+The $\hat{R}$ statistic measures  the ratio of the average variance of samples within each chain to the variance of the pooled samples across chains; if all chains are at equilibrium, these will be the same and Rhat will be one. If the chains have not converged to a common distribution, the Rhat statistic will be greater than one.
 
-- **Rank plot**: (from bayesplot helpfile) Whereas traditional trace plots visualize how the chains mix over the course of sampling, rank histograms visualize how the values from the chains mix together in terms of ranking. An ideal plot would show the rankings mixing or overlapping in a uniform distribution.  See Vehtari et al. (2019) for details.
+##### ESS
 
-- **Efficiency plots**: This is often recommended but never with a function that actually does it.  I assume they mean something like the following, but honestly one shouldn't have to search forums and read the documentation of multiple functions to find this. Some just show you what you already saw in the summary
+Effective sample size is an estimate of the effective number of independent draws from the posterior distribution of the estimand of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will be smaller than the total number of iterations.
 
-```{r}
-mcmc_plot(model_start, type='rhat')
-mcmc_plot(model_start, type='neff')
-mcmc_plot(model_start, type='acf')
-mcmc_neff(neff_ratio(model_start))
+  - *Bulk ESS*: ESS for the mean
+  - *Tail ESS*: ESS for the 5% and 95% quantiles. Tail-ESS can help diagnose problems due to different scales of the chains and slow mixing in the tails.
+    
+##### Trace plot
+
+Shows the estimated parameter values at each iteration.  In general you would like a random bouncing around an average value.
+
+##### Rank plot
+
+From bayesplot helpfile: 
+
+>Whereas traditional trace plots visualize how the chains mix over the course of sampling, rank histograms visualize how the values from the chains mix together in terms of ranking. An ideal plot would show the rankings mixing or overlapping in a uniform distribution.  
+
+See Vehtari et al. (2019) for details.
+
+##### ACF plot
+
+The acf, or autocorrelation function plot, is exactly the same thing you'd visualize for any time series.  It is a plot of a series correlation with specific lags of itself.  Autocorrelation does not bias estimates, but increased autocorrelation may be more inefficient/slower. At lag zero, the series estimates are perfectly correlated with themselves, so that's where the plot usually starts.
+
+##### Efficiency plots
+
+I have seen these often been recommended but without an accompanying package function that actually does it.  I assume they mean something like the following, but honestly one shouldn't have to search forums and read the documentation of multiple functions to find this. Some just show you what you already saw in the summary, so don't really help. For the first two plots, darker is worse.
+
+```{r eff-plots}
+mcmc_plot(model_start_100, type = 'rhat')  # > 1.05 problematic
+mcmc_plot(model_start_100, type = 'neff')  # < .1 problem
+mcmc_plot(model_start_100, type = 'acf')
 ```
 
 #### Solution for Rhat/ESS warnings
@@ -371,48 +416,42 @@ brm(model, warmup = 2000, iter = 4000, thin = 8)  # 4*(4000 - 2000)/8 = 1000 pos
 ```
 
 
+
 ### BFMI low
 
-You may see a warning that says some number of chains had an estimated Bayesian Fraction of Missing Information (BFMI) that was too low. This implies that the adaptation phase of the Markov Chains did not turn out well and those chains likely did not explore the posterior distribution efficiently. For more details on this diagnostic, see https://arxiv.org/abs/1604.00695.
+You may see a warning that says some number of chains had an estimated Bayesian Fraction of Missing Information (BFMI) that was too low. This implies that the adaptation phase of the Markov Chains did not turn out well, and those chains likely did not explore the posterior distribution efficiently. For more details on this diagnostic, you can see [Betancourt's article](https://arxiv.org/abs/1604.00695), but this will almost surely be too technical for many applied and even more advanced users.
 
-
-In this case, these issues are easily remedied by just adding more iterations. I typically keep to 1000 posterior samples, which makes for nicer visualizations of distributions without creating relatively large model objects.
+In this case, the problem here is usually remedied by just adding more iterations as before. I typically keep to 1000 posterior samples, which makes for nicer visualizations of distributions without creating relatively large model objects.
 
 ```{r model-start-checks}
-model_start = update(model_start_100, warmup = 1750, iter = 2000)
+model_start = update(model_start_100, warmup = 1750, iter = 2000) # 4 * (2000 - 1750) = 1000 posterior draws
 summary(model_start)
 plot(model_start, par = 'x1')
 ```
 
-ADD SHINYSTAN IMG
 
 #### Solution for low BFMI
 
-If there aren't other serious problems, add more iterations.
+If there aren't other serious problems, add more iterations.  In some cases, switching from a heavy-tailed prior (e.g. student t) to normal would be helpful. Otherwise, you will approach it similarly to the problem of [divergent transitions][divergent transitions].
 
 
 ### Tree Depth
 
+Tree depth is a more technical warning that has to do with the details of Hamiltonian Monte Carlo. Practically speaking:
 
 > Lack of convergence and hitting the maximum number of leapfrog steps (equivalently maximum tree depth) are indicative of improper posteriors ~ Stan User Guide
 
 Sometimes you'll get a warning about hitting maximum tree depth, and without getting overly technical, the fix is easy enough.  Just set the maximum higher.
 
-```{r tree-depth, eval=FALSE}
-model_start = update(model_start_100, warmup = 1750, iter = 2000, control = list(max_tree_depth = 15) )
-```
 
 
-Unfortunately the shinystan documentation in the browser doesn't really tell you what to look for in these plots.  The glossary contains information likely overly technical for applied users, and if there is a problem, there's not really a whole lot to go on.  As an example, consider the tree depth plots.  What would not be good here? The help tells you the value should be somewhere between 0 and whatever `max_treedepth` is set at.  If they are large, the documentation states it could be due to three different things, all of which suggest either reparameterization of the model (probably not unless using Stan directly), or just increasing the value.  None of the documentation tells you what those plots are supposed to look like, and unfortunately that renders them as not very useful.
 
-The divergence and energy plots are similarly underexplained.  Many refer users to Betancourt's wonderful articles on the details, but these are far too technical for those not already steeped in the approach, and even then[^betanwhat].
-
-#### Solution for low max tree depth
+#### Solution for max tree depth
 
 Use the control argument to increase the value beyond 10.
 
-```{r max-tree, eval = F}
-model = brm(..., control = list(max_treedepth = `a number bigger than 10`))
+```{r tree-depth, eval=FALSE}
+model_start = update(model_start_100, warmup = 1750, iter = 2000, control = list(max_tree_depth = 15))
 ```
 
 
@@ -433,12 +472,13 @@ As an example, I'll make a relatively complex model with only a small random sam
 
 ```{r divergent-model}
 problem_model = brm(
-  y ~ b1*b2 + x1*b2 + x2*b2 + x3*b2 + (1|group),
-  data = main_df %>% slice_sample(prop = .15),
-  cores = 4,
+  y ~ b1*b2*x1 + x2*b2 + x3*b2 + (1 + x1 + b2|group),
+  data   = main_df %>% slice_sample(prop = .1),
+  cores  = 4,
   warmup = 10,
-  iter = 260,
-  seed = 12
+  iter   = 1010,
+  thin   = 4,
+  seed   = 12
 )
 
 problem_model
@@ -451,25 +491,36 @@ So what do we do in this case? Well let's start with visual inspection.
 
 A  diagnostic tool that is typically suggested to look at with divergent transitions is the <span class="emph" style = "">pairs plot</span>.  It is just a scatterplot matrix of the parameters estimates (and log posterior value), but it suffers from a few issues.  The plot is slow to render even with few parameters, and simply too unwieldy to use for many typical modeling situations. If you somehow knew in advance which parameters were causing issues, you could narrow it down by only looking at those parameters. But if you knew which parameters were the problem, you wouldn't need the pairs plot.  
 
-Another issue is that it isn't what you think it is.  The upper diagonal is not just the flipped coordinates of the lower diagonal (like every other scatterplot matrix you've seen).  The chains are split such that half are used for the above diagonal plots, and the other for the lower.  In addition, for diagonstic purposes:
+Another issue is that it isn't what you think it is.  The upper diagonal is not just the flipped coordinates of the lower diagonal (like every other scatterplot matrix you've seen).  The chains are split such that half are used for the above diagonal plots, and the other for the lower.  
 
 > In this case, plots below the diagonal will contain realizations that are below the median of the indicated variable (or are zero in the case of "divergent__"), and plots above the diagonal will contain realizations that are greater than or equal to the median of the indicated variable (or are one in the case of "divergent__"). ~ documentation for <span class="func" style = "">mcmc_pairs</span>
 
-I suspect this won't mean much to applied users. Another issue is that you could potentially change how the chains are split and it could dramatically change the how the pattern of divergent transitions looks.  But the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` argument will probably help, otherwise it likely won't.  In the cases I see for myself and clients, increasing `adapt_delta` rarely helps in any scenario.
+I suspect this won't mean much to applied users. Another issue is that you could change how the chains are split and it could potentially dramatically change the how the pattern of divergent transitions looks.  But the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` argument may help, otherwise it likely won't.  In the cases I see for myself and clients, increasing `adapt_delta` rarely helps in either case, but it doesn't hurt to try.
 
-Let's take a look anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency, don't take standard arguments to update, and generally require more effort than I want to spend on a diagnostic plot.  In addition, we'll use a density plot on the diagonal, instead of the poorer option of histogram.
+Let's take a look anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency, don't take standard arguments to update, and generally require more effort to figure out how to manipulate than I want to spend on a diagnostic plot.  In addition, we'll use a density plot on the diagonal, instead of the poorer option of histogram.
 
 ```{r pairs-plot-model-start-complex}
 mcmc_plot(
-  model_start_complex,
-  pars = c('b_x1', 'sigma'),
+  model_problem,
+  pars = c('b_b11', 'b_b21', 'sigma'),
   type = 'pairs',
   diag_fun = 'dens',
-  off_diag_fun = 'hex'
+  off_diag_fun = 'hex',
+  fixed = TRUE
 )
+
+# mcmc_pairs(
+#   model_problem,
+#   pars = c('b_b11', 'b_b21', 'sigma'),
+#   # type = 'pairs',
+#   diag_fun = 'dens',
+#   off_diag_fun = 'hex',
+#   np = nuts_params(model_problem),
+#   condition = pairs_condition(nuts = 'divergent__')
+# )
 ```
 
-We can see on the diagonal that the posterior distribution for `x1` is not even approaching normal. What you might see on the off-diagonal if there were a problem is some sort of 'funneling', which would indicate where the sampler is getting stuck in the parameter space.  However, this visual notion isn't really defined, and it may be happening without being obvious, displaying just a bump[^funnelcloud].  But you'll also regularly see correlated parameters, including nonlinearly related ones, but it's unclear whether these might be a problem as well.
+With problematic cases, what you might see on the off-diagonal plots is some sort of 'funneling', which would indicate where the sampler is getting stuck in the parameter space.  However, this visual notion isn't really defined, and it may be happening without being obvious, displaying just a bump[^funnelcloud].  But you'll also regularly see correlated parameters, including nonlinearly related ones, but it's unclear whether these might be a problem as well.
 
 For the main model the pairs plot for all parameters took several seconds to produce, and even with the hex option still looks pretty poor.  It shows the intercept and `b2` parameters to be notably correlated, but there is no obvious reason for this.
 
@@ -516,7 +567,7 @@ Use the control argument to increase `adapt_delta` to .99[^adapt_delta] and let 
 model = brm(..., control = list(adapt_delta = .99))
 ```
 
-Aside from that you will have to look more deeply, including issues with priors, model specification, and more.
+Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this typically comes from poor data (e.g. not scaled) combined with a complex model, and beyond that, the priors may need to be amended.
 
 
 #### More
@@ -524,13 +575,258 @@ Aside from that you will have to look more deeply, including issues with priors,
 https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099
 
 
+### shinystan
 
-## The practical approach to diagnostics
+ADD SHINYSTAN IMG
 
-For applied analysts, I would suggest primarily focusing on the density plots and trace plots for parameters.  For the density plots of regression coefficients, these should be roughly normal looking, for variance parameters you likely will see skewness, especially if the estimate is relatively near zero with smaller data sets. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a problem.  If the chains are not converging to one another, you probably already were getting warnings and messages.
+
+Unfortunately the shinystan documentation in the browser doesn't really tell you what to look for in these plots.  The glossary contains information likely overly technical for applied users, and if there is a problem, there's not really a whole lot to go on.  As an example, consider the tree depth plots.  What would not be good here? The help tells you the value should be somewhere between 0 and whatever `max_treedepth` is set at.  If they are large, the documentation states it could be due to three different things, all of which suggest either reparameterization of the model (probably not unless using Stan directly), or just increasing the value.  None of the documentation tells you what those plots are supposed to look like, and unfortunately that renders them as not very useful.
+
+The divergence and energy plots are similarly underexplained.  Many refer users to Betancourt's wonderful articles on the details, but these are far too technical for those not already steeped in the approach, and even then[^betanwhat].
+
+
+### Other messages
+
+Certain builds of rstan for certain settings (e.g. specific operating systems) will often have warnings or other messages.  Oftentimes it looks like a bunch of gobbledygook, which is typically something happening at the C++ level. If your model runs and produces output, you can typically ignore most cases. However, even then you should look it up on the forums just to be sure.
+
+#### Parser warnings
+
+Parser warnings are either a deprecation warning or another more serious kind (Jacobian). The latter will not happen if you're using higher level interfaces rather than programming in Stan directly. The other kind, deprecation warnings, are not something you can do anything about, but the developer of the package will likely need to make minor changes to the code to avoid them.  I've never seen parser warnings from using rstanarm or brms.
+
+
+#### Compilation warnings
+
+Compiler warnings happen regularly and indicate something going on at the compiler level, typically that something in Stan is being compiled but not used.  You can ignore these.
+
+
+
+#### Solutions for other messages
+
+If you are using a package to interface with Stan and not having an issue with the model (i.e. it runs), these messages can largely be ignored.
+
+
+## Summary: The Practical Approach to Diagnostics
+
+For applied analysts, I would suggest primarily focusing on the density plots and trace plots for parameters.  For the density plots of regression coefficients, these should be roughly normal looking, for variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a problem.  If the chains are not converging with one another, you probably already were getting warnings and messages.
+
+
+
+
+
+## Better Bayesian Approaches
+
+We've talked about the basics one can do to run a bayesian model, and what to do if there is a problem, which is the primary goal of this post.  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's do some 'best practical practices' to see what we come up with
+
+
+## Suggested steps
+
+- First generate 'fake data' to assess prior viability
+- With viable priors, start with a simple, but viable model
+- For simple models you do not need many iterations
+    - If you are doing standard GLM or simpler versions of common extensions, even the defaults are likely overkill.  For example, a basic linear regression should converge almost immediately.
+- Problems
+  - If Rhat is issue, run more iterations
+  - if max_tree_depth is issue, increase
+  - if divergent transitions
+      - Check data, has it been scaled?
+      - Use pairs plot
+      - Use parcoord plot
+      <!-- - reparameterize model -->
+      - get more/better data
+      - get a better model
+- Use pp_check
+    - Nice, but what if it doesn't fit?
+        - get better data
+        - get a better model
+- Explore a more viable model
+- Compare and/or average models
+
+In this case, let's say we know we should at least do a linear mixed model.  You could even start with just a linear regression, but we'll say we already know we need to at least account for the heterogeneity.
+
+
+
+
+## Simulate from priors
+
+A first step is to produce some viable priors.  The basic idea here is to generate coefficients based on the prior distributions, predict data based on those coefficients, and then compare the predictions to our observed target variable.  The brms package makes this very easy to do.  We will check the following:
+
+- Prior set 1
+  - regression coefficients: Normal with mean 0, standard deviation 10 
+  - Intercept: default
+  - Variances: default
+- Prior set 2
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: default
+  - Variances: default
+- Prior set 3
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: mean of `y`
+  - Variances: default
+- Prior set 4
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: based on mean of `y` (~3)
+  - Variances: based on sd of `y` (~1)
+
+We'll use pp_check to examine the prior-generated data versus the observed target `y`.  I show them all together at the end.
+
+```{r sample-prior, eval=FALSE}
+# prior_summary(model_start) # examine the defaults from a previous model.
+
+pr_norm_b_0_10 = prior(normal(0, 10), 'b')
+
+model_0_norm_b_0_10 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_0_10
+)
+
+# pp_check(model_0_norm_b_0_10, nsamples = 50)
+
+pr_norm_b_0_1 = prior(normal(0, 1), 'b')
+
+model_0_norm_b_0_1 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_0_1
+)
+
+# pp_check(model_0_norm_b_0_1, nsamples = 50)
+
+
+
+pr_norm_b_norm_int = c(
+  prior(normal(0, 1), class = 'b'),
+  prior(normal(3, 1), class = 'Intercept')#,
+)
+
+model_0_norm_b_0_1_norm_Int = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_norm_int
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+
+
+pr_norm_b_norm_int_t_sigma = c(
+  prior(normal(0, 1), class = 'b'),
+  prior(normal(3, 1), class = 'Intercept'),
+  prior(student_t(10, 1, 1), class = 'sigma')
+)
+
+model_0_norm_b_0_1_norm_Int_sigma = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_norm_int_t_sigma
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+```
+
+
+```{r sample-prior-show, eval=FALSE}
+library(patchwork)
+{
+  pp_check(model_0_norm_b_0_10, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Normal b, with defaults') +
+    # theme(axis.text.x = element_text(size= 6)) +
+    pp_check(model_0_norm_b_0_1, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Normal b tighter')
+  } /
+{
+  pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Add Int prior') +
+    pp_check(model_0_norm_b_0_1_norm_Int_sigma, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Add sigma prior')
+  }
+```
+
+So given that our target variable is between `r round(min(main_df$y))` and `r round(max(main_df$y))`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will help our models be more efficient and better behaved.
+
+Note that if all else fails you can use a convenience function like auto_prior demonstrated below.  From the help file:
+
+> auto_prior() is a small, convenient function to create some default priors for brms-models with automatically adjusted prior scales, in a similar way like rstanarm does. The default scale for the intercept is 10, for coefficients 2.5. If the outcome is gaussian, both scales are multiplied with sd(y). Then, for categorical variables, nothing more is changed. For numeric variables, the scales are divided by the standard deviation of the related variable. 
+
+Let's compare it to our previous worst case.
+
+```{r auto-prior}
+pr_auto = sjstats::auto_prior(
+  y ~ b1 + b2 + x1 + x2 + x3,
+  data = main_df,
+  gaussian = T
+)
+
+model_auto_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_auto
+)
+
+pp_check(model_auto_prior, nsamples = 50)
+
+
+```
+
+```{r default-prior, echo=FALSE}
+model_default_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior =  prior(uniform(-10, 10), 'b')
+)
+
+# pp_check(model_default_prior, nsamples = 50)
+```
+
+
+```{r proposed-priors-plot}
+{
+  pp_check(model_default_prior, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Defaults') +
+    # theme(axis.text.x = element_text(size= 6)) +
+    pp_check(model_auto_prior, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Auto prior')
+  } /
+{
+  pp_check(model_0_norm_b_0_10, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Normal b, with defaults') +
+    # theme(axis.text.x = element_text(size= 6)) +
+    pp_check(model_0_norm_b_0_1, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Normal b tighter')
+  } /
+{
+  pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Add Int prior') +
+    pp_check(model_0_norm_b_0_1_norm_Int_sigma, nsamples = 50) +
+    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
+    labs(title = 'Add sigma prior')
+  }
+```
+
 
 
 So now let's explore the actual effects. The <span class="func" style = "">conditional_effects</span> function is what we want here, as this is what you'd likely report visually.  Without interactions or other things going, on they aren't very interesting, but it's a useful tool nonetheless.
+
 
 ```{r model-start-explore}
 conditional_effects(model_start, 'b2')
@@ -587,107 +883,9 @@ model_re = brm(
 
 
 
-## Simulate from priors
 
 
-```{r sample-prior, eval=FALSE}
-pr = prior(normal(0, 10), 'b')
 
-model_0_norm_b = brm(
-  y ~ b1 + b2 + x1 + x2 + x3, 
-  data = main_df,
-  iter = 1000,
-  sample_prior = 'only',
-  prior = pr
-)
-
-pp_check(model_0_norm_b, nsamples = 50)
-
-pr = prior(normal(0, 1), 'b')
-
-model_0_norm_b_0_1 = brm(
-  y ~ b1 + b2 + x1 + x2 + x3, 
-  data = main_df,
-  iter = 1000,
-  sample_prior = 'only',
-  prior = pr
-)
-
-pp_check(model_0_norm_b_0_1, nsamples = 50)
-
-prior_summary(model_0)
-
-
-pr = c(
-  prior(normal(0, 1), class = 'b'),
-  prior(normal(3, 1), class = 'Intercept')#,
-)
-
-model_0_norm_b_0_1_norm_Int = brm(
-  y ~ b1 + b2 + x1 + x2 + x3, 
-  data = main_df,
-  iter = 1000,
-  sample_prior = 'only',
-  prior = pr
-)
-
-pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
-
-
-pr = c(
-  prior(normal(0, 1), class = 'b'),
-  prior(normal(3, 1), class = 'Intercept'),
-  prior(student_t(10, 1, 1), class = 'sigma'),
-)
-
-model_0_norm_b_0_1_norm_Int_sigma = brm(
-  y ~ b1 + b2 + x1 + x2 + x3, 
-  data = main_df,
-  iter = 1000,
-  sample_prior = 'only',
-  prior = pr
-)
-
-pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
-
-
-library(patchwork)
-{
-  pp_check(model_0_norm_b, nsamples = 50) +
-    scale_x_continuous(breaks = seq(-50, 50, by = 25), limits = c(-125, 125)) +
-    labs(title = 'Normal b, with defaults') +
-    pp_check(model_0_norm_b_0_1, nsamples = 50) +
-    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
-    labs(title = 'Normal b tighter')
-  } /
-{
-  pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50) +
-    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
-    labs(title = 'Add Int prior') +
-    pp_check(model_0_norm_b_0_1_norm_Int_sigma, nsamples = 50) +
-    scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) +
-    labs(title = 'Add sigma prior')
-  }
-  
-```
-
-
-## Suggested steps
-
-- First generate 'fake data' to assess prior viability
-- If Rhat is issue, run more iterations
-- if max_tree_depth is issue, increase
-- if divergent transitions
-    - Use pairs plot
-    - Use parcoord plot
-    - reparameterize model
-    - get better data
-    - get a better model
-- Use pp_check
-    - Nice, but what if it doesn't fit?
-        - get better data
-        - get a better model
--
 
 ## Get the model to run
 
@@ -796,7 +994,9 @@ http://mc-stan.org/cmdstanr/articles/cmdstanr.html Use CmdStan to save memory
 
 
 [^betanwhat]: Betancourt, whose work I admire greatly, typically makes my head spin.
+
 [^parcoord]: I swear sometimes we're taking a step back in time with some of these plots.  All of the diagnostic plots defaults appear to be styles you'd find in Tukey's EDA from 1950.  You don't necessarily need to get fancy, but surely the defaults could be better.
+
 [^funnelcloud]: And I say this as someone with  experience detecting funnel clouds.
 
 [^adapt_delta]: In my experience, there isn't a need to guess between .80 and .99 as the time differences are typically negligble.  If it doesn't work at .99, it won't at .9999 either.
