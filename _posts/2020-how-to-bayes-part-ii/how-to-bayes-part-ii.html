@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"/>
+  <meta name="generator" content="distill" />
+
+  <style type="text/css">
+  /* Hide doc at startup (prevent jankiness while JS renders/transforms) */
+  body {
+    visibility: hidden;
+  }
+  </style>
+
+ <!--radix_placeholder_import_source-->
+ <!--/radix_placeholder_import_source-->
+
+  <!--radix_placeholder_meta_tags-->
+  <title>Bayesian Analysis</title>
+  
+  <meta property="description" itemprop="description" content="Practical steps you can take in your Stan journey to deal with issues and explore your models fully."/>
+  
+  
+  <!--  https://schema.org/Article -->
+  <meta property="article:published" itemprop="datePublished" content="2020-09-17"/>
+  <meta property="article:created" itemprop="dateCreated" content="2020-09-17"/>
+  <meta name="article:author" content="Michael Clark"/>
+  
+  <!--  https://developers.facebook.com/docs/sharing/webmasters#markup -->
+  <meta property="og:title" content="Bayesian Analysis"/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:description" content="Practical steps you can take in your Stan journey to deal with issues and explore your models fully."/>
+  <meta property="og:locale" content="en_US"/>
+  
+  <!--  https://dev.twitter.com/cards/types/summary -->
+  <meta property="twitter:card" content="summary"/>
+  <meta property="twitter:title" content="Bayesian Analysis"/>
+  <meta property="twitter:description" content="Practical steps you can take in your Stan journey to deal with issues and explore your models fully."/>
+  
+  <!--/radix_placeholder_meta_tags-->
+  <!--radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-rmarkdown-metadata">
+  {"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["title","description","author","date","preview","output","draft","tags","categories"]}},"value":[{"type":"character","attributes":{},"value":["Bayesian Analysis"]},{"type":"character","attributes":{},"value":["Practical steps you can take in your Stan journey to deal with issues and explore your models fully.\n"]},{"type":"list","attributes":{},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["name","url"]}},"value":[{"type":"character","attributes":{},"value":["Michael Clark"]},{"type":"character","attributes":{},"value":["https://m-clark.github.io"]}]}]},{"type":"character","attributes":{},"value":["September 17, 2020"]},{"type":"character","attributes":{},"value":["../../img/r_and_stan.png"]},{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["distill::distill_article"]}},"value":[{"type":"list","attributes":{"names":{"type":"character","attributes":{},"value":["self_contained","toc","css"]}},"value":[{"type":"logical","attributes":{},"value":[false]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["../../styles.css","https://use.fontawesome.com/releases/v5.14.0/css/all.css"]}]}]},{"type":"logical","attributes":{},"value":[true]},{"type":"character","attributes":{},"value":["tags","taggy"]},{"type":"character","attributes":{},"value":["bayesian"]}]}
+  </script>
+  <!--/radix_placeholder_rmarkdown_metadata-->
+  
+  <script type="text/json" id="radix-resource-manifest">
+  {"type":"NULL"}
+  </script>
+  <!--radix_placeholder_navigation_in_header-->
+  <!--/radix_placeholder_navigation_in_header-->
+  <!--radix_placeholder_distill-->
+  
+  <style type="text/css">
+  
+  body {
+    background-color: white;
+  }
+  
+  .pandoc-table {
+    width: 100%;
+  }
+  
+  .pandoc-table>caption {
+    margin-bottom: 10px;
+  }
+  
+  .pandoc-table th:not([align]) {
+    text-align: left;
+  }
+  
+  .pagedtable-footer {
+    font-size: 15px;
+  }
+  
+  .html-widget {
+    margin-bottom: 2.0em;
+  }
+  
+  .l-screen-inset {
+    padding-right: 16px;
+  }
+  
+  .l-screen .caption {
+    margin-left: 10px;
+  }
+  
+  .shaded {
+    background: rgb(247, 247, 247);
+    padding-top: 20px;
+    padding-bottom: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .html-widget {
+    margin-bottom: 0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .shaded .shaded-content {
+    background: white;
+  }
+  
+  .text-output {
+    margin-top: 0;
+    line-height: 1.5em;
+  }
+  
+  .hidden {
+    display: none !important;
+  }
+  
+  d-article {
+    padding-bottom: 30px;
+  }
+  
+  d-appendix {
+    padding-top: 30px;
+  }
+  
+  d-article>p>img {
+    width: 100%;
+  }
+  
+  d-article iframe {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 2.0em;
+    width: 100%;
+  }
+  
+  figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  /* CSS for table of contents */
+  
+  .d-toc {
+    color: rgba(0,0,0,0.8);
+    font-size: 0.8em;
+    line-height: 1em;
+  }
+  
+  .d-toc-header {
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 1.3em;
+  }
+  
+  .d-toc a {
+    border-bottom: none;
+  }
+  
+  .d-toc ul {
+    padding-left: 0;
+  }
+  
+  .d-toc li>ul {
+    padding-top: 0.8em;
+    padding-left: 16px;
+    margin-bottom: 0.6em;
+  }
+  
+  .d-toc ul,
+  .d-toc li {
+    list-style-type: none;
+  }
+  
+  .d-toc li {
+    margin-bottom: 0.9em;
+  }
+  
+  .d-toc-separator {
+    margin-top: 20px;
+    margin-bottom: 2em;
+  }
+  
+  .d-article-with-toc {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  
+  
+  /* Tweak code blocks (note that this CSS is repeated above in an injection
+     into the d-code shadow dom) */
+  
+  d-code {
+    overflow-x: auto !important;
+  }
+  
+  pre.d-code code.d-code {
+    padding-left: 10px;
+    font-size: 12px;
+    border-left: 2px solid rgba(0,0,0,0.1);
+  }
+  
+  pre.text-output {
+  
+    font-size: 12px;
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  @media(min-width: 768px) {
+  
+  d-code {
+    overflow-x: visible !important;
+  }
+  
+  pre.d-code code.d-code  {
+      padding-left: 18px;
+      font-size: 14px;
+  }
+  pre.text-output {
+    font-size: 14px;
+  }
+  }
+  
+  /* Figure */
+  
+  .figure {
+    position: relative;
+    margin-bottom: 2.5em;
+    margin-top: 1.5em;
+  }
+  
+  .figure img {
+    width: 100%;
+  }
+  
+  .figure .caption {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 12px;
+    line-height: 1.5em;
+  }
+  
+  .figure img.external {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+    padding: 18px;
+    box-sizing: border-box;
+  }
+  
+  .figure .caption a {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .figure .caption b,
+  .figure .caption strong, {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 1.0);
+  }
+  
+  
+  
+  /* Tweak 1000px media break to show more text */
+  
+  @media(min-width: 1000px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 50px [text-start kicker-end] 65px 65px 65px 65px 65px 65px 65px 65px [text-end gutter-start] 65px [middle-end] 65px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 16px;
+    }
+  
+    .grid {
+      grid-column-gap: 16px;
+    }
+  
+    d-article {
+      font-size: 1.06rem;
+      line-height: 1.7em;
+    }
+    figure .caption, .figure .caption, figure figcaption {
+      font-size: 13px;
+    }
+  }
+  
+  @media(min-width: 1180px) {
+    .base-grid,
+    distill-header,
+    d-title,
+    d-abstract,
+    d-article,
+    d-appendix,
+    distill-appendix,
+    d-byline,
+    d-footnote-list,
+    d-citation-list,
+    distill-footer {
+      grid-template-columns: [screen-start] 1fr [page-start kicker-start] 60px [middle-start] 60px [text-start kicker-end] 60px 60px 60px 60px 60px 60px 60px 60px [text-end gutter-start] 60px [middle-end] 60px [page-end gutter-end] 1fr [screen-end];
+      grid-column-gap: 32px;
+    }
+  
+    .grid {
+      grid-column-gap: 32px;
+    }
+  }
+  
+  
+  /* Get the citation styles for the appendix (not auto-injected on render since
+     we do our own rendering of the citation appendix) */
+  
+  d-appendix .citation-appendix,
+  .d-appendix .citation-appendix {
+    font-size: 11px;
+    line-height: 15px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    padding-left: 18px;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.02);
+    padding: 10px 18px;
+    border-radius: 3px;
+    color: rgba(150, 150, 150, 1);
+    overflow: hidden;
+    margin-top: -12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
+  
+  /* Social footer */
+  
+  .social_footer {
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.67);
+  }
+  
+  .disqus-comments {
+    margin-right: 30px;
+  }
+  
+  .disqus-comment-count {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  
+  #disqus_thread {
+    margin-top: 30px;
+  }
+  
+  .article-sharing a {
+    border-bottom: none;
+    margin-right: 8px;
+  }
+  
+  .article-sharing a:hover {
+    border-bottom: none;
+  }
+  
+  .sidebar-section.subscribe {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .subscribe p {
+    margin-bottom: 0.5em;
+  }
+  
+  
+  .article-footer .subscribe {
+    font-size: 15px;
+    margin-top: 45px;
+  }
+  
+  
+  .sidebar-section.custom {
+    font-size: 12px;
+    line-height: 1.6em;
+  }
+  
+  .custom p {
+    margin-bottom: 0.5em;
+  }
+  
+  
+  /* Improve display for browsers without grid (IE/Edge <= 15) */
+  
+  .downlevel {
+    line-height: 1.6em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+  }
+  
+  .downlevel .d-title {
+    padding-top: 6rem;
+    padding-bottom: 1.5rem;
+  }
+  
+  .downlevel .d-title h1 {
+    font-size: 50px;
+    font-weight: 700;
+    line-height: 1.1em;
+    margin: 0 0 0.5rem;
+  }
+  
+  .downlevel .d-title p {
+    font-weight: 300;
+    font-size: 1.2rem;
+    line-height: 1.55em;
+    margin-top: 0;
+  }
+  
+  .downlevel .d-byline {
+    padding-top: 0.8em;
+    padding-bottom: 0.8em;
+    font-size: 0.8rem;
+    line-height: 1.8em;
+  }
+  
+  .downlevel .section-separator {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .downlevel .d-article {
+    font-size: 1.06rem;
+    line-height: 1.7em;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+  
+  
+  .downlevel .d-appendix {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: none;
+    font-size: 0.8em;
+    line-height: 1.7em;
+    margin-bottom: 0;
+    color: rgba(0,0,0,0.5);
+    padding-top: 40px;
+    padding-bottom: 48px;
+  }
+  
+  .downlevel .footnotes ol {
+    padding-left: 13px;
+  }
+  
+  .downlevel .base-grid,
+  .downlevel .distill-header,
+  .downlevel .d-title,
+  .downlevel .d-abstract,
+  .downlevel .d-article,
+  .downlevel .d-appendix,
+  .downlevel .distill-appendix,
+  .downlevel .d-byline,
+  .downlevel .d-footnote-list,
+  .downlevel .d-citation-list,
+  .downlevel .distill-footer,
+  .downlevel .appendix-bottom,
+  .downlevel .posts-container {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  
+  @media(min-width: 768px) {
+    .downlevel .base-grid,
+    .downlevel .distill-header,
+    .downlevel .d-title,
+    .downlevel .d-abstract,
+    .downlevel .d-article,
+    .downlevel .d-appendix,
+    .downlevel .distill-appendix,
+    .downlevel .d-byline,
+    .downlevel .d-footnote-list,
+    .downlevel .d-citation-list,
+    .downlevel .distill-footer,
+    .downlevel .appendix-bottom,
+    .downlevel .posts-container {
+    padding-left: 150px;
+    padding-right: 150px;
+    max-width: 900px;
+  }
+  }
+  
+  .downlevel pre code {
+    display: block;
+    border-left: 2px solid rgba(0, 0, 0, .1);
+    padding: 0 0 0 20px;
+    font-size: 14px;
+  }
+  
+  .downlevel code, .downlevel pre {
+    color: black;
+    background: none;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    text-align: left;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+  
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+  
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+  }
+  
+  </style>
+  
+  <script type="application/javascript">
+  
+  function is_downlevel_browser() {
+    if (bowser.isUnsupportedBrowser({ msie: "12", msedge: "16"},
+                                   window.navigator.userAgent)) {
+      return true;
+    } else {
+      return window.load_distill_framework === undefined;
+    }
+  }
+  
+  // show body when load is complete
+  function on_load_complete() {
+  
+    // set body to visible
+    document.body.style.visibility = 'visible';
+  
+    // force redraw for leaflet widgets
+    if (window.HTMLWidgets) {
+      var maps = window.HTMLWidgets.findAll(".leaflet");
+      $.each(maps, function(i, el) {
+        var map = this.getMap();
+        map.invalidateSize();
+        map.eachLayer(function(layer) {
+          if (layer instanceof L.TileLayer)
+            layer.redraw();
+        });
+      });
+    }
+  
+    // trigger 'shown' so htmlwidgets resize
+    $('d-article').trigger('shown');
+  }
+  
+  function init_distill() {
+  
+    init_common();
+  
+    // create front matter
+    var front_matter = $('<d-front-matter></d-front-matter>');
+    $('#distill-front-matter').wrap(front_matter);
+  
+    // create d-title
+    $('.d-title').changeElementType('d-title');
+  
+    // create d-byline
+    var byline = $('<d-byline></d-byline>');
+    $('.d-byline').replaceWith(byline);
+  
+    // create d-article
+    var article = $('<d-article></d-article>');
+    $('.d-article').wrap(article).children().unwrap();
+  
+    // move posts container into article
+    $('.posts-container').appendTo($('d-article'));
+  
+    // create d-appendix
+    $('.d-appendix').changeElementType('d-appendix');
+  
+    // create d-bibliography
+    var bibliography = $('<d-bibliography></d-bibliography>');
+    $('#distill-bibliography').wrap(bibliography);
+  
+    // flag indicating that we have appendix items
+    var appendix = $('.appendix-bottom').children('h3').length > 0;
+  
+    // replace citations with <d-cite>
+    $('.citation').each(function(i, val) {
+      appendix = true;
+      var cites = $(this).attr('data-cites').split(" ");
+      var dt_cite = $('<d-cite></d-cite>');
+      dt_cite.attr('key', cites.join());
+      $(this).replaceWith(dt_cite);
+    });
+    // remove refs
+    $('#refs').remove();
+  
+    // replace footnotes with <d-footnote>
+    $('.footnote-ref').each(function(i, val) {
+      appendix = true;
+      var href = $(this).attr('href');
+      var id = href.replace('#', '');
+      var fn = $('#' + id);
+      var fn_p = $('#' + id + '>p');
+      fn_p.find('.footnote-back').remove();
+      var text = fn_p.html();
+      var dtfn = $('<d-footnote></d-footnote>');
+      dtfn.html(text);
+      $(this).replaceWith(dtfn);
+    });
+    // remove footnotes
+    $('.footnotes').remove();
+  
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      var id = $(this).attr('id');
+      $('.d-toc a[href="#' + id + '"]').parent().remove();
+      appendix = true;
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('d-appendix'));
+    });
+  
+    // show d-appendix if we have appendix content
+    $("d-appendix").css('display', appendix ? 'grid' : 'none');
+  
+    // replace code blocks with d-code
+    $('pre>code').each(function(i, val) {
+      var code = $(this);
+      var pre = code.parent();
+      var clz = "";
+      var language = pre.attr('class');
+      if (language) {
+        // map unknown languages to "clike" (without this they just dissapear)
+        if ($.inArray(language, ["bash", "clike", "css", "go", "html",
+                                 "javascript", "js", "julia", "lua", "markdown",
+                                 "markup", "mathml", "python", "svg", "xml"]) == -1)
+          language = "clike";
+        language = ' language="' + language + '"';
+        var dt_code = $('<d-code block' + language + clz + '></d-code>');
+        dt_code.text(code.text());
+        pre.replaceWith(dt_code);
+      } else {
+        code.addClass('text-output').unwrap().changeElementType('pre');
+      }
+    });
+  
+    // localize layout chunks to just output
+    $('.layout-chunk').each(function(i, val) {
+  
+      // capture layout
+      var layout = $(this).attr('data-layout');
+  
+      // apply layout to markdown level block elements
+      var elements = $(this).children().not('d-code, pre.text-output, script');
+      elements.each(function(i, el) {
+        var layout_div = $('<div class="' + layout + '"></div>');
+        if (layout_div.hasClass('shaded')) {
+          var shaded_content = $('<div class="shaded-content"></div>');
+          $(this).wrap(shaded_content);
+          $(this).parent().wrap(layout_div);
+        } else {
+          $(this).wrap(layout_div);
+        }
+      });
+  
+  
+      // unwrap the layout-chunk div
+      $(this).children().unwrap();
+    });
+  
+    // load distill framework
+    load_distill_framework();
+  
+    // wait for window.distillRunlevel == 4 to do post processing
+    function distill_post_process() {
+  
+      if (!window.distillRunlevel || window.distillRunlevel < 4)
+        return;
+  
+      // hide author/affiliations entirely if we have no authors
+      var front_matter = JSON.parse($("#distill-front-matter").html());
+      var have_authors = front_matter.authors && front_matter.authors.length > 0;
+      if (!have_authors)
+        $('d-byline').addClass('hidden');
+  
+      // table of contents
+      if (have_authors) // adjust border if we are in authors
+        $('.d-toc').parent().addClass('d-article-with-toc');
+  
+      // strip links that point to #
+      $('.authors-affiliations').find('a[href="#"]').removeAttr('href');
+  
+      // hide elements of author/affiliations grid that have no value
+      function hide_byline_column(caption) {
+        $('d-byline').find('h3:contains("' + caption + '")').parent().css('visibility', 'hidden');
+      }
+  
+      // affiliations
+      var have_affiliations = false;
+      for (var i = 0; i<front_matter.authors.length; ++i) {
+        var author = front_matter.authors[i];
+        if (author.affiliation !== "&nbsp;") {
+          have_affiliations = true;
+          break;
+        }
+      }
+      if (!have_affiliations)
+        $('d-byline').find('h3:contains("Affiliations")').css('visibility', 'hidden');
+  
+      // published date
+      if (!front_matter.publishedDate)
+        hide_byline_column("Published");
+  
+      // document object identifier
+      var doi = $('d-byline').find('h3:contains("DOI")');
+      var doi_p = doi.next().empty();
+      if (!front_matter.doi) {
+        // if we have a citation and valid citationText then link to that
+        if ($('#citation').length > 0 && front_matter.citationText) {
+          doi.html('Citation');
+          $('<a href="#citation"></a>')
+            .text(front_matter.citationText)
+            .appendTo(doi_p);
+        } else {
+          hide_byline_column("DOI");
+        }
+      } else {
+        $('<a></a>')
+           .attr('href', "https://doi.org/" + front_matter.doi)
+           .html(front_matter.doi)
+           .appendTo(doi_p);
+      }
+  
+       // change plural form of authors/affiliations
+      if (front_matter.authors.length === 1) {
+        var grid = $('.authors-affiliations');
+        grid.children('h3:contains("Authors")').text('Author');
+        grid.children('h3:contains("Affiliations")').text('Affiliation');
+      }
+  
+      // inject pre code styles (can't do this with a global stylesheet b/c a shadow root is used)
+      $('d-code').each(function(i, val) {
+        var style = document.createElement('style');
+        style.innerHTML = 'pre code { padding-left: 10px; font-size: 12px; border-left: 2px solid rgba(0,0,0,0.1); } ' +
+                          '@media(min-width: 768px) { pre code { padding-left: 18px; font-size: 14px; } }';
+        if (this.shadowRoot)
+          this.shadowRoot.appendChild(style);
+      });
+  
+      // move appendix-bottom entries to the bottom
+      $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
+      $('.appendix-bottom').remove();
+  
+      // clear polling timer
+      clearInterval(tid);
+  
+      // show body now that everything is ready
+      on_load_complete();
+    }
+  
+    var tid = setInterval(distill_post_process, 50);
+    distill_post_process();
+  
+  }
+  
+  function init_downlevel() {
+  
+    init_common();
+  
+     // insert hr after d-title
+    $('.d-title').after($('<hr class="section-separator"/>'));
+  
+    // check if we have authors
+    var front_matter = JSON.parse($("#distill-front-matter").html());
+    var have_authors = front_matter.authors && front_matter.authors.length > 0;
+  
+    // manage byline/border
+    if (!have_authors)
+      $('.d-byline').remove();
+    $('.d-byline').after($('<hr class="section-separator"/>'));
+    $('.d-byline a').remove();
+  
+    // remove toc
+    $('.d-toc-header').remove();
+    $('.d-toc').remove();
+    $('.d-toc-separator').remove();
+  
+    // move appendix elements
+    $('h1.appendix, h2.appendix').each(function(i, val) {
+      $(this).changeElementType('h3');
+    });
+    $('h3.appendix').each(function(i, val) {
+      $(this).nextUntil($('h1, h2, h3')).addBack().appendTo($('.d-appendix'));
+    });
+  
+  
+    // inject headers into references and footnotes
+    var refs_header = $('<h3></h3>');
+    refs_header.text('References');
+    $('#refs').prepend(refs_header);
+  
+    var footnotes_header = $('<h3></h3');
+    footnotes_header.text('Footnotes');
+    $('.footnotes').children('hr').first().replaceWith(footnotes_header);
+  
+    // move appendix-bottom entries to the bottom
+    $('.appendix-bottom').appendTo('.d-appendix').children().unwrap();
+    $('.appendix-bottom').remove();
+  
+    // remove appendix if it's empty
+    if ($('.d-appendix').children().length === 0)
+      $('.d-appendix').remove();
+  
+    // prepend separator above appendix
+    $('.d-appendix').before($('<hr class="section-separator" style="clear: both"/>'));
+  
+    // trim code
+    $('pre>code').each(function(i, val) {
+      $(this).html($.trim($(this).html()));
+    });
+  
+    // move posts-container right before article
+    $('.posts-container').insertBefore($('.d-article'));
+  
+    $('body').addClass('downlevel');
+  
+    on_load_complete();
+  }
+  
+  
+  function init_common() {
+  
+    // jquery plugin to change element types
+    (function($) {
+      $.fn.changeElementType = function(newType) {
+        var attrs = {};
+  
+        $.each(this[0].attributes, function(idx, attr) {
+          attrs[attr.nodeName] = attr.nodeValue;
+        });
+  
+        this.replaceWith(function() {
+          return $("<" + newType + "/>", attrs).append($(this).contents());
+        });
+      };
+    })(jQuery);
+  
+    // prevent underline for linked images
+    $('a > img').parent().css({'border-bottom' : 'none'});
+  
+    // mark non-body figures created by knitr chunks as 100% width
+    $('.layout-chunk').each(function(i, val) {
+      var figures = $(this).find('img, .html-widget');
+      if ($(this).attr('data-layout') !== "l-body") {
+        figures.css('width', '100%');
+      } else {
+        figures.css('max-width', '100%');
+        figures.filter("[width]").each(function(i, val) {
+          var fig = $(this);
+          fig.css('width', fig.attr('width') + 'px');
+        });
+  
+      }
+    });
+  
+    // auto-append index.html to post-preview links in file: protocol
+    // and in rstudio ide preview
+    $('.post-preview').each(function(i, val) {
+      if (window.location.protocol === "file:")
+        $(this).attr('href', $(this).attr('href') + "index.html");
+    });
+  
+    // get rid of index.html references in header
+    if (window.location.protocol !== "file:") {
+      $('.distill-site-header a[href]').each(function(i,val) {
+        $(this).attr('href', $(this).attr('href').replace("index.html", "./"));
+      });
+    }
+  
+    // add class to pandoc style tables
+    $('tr.header').parent('thead').parent('table').addClass('pandoc-table');
+    $('.kable-table').children('table').addClass('pandoc-table');
+  
+    // add figcaption style to table captions
+    $('caption').parent('table').addClass("figcaption");
+  
+    // initialize posts list
+    if (window.init_posts_list)
+      window.init_posts_list();
+  
+    // implmement disqus comment link
+    $('.disqus-comment-count').click(function() {
+      window.headroom_prevent_pin = true;
+      $('#disqus_thread').toggleClass('hidden');
+      if (!$('#disqus_thread').hasClass('hidden')) {
+        var offset = $(this).offset();
+        $(window).resize();
+        $('html, body').animate({
+          scrollTop: offset.top - 35
+        });
+      }
+    });
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    if (is_downlevel_browser())
+      init_downlevel();
+    else
+      window.addEventListener('WebComponentsReady', init_distill);
+  });
+  
+  </script>
+  
+  <!--/radix_placeholder_distill-->
+  <script src="how-to-bayes-part-ii_files/jquery-1.11.3/jquery.min.js"></script>
+  <script src="how-to-bayes-part-ii_files/bowser-1.9.3/bowser.min.js"></script>
+  <script src="how-to-bayes-part-ii_files/webcomponents-2.0.0/webcomponents.js"></script>
+  <script src="how-to-bayes-part-ii_files/distill-2.2.21/template.v2.js"></script>
+  <!--radix_placeholder_site_in_header-->
+  <!--/radix_placeholder_site_in_header-->
+
+  <link rel="stylesheet" href="../../styles.css" type="text/css"/>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" type="text/css"/>
+
+</head>
+
+<body>
+
+<!--radix_placeholder_front_matter-->
+
+<script id="distill-front-matter" type="text/json">
+{"title":"Bayesian Analysis","description":"Practical steps you can take in your Stan journey to deal with issues and explore your models fully.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#"}],"publishedDate":"2020-09-17T00:00:00.000-04:00","citationText":"Clark, 2020"}
+</script>
+
+<!--/radix_placeholder_front_matter-->
+<!--radix_placeholder_navigation_before_body-->
+<!--/radix_placeholder_navigation_before_body-->
+<!--radix_placeholder_site_before_body-->
+<!--/radix_placeholder_site_before_body-->
+
+<div class="d-title">
+<h1>Bayesian Analysis</h1>
+<p><p>Practical steps you can take in your Stan journey to deal with issues and explore your models fully.</p></p>
+</div>
+
+<div class="d-byline">
+  Michael Clark <a href="https://m-clark.github.io" class="uri">https://m-clark.github.io</a> 
+  
+<br/>September 17, 2020
+</div>
+
+<div class="d-article">
+<h3 class="d-toc-header">Table of Contents</h3>
+<nav class="d-toc" id="TOC">
+<ul>
+<li><a href="#better-bayesian-approaches-part-ii">Better Bayesian Approaches, Part II</a><ul>
+<li><a href="#suggested-steps">Suggested Steps</a></li>
+</ul></li>
+<li><a href="#example-data">Example data</a></li>
+<li><a href="#simulate-from-priors">Simulate from priors</a></li>
+<li><a href="#run-and-summarize-the-baseline-model">Run and Summarize the Baseline Model</a><ul>
+<li><a href="#check-priors">Check priors</a></li>
+<li><a href="#explore-and-visualize-effects">Explore and visualize effects</a></li>
+<li><a href="#model-effectiveness">Model Effectiveness</a></li>
+</ul></li>
+<li><a href="#prediction-model-comparison">Prediction &amp; Model comparison</a><ul>
+<li><a href="#basic-prediction">Basic prediction</a></li>
+<li><a href="#model-comparisons">Model Comparisons</a></li>
+<li><a href="#averaging-models">Averaging models</a></li>
+<li><a href="#cross-validation">Cross-validation</a></li>
+</ul></li>
+<li><a href="#solutions-and-their-problems">Solutions and their problems</a><ul>
+<li><a href="#pareto-stuff">pareto stuff</a></li>
+</ul></li>
+<li><a href="#resources">Resources</a></li>
+</ul>
+</nav>
+<hr class="d-toc-separator"/>
+<h2 id="better-bayesian-approaches-part-ii">Better Bayesian Approaches, Part II</h2>
+<p>We’ve talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of this post. But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings. So let’s engage in some better practices to outline an approach you can use every time to help things run more smoothly.</p>
+<h3 id="suggested-steps">Suggested Steps</h3>
+<div style="text-align: center">
+<p><i class="fas fa-list-ol fa-5x" style="padding: 20px"></i></p>
+</div>
+<p><br></p>
+<div style="text-align: center">
+<p><i class="fas fa-hat-wizard fas-5x" style="padding: 20px"></i></p>
+</div>
+<p><br></p>
+<ul>
+<li>First generate ‘fake data’ to assess prior viability</li>
+<li>With adequate priors, start with a simple, but viable model</li>
+<li>For simple models you do not need many iterations
+<ul>
+<li>If you are doing standard GLM or simpler versions of common extensions, even the defaults are likely overkill. For example, a basic linear regression should converge almost immediately.</li>
+</ul></li>
+<li>Problems
+<ul>
+<li>If Rhat/ESS is issue, run more iterations</li>
+<li>if max_tree_depth is issue, increase</li>
+<li>if divergent transitions
+<ul>
+<li>Check the data, has it been scaled?</li>
+<li>Can something more be done about priors</li>
+<li>Use pairs plot</li>
+<li>Use parcoord plot <!-- - reparameterize model --></li>
+<li>get more/better data</li>
+<li>get a better model</li>
+</ul></li>
+</ul></li>
+<li>Use posterior predictive checks
+<ul>
+<li>Nice, but what if it doesn’t fit?
+<ul>
+<li>get better data</li>
+<li>get a better model</li>
+</ul></li>
+</ul></li>
+<li>Explore a more viable model</li>
+<li>Compare and/or average models</li>
+</ul>
+<p>In this case, let’s say we know we should at least do a linear mixed model. You could even start with just a linear regression, but we’ll say we already know we need to at least account for the heterogeneity.</p>
+<h2 id="example-data">Example data</h2>
+<div style="text-align: center">
+<p><i class="fas fa-database fa-5x" style="padding: 20px"></i></p>
+</div>
+<p><br></p>
+<p>To start out, I’m going to create some data for us to run some basic models with. To make things interesting, the true underlying model has categorical and continuous covariates, interactions, nonlinear relationships, random effects (observations are clustered in groups), and some variables are collinear. You can skip these details if uninterested, but note that we will be purposely using under- and over-fitted models relative to this one to see what happens.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(tidyverse)
+
+create_data &lt;- function( N = 1000, ng = 100, seed = 1234) {
+  
+  set.seed(seed)
+  
+  X_mm = cbind(
+    # a standard binary
+    binary_1 = sample(0:1, N, replace = TRUE),                      
+    # a relatively rare categorical
+    binary_2 = sample(0:1, N, replace = TRUE, prob = c(.05, .95)),  
+    # two partly collinear numeric
+    mvtnorm::rmvnorm(N,
+                     mean = rep(0, 3),
+                     sigma = lazerhawk::create_corr(runif(3, max = .6)))
+  )
+  
+  X_mm = cbind(
+    # intercept
+    1,
+    X_mm,
+    # a quadratic effect
+    scale(poly(X_mm[,5], 3))[,2:3],
+    # interaction of binary variables
+    X_mm[,1]*X_mm[,2], 
+    # interaction of binary 2 with numeric 1
+    X_mm[,2]*X_mm[,3]
+  )
+  
+  # add intercept
+  colnames(X_mm) = c(
+    &#39;Intercept&#39;,
+    &#39;b1&#39;,
+    &#39;b2&#39;,
+    &#39;x1&#39;,
+    &#39;x2&#39;,
+    &#39;x3&#39;,
+    &#39;x3_sq&#39;,
+    &#39;x3_cub&#39;,
+    &#39;b1_b2&#39;,
+    &#39;b2_x1&#39;
+  )
+  
+  # coefficients
+  beta = c(
+    3.0,   # intercept
+     .3,   # b1
+    -.3,   # b2
+     .5,   # x1
+     .0,   # x2
+     .3 ,  # x3 
+     .3,   # x3_sq
+    -.2,   # x3_cub
+     .5,   # b1_b2 
+    -.5    # b2_x1
+  )
+  
+  # create target variable/linear predictor
+  y = X_mm %*% beta
+  
+  # add random effect
+  groups = sort(sample(1:ng, N, replace = T))
+  
+  re = rnorm(ng, sd = .5)[groups]  # re sd = .5
+  
+  # add re and residual noise
+  y = y + re + rnorm(N)
+  y = cbind(y, groups)
+  colnames(y) = c(&#39;y&#39;, &#39;group&#39;)
+  
+  as_tibble(cbind(X_mm, y))
+}</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+true_params = data.frame(
+  parameter = c(
+    &#39;intercept&#39;,
+    &#39;b1&#39;,
+    &#39;b2&#39;,
+    &#39;x1&#39;,
+    &#39;x2&#39;,
+    &#39;x3 &#39;,
+    &#39;x3_sq&#39;,
+    &#39;x3_cub&#39;,
+    &#39;b1_b2 &#39;,
+    &#39;b2_x1&#39;,
+    &#39;re sd&#39;,
+    &#39;sigma &#39;
+  ), 
+    value = c(
+    3.0,
+     .3,
+    -.3,
+     .5,
+     .0,
+     .3,
+     .3,
+    -.2,
+     .5,
+    -.5,
+     .5,
+    1.0
+  )
+)</code></pre>
+</div>
+<p>If you want to check that the parameters are recovered, run the following.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+dat = create_data(N = 10000)
+
+mod = lme4::lmer(y ~ . -group + (1|group), data.frame(dat[,-1]))
+
+mixedup::summarise_model(mod, ci = FALSE)</code></pre>
+</div>
+<p>We do not need as much data for our purposes so we’ll set the total sample size to 1000. We’ll also make our binary covariates explicit factors, which will make things easier when want to visualize grouped effects later.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+# create the primary data frame
+
+main_df = 
+  create_data(N = 1000) %&gt;% 
+  as_tibble() %&gt;% 
+  select(group, b1:x3, y) %&gt;% 
+  mutate(
+    b1 = factor(b1),   # will help with visuals
+    b2 = factor(b2)
+  )</code></pre>
+</div>
+<h2 id="simulate-from-priors">Simulate from priors</h2>
+<p>A first step is to produce some viable priors. But the obvious question is, what priors should we choose? Thankfully, for standard models there is not much guesswork involved. Bayesian analysis has been around a long time, so the bulk of the work has been done for you. Even default settings should not affect things much, especially for rstanarm, which has some basic defaults that are informed by the data. However, due to the flexibility of the brms modeling functions, some priors are unspecified and left flat (i.e. uniform), which is something we definitely don’t want, and while others like rstanarm’s defaults might be somewhat better, they could still cause problems for more complex situations. So how might we choose better ones?</p>
+<p>The basic idea here is to generate parameters (e.g. regression coefficients) based on the prior distributions, predict data based on those parameters, and then compare the predictions to our observed target variable. The brms package makes this very easy to do. We will check the following:</p>
+<ul>
+<li>Prior set 0
+<ul>
+<li>similar to brms</li>
+<li>regression coefficients: uniform</li>
+<li>Intercept: default</li>
+<li>Variances: default</li>
+</ul></li>
+<li>Prior set 1
+<ul>
+<li>similar to rstanarm</li>
+<li>regression coefficients: normal</li>
+<li>Intercept: default</li>
+<li>Variances: default</li>
+</ul></li>
+<li>Prior set 2
+<ul>
+<li>diffuse, larger sd than rstanrm</li>
+<li>regression coefficients: Normal with mean 0, standard deviation 10</li>
+<li>Intercept: default</li>
+<li>Variances: default</li>
+</ul></li>
+<li>Prior set 3
+<ul>
+<li>If data is standardized, this would be very reasonable</li>
+<li>regression coefficients: Normal with mean 0, standard deviation 1</li>
+<li>Intercept: default</li>
+<li>Variances: default</li>
+</ul></li>
+<li>Prior set 4
+<ul>
+<li>Go further to restrict range of intercept to more plausible values</li>
+<li>regression coefficients: Normal with mean 0, standard deviation 1</li>
+<li>Intercept: mean of <code>y</code> (~3)</li>
+<li>Variances: default</li>
+</ul></li>
+<li>Prior set 5
+<ul>
+<li>Go further to restrict range of sigma to more plausible values</li>
+<li>regression coefficients: Normal with mean 0, standard deviation 1</li>
+<li>Intercept: based on mean of <code>y</code> (~3)</li>
+<li>Variances: based on sd of <code>y</code> (~1)</li>
+</ul></li>
+</ul>
+<p>We can use pp_check to examine the prior-generated data versus the observed target <code>y</code>, but I wait to show them all together at the end.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+# prior_summary(model_start) # examine the defaults from a previous model.
+
+pr_uniform = prior(uniform(-100, 100), lb = -100, ub = 100, &#39;b&#39;)
+
+model_default_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior =  
+)
+
+# pp_check(model_default_prior, nsamples = 50)
+
+pr_auto = sjstats::auto_prior(
+  y ~ b1 + b2 + x1 + x2 + x3,
+  data = main_df,
+  gaussian = TRUE
+)
+
+model_auto_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior = pr_auto
+)
+
+# pp_check(model_auto_prior, nsamples = 50)
+
+
+pr_norm_b_0_10 = prior(normal(0, 10), &#39;b&#39;)
+
+model_0_norm_b_0_10 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior = pr_norm_b_0_10
+)
+
+# pp_check(model_0_norm_b_0_10, nsamples = 50)
+
+pr_norm_b_0_1 = prior(normal(0, 1), &#39;b&#39;)
+
+model_0_norm_b_0_1 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior = pr_norm_b_0_1
+)
+
+# pp_check(model_0_norm_b_0_1, nsamples = 50)
+
+pr_norm_b_norm_int = c(
+  prior(normal(0, 1), class = &#39;b&#39;),
+  prior(normal(3, 1), class = &#39;Intercept&#39;)#,
+)
+
+model_0_norm_b_0_1_norm_Int = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior = pr_norm_b_norm_int
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+
+
+pr_norm_b_norm_int_t_sigma = c(
+  prior(normal(0, 1), class = &#39;b&#39;),
+  prior(normal(3, 1), class = &#39;Intercept&#39;),
+  prior(student_t(10, 1, 1), class = &#39;sigma&#39;)
+)
+
+model_0_norm_b_0_1_norm_Int_sigma = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = &#39;only&#39;,
+  prior = pr_norm_b_norm_int_t_sigma
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)</code></pre>
+</div>
+<p>The following plot shows the model predictions based on priors only. We restrict the range of values for display purposes, so note that some of the priors would generate more extreme values. For example the defaults could generate values into the <span class="math inline">\(\pm\)</span> 500 and beyond. I also mark the boundaries of the observed target variable.</p>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<p>So given that our target variable is between round(min(main_df<span class="math inline">\(y)) and round(max(main_df\)</span>y)), it seems that just adding some basic, data-informed information to our priors resulted in more plausible results. This will generally help our models be more efficient and better behaved. Note that if all else fails, for brms you can use a convenience function like auto_prior demonstrated above.</p>
+<h2 id="run-and-summarize-the-baseline-model">Run and Summarize the Baseline Model</h2>
+<p>Now let’s run a baseline model, one that’s simple but plausible. Given that there will eventually be additional complexities, I’ll go ahead and add some iterations, and increase max tree depth and adapt delta now to make the code reusable.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(brms)
+
+pr = c(
+  prior(normal(0, 1), class = &#39;b&#39;),
+  prior(student_t(10, 1, 1), class = &#39;sigma&#39;),
+  prior(student_t(10, 1, 1), class = &#39;sd&#39;)  # prior for random intercept std dev
+)
+
+model_baseline = brm(
+  y ~ b1 + b2 + x1 + x2 + x3 + (1 | group), 
+  data   = main_df,
+  warmup = 5000,
+  iter   = 6000,
+  thin  = 4,
+  prior  = pr, 
+  cores  = 4,
+  control = list(
+    adapt_delta = .95,
+    max_treedepth = 15
+  ),
+  save_all_pars = TRUE
+)</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+summary(model_baseline)</code></pre>
+</div>
+<p>For reporting purposes all you need are the <code>Estimate</code> and lower and upper bounds. If you want a visual approach, you can use something like this.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+mcmc_plot(model_baseline, type = &#39;areas&#39;)
+mcmc_plot(model_start_100, type = &#39;intervals&#39;)</code></pre>
+</div>
+<h3 id="check-priors">Check priors</h3>
+<p>Were our priors informative? The following will do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Having an informative prior isn’t really a problem in my opinion, unless it’s more informative than you wanted. For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.</p>
+<p><a href="https://statmodeling.stat.columbia.edu/2019/08/10/" class="uri">https://statmodeling.stat.columbia.edu/2019/08/10/</a></p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+prior_summary(model_baseline)
+bayestestR::check_prior(model_baseline)</code></pre>
+</div>
+<h3 id="explore-and-visualize-effects">Explore and visualize effects</h3>
+<p>We can plot effects easily with brms. The <span class="func" style="">conditional_effects</span> function is what we want here. Without interactions or other things going, on they aren’t very interesting, but it’s a useful tool nonetheless.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+conditional_effects(model_start, &#39;b2&#39;)</code></pre>
+</div>
+<p>We can also use the hypothesis function to test for specific types of effects. By default they provide a one-sided probability and uncertainty interval. For starters, we can just duplicate what we saw in the previous summary for the <code>b2</code> effect. The only benefit is to easily obtain the one-sided p-value (that <code>b2</code> is less than zero) and the corresponding <em>evidence ratio</em>, which is just <code>p/(1-p)</code>.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+hypothesis(model_start, &#39;b21 &lt; 0&#39;)</code></pre>
+</div>
+<p>But we can really try anything. The following tests whether the combined effect of our categorical covariates is greater than zero.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+hypothesis(model_start, &#39;b11 + b21 &gt; 0&#39;)</code></pre>
+</div>
+<h3 id="model-effectiveness">Model Effectiveness</h3>
+<p>A natural question to ask is how useful our model actually is. The next question is how to define such utility. Such an assessment definitely cannot be made with something like ‘statistical significance’. Science of any kind is nothing without prediction, so we we can start there.</p>
+<h4 id="posterior-predictive-checks">Posterior predictive checks</h4>
+<p>Posterior predictive checks are a key component of bayesian analysis. The prior checks we did before are just a special case of this. Here we actually use the posterior distributions of parameters to generate the data to compare what the model</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+pp_check(model_baseline, nsamples = 100)
+pp_check(model_baseline, nsamples = 10, type =&#39;error_scatter_avg&#39;)
+
+q10 = function(y) quantile(y, 0.1)
+q90 = function(y) quantile(y, 0.9)
+
+pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat=&#39;median&#39;)
+pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat = &#39;q90&#39;)
+pp_check(model_baseline, nsamples = 100, type =&#39;stat_2d&#39;, stat = c(&#39;q10&#39;, &#39;q90&#39;))
+pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat = &#39;max&#39;)
+
+# library(patchwork)
+# {pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat = &#39;min&#39;) +
+#     pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat = &#39;max&#39;)}  /
+#   {pp_check(model_baseline, nsamples = 100, type =&#39;stat_grouped&#39;, stat = &#39;min&#39;, group = &#39;b2&#39;) + 
+#       guides(fill = &#39;none&#39;) +
+#     pp_check(model_baseline, nsamples = 100, type =&#39;stat_grouped&#39;, stat = &#39;max&#39;, group = &#39;b2&#39;) + 
+#       guides(fill = &#39;none&#39;)}</code></pre>
+</div>
+<h4 id="bayes-r-squared">Bayes R-squared</h4>
+<p>In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don’t really recommend this beyond linear models assuming a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values to the observed, so can be seen as descriptive statistic. Since we are Bayesians, we also get a ready-made interval for it. But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional). Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming it is notable in the first place.</p>
+<p><a href="https://avehtari.github.io/bayes_R2/bayes_R2.html" class="uri">https://avehtari.github.io/bayes_R2/bayes_R2.html</a></p>
+<p>Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared for Bayesian regression models. The American Statistician, <a href="doi:10.1080/00031305.2018.1549100" class="uri">doi:10.1080/00031305.2018.1549100</a>. <a href="http://www.stat.columbia.edu/~gelman/research/unpublished/bayes_R2_v3.pdf">Online Preprint</a>.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+bayes_R2(model_baseline)
+bayes_R2(model_baseline, re_formula = NA)  # random effects not included
+# performance::r2_bayes(model_baseline)  # alternative provides both</code></pre>
+</div>
+<p>To show the limitation of R<sup>2</sup>, I rerun the model using a restrictive prior on the intercept. Intercepts for the resulting models are different but the other fixed effects are basically the same. The R<sup>2</sup> suggests equal fit.</p>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<p>However, a posterior predictive check shows clearly the failure of the modified model to capture the data.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+{pp_check(model_baseline, re_formula = NA) + labs(subtitle = &#39;Baseline Model&#39;)} /
+  {pp_check(model_r2_vs_pp, re_formula = NA) + labs(subtitle = &#39;Modified Model&#39;)}</code></pre>
+</div>
+<p>A variant of R<sup>2</sup>, the ‘LOO’ R<sup>2</sup>, is also available via the loo_R2 function. LOO stands for <em>leave-one-out</em>, as in leave-one-out cross-validation. It’s based on the residuals from the leave one out predictions. The results suggests that the LOO R<sup>2</sup> actually picks up the difference in models, and would be lower for the modified model, even if we included the random effects.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+tibble(
+  model = c(&#39;baseline&#39;, &#39;modified&#39;),
+  rbind(as_tibble(loo_R2(model_baseline, re_formula = NA)),
+        as_tibble(loo_R2(model_r2_vs_pp, re_formula = NA)))
+) %&gt;% 
+  kable_df()</code></pre>
+</div>
+<!-- ### Model comparison -->
+<!-- We will use estimates like WAIC and loo for model comparison later.  They are essentially used as you would AIC, or root mean squared error to compare models in a predictive fashion.  In addition We only really have our  -->
+<!-- Even now, we can use loo as a diagnostic to possibly discover problematic observations, -->
+<!-- ```{r} -->
+<!-- loo(model_start) -->
+<!-- WAIC(model_start) -->
+<!-- post_prob(model_baseline, model_r2_vs_pp) -->
+<!-- ``` -->
+<!-- The interesting thing here is that we have a grossly inefficient model, yet none we have nothing that notes any issues -->
+<h2 id="prediction-model-comparison">Prediction &amp; Model comparison</h2>
+<p>Expected predictive accuracy, log probability for observing a new data point</p>
+<h3 id="basic-prediction">Basic prediction</h3>
+<h3 id="model-comparisons">Model Comparisons</h3>
+<p>If we’re doing what we should, we should have a couple models to compare against one another. In the Bayesian approach, we will use estimates like WAIC and loo for model comparison. They are essentially used as you would AIC, or root mean squared error, to compare models in a predictive fashion. The values themselves don’t tell us much, but in comparing models, lower means less predictive error, which is what we want. And since we’re bayesian, we even have estimates of uncertainty for these values as well.</p>
+<p>WAIC vs. LOO. LOO has better diagnostics for noting whether there are potential issues using it. But in practice, how much would it differ?</p>
+<p><a href="https://mc-stan.org/loo/articles/loo2-weights.html" class="uri">https://mc-stan.org/loo/articles/loo2-weights.html</a></p>
+<p>issues- overfitting, time, complexity is more accurate portrayal of nature even if not ‘best’</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+model_interact = update(
+  model_baseline,
+  . ~ . + b1:b2 + b2:x1,
+  cores = 4
+)
+
+model_interact_nonlin = update(
+  model_interact,
+  . ~ . + s(x3),
+  cores = 4
+)</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+model_baseline = add_criterion(model_baseline,  &#39;loo&#39;)
+model_interact = add_criterion(model_interact, &#39;loo&#39;)
+model_interact_nonlin = add_criterion(model_interact_nonlin, &#39;loo&#39;)
+
+loo_compare(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin
+)
+
+map_df(list(model_baseline,
+            model_interact,
+            model_interact_nonlin), function(x)
+              as.data.frame(bayes_R2(x)))</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+post_prob(
+  model_baseline, 
+  model_interact
+)
+
+post_prob(
+  model_baseline, 
+  model_interact_nonlin
+)
+
+post_prob(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin
+)
+
+model_weights(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin, 
+  method = &#39;loo&#39;
+) </code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+pp_check(model_baseline)
+pp_check(model_interact_nonlin)
+pp_check(model_baseline, nsamples = 100, type =&#39;stat&#39;, stat = &#39;min&#39;)
+pp_check(model_interact_nonlin, nsamples = 100, type =&#39;stat&#39;, stat = &#39;min&#39;)</code></pre>
+</div>
+<h4 id="problems-at-the-loo">Problems at the loo</h4>
+<p>After the previous warnings discussed, the next most common point of confusion I see with clients is with model comparison. Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical. Another reason is that these are not perfect tools. They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay. Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn’t a contradiction, but which may indicate an overfit situation. So what should we do here?</p>
+<p>As an example, let’s start with our complex model and get the leave-one-out criterion measure. I will avoid as much technical jargon as possible so that the applied modeler can get on with things. The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>The following provides influence statistics, which are a way of saying which observations in the data are not capture well by the model. Larger values are bad, but you don’t even have to worry much here, the function provides the breakdown for you.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+loo(model_baseline)
+loo(model_interact_nonlin)</code></pre>
+</div>
+<div class="layout-chunk" data-layout="l-body">
+
+</div>
+<h3 id="averaging-models">Averaging models</h3>
+<p>Rather than selecting one model, if our goal is prediction, we can use model averaging, which provides weighted estimates of several models.</p>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+prediction_data = crossing(
+  b1 = 0:1,
+  b2 = 0:1,
+  x1 = 0,
+  x2 = 0,
+  x3 = 0
+  # x1 = c(-1, 0, 1),
+  # x2 = c(-1, 0, 1),
+  # x3 = c(-1, 0, 1)
+)
+
+average_predictions = pp_average(
+  model_baseline,
+  model_interact,
+  model_interact_nonlin,
+  newdata = prediction_data,
+  re_formula = NA
+) 
+
+average_predictions</code></pre>
+</div>
+<p>Vehtari, A., Gelman, A., and Gabry, J. (2017a). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. Statistics and Computing. 27(5), 1413–1432. <a href="doi:10.1007/s11222-016-9696-4" class="uri">doi:10.1007/s11222-016-9696-4</a> (<a href="http://link.springer.com/article/10.1007%2Fs11222-016-9696-4">journal version</a>, <a href="https://arxiv.org/abs/1507.04544">preprint arXiv:1507.04544</a>).</p>
+<p>Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using stacking to average Bayesian predictive distributions. Bayesian Analysis, advance publication, <a href="doi:10.1214/17-BA1091" class="uri">doi:10.1214/17-BA1091</a>. (<a href="https://projecteuclid.org/euclid.ba/1516093227">online</a>).</p>
+<p>Vehtari, A., Simpson, D., Gelman, A., Yao, Y., and Gabry, J. (2019). Pareto smoothed importance sampling. <a href="https://arxiv.org/abs/1507.02646/">preprint arXiv:1507.02646</a></p>
+<p>Gabry, J. , Simpson, D. , Vehtari, A. , Betancourt, M. and Gelman, A. (2019), Visualization in Bayesian workflow. J. R. Stat. Soc. A, 182: 389-402. <a href="doi:10.1111/rssa.12378" class="uri">doi:10.1111/rssa.12378</a>. (journal version, arXiv preprint, code on GitHub)</p>
+<h3 id="cross-validation">Cross-validation</h3>
+<div class="layout-chunk" data-layout="l-body">
+<pre class="r"><code>
+library(future)
+plan(multiprocess)
+model_interact_nonlin_cv = kfold(model_interact_nonlin, K = 5, chains = 1, save_fits = TRUE)
+str(model_interact_nonlin_cv, 0)
+test = kfold_predict(model_interact_nonlin_cv, newdata = prediction_data)
+
+rmse &lt;- function(y, yrep) {
+  yrep_mean &lt;- colMeans(yrep)
+  sqrt(mean((yrep_mean - y)^2))
+}
+rmse(y = test$y, yrep = test$yrep)</code></pre>
+</div>
+<p>The issues with recommendations that I see are problematic for applied users. I’m at U of Michigan and see Stan family users from psychology, environmental sciences, engineering, and many other disciplines, and I thought it might be useful to pass along some recurring themes.</p>
+<p>Many suggestions, while great if you have time to read several technical articles and discussions and have the ability to understand them, are simply not very helpful for applied users. These folks probably don’t have the time (and generally no inclination) to delve into things like the details regarding divergent transitions, pareto values, etc.</p>
+<p><a href="https://mc-stan.org/docs/2_24/stan-users-guide/problematic-posteriors-chapter.html" class="uri">https://mc-stan.org/docs/2_24/stan-users-guide/problematic-posteriors-chapter.html</a></p>
+<h2 id="solutions-and-their-problems">Solutions and their problems</h2>
+<p>It seems that the ‘usual’ approach is adding a level of complexity that is going well beyond what should be expected for new/applied users. While some might actually enjoy such complexity (like me!), this turns applied users off, especially if there is no obvious gain over traditional approaches.</p>
+<p>Increasing adapt_delta seems to often does not solve the problem for which it is suggested (based on personal experience it’s actually rare). I usually start at .99 anyway just to make it a non-issue. For applied users, having to deal with ‘control’ options usually shouldn’t be a first step, especially if it’s not likely to improve things. For example, would trying a simpler model for diagnostic purposes, or rescaling the data, be just as likely to improve things?</p>
+<p>Reparameterization/Change of variables - Only those with notably advanced statistical knowledge would even know where to begin here.</p>
+<p>‘Finding a better model’ isn’t usually helpful even if 100% accurate for every modeling situation. Unless the advice is specific (e.g. to add an additional specific covariate, change a specific distribution, add some other complexity), it’s likely not going to help an applied user.</p>
+<p>‘Try different priors’ Which and by how does one determine ‘different’? For many regression situations, normal(0, 1) vs. normal(0, 10) vs. student(df = X) would result in basically wasted time. Is there a way to make a reasonable guess as to what should be tested to demonstrate sensitivity/improvement?</p>
+<p>The model comparison situation has grown so complex there is a 20+ item FAQ that still may not help in many cases. What is someone to do if there are ‘pareto issues’ and they have no other obvious modeling options? Abandon model comparison?</p>
+<h3 id="pareto-stuff">pareto stuff</h3>
+<p><a href="https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s" class="uri">https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s</a></p>
+<p>The usual cases are</p>
+<ul>
+<li>misspecified models MC: all models are misspecified, so how will knowing this help us finish the project?</li>
+<li>models with parameters which see the information only from one observation each (e.g. ‘random’ effect models) MC: sorry, but this is reality for many such models. Assuming we can’t increase this, which is practically every situation, what are we to do about it?</li>
+<li>otherwise flexible models MC: how is ‘flexible’ defined? Overly vague priors?</li>
+<li><a href="https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446">A quick note what I infer from p_loo and Pareto km values</a></li>
+<li><a href="https://discourse.mc-stan.org/t/recommendations-for-what-to-do-when-k-exceeds-0-5-in-the-loo-package/3417">Recommendations for what to do when k exceeds 0.5 in the loo package?</a></li>
+<li><a href="https://discourse.mc-stan.org/t/improve-model-with-some-observations-pareto-0-7/17500">Improve model with some observations Pareto &gt;0.7</a></li>
+<li><a href="https://rawgit.com/avehtari/modelselection_tutorial/master/roaches.html#22_cross-validation_checking">Bayesian data analysis - roaches cross-validation demo</a></li>
+<li><a href="https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s">16 What to do if I have many high Pareto k’s?</a></li>
+<li><a href="https://discourse.mc-stan.org/t/pareto-k-for-outlier-detection/12177/9">Pareto K for outlier detection 1</a></li>
+</ul>
+<blockquote>
+<p>These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ <a href="https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678">Aki Vehtari</a></p>
+</blockquote>
+<h2 id="resources">Resources</h2>
+<p><a href="https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations" class="uri">https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations</a></p>
+<p><a href="https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html" class="uri">https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html</a></p>
+<p><a href="https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099" class="uri">https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099</a></p>
+<p><a href="https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html" class="uri">https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html</a></p>
+<p><a href="https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html" class="uri">https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html</a></p>
+<p><a href="http://mc-stan.org/cmdstanr/articles/cmdstanr.html">Use CmdStan to save memory</a></p>
+<ul>
+<li><a href="https://jrnold.github.io/bayesian_notes/">Jeffrey Arnold’s Bayesian Notes</a> has nice examples of many models and good summaries otherwise</li>
+</ul>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>In the same post, as a comment, Daniel Lakeland proposes an alternative approach is whether the posterior estimate falls within the 95% highest density interval of the prior. This is available via the method argument: <code>bayestestR::check_prior(model_baseline, method = 'lakeland')</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>The <code>looic</code> is just -2<em><code>elpd_loo</code>, as we often use -2</em>log likelihood (a.k.a. deviance) in standard approaches for AIC. In this case, <code>elpd_loo</code>, is a leave-one-out density. <code>p_loo</code> is the ‘effective number of parameters’, which users of penalized regression and mixed models will have some familiarity with.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+<!--radix_placeholder_article_footer-->
+<!--/radix_placeholder_article_footer-->
+</div>
+
+<div class="d-appendix">
+</div>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+<!--radix_placeholder_site_after_body-->
+<!--/radix_placeholder_site_after_body-->
+<!--radix_placeholder_appendices-->
+<div class="appendix-bottom"></div>
+<!--/radix_placeholder_appendices-->
+<!--radix_placeholder_navigation_after_body-->
+<!--/radix_placeholder_navigation_after_body-->
+
+</body>
+
+</html>

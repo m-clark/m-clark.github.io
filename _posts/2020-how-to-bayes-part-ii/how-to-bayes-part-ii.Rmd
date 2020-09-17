@@ -1,0 +1,881 @@
+---
+title: "Bayesian Analysis"
+description: |
+  Practical steps you can take in your Stan journey to deal with issues and explore your models fully.
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/r_and_stan.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: [../../styles.css, 'https://use.fontawesome.com/releases/v5.14.0/css/all.css']
+draft: true
+tags: [tags, taggy]
+categories:
+  - bayesian
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  eval      = F, 
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+library(broom)
+library(kableExtra)
+library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd
+```
+
+
+## Better Bayesian Approaches, Part II
+
+We've talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of this post.  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's engage in some better practices to outline an approach you can use every time to help things run more smoothly.
+
+
+### Suggested Steps
+
+<div style = 'text-align: center'>
+<i class="fas fa-list-ol fa-5x" style="padding: 20px"></i>
+</div>
+
+<br>
+
+<div style = 'text-align: center'>
+<i class="fas fa-hat-wizard fas-5x" style="padding: 20px"></i>
+</div>
+
+<br>
+
+- First generate 'fake data' to assess prior viability
+- With adequate priors, start with a simple, but viable model
+- For simple models you do not need many iterations
+    - If you are doing standard GLM or simpler versions of common extensions, even the defaults are likely overkill.  For example, a basic linear regression should converge almost immediately.
+- Problems
+  - If Rhat/ESS is issue, run more iterations
+  - if max_tree_depth is issue, increase
+  - if divergent transitions
+      - Check the data, has it been scaled? 
+      - Can something more be done about priors 
+      - Use pairs plot
+      - Use parcoord plot
+      <!-- - reparameterize model -->
+      - get more/better data
+      - get a better model
+- Use posterior predictive checks
+    - Nice, but what if it doesn't fit?
+        - get better data
+        - get a better model
+- Explore a more viable model
+- Compare and/or average models
+
+In this case, let's say we know we should at least do a linear mixed model.  You could even start with just a linear regression, but we'll say we already know we need to at least account for the heterogeneity.
+
+
+
+## Example data
+
+
+<div style = 'text-align: center'>
+<i class="fas fa-database fa-5x" style="padding: 20px"></i>
+</div>
+<br>
+
+To start out, I'm going to create some data for us to run some basic models with. To make things interesting, the true underlying model has categorical and continuous covariates, interactions, nonlinear relationships, random effects (observations are clustered in groups), and some variables are collinear.  You can skip these details if uninterested, but note that we will be purposely using under- and over-fitted models relative to this one to see what happens.
+
+```{r create-data-setup}
+library(tidyverse)
+
+create_data <- function( N = 1000, ng = 100, seed = 1234) {
+  
+  set.seed(seed)
+  
+  X_mm = cbind(
+    # a standard binary
+    binary_1 = sample(0:1, N, replace = TRUE),                      
+    # a relatively rare categorical
+    binary_2 = sample(0:1, N, replace = TRUE, prob = c(.05, .95)),  
+    # two partly collinear numeric
+    mvtnorm::rmvnorm(N,
+                     mean = rep(0, 3),
+                     sigma = lazerhawk::create_corr(runif(3, max = .6)))
+  )
+  
+  X_mm = cbind(
+    # intercept
+    1,
+    X_mm,
+    # a quadratic effect
+    scale(poly(X_mm[,5], 3))[,2:3],
+    # interaction of binary variables
+    X_mm[,1]*X_mm[,2], 
+    # interaction of binary 2 with numeric 1
+    X_mm[,2]*X_mm[,3]
+  )
+  
+  # add intercept
+  colnames(X_mm) = c(
+    'Intercept',
+    'b1',
+    'b2',
+    'x1',
+    'x2',
+    'x3',
+    'x3_sq',
+    'x3_cub',
+    'b1_b2',
+    'b2_x1'
+  )
+  
+  # coefficients
+  beta = c(
+    3.0,   # intercept
+     .3,   # b1
+    -.3,   # b2
+     .5,   # x1
+     .0,   # x2
+     .3 ,  # x3 
+     .3,   # x3_sq
+    -.2,   # x3_cub
+     .5,   # b1_b2 
+    -.5    # b2_x1
+  )
+  
+  # create target variable/linear predictor
+  y = X_mm %*% beta
+  
+  # add random effect
+  groups = sort(sample(1:ng, N, replace = T))
+  
+  re = rnorm(ng, sd = .5)[groups]  # re sd = .5
+  
+  # add re and residual noise
+  y = y + re + rnorm(N)
+  y = cbind(y, groups)
+  colnames(y) = c('y', 'group')
+  
+  as_tibble(cbind(X_mm, y))
+}
+
+
+```
+
+```{r save-true-parameters}
+true_params = data.frame(
+  parameter = c(
+    'intercept',
+    'b1',
+    'b2',
+    'x1',
+    'x2',
+    'x3 ',
+    'x3_sq',
+    'x3_cub',
+    'b1_b2 ',
+    'b2_x1',
+    're sd',
+    'sigma '
+  ), 
+    value = c(
+    3.0,
+     .3,
+    -.3,
+     .5,
+     .0,
+     .3,
+     .3,
+    -.2,
+     .5,
+    -.5,
+     .5,
+    1.0
+  )
+)
+```
+
+
+If you want to check that  the parameters are recovered, run the following.
+
+```{r create-data-test, eval=FALSE}
+dat = create_data(N = 10000)
+
+mod = lme4::lmer(y ~ . -group + (1|group), data.frame(dat[,-1]))
+
+mixedup::summarise_model(mod, ci = FALSE)
+```
+
+We do not need as much data for our purposes so we'll set the total sample size to 1000.  We'll also make our binary covariates explicit factors, which will make things easier when want to visualize grouped effects later.
+
+```{r create-data}
+# create the primary data frame
+
+main_df = 
+  create_data(N = 1000) %>% 
+  as_tibble() %>% 
+  select(group, b1:x3, y) %>% 
+  mutate(
+    b1 = factor(b1),   # will help with visuals
+    b2 = factor(b2)
+  )
+```
+
+## Simulate from priors
+
+A first step is to produce some viable priors.  But the obvious question is, what priors should we choose?  Thankfully, for standard models there is not much guesswork involved. Bayesian analysis has been around a long time, so the bulk of the work has been done for you.  Even default settings should not affect things much, especially for rstanarm, which has some basic defaults that are informed by the data.  However, due to the flexibility of the brms modeling functions, some priors are unspecified and left flat (i.e. uniform), which is something we definitely don't want, and while others like rstanarm's defaults might be somewhat better, they could still cause problems for more complex situations.  So how might we choose better ones?
+
+
+The basic idea here is to generate parameters (e.g. regression coefficients) based on the prior distributions, predict data based on those parameters, and then compare the predictions to our observed target variable.  The brms package makes this very easy to do.  We will check the following:
+
+- Prior set 0  
+  - similar to brms
+  - regression coefficients: uniform
+  - Intercept: default
+  - Variances: default
+- Prior set 1
+  - similar to rstanarm
+  - regression coefficients: normal
+  - Intercept: default
+  - Variances: default
+- Prior set 2
+  - diffuse, larger sd than rstanrm
+  - regression coefficients: Normal with mean 0, standard deviation 10
+  - Intercept: default
+  - Variances: default
+- Prior set 3
+  - If data is standardized, this would be very reasonable
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: default
+  - Variances: default
+- Prior set 4
+  - Go further to restrict range of intercept to more plausible values
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: mean of `y` (~3)
+  - Variances: default
+- Prior set 5
+  - Go further to restrict range of sigma to more plausible values
+  - regression coefficients: Normal with mean 0, standard deviation 1
+  - Intercept: based on mean of `y` (~3)
+  - Variances: based on sd of `y` (~1)
+
+We can use pp_check to examine the prior-generated data versus the observed target `y`, but I wait to show them all together at the end.
+
+```{r sample-prior, eval=FALSE}
+# prior_summary(model_start) # examine the defaults from a previous model.
+
+pr_uniform = prior(uniform(-100, 100), lb = -100, ub = 100, 'b')
+
+model_default_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior =  
+)
+
+# pp_check(model_default_prior, nsamples = 50)
+
+pr_auto = sjstats::auto_prior(
+  y ~ b1 + b2 + x1 + x2 + x3,
+  data = main_df,
+  gaussian = TRUE
+)
+
+model_auto_prior = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_auto
+)
+
+# pp_check(model_auto_prior, nsamples = 50)
+
+
+pr_norm_b_0_10 = prior(normal(0, 10), 'b')
+
+model_0_norm_b_0_10 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_0_10
+)
+
+# pp_check(model_0_norm_b_0_10, nsamples = 50)
+
+pr_norm_b_0_1 = prior(normal(0, 1), 'b')
+
+model_0_norm_b_0_1 = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_0_1
+)
+
+# pp_check(model_0_norm_b_0_1, nsamples = 50)
+
+pr_norm_b_norm_int = c(
+  prior(normal(0, 1), class = 'b'),
+  prior(normal(3, 1), class = 'Intercept')#,
+)
+
+model_0_norm_b_0_1_norm_Int = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_norm_int
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+
+
+pr_norm_b_norm_int_t_sigma = c(
+  prior(normal(0, 1), class = 'b'),
+  prior(normal(3, 1), class = 'Intercept'),
+  prior(student_t(10, 1, 1), class = 'sigma')
+)
+
+model_0_norm_b_0_1_norm_Int_sigma = brm(
+  y ~ b1 + b2 + x1 + x2 + x3, 
+  data = main_df,
+  iter = 1000,
+  sample_prior = 'only',
+  prior = pr_norm_b_norm_int_t_sigma
+)
+
+# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+```
+
+The following plot shows the model predictions based on priors only. We restrict the range of values for display purposes, so note that some of the priors would generate more extreme values.  For example the defaults could generate values into the $\pm$ 500 and beyond. I also mark the boundaries of the observed target variable. 
+
+```{r proposed-priors-plot, echo=FALSE}
+# can't do alpha here
+color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direction = -1)) 
+
+{
+  {
+    pp_check(model_default_prior, nsamples = 50, alpha = .2) +
+      labs(title = 'Defaults')
+  }/
+    # theme(axis.text.x = element_text(size= 6)) +
+    {
+      pp_check(model_auto_prior, nsamples = 50, alpha = .2) +
+        labs(title = 'Auto prior')
+    }/
+    {
+      pp_check(model_0_norm_b_0_10, nsamples = 50, alpha = .2) +
+        labs(title = 'Normal b, with defaults')
+    }
+} * 
+  geom_vline(xintercept = c(min(main_df$y), max(main_df$y)), color = '#00aaff80') * 
+  scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50)) |
+  
+{
+  {
+    pp_check(model_0_norm_b_0_1, nsamples = 50, alpha = .2) +
+    labs(title = 'Normal b tighter')
+  } /
+{
+  pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50, alpha = .2) +
+    labs(title = 'Add Int prior') 
+  } /
+    pp_check(model_0_norm_b_0_1_norm_Int_sigma, nsamples = 50, alpha = .2) +
+    labs(title = 'Add sigma prior')
+} * 
+  geom_vline(xintercept = c(min(main_df$y), max(main_df$y)), color = '#00aaff80') * 
+  scale_x_continuous(breaks = seq(-25, 25, by = 10), limits = c(-50, 50))
+```
+
+
+So given that our target variable is between `r 'round(min(main_df$y))'` and `r 'round(max(main_df$y))'`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will generally help our models be more efficient and better behaved. Note that if all else fails, for brms you can use a convenience function like auto_prior demonstrated above.
+
+
+## Run and Summarize the Baseline Model
+
+Now let's run a baseline model, one that's simple but plausible.  Given that there will eventually be additional complexities, I'll go ahead and add some iterations, and increase max tree depth and adapt delta now to make the code reusable.
+
+```{r model-baseline}
+library(brms)
+
+pr = c(
+  prior(normal(0, 1), class = 'b'),
+  prior(student_t(10, 1, 1), class = 'sigma'),
+  prior(student_t(10, 1, 1), class = 'sd')  # prior for random intercept std dev
+)
+
+model_baseline = brm(
+  y ~ b1 + b2 + x1 + x2 + x3 + (1 | group), 
+  data   = main_df,
+  warmup = 5000,
+  iter   = 6000,
+  thin  = 4,
+  prior  = pr, 
+  cores  = 4,
+  control = list(
+    adapt_delta = .95,
+    max_treedepth = 15
+  ),
+  save_all_pars = TRUE
+)
+```
+
+```{r model-baseline-summary}
+summary(model_baseline)
+```
+
+For reporting purposes all you need are the `Estimate` and lower and upper bounds.  If you want a visual approach, you can use something like this.
+
+```{r model-baseline-summary-plots}
+mcmc_plot(model_baseline, type = 'areas')
+mcmc_plot(model_start_100, type = 'intervals')
+```
+
+
+
+### Check priors
+
+
+Were our priors informative? The following will do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation[^lakeland].  Having an informative prior isn't really a problem in my opinion, unless it's more informative than you wanted.  For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.
+
+https://statmodeling.stat.columbia.edu/2019/08/10/
+
+```{r informative-priors}
+prior_summary(model_baseline)
+bayestestR::check_prior(model_baseline)
+```
+
+
+
+### Explore and visualize effects
+
+We can plot effects easily with brms. The <span class="func" style = "">conditional_effects</span> function is what we want here.  Without interactions or other things going, on they aren't very interesting, but it's a useful tool nonetheless.
+
+
+```{r model-start-explore}
+conditional_effects(model_start, 'b2')
+```
+
+We can also use the hypothesis function to test for specific types of effects.  By default they provide a one-sided probability and uncertainty interval.  For starters,  we can just duplicate what we saw in the previous summary for the `b2` effect.  The only benefit is to easily obtain the one-sided p-value (that `b2` is less than zero) and the corresponding *evidence ratio*, which is just `p/(1-p)`.
+
+```{r model-start-hype}
+hypothesis(model_start, 'b21 < 0')
+```
+
+But we can really try anything. The following tests whether the combined effect of our categorical covariates is greater than zero.
+
+```{r model-start-hype2}
+hypothesis(model_start, 'b11 + b21 > 0')
+```
+
+
+### Model Effectiveness
+
+A natural question to ask is how useful our model actually is.  The next question is how to define such utility.  Such an assessment definitely cannot be made with something like 'statistical significance'. Science of any kind is nothing without prediction, so we we can start there.
+
+#### Posterior predictive checks
+
+Posterior predictive checks are a key component of bayesian analysis.  The prior checks we did before are just a special case of this.  Here we actually use the posterior distributions of parameters to generate the data to compare what the model 
+
+```{r model-baseline-ppcheck}
+pp_check(model_baseline, nsamples = 100)
+pp_check(model_baseline, nsamples = 10, type ='error_scatter_avg')
+
+q10 = function(y) quantile(y, 0.1)
+q90 = function(y) quantile(y, 0.9)
+
+pp_check(model_baseline, nsamples = 100, type ='stat', stat='median')
+pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'q90')
+pp_check(model_baseline, nsamples = 100, type ='stat_2d', stat = c('q10', 'q90'))
+pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'max')
+
+# library(patchwork)
+# {pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'min') +
+#     pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'max')}  /
+#   {pp_check(model_baseline, nsamples = 100, type ='stat_grouped', stat = 'min', group = 'b2') + 
+#       guides(fill = 'none') +
+#     pp_check(model_baseline, nsamples = 100, type ='stat_grouped', stat = 'max', group = 'b2') + 
+#       guides(fill = 'none')}
+```
+
+#### Bayes R-squared
+
+In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don't really recommend this beyond linear models assuming a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values to the observed, so can be seen as descriptive statistic.  Since we are Bayesians, we also get a ready-made interval for it.  But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional).  Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming it is notable in the first place.
+
+https://avehtari.github.io/bayes_R2/bayes_R2.html
+
+Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared for Bayesian regression models. The American Statistician, doi:10.1080/00031305.2018.1549100. [Online Preprint](http://www.stat.columbia.edu/~gelman/research/unpublished/bayes_R2_v3.pdf).
+
+```{r model-baseline-r2}
+bayes_R2(model_baseline)
+bayes_R2(model_baseline, re_formula = NA)  # random effects not included
+# performance::r2_bayes(model_baseline)  # alternative provides both
+```
+
+To show the limitation of R^2^, I rerun the model using a restrictive prior on the intercept. Intercepts for the resulting models are different but the other fixed effects are basically the same.  The R^2^ suggests equal fit.
+
+```{r r2-not-pp, echo=FALSE}
+model_r2_vs_pp = update(
+  model_baseline, 
+  cores = 4,
+  prior = c(
+    prior(normal(0, 1), class = 'b'),
+    prior(normal(5, .1), class = 'Intercept'),
+    prior(student_t(10, 1, 1), class = 'sigma'),
+    prior(student_t(10, 1, 1), class = 'sd')  # prior for random intercept
+  ),
+  save_all_pars = TRUE
+)
+
+tibble(
+  model = c('baseline', 'modified'),
+  rbind(as_tibble(bayes_R2(model_baseline, re_formula = NA)),
+        as_tibble(bayes_R2(model_r2_vs_pp, re_formula = NA)))
+) %>% 
+  kable_df()
+```
+
+However, a posterior predictive check shows clearly the failure of the modified model to capture the data.
+
+```{r r2-not-pp-check}
+{pp_check(model_baseline, re_formula = NA) + labs(subtitle = 'Baseline Model')} /
+  {pp_check(model_r2_vs_pp, re_formula = NA) + labs(subtitle = 'Modified Model')}
+```
+
+A variant of R^2^, the 'LOO' R^2^, is also available via the loo_R2 function. LOO stands for *leave-one-out*, as in leave-one-out cross-validation.  It's based on the residuals from the leave one out predictions.  The results suggests that the LOO R^2^ actually picks up the difference in models, and would be lower for the modified model, even if we included the random effects.
+
+```{r}
+tibble(
+  model = c('baseline', 'modified'),
+  rbind(as_tibble(loo_R2(model_baseline, re_formula = NA)),
+        as_tibble(loo_R2(model_r2_vs_pp, re_formula = NA)))
+) %>% 
+  kable_df()
+```
+
+
+
+<!-- ### Model comparison -->
+
+<!-- We will use estimates like WAIC and loo for model comparison later.  They are essentially used as you would AIC, or root mean squared error to compare models in a predictive fashion.  In addition We only really have our  -->
+
+<!-- Even now, we can use loo as a diagnostic to possibly discover problematic observations, -->
+
+<!-- ```{r} -->
+<!-- loo(model_start) -->
+<!-- WAIC(model_start) -->
+<!-- post_prob(model_baseline, model_r2_vs_pp) -->
+<!-- ``` -->
+
+<!-- The interesting thing here is that we have a grossly inefficient model, yet none we have nothing that notes any issues -->
+
+
+
+
+
+
+
+
+
+## Prediction & Model comparison
+
+Expected predictive accuracy, log probability for observing a new data point
+
+### Basic prediction
+
+
+### Model Comparisons
+
+If we're doing what we should, we should have a couple models to compare against one another.  In the Bayesian approach, we will use estimates like WAIC and loo for model comparison.  They are essentially used as you would AIC, or root mean squared error, to compare models in a predictive fashion.  The values themselves don't tell us much, but in comparing models, lower means less predictive error, which is what we want.  And since we're bayesian, we even have estimates of uncertainty for these values as well.
+
+WAIC vs. LOO.  LOO has better diagnostics for noting whether there are potential issues using it.  But in practice, how much would it differ?
+
+https://mc-stan.org/loo/articles/loo2-weights.html
+
+
+issues- overfitting, time, complexity is more accurate portrayal of nature even if not 'best'
+
+```{r model-complex}
+model_interact = update(
+  model_baseline,
+  . ~ . + b1:b2 + b2:x1,
+  cores = 4
+)
+
+model_interact_nonlin = update(
+  model_interact,
+  . ~ . + s(x3),
+  cores = 4
+)
+```
+
+
+```{r}
+model_baseline = add_criterion(model_baseline,  'loo')
+model_interact = add_criterion(model_interact, 'loo')
+model_interact_nonlin = add_criterion(model_interact_nonlin, 'loo')
+
+loo_compare(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin
+)
+
+map_df(list(model_baseline,
+            model_interact,
+            model_interact_nonlin), function(x)
+              as.data.frame(bayes_R2(x)))
+```
+
+
+```{r}
+post_prob(
+  model_baseline, 
+  model_interact
+)
+
+post_prob(
+  model_baseline, 
+  model_interact_nonlin
+)
+
+post_prob(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin
+)
+
+model_weights(
+  model_baseline, 
+  model_interact,
+  model_interact_nonlin, 
+  method = 'loo'
+) 
+```
+
+
+```{r}
+pp_check(model_baseline)
+pp_check(model_interact_nonlin)
+pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'min')
+pp_check(model_interact_nonlin, nsamples = 100, type ='stat', stat = 'min')
+```
+
+
+
+#### Problems at the loo
+
+After the previous warnings discussed, the next most common point of confusion I see with clients is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation.  So what should we do here?
+
+As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic]
+
+The following provides influence statistics, which are a way of saying which observations in the data are not capture well by the model. Larger values are bad, but you don't even have to worry much here, the function provides the breakdown for you. 
+
+```{r loo-basic}
+loo(model_baseline)
+loo(model_interact_nonlin)
+```
+
+
+```{r pareto-compare, echo=FALSE}
+pareto_probs = loo(model_interact_nonlin)
+
+str(pareto_probs)
+
+loo_pit_interact_nonlin = pp_check(model_interact_nonlin, type = 'loo_pit')
+loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit')
+
+# bind_rows(
+#   loo_pit_baseline %>% layer_data(),
+#   loo_pit_interact_nonlin %>% layer_data(),
+#   .id = 'model'
+# ) %>% 
+#   mutate(
+#     model = factor(model, labels = c('baseline', 'complex')),
+#     alpha = rep(c(1, .5), e = 1000)
+#     ) %>% 
+#   rename(Uniform = x, `LOO-PIT` = y) %>% 
+#   ggplot(aes(Uniform, `LOO-PIT`)) +
+#   geom_line(aes(color = model, alpha = I(alpha)), size = 2) +
+#   geom_line(aes(y = theoretical), color = '#990021', alpha = .5) +
+#   scico::scale_color_scico_d(begin = .25, end = .75) +
+#   theme_clean()
+
+# main_df %>% 
+#   slice(which(pareto_probs$diagnostics$pareto_k > .5)) %>% 
+#   bind_cols(pareto_probs$diagnostics %>%
+#               as_tibble() %>%
+#               slice(which(pareto_probs$diagnostics$pareto_k > .5))) %>% 
+#   bind_cols(pareto_probs$pointwise %>%
+#               as_tibble() %>%
+#               slice(which(pareto_probs$diagnostics$pareto_k > .5)))
+```
+
+
+
+
+### Averaging models
+
+Rather than selecting one model, if our goal is prediction, we can use model averaging, which provides weighted estimates of several models. 
+
+```{r}
+prediction_data = crossing(
+  b1 = 0:1,
+  b2 = 0:1,
+  x1 = 0,
+  x2 = 0,
+  x3 = 0
+  # x1 = c(-1, 0, 1),
+  # x2 = c(-1, 0, 1),
+  # x3 = c(-1, 0, 1)
+)
+
+average_predictions = pp_average(
+  model_baseline,
+  model_interact,
+  model_interact_nonlin,
+  newdata = prediction_data,
+  re_formula = NA
+) 
+
+average_predictions
+```
+
+Vehtari, A., Gelman, A., and Gabry, J. (2017a). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. Statistics and Computing. 27(5), 1413–1432. doi:10.1007/s11222-016-9696-4 ([journal version](http://link.springer.com/article/10.1007%2Fs11222-016-9696-4), [preprint arXiv:1507.04544](https://arxiv.org/abs/1507.04544)).
+
+Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using stacking to average Bayesian predictive distributions. Bayesian Analysis, advance publication, doi:10.1214/17-BA1091. ([online](https://projecteuclid.org/euclid.ba/1516093227)).
+
+Vehtari, A., Simpson, D., Gelman, A., Yao, Y., and Gabry, J. (2019). Pareto smoothed importance sampling. [preprint arXiv:1507.02646](https://arxiv.org/abs/1507.02646/)
+
+Gabry, J. , Simpson, D. , Vehtari, A. , Betancourt, M. and Gelman, A. (2019), Visualization in Bayesian workflow. J. R. Stat. Soc. A, 182: 389-402. doi:10.1111/rssa.12378. (journal version, arXiv preprint, code on GitHub)
+
+
+### Cross-validation
+
+
+```{r}
+library(future)
+plan(multiprocess)
+model_interact_nonlin_cv = kfold(model_interact_nonlin, K = 5, chains = 1, save_fits = TRUE)
+str(model_interact_nonlin_cv, 0)
+test = kfold_predict(model_interact_nonlin_cv, newdata = prediction_data)
+
+rmse <- function(y, yrep) {
+  yrep_mean <- colMeans(yrep)
+  sqrt(mean((yrep_mean - y)^2))
+}
+rmse(y = test$y, yrep = test$yrep)
+```
+
+
+
+
+The issues with recommendations that I see are problematic for applied users.  I'm at U of Michigan and see Stan family users from psychology, environmental sciences, engineering, and many other disciplines, and I thought it might be useful to pass along some recurring themes.
+
+Many suggestions, while great if you have time to read several technical articles and discussions and have the ability to understand them, are simply not very helpful for applied users.  These folks probably  don't have the time (and generally no inclination) to delve into things like the details regarding divergent transitions, pareto values, etc.
+
+
+
+https://mc-stan.org/docs/2_24/stan-users-guide/problematic-posteriors-chapter.html
+
+
+## Solutions and their problems
+
+It seems that the 'usual' approach is adding a level of complexity that is going well beyond what should be expected for new/applied users.  While some might actually enjoy such complexity (like me!), this turns applied users off, especially if there is no obvious gain over traditional approaches.
+
+Increasing adapt_delta seems to often does not solve the problem for which it is suggested (based on personal experience it's actually rare). I usually start at .99 anyway just to make it a non-issue. For applied users, having to deal with 'control' options usually shouldn't be a first step, especially if it's not likely to improve things. For example, would trying a simpler model for diagnostic purposes, or rescaling the data, be just as likely to improve things?
+
+
+Reparameterization/Change of variables
+    - Only those with notably advanced statistical knowledge would even know where to begin here.
+
+'Finding a better model' isn't usually helpful even if 100% accurate for every modeling situation.  Unless the advice is specific (e.g. to add an additional specific covariate, change a specific distribution, add some other complexity), it's likely not going to help an applied user.
+
+'Try different priors' Which and by how does one determine 'different'?  For many regression situations, normal(0, 1) vs. normal(0, 10) vs. student(df = X) would result in basically wasted time.  Is there a way to make a reasonable guess as to what should be tested to demonstrate sensitivity/improvement?
+
+The model comparison situation has grown so complex there is a 20+ item FAQ that still may not help in many cases.  What is someone to do if there are 'pareto issues' and they have no other obvious modeling options? Abandon model comparison?
+
+### pareto stuff
+
+https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s
+
+
+The usual cases are
+
+- misspecified models MC: all models are misspecified, so how will knowing this help us finish the project?
+- models with parameters which see the information only from one observation each (e.g. 'random' effect models)  MC: sorry, but this is reality for many such models.  Assuming we can't increase this, which is practically every situation, what are we to do about it?
+- otherwise flexible models  MC: how is 'flexible' defined? Overly vague priors?
+- [A quick note what I infer from p_loo and Pareto km values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
+- [Recommendations for what to do when k exceeds 0.5 in the loo package?](https://discourse.mc-stan.org/t/recommendations-for-what-to-do-when-k-exceeds-0-5-in-the-loo-package/3417)
+- [Improve model with some observations Pareto >0.7](https://discourse.mc-stan.org/t/improve-model-with-some-observations-pareto-0-7/17500)
+- [Bayesian data analysis - roaches cross-validation demo](https://rawgit.com/avehtari/modelselection_tutorial/master/roaches.html#22_cross-validation_checking)
+- [16 What to do if I have many high Pareto k’s?](https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s)
+- [Pareto K for outlier detection 1](https://discourse.mc-stan.org/t/pareto-k-for-outlier-detection/12177/9)
+
+
+
+
+
+> These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ [Aki Vehtari](https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678)
+
+
+
+
+
+
+
+## Resources
+
+
+https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations
+
+https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html
+
+https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099
+
+https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html
+
+https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html
+
+[Use CmdStan to save memory](http://mc-stan.org/cmdstanr/articles/cmdstanr.html)
+
+- [Jeffrey Arnold's Bayesian Notes](https://jrnold.github.io/bayesian_notes/) has nice examples of many models and good summaries otherwise
+
+[^betanwhat]: Betancourt, whose work I admire greatly, typically makes my head spin.
+
+[^parcoord]: I swear sometimes we're taking a step back in time with some of these plots.  All of the diagnostic plots defaults appear to be styles you'd find in Tukey's EDA from 1950.  You don't necessarily need to get fancy, but surely the defaults could be better.
+
+[^funnelcloud]: And I say this as someone with  experience detecting funnel clouds.
+
+[^adapt_delta]: In my experience, there isn't a need to guess between .80 and .99 as the time differences are typically negligble.  If it doesn't work at .99, it won't at .9999 either.
+
+[^bigobjects]: With more posterior samples comes slower visualizations and possibly other computations.
+
+[^mac]: I will spare the details my true opinions, which are almost entirely negative.
+
+[^lakeland]: In the same post, as a comment, Daniel Lakeland proposes an alternative approach is whether the posterior estimate falls within the 95% highest density interval of the prior.  This is available via the method argument:  `bayestestR::check_prior(model_baseline, method = 'lakeland')`.
+
+[^looic]: The `looic` is just -2*`elpd_loo`, as we often use -2*log likelihood (a.k.a. deviance) in standard approaches for AIC.  In this case, `elpd_loo`, is a leave-one-out density.  `p_loo` is the 'effective number of parameters', which users of penalized regression and mixed models will have some familiarity with.
+
+[^reparameterize]: It is often suggested in the Stan world to reparameterize models.  However, this advice doesn't really apply in the case of using rstanarm or brms (i.e. where you aren't writing Stan code directly), and it assumes a level of statistical expertise many would not have, or even if they do, route to respecifying the model may not be obvious.
