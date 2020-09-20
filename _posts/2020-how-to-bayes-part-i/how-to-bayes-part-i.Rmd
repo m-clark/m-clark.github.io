@@ -582,7 +582,7 @@ model_update_treedepth = update(
 
 ### Divergent Transitions
 
-*Divergent transitions*  are a technical issue that indicates something may be notably wrong with the data or model ([technical details](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)). They indicate that the sampling process has 'gone off the rails' and the iteration's results and anything based on them (i.e. subsequent draws, parameter estimates) can't be trusted.  
+*Divergent transitions*  are a technical issue that indicates something may be notably wrong with the data or model ([technical details](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)). They indicate that the sampling process has 'gone off the rails' and the iteration's results and anything based on them (i.e. subsequent draws, parameter estimates) can't be trusted.  Unlike the other problems we've discussed, this is the harder one to navigate.
 
 Why might this happen?
 
@@ -590,15 +590,21 @@ Why might this happen?
 - poor model
 - high collinearity
 - improper priors
+- problematic priors
 - separability (logistic regression)
+- any number of other things
 
 
-As an example, I'll make a relatively complex model with only a small random sample of the data, and use very few warmups.
+As an example, I'll make a relatively complex model with only a small random sample of the data, improper priors, and use very few warmups.
 
 ```{r divergent-model, warning=T, message = T, results='hide'}
 model_problem = brm(
-  y ~ b1*b2*x1 + x2*b2 + x3*b2 + (1 + x1 + b2|group),
+    bf(
+      y ~ b1*b2*x1 + x2*b2 + x3*b2 + (1 + x1 + b2|group),
+      sigma ~ x1 + b2
+    ),
   data   = main_df %>% slice_sample(prop = .1),
+  family = student,
   cores  = 4,
   warmup = 10,
   iter   = 1010,
@@ -614,13 +620,13 @@ So what do we do in this case? Well let's start with visual inspection.
 
 A  diagnostic tool that is typically suggested to look at with divergent transitions is the <span class="emph" style = "">pairs plot</span>.  It is just a scatterplot matrix of the parameters estimates (and log posterior value), but it suffers from a few issues.  The plot is slow to render even with few parameters, and simply too unwieldy to use for many typical modeling situations. If you somehow knew in advance which parameters were causing issues, you could narrow it down by only looking at those parameters. But if you knew which parameters were the problem, you wouldn't need the pairs plot.  
 
-Another issue is that it isn't what you think it is.  The upper diagonal is not just the flipped coordinates of the lower diagonal like every other scatterplot matrix you've seen.  The chains are split such that half are used for the above diagonal plots, and the other for the lower.  
+Another issue is that it isn't what you think it is at first glance.  The upper diagonal is not just the flipped coordinates of the lower diagonal like every other scatterplot matrix you've seen.  The chains are split such that half are used for the above diagonal plots, and the other for the lower.  
 
 > In this case, plots below the diagonal will contain realizations that are below the median of the indicated variable (or are zero in the case of "divergent__"), and plots above the diagonal will contain realizations that are greater than or equal to the median of the indicated variable (or are one in the case of "divergent__"). ~ documentation for <span class="func" style = "">mcmc_pairs</span>
 
-I suspect this won't mean much to applied users. Another issue is that you could change how the chains are split and it could potentially dramatically change the how the pattern of divergent transitions looks.  But the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` argument may help, otherwise it likely won't.  In the cases I see for myself and clients, increasing `adapt_delta` rarely helps in either case, but it doesn't hurt to try.
+I suspect this may not mean much to applied users. Another issue is that you could change how the chains are split and it could potentially dramatically change the how the pattern of divergent transitions looks.  But the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` argument may help, otherwise it likely won't.  In the cases I see for myself and clients, increasing `adapt_delta` rarely helps, but it doesn't hurt to try.
 
-Let's take a look anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency, don't take standard arguments to update, and generally require more effort to figure out how to manipulate than I want to spend on a diagnostic plot.  In addition, we'll use a density plot on the diagonal, instead of the poorer option of histogram.
+Let's take a look at the pairs plot anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency by default.  In addition, we'll use a density plot on the diagonal, instead of the poorer option of histogram.
 
 ```{r pairs-plot-model-start-complex, echo=-1}
 color_scheme_set()
