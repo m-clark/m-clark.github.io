@@ -80,7 +80,7 @@ This is all great in general.  However, in consulting I see a consistent issue a
 
 In the beginning of Stan's ascension, the majority of people using Stan/rstan were more technically inclined, coded in Stan directly, and, when problems arose, they were willing to do a lot of extra work to solve the problems (reading articles, developing pseudo-expertise with various techniques, and more). But tools like rstanarm and brms make running Bayesian models as [easy to do](https://m-clark.github.io/easy-bayes/) as using base R functions and other non-Bayesian packages, and as Bayesian analysis has become more widely used, accepted, and presented, this has opened the Bayesian approach to practically anyone that wants to do it.
 
-I personally don't think one needs to be an expert in Bayesian analysis to enjoy its benefits for common models, even if difficulties come up.  Nor do I think an exhaustive search through forums, technical articles, and more are necessary to have to do for issues that arise often.  So this is an attempt at a one-stop shop for dealing with the most common issues that arise, interpreting results of diagnostics, and summarizing the options one can take.
+I personally don't think one needs to be an expert in Bayesian analysis to enjoy its benefits for common models, even if difficulties come up.  Nor do I think an exhaustive search through forums, technical articles, function documentation and more are necessary to deal issues that arise often.  So this is an attempt at a practical guide and one-stop shop for dealing with the most common issues that arise, interpreting results of diagnostics, and summarizing the options one can take.
 
 
 ## Audience
@@ -616,19 +616,15 @@ model_problem = brm(
 So what do we do in this case? Well let's start with visual inspection.
 
 
-#### Example: Pairs plot
+#### Visualization: Pairs plot
 
 A  diagnostic tool that is typically suggested to look at with divergent transitions is the <span class="emph" style = "">pairs plot</span>.  It is just a scatterplot matrix of the parameters estimates (and log posterior value), but it suffers from a few issues.  The plot is slow to render even with few parameters, and simply too unwieldy to use for many typical modeling situations. If you somehow knew in advance which parameters were causing issues, you could narrow it down by only looking at those parameters. But if you knew which parameters were the problem, you wouldn't need the pairs plot.  
 
-Another issue is that it isn't what you think it is at first glance.  The upper diagonal is not just the flipped coordinates of the lower diagonal like every other scatterplot matrix you've seen.  The chains are split such that half are used for the above diagonal plots, and the other for the lower.  
+Another issue is that it isn't what you think it is at first glance.  The upper diagonal is not just the flipped coordinates of the lower diagonal like every other scatterplot matrix you've seen.  The chains are split such that half are used for the above diagonal plots, and the other for the lower, with the split being based on the amount of numerical error (above or below the median).   I suspect this may not help applied users interpret things, but the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` part of the control argument may help ([see below][Solution for divergent transitions]), otherwise it likely won't.   
 
-> In this case, plots below the diagonal will contain realizations that are below the median of the indicated variable (or are zero in the case of "divergent__"), and plots above the diagonal will contain realizations that are greater than or equal to the median of the indicated variable (or are one in the case of "divergent__"). ~ documentation for <span class="func" style = "">mcmc_pairs</span>
+Let's take a look at the pairs plot anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency by default.  In addition, we'll use a density plot on the diagonal, instead of the histogram.
 
-I suspect this may not mean much to applied users. Another issue is that you could change how the chains are split and it could potentially dramatically change the how the pattern of divergent transitions looks.  But the gist is, that if your red points show up on the upper diagonal, changing the `adapt_delta` argument may help, otherwise it likely won't.  In the cases I see for myself and clients, increasing `adapt_delta` rarely helps, but it doesn't hurt to try.
-
-Let's take a look at the pairs plot anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency by default.  In addition, we'll use a density plot on the diagonal, instead of the poorer option of histogram.
-
-```{r pairs-plot-model-start-complex, echo=-1}
+```{r pairs-plot-model-start-complex, echo=-1, cache.rebuild=T}
 color_scheme_set()
 mcmc_plot(
   model_problem,
@@ -654,9 +650,9 @@ mcmc_plot(
 ```
 
 
-With problematic cases, what you might see on the off-diagonal plots is some sort of 'funneling', which would indicate where the sampler is getting stuck in the parameter space.  However, this visual notion isn't defined well, as it may be happening without being obvious, displaying just a bump[^funnelcloud].  But you'll also regularly see correlated parameters, including nonlinearly related ones, but it's unclear whether these might be a problem as well.
+With problematic cases, what you might see on the off-diagonal plots is some sort of 'funneling', which would indicate where the sampler is getting stuck in the parameter space.  However, this visual notion isn't defined well, as it may be happening without being obvious, displaying just a bump[^funnelcloud].  But you'll also regularly see correlated parameters, but it's unclear whether these might necessarily be a problem in a given situation.
 
-For the main model the pairs plot for all parameters took several seconds to produce, and even with the hex option still looks pretty poor.  It shows the intercept and `b2` parameters to be notably correlated, but there is no obvious reason for this.
+For the main model the pairs plot for all parameters takes several seconds to produce, and even with the hex option still looks pretty poor.  It shows the intercept and `b2` parameters to be notably correlated, possibly due to the poor priors.
 
 ```{r pairs-plot-model-start, echo=-1}
 color_scheme_set()
@@ -668,12 +664,14 @@ mcmc_plot(
 )
 ```
 
+**What we want**: Roughly no relation among parameters.
 
-#### Example: Parallel Coordinates Plot
 
-It is also suggested to look at parallel coordinates[^parcoord].  The order of these is arbitrary, but can definitely be highly influential in your perception of them.  Also, unless everything is on similar scales, they aren't going to be very useful, but even if you scale your data in some fashion, the estimates given divergent transitions may be notably beyond a reasonable scale.  With our model, it was actually difficult to get divergent transitions, and sometimes, with a overly complex model with almost no warmup and only 15% of the data, I could get a result with no warnings whatsoever.
+#### Visualization: Parallel Coordinates Plot
 
-As near as I can tell, we'd be looking for knots where the highlighted lines converge to a point. Likewise in our pairs plot, we'd be looking for a pattern among the divergences.  If these aren't the case we're told that the divergences are probably false positives, which seems counter to the suggestion that even 1 divergent transition
+It is also suggested to look at parallel coordinates[^parcoord], but unfortunately there are issues with these plots as well.  The order of these is arbitrary, but the order can definitely influence your perception of any patterns.  Also, unless everything is on similar scales, they simply aren't going to be very useful, but even if you scale your data in some fashion, the estimates given divergent transitions may be notably beyond a reasonable scale.  
+
+As in our pairs plot, we'd be looking for a pattern among the divergences.  If these aren't the case we're told that the divergences are probably false positives[^FPdiv]
 
 ```{r par-coord}
 library(bayesplot)
@@ -692,22 +690,32 @@ mcmc_parcoord(
 )
 ```
 
+**What we want**: Roughly no obvious pattern. If the divergence lines are not showing any particular concentration, it could be that these are false positives.
+
+
 #### Solution for divergent transitions
 
-Use the control argument to increase `adapt_delta` to .99[^adapt_delta] and let your model have more warmup/total iterations.
+
+Unfortunately the solution to divergent transitions is usually not straightforward. The typical starting point for solving the problem of divergent transitions is to use the control argument to increase `adapt_delta` to .99[^adapt_delta] and let your model have more warmup/total iterations. In the cases I see for myself and clients, increasing `adapt_delta` rarely helps, but it doesn't hurt to try[^pairsprob].
 
 ```{r adapt-delta, eval = F}
 model = brm(..., control = list(adapt_delta = .99))
 ```
 
-Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this typically comes from poor data (e.g. not scaled) combined with a complex model, and beyond that, the priors may need to be amended.
+Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this problem often comes from poor data (e.g. not scaled, possible separation in logistic models, etc.) combined with a complex model, and beyond that, the priors may need to be amended.  As You may need to simplify the model.  As an example, for mixed models, it may be that some variance components are not necessary. You should at least not have uniform priors for any parameter, and as we'll see in Part II, you can use a simulation approach to help choose better priors.  Often the data and prior checks are better approach to solving the problem.
 
 
-#### More
-
-https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099
+Many solutions offered on the forums assume you are coding in Stan directly so things like reparameterizing your model, using specific types of priors, etc.  If you are writing Stan code rather than using a modeling package, you definitely need to double check it, as typos or other mistakes can certainly result in a problematic model. However, this post is for those using modeling packages, so I will not offer such remedies.
 
 
+
+
+
+
+
+Resource: [Case study: Divergences and Bias](https://mc-stan.org/users/documentation/case-studies/divergences_and_bias.html)
+
+Resource: [Divergent Transitions A Primer](https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099)
 
 
 
@@ -717,13 +725,12 @@ Certain builds of rstan for certain settings (e.g. specific operating systems) w
 
 #### Parser warnings
 
-Parser warnings are either a deprecation warning or another more serious kind (Jacobian). The latter will not happen if you're using higher level interfaces rather than programming in Stan directly. The other kind, deprecation warnings, are not something you can do anything about, but the developer of the package will likely need to make minor changes to the code to avoid them.  I've never seen parser warnings from using rstanarm or brms.
+Parser warnings are either a deprecation warning or another more serious kind (Jacobian). The latter will not happen if you're using higher level interfaces (e.g. brms) rather than programming in Stan directly. The other kind, deprecation warnings, are not something you can do anything about, but the developer of the package will likely need to make minor changes to the code to avoid them.  I've never seen parser warnings from using rstanarm or brms.
 
 
 #### Compilation warnings
 
 Compiler warnings happen regularly and indicate something going on at the compiler level, typically that something in Stan is being compiled but not used.  You can ignore these.
-
 
 
 #### Solutions for other messages
@@ -736,26 +743,27 @@ If you are using a package to interface with Stan and not having an issue with t
 
 ### But it's slow!
 
-The main other problem people seem to be concerned with is the speed of the analysis.  If you have a lot of data, or more the point, a lot of parameters, your model can be very slow.  For standard models with rstanarm and brms, there may be no real benefit if you have millions of data points and simpler models.  If your model is only taking a couple minutes, then you really have nothing to complain about- watch some youtube or something while it runs. If your model takes on the order of hours, work with less data or simpler models, until you have your modeling code, plots, etc. squared away
+Another problem people seem to be concerned with is the speed of the analysis.  If you have a lot of data, or more to the point, a lot of parameters, your model can be very slow.  For standard models with rstanarm and brms, there may be no real benefit if you have millions of data points and simpler models.  If your model is only taking a couple minutes, then you really have nothing to complain about- watch some YouTube or something while it runs. If your model takes on the order of hours, work with less data or simpler models until you have your modeling code, plots, etc. squared away.  At that point you can run your primary analysis and wait it out.
+
 
 #### Solutions for a slow model
 
-- Scale the data: for any model, bayesian or otherwise, scaling the data will usually result in a more manageable estimation process.
+- Scale the data: for any model, Bayesian or otherwise, scaling the data will usually result in a more manageable estimation process.
 - Use more informative priors: why explore areas of the posterior that aren't going to lead to plausible results?
-- Possibly use less iterations if no other issues.
+- Possibly use less iterations if there are no other issues.
 - If possible, work with less data or simpler models until ready for the real deal.
-- If possible, work with a different version of the model that can still answer the question of interest. For example, if an ordinal model is causing a lot of issues, and you're not interested in category specific probabilities, just treat it as numeric[^reparameterize].
+- If possible, work with a different version of the model that can still answer the question of interest. For example, if an ordinal model is causing a lot of issues, and you're not interested in category specific probabilities, just treat the target variable as numeric[^reparameterize].
 
 
 ### shinystan
 
-The shinystan is a package that makes exploring model diagnostics actually fun! Using launch_shinystan opens a browser window, providing interactive visualizations to help you see what's going on with your model.  You can look at many of the previous plots, plus a few others we haven't shown.
+The shinystan package makes exploring model diagnostics actually fun! Using launch_shinystan opens a browser window, providing interactive visualizations to help you see what's going on with your model.  You can look at many of the previous plots, plus a few others we haven't shown.
 
-Unfortunately the documentation in the browser doesn't really tell you what to look for in these plots.  The glossary contains information that is likely overly technical for applied or new users, and if there is a problem, there's not really a whole lot to go on.  In addition, some plots are just poor (e.g. trying to assess whether overlapping histograms are similar), or are probably only useful if you have very obvious problem (e.g. lots of divergent transitions).  As an example, consider the tree depth plots.  What would not be good here? 
+Unfortunately the documentation in the browser doesn't really tell you what to look for in these plots.  The glossary contains information that is likely overly technical for applied or new users, and if there is a problem, there's not really a whole lot to go on.  In addition, some plots are just poor (e.g. trying to assess whether overlapping histograms are similar), or are probably only useful if you have very obvious problem (e.g. lots of divergent transitions).  As an example, consider the tree depth plots.  What would be good here? 
 
 <img src="../../img/howtobayes/max_treedepth.png" style="display:block; margin: 0 auto;">
 
-The documentation tells you the value should be somewhere between 0 and whatever `max_treedepth` is set at.  If they are large, the documentation states the problem could be due to different things, but the solutions are to either reparameterize of the model (probably not possible unless using Stan code directly), or just increase the value.  It doesn't seem to tell you what those plots are supposed to look like, and unfortunately that renders them as not very useful. The divergence and energy plots are similarly underexplained.  Many refer users to Betancourt's wonderful articles on the details, but these are far too technical for those not already steeped in the approach, and even then[^betanwhat].
+The documentation tells you the value should be somewhere between 0 and whatever `max_treedepth` is set at.  If they are large, the documentation states the problem could be due to different things, but the solutions are to either reparameterize of the model (probably not possible unless using Stan code directly), or just increase the value.  It doesn't seem to tell you what those plots are supposed to look like, and unfortunately that renders them as not very useful. The divergence and energy plots are similarly underexplained.  Many refer users to Betancourt's wonderful articles on the details, but these are far too technical for those not already steeped in the approach[^betanwhat].
 
 All that said, luckily there is a nice walkthrough if you do have a hankering to go down that path.  This provides more details on the statistics and on what you should be looking for in the visualizations.
 
@@ -768,29 +776,58 @@ All that said, luckily there is a nice walkthrough if you do have a hankering to
 
 For applied analysts, I would suggest primarily focusing on the density plots and trace plots for parameters.  For the density plots of regression coefficients, these should be roughly normal looking, for variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a problem.  If the chains are not converging with one another, you probably already were getting warnings and messages.  You can then examine other visualizations that might be appropriate to the problem, and take the appropriate steps outlined to try and solve those issues.
 
-If none of the above solves your problems.
+Many of the problems can be solved by increasing the warmup and number of iterations.  After that, setting control parameters may be enough.  For more serious issues, you may need to try different priors or even a different model.  If none of the above solves your problems, you are almost certainly trying too complex of a model for your data.
 
-
+In general, doing Bayesian analysis can be easy, and hopefully it will be for you.  Many common problems have simple solutions, and the more serious ones will only make you a better Bayesian though the efforts you take to solve them. Rather than see them as a nuisance, see them as a learning opportunity, and you'll enjoy your results even more when you finally resolve them.  Remember that you may not be in your comfort zone, and that's okay.  Things will come around eventually, and you'll solve these problems more easily in the future!
 
 
 
 
 ## Resources
 
+### General
 
-https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations
+[Aki Vehtari's website](https://avehtari.github.io/) has demos and explanation for things like model comparison, Rhat/Neff, and more.
 
-https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html
+[Bayesplot Vignette for Diagnostic Plots](https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html)
 
-https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099
+[Jeffrey Arnold's Bayesian Notes](https://jrnold.github.io/bayesian_notes/) has nice examples of many models and good summaries otherwise.
 
-https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html
+[Bayesian Basics](m-clark.github.io/bayesian-basics/), an applied overview of Bayesian analysis with Stan as the backdrop.
 
-https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html
+
+
+### Priors
+
+[Prior Choice Recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations) by the Stan group.
+
+[rstanarm vignette](https://cran.r-project.org/web/packages/rstanarm/vignettes/priors.html)
+
+
+### Rhat/ESS
+
+[Stan Reference on Effective Sample Size](https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html)
+
+
+### Divergence
+
+[Stan Reference on Divergent Transitions](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)
+
+[Divergent Transitions A Primer](https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099)
+
+[Case study: Divergences and Bias](https://mc-stan.org/users/documentation/case-studies/divergences_and_bias.html)
+
+
+### Misc
+
+[brms vignettes](https://cran.r-project.org/web/packages/brms/)
 
 [Use CmdStan to save memory](http://mc-stan.org/cmdstanr/articles/cmdstanr.html)
 
-- [Jeffrey Arnold's Bayesian Notes](https://jrnold.github.io/bayesian_notes/) has nice examples of many models and good summaries otherwise
+
+
+
+
 
 [^betanwhat]: Betancourt, whose work I admire greatly, typically makes my head spin.
 
@@ -812,3 +849,6 @@ https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html
 
 [^reparameterize]: It is often suggested in the Stan world to reparameterize models.  However, this advice doesn't really apply in the case of using rstanarm or brms (i.e. where you aren't writing Stan code directly), and it assumes a level of statistical expertise many would not have, or even if they do, route to respecifying the model may not be obvious.
 
+[^pairsprob]: Another issue is that you could change how the chains are split and it could potentially dramatically change the how the pattern of divergent transitions looks. 
+
+[^FPdiv]: This seems counter to the common suggestion that even 1 divergent transition renders results suspect.  I've never seen results meaningfully change for something with a couple divergent transitions to one that has none, and often when there are that few even rerunning the model will result in no problem.
