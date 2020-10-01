@@ -465,7 +465,7 @@ mcmc_plot(model_start_100, type = 'rhat')  # > 1.05 problematic
 
 Effective sample size is an estimate of the effective number of independent draws from the posterior distribution of the parameter of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will be smaller than the total number of iterations.
 
-- *Bulk ESS*: ESS for the mean/median
+- *Bulk ESS*: ESS for the mean/median (`n_eff` in rstanarm)
 - *Tail ESS*: ESS for the 5% and 95% quantiles. Tail-ESS can help diagnose problems due to different scales of the chains and slow mixing in the tails.
 
 
@@ -480,7 +480,14 @@ mcmc_plot(model_start_100, type = 'neff')  # < .1 problem
 
 Shows the estimated parameter values at each iteration.  In general you would like a random bouncing around an average value.
 
-**What we want**: Something like random normal draws over a series.  'Grassy', 'Fuzzy caterpillar'
+
+**What we want**: Something like random normal draws over a series. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a serious problem.  If the chains are not converging with one another, you probably already were getting warnings and messages.  
+
+##### Density plot
+
+Shows the density of the posterior draws for the parameters.
+
+**What we want**: For the density plots of regression coefficients, these should be roughly normal looking. For variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. In general we would not want to see long tails or bimodality for the typical parameters of interest for models you'd be doing with rstanarm and brms.
 
 
 ##### Rank plot
@@ -737,10 +744,13 @@ Parser warnings are either a deprecation warning or another more serious kind (J
 
 Compiler warnings happen regularly and indicate something going on at the compiler level, typically that something in Stan is being compiled but not used.  You can ignore these.
 
+#### Package warnings
+
+Like any good package, when things go unexpectedly, or just to be informative, modeling packages like rstanarm and brms  will provide you messages or warnings.  These do not have to do with the Stan part of things.  For example, brms will warn you that it will drop cases with missing values (`Rows containing NAs were excluded from the model.`). Some issues can be more subtle.  For example, you may get a message that the model is compiling but then nothing happens.  This might be because of a typo in a distribution name for your priors, or some similar goof.
 
 #### Solutions for other messages
 
-If you are using a package to interface with Stan and not having an issue with the model (i.e. it runs), these messages can largely be ignored.
+If you are using a package to interface with Stan and not having an issue with the model (i.e. it runs), these messages can largely be ignored, unless it is a warning from the package itself, which typically should be investigated.
 
 - Resource: [Brief Guide to Stan's Warnings](https://mc-stan.org/misc/warnings.html#preruntime-warnings)
 
@@ -785,11 +795,14 @@ All that said, luckily there is a nice walkthrough if you do have a hankering to
 
 ## Summary: The Practical Approach to Diagnostics
 
-For applied analysts, I would suggest first focusing on the density plots and trace plots for parameters.  For the density plots of regression coefficients, these should be roughly normal looking, for variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a serious problem.  If the chains are not converging with one another, you probably already were getting warnings and messages.  You can then examine other visualizations that might be appropriate to the problem, and take the appropriate steps outlined to try and solve those issues.  Pay extra attention to parameters with relatively low effective sample sizes, as these are the ones the model is struggling more so to estimate.
+For applied analysts, I would suggest first focusing on the density plots and trace plots for parameters.  You can then examine other visualizations that might be appropriate to the problem, and take the appropriate steps outlined to try and solve those issues.  Pay extra attention to parameters with relatively low effective sample sizes, as these are the ones the model is struggling more so to estimate.
 
-Many of the problems can be solved by increasing the warmup and number of iterations.  After that, setting control parameters may be enough.  For more serious issues, you may need to try different priors or even a different model.  If none of the above solves your problems, you are almost certainly trying too complex of a model for your data.
+Many of the problems can be solved by increasing the warmup and number of iterations.  After that, setting control parameters may be enough.  For more serious issues, you may need to try different priors or even a different model.  If none of the above solves your problems, you are almost probably trying too complex of a model for your data, have a data problem, or some other issue.
 
 In general, doing Bayesian analysis can be easy, and hopefully it will be for you.  Many common problems have simple solutions, and the more serious ones will only make you a better Bayesian though the efforts you take to solve them. Rather than see them as a nuisance, see them as a learning opportunity, and you'll enjoy your results even more when you finally resolve them.  Remember that you may not be in your comfort zone, and that's okay.  Things will come around eventually, and you'll solve these problems more easily in the future!
+
+
+
 
 On to [PART II: Do Bayes Better](). 
 
@@ -840,24 +853,7 @@ On to [PART II: Do Bayes Better]().
 
 
 
-### Unhelpful solutions you can ignore
 
-'Reparameterize the model/Use a change of variables.':  If it is suggested without a specifc implementation, it's almost useless advice.
-
-'Your model is probably  misspecified.': So it is, so is any I come up with. Without suggestions toward a better specification, this doesn't help.
-
-'Look for patterns in poor plots.': If it's not a good visualization to begin with, or 'patterns' isn't clearly defined, this isn't helpful.
-
-'Read a highly technical article/several pages of technical documentation.': Few want to do this just to fix what should be a relatively minor issue. Many users will not have the context necessary for interpretation.
-
-
-### Solutions to pay attention to
-
-Those that offer very specific advice that has an obvious implementation in your current modeling approach.
-
-Those that offer code that follows said advice.
-
-It seems unfair to ask people for a reproducible example just to give unreproducible advice.
 
 
 [^betanwhat]: Betancourt, whose work I admire greatly, typically makes my head spin.
