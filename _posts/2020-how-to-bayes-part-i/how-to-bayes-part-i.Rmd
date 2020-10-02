@@ -53,7 +53,7 @@ color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direc
 
 
 
-## Overview
+# Overview
 
 ```{r rstan-img, echo=FALSE, out.width='50%', eval=F}
 knitr::include_graphics('img/r_and_stan.png')  # this doesn't work without creating an img dir in the post dir
@@ -69,25 +69,27 @@ One of the advantages of doing Bayesian analysis with these tools is that there 
 
 
 
-## The Stated Problem
+# The Stated Problem
 
 <div style = 'text-align: center'>
 <i class="far fa-question-circle fa-5x" style="padding: 20px"></i>
 </div>
 
 
-This is all great in general.  However, in consulting I see a consistent issue among clients starting out with Bayesian analysis and Stan packages.  Someone has a standard model, e.g. a basic regression or mixed model, but is getting problematic warnings, messages, or errors.  When they look up how to solve this problem, the documentation, forums, and other outlets, while great resources for the initiated, generally overwhelm newer and/or more applied users, as they are too technical, assume a great deal of background knowledge, are even underexplained (especially in the case of interpreting visualizations), and even suggest things that aren't typically possible (e.g. getting better data/model).  What seems straightforward to an advanced user or developer may not be even close to that for most applied analysts, and many of them (again, my experience) are left a bit deflated by the whole process.
+This is all great in general.  However, in consulting I see a consistent issue among clients starting out with Bayesian analysis and Stan packages.  Someone has a standard model, e.g. a basic regression or mixed model, but is getting problematic warnings, messages, or errors.  When they look up how to solve this problem, the documentation, forums, and other outlets, while great resources for the initiated, often overwhelm newer and/or more applied users, as they are too technical, assume a great deal of background knowledge, are even underexplained (especially in the case of interpreting visualizations), and even suggest things that aren't typically possible (e.g. getting better data/model).  What seems a straightforward suggestion to a more advanced user or developer, may not be even close to that for many applied analysts, and they can be left a bit deflated by the whole process (again, my experience).
 
 In the beginning of Stan's ascension, the majority of people using Stan/rstan were more technically inclined, coded in Stan directly, and, when problems arose, they were willing to do a lot of extra work to solve the problems (reading articles, developing pseudo-expertise with various techniques, and more). But tools like rstanarm and brms make running Bayesian models as [easy to do](https://m-clark.github.io/easy-bayes/) as using base R functions and other non-Bayesian packages, and as Bayesian analysis has become more widely used, accepted, and presented, this has opened the Bayesian approach to practically anyone that wants to do it.
 
 I personally don't think one needs to be an expert in Bayesian analysis to enjoy its benefits for common models, even if difficulties come up.  Nor do I think an exhaustive search through forums, technical articles, function documentation and more are necessary to deal issues that arise often.  So this is an attempt at a practical guide and one-stop shop for dealing with the most common issues that arise, interpreting results of diagnostics, and summarizing the options one can take.
 
 
-## Audience
+# Audience
 
 <div style = 'text-align: center'>
-<i class="fas fa-users fa-5x" style="padding: 20px"></i><i class="fas fa-users fa-5x"></i><i class="fas fa-users fa-5x"></i>
+<i class="fas fa-users fa-5x"></i><i class="fas fa-users fa-5x"></i><i class="fas fa-users fa-5x"></i>
 </div>
+
+<br>
 
 Here is the presumed audience for this post:
 
@@ -107,7 +109,7 @@ You can obtain this basic info from my document [Bayesian Basics](m-clark.github
 
 
 
-## Outline
+# Outline
 
 
 Here is what we're going to do:
@@ -120,7 +122,7 @@ Here is what we're going to do:
 
 
 
-## Installation issues
+# Installation issues
 
 Your first hurdle is installation, so let's start there.  Applied users will use rstanarm, brms, or other higher level interfaces to the Stan programming language. These tools use Stan, but Stan itself requires compilation to C++. This means that to run a basic regression with brms, you'll likely be depending on multiple languages and packages for it to work.
 
@@ -136,7 +138,7 @@ In general, installing the package you want to use will install the appropriate 
 
 ### Mac
 
-Mac's Catalina OS has been a problematic release to say the least.  There was a  period of time where Stan wasn't viable for many users without extensive workarounds, and even now, issues seemingly still arise with every update to Catalina. This is not specific to Stan, or R, by the way[^mac].  Then R 4.0 came along and helped some things, but also resulted in new issues That said, the Stan community have been excellent at helping people here. My own luck of late has been better, but I just assume at this point that if I update Catalina or update the packages, I may have to work through some problem.
+To be nice about it, Mac's Catalina OS has been a problematic release to say the least.  For our purposes, this meant that there was a  period of time where Stan wasn't viable for many users without extensive workarounds, and even now, issues seemingly still arise with every update to Catalina. This is not specific to Stan, or R, by the way[^mac].  Then R 4.0 came along and helped some things, but also resulted in new issues. That said, the Stan community have been excellent at helping people here. My own luck of late has been better, but I just assume at this point that if I update Catalina or update the packages, I may have to work through some problem.
 
 Here are some discussions on the Stan forums for getting through installation problems.  Unfortunately a couple of these threads are now nearly a year old, and weren't closed, so some are still posting to them.  This means that any discussion prior to R 4.0 can be ignored, and you probably only want to skip towards the end of those discussions for the relevant parts.
 
@@ -157,7 +159,7 @@ I rarely had installation issues on Windows' releases, though haven't had to use
 
 ### Linux
 
-I've only used Stan with Linux in a cluster computing environment. Applied users also need cluster computing on occasion, it's just that the problems will likely require IT support in that case.  I generally have not had issues, but it's not something I've done recently, and I don't have any basic Linux desktop experience.  Again though, plenty of Stan folks are willing to help.
+I've only used Stan with Linux in a cluster computing environment.  I generally have not had issues, but it's not something I've done recently, and I don't have any basic Linux desktop experience. Applied users also need cluster computing on occasion, it's just that the problems will likely require IT support in that case.  Again though, plenty of Stan folks are willing to help.
 
 [Search Linux Issues on Stan Forums](https://discourse.mc-stan.org/search?q=Linux)
 
@@ -167,7 +169,7 @@ I've only used Stan with Linux in a cluster computing environment. Applied users
 If you're using Stan with Python, Stata, Julia, etc., then you're using the Stan language directly, and you're likely already very familiar with the forums and dealing with a variety of issues.  That's not to say that you won't find something useful here, it's just that I have nothing to offer you regarding those platforms specifically.
 
 
-## Example data
+# Example data
 
 
 <div style = 'text-align: center'>
@@ -288,17 +290,17 @@ true_params = data.frame(
 ```
 
 
-If you want to check that  the parameters are recovered, run the following.
+If you want to check that  the parameters are recovered, you can run something like the following.
 
 ```{r create-data-test, eval=FALSE}
 dat = create_data(N = 10000)
 
 mod = lme4::lmer(y ~ . -group + (1|group), data.frame(dat[,-1]))
 
-mixedup::summarise_model(mod, ci = FALSE)
+mixedup::summarise_model(mod, ci = FALSE)  # or just summary
 ```
 
-We do not need as much data for our purposes so we'll set the total sample size to 1000.  We'll drop unnecessary columns, and also make our binary covariates explicit factors, which will make things easier when want to visualize grouped effects later.
+We do not need as much data for our purposes so we'll set the total sample size to 1000.  We'll drop unnecessary columns, and also make our binary covariates explicit factors, which will make things easier when we want to visualize grouped effects later.
 
 ```{r create-data}
 # create the primary data frame
@@ -319,7 +321,7 @@ main_df
 
 
 
-## Essential Steps for Practical Modeling
+# Essential Steps for Practical Modeling
 
 <div style = 'text-align: center'>
 <i class="fa fa-shoe-prints fa-5x" style="padding: 20px"></i>
@@ -353,8 +355,8 @@ Once data is in hand there are basic steps to take for a practical modeling appr
 ##### Examine model effectiveness visually  
 
 - There are entire packages at your disposal for visualizing model results such as <span class="pack" style = "">bayesplot</span>, tidybayes, etc.  However, standard plots can be called from rstanarm or brms functions, which are wrappers for bayesplot functions.
-- Posterior predictive checks are a fundamental part of Bayesian analysis.
-- Avoid using [bayes factors](https://statmodeling.stat.columbia.edu/2019/09/10/i-hate-bayes-factors-when-theyre-used-for-null-hypothesis-significance-testing/), at least as a way to substitute the null hypothesis test you would have done in the non-Bayesian setting, but also for other technical reasons.
+- *Posterior predictive checks* are a fundamental part of Bayesian analysis.
+- Avoid using approaches that are merely substitutes for the null hypothesis test you would have done in the non-Bayesian setting  (e.g. using [bayes factors](https://statmodeling.stat.columbia.edu/2019/09/10/i-hate-bayes-factors-when-theyre-used-for-null-hypothesis-significance-testing/)).
 
 
 ##### Compare models using loo, posterior probabilities of models
@@ -368,7 +370,7 @@ Assuming you have no problems in the above process, you have more or less fulfil
 
 
 
-## Warnings, What They Mean, and What to do About Them
+# Warnings, What They Mean, and What to do About Them
 
 <div style = 'text-align: center'>
 <i class="fas fa-exclamation-triangle fa-5x" style="padding: 20px"></i>
@@ -380,7 +382,7 @@ Of course, if it was always that easy, we wouldn't be posting this. There are a 
 Primary reference: [Brief Guide to Stan’s Warnings](https://mc-stan.org/misc/warnings.html)
 
 
-### Rhat & Effective Sample Size
+## Rhat & Effective Sample Size
 
 We will start with a simple standard regression model that we know is not adequate.  We will use default priors[^defaultprior] and run very few iterations. 
 
@@ -402,37 +404,35 @@ summary(model_start_100)
 ```
 
 
-The warnings about Rhat and effective sample size (ESS) are likely to pop up if you use default iterations for more complex models.  They mostly regard the efficiency of the sampling process, and whether you have enough samples to have stable parameter estimates.  Ideally Rhat is close to 1.0, and ESS is?
+The warnings about Rhat and effective sample size (ESS) are likely to pop up if you use default iterations for more complex models.  They mostly regard the efficiency of the sampling process, and whether you have enough samples to have stable parameter estimates.  Ideally Rhat is close to 1.0, and ESS is at least a notable percentage of the total posterior samples (e.g. 50%).
 
-The fix for these warnings is usually simple, just let the model run for more iterations.  The default is 2000 iterations with warmup half of that.  Warmup iterations are not used in calculation of parameter estimates, so you can just increase the number of iterations relative to the warmup, or increase both by only increasing the `iter` argument.
+The fix for these warnings is usually simple, just let the model run for more iterations beyond your warmup.  The default is 2000 iterations with warmup half of that.  Warmup iterations are not used in calculation of parameter estimates, so you can just increase the number of iterations relative to the warmup, or increase both by only increasing the `iter` argument.
 
-As an example we can look at our short run model. If we plot the estimated values across each iteration for each chain, called a *trace plot*, we can see that the chains could be mixing better, but only if you are used to looking at these things.  
+As an example we can look at our short run model. If we plot the estimated values across each iteration for each chain, called a *trace plot*, as well as the *density plot*, and from this we  could see that things could be better, but only if you are used to looking at these things.  We'll 
 
 
 ```{r model-start-trace-dens}
 # plot(model_start_100, par = 'x1') # examine specific parameters
-mcmc_plot(model_start_100, pars = c('b11', 'b2', 'x1'), type = 'combo')
+mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'combo')
 ```
 
 To see what you would expect, just plot a series from a normal distribution.
 
 ```{r rnorm-trace-dens, out.width='50%'}
-ggplot2::qplot(x = 1:1000,
-               y = rnorm(1000),
-               geom = 'line')
+ggplot2::qplot(x = 1:1000, y = rnorm(1000), geom = 'line')
 
 ggplot2::qplot(x = rnorm(1000), geom = 'density')
 ```
 
-Other plots that might be of interest allow us to look at the same things from a different perspective or break out results by each chain.
+Other plots that might be of interest allow us to look at the same things from a different perspective, or break out results by each chain.
 
 ```{r area-violin}
 mcmc_plot(model_start_100, type = 'areas')
-mcmc_plot(model_start_100, type = 'violin')
+mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'violin')
 ```
 
 
-While things seem okay, what happens if we single out a particular chain, we might think otherwise.  In this case, the intercept and b2 coefficients may be problematic.
+While things seem okay, what happens if we single out a particular chain, we might think otherwise.  In this case, the `Intercept` and `b2` coefficients may be problematic.
 
 ```{r trace-highlight}
 mcmc_plot(model_start_100, highlight = 2, type = 'trace_highlight')
@@ -443,25 +443,26 @@ mcmc_plot(model_start_100, highlight = 2, type = 'trace_highlight')
 Some suggest to look at *rank plots* instead of traditional traceplots.  Really, all we've changed is looking for something 'fuzzy' to looking for 'approximately uniform', so my opinion is that it's not much of an improvement visually or intuitively.  In general, histograms, which are variants of bar charts, are rarely an improvement for any visualization.  If you do use it, you can use an overlay approach to see if the ranks are mixing, but this looks a lot like what I'd be looking for from a traceplot.
 
 ```{r rank-plots}
-mcmc_plot(model_start_100, type = 'rank_hist')
-mcmc_plot(model_start_100, type = 'rank_overlay')
+mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'rank_hist')
+mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'rank_overlay')
 ```
 
-#### Some technical details
+### Some details
 
+A little more detail will provide additional understanding and potentially guidance when looking at your own results.
 
-##### Rhat
+#### Rhat
 
 The $\hat{R}$ statistic measures  the ratio of the average variance of samples within each chain to the variance of the pooled samples across chains; if all chains are at equilibrium, these will be the same and Rhat will be 1.0. If the chains have not converged to a common distribution, the Rhat statistic will be greater than one.
 
 **What we want**: values near 1.0 and less than 1.05
 
 ```{r rhat-plot}
-mcmc_plot(model_start_100, type = 'rhat')  # > 1.05 problematic
+mcmc_plot(model_start_100, type = 'rhat')
 ```
 
 
-##### ESS
+#### ESS
 
 Effective sample size is an estimate of the effective number of independent draws from the posterior distribution of the parameter of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will be smaller than the total number of iterations.
 
@@ -476,45 +477,57 @@ mcmc_plot(model_start_100, type = 'neff')  # < .1 problem
 ```
 
     
-##### Trace plot
+#### Trace plot
 
 Shows the estimated parameter values at each iteration.  In general you would like a random bouncing around an average value.
+
+```{r trace-plot}
+mcmc_plot(model_start_100, type = 'trace')
+```
 
 
 **What we want**: Something like random normal draws over a series. Trace plots in general should look 'grassy' or like a 'fuzzy caterpillar', which isn't very helpful, but deviations are usually striking and obvious in my experience.  If you see chains that look like they are getting stuck around certain estimates, or separating from one another, this would indicate a serious problem.  If the chains are not converging with one another, you probably already were getting warnings and messages.  
 
-##### Density plot
+#### Density plot
 
 Shows the density of the posterior draws for the parameters.
 
-**What we want**: For the density plots of regression coefficients, these should be roughly normal looking. For variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. In general we would not want to see long tails or bimodality for the typical parameters of interest for models you'd be doing with rstanarm and brms.
+```{r dens-plot}
+mcmc_plot(model_start_100, type = 'dens')
+```
+
+**What we want**: For the density plots of regression coefficients, these should be roughly normal looking. For variance parameters you may see skewness, especially if the estimate is relatively near zero with smaller data sets. In general, we would not want to see long tails or bimodality for the typical parameters of interest with models you'd be doing with rstanarm and brms.
 
 
-##### Rank plot
+#### Rank plot
 
 From bayesplot helpfile: 
 
 > Whereas traditional trace plots visualize how the chains mix over the course of sampling, rank histograms visualize how the values from the chains mix together in terms of ranking. An ideal plot would show the rankings mixing or overlapping in a uniform distribution.  
 
-See Vehtari et al. (2019) for details.
+
+```{r rank-plot}
+mcmc_plot(model_start_100, type = 'rank_hist')
+```
 
 **What we want**: Uniform distribution, Good mixing of lines for overlay.
 
+See Vehtari et al. (2019) for details.
 
 
-##### ACF plot
+#### ACF plot
 
-The acf, or autocorrelation function plot (see next section), is exactly the same thing you'd visualize for any time series.  It is a plot of a series correlation with specific lags of itself.  Autocorrelation does not bias estimates, but increased autocorrelation may be more inefficient/slower. At lag zero, the series estimates are perfectly correlated with themselves, so that's where the plot usually starts.
+The *acf*, or *autocorrelation* function plot (see next section), is exactly the same thing you'd visualize for any time series.  It is a plot of a series of correlations of a parametr with specific lags of itself.  Autocorrelation does not bias estimates, but increased autocorrelation may be more inefficient/slower. At lag zero, the series estimates are perfectly correlated with themselves, so that's where the plot usually starts.
 
 **What we want**: Quick drop off, but not really that important.
 
 
 ```{r acf-plot}
-mcmc_plot(model_start_100, type = 'acf')  # < .1 problem
+mcmc_plot(model_start_100, type = 'acf')
 ```
 
 
-##### Efficiency plots
+#### Efficiency plots
 
 I have seen these often recommended, but I'm not aware of a package does them.  Aki Vehtari has supplied a walkthrough and some code, but there isn't really documentation for the functions, and they likely won't work outside of rstan objects, or at least I had limited success with brms.  Furthermore, these are getting into weeds that are beyond what I'd expect applied users to be wading through.
 
@@ -525,21 +538,26 @@ I have seen these often recommended, but I'm not aware of a package does them.  
 [Code for plots](https://github.com/avehtari/rhat_ess/blob/master/code/monitorplot.R)
 
 
-#### Solution for Rhat/ESS warnings
+### Solution for Rhat/ESS warnings
 
-The general solution to Rhat and ESS warnings is simply to do more iterations. To keep posterior samples and model objects from becoming unwieldy in size[^bigobjects], consider thinning also. Thinning will also reduce autocorrelation, as the draws retained after thinning are not as correlated with one another as successive draws would be.
+To summarize, the general solution to Rhat and ESS warnings is simply to do more iterations (relative to the warmup). To keep posterior samples and model objects from becoming unwieldy in size[^bigobjects], consider thinning also. Thinning will also reduce autocorrelation, as the draws retained after thinning are not as correlated with one another as successive draws would be.
 
 ```{r increase-iter, eval=F}
-brm(model)  # default with 4 chains, 1000 warmup 2000 total = 4*(2000 - 1000) = 4000 post-warmup draws
-brm(model, warmup = 2000, iter = 4000)  # 4*(4000 - 2000) = 8000 posterior draws
-brm(model, warmup = 2000, iter = 4000, thin = 8)  # 4*(4000 - 2000)/8 = 1000 posterior draws
+# default with 4 chains, 1000 warmup 2000 total = 4*(2000 - 1000) = 4000 post-warmup draws
+brm(model)
+
+# 4*(4000 - 2000) = 8000 posterior draws
+brm(model, warmup = 2000, iter = 4000)
+
+# 4*(4000 - 2000)/8 = 1000 posterior draws
+brm(model, warmup = 2000, iter = 4000, thin = 8)
 ```
 
 
 
-### BFMI low
+## BFMI low
 
-You may see a warning that says some number of chains had an estimated Bayesian Fraction of Missing Information (BFMI) that was too low. This implies that the adaptation phase of the Markov Chains did not turn out well, and those chains likely did not explore the posterior distribution efficiently. For more details on this diagnostic, you can see [Betancourt's article](https://arxiv.org/abs/1604.00695), but this will almost surely be too technical for many applied and even more advanced users.
+You may see a warning that says some number of chains had an `estimated Bayesian Fraction of Missing Information (BFMI) that was too low`. This implies that the adaptation phase of the Markov Chains did not turn out well, and those chains likely did not explore the posterior distribution efficiently. For more details on this diagnostic, you can see [Betancourt's article](https://arxiv.org/abs/1604.00695), but this will almost surely be too technical for many applied and even more advanced users.
 
 In this case, the problem here is often remedied by just adding more iterations as before. I typically keep to 1000 posterior samples, which makes for nicer visualizations of distributions without creating relatively large model objects.
 
@@ -559,10 +577,10 @@ plot(model_start, par = 'b2')
 
 #### Solution for low BFMI
 
-If there aren't other serious problems, add more iterations.  In some cases, switching from a heavy-tailed prior (e.g. student t) to normal would be helpful, but this typically would involve having to write Stan code directly to [reparameterize the model](https://mc-stan.org/docs/2_18/stan-users-guide/reparameterization-section.html). Otherwise, you will approach it similarly to the problem of [divergent transitions][divergent transitions].
+If there aren't other serious problems, add more iterations.  In some cases, switching from a heavy-tailed prior (e.g. student t) to normal would be helpful, but some other approaches typically would involve having to write Stan code directly to [reparameterize the model](https://mc-stan.org/docs/2_18/stan-users-guide/reparameterization-section.html). Otherwise, you may need to approach it similarly to the problem of [divergent transitions][divergent transitions].
 
 
-### Tree Depth
+## Tree Depth
 
 Tree depth is a more technical warning that has to do with the details of Hamiltonian Monte Carlo. Practically speaking:
 
@@ -587,9 +605,9 @@ model_update_treedepth = update(
 ```
 
 
-### Divergent Transitions
+## Divergent Transitions
 
-*Divergent transitions*  are a technical issue that indicates something may be notably wrong with the data or model ([technical details](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)). They indicate that the sampling process has 'gone off the rails' and the iteration's results and anything based on them (i.e. subsequent draws, parameter estimates) can't be trusted.  Unlike the other problems we've discussed, this is the harder one to navigate.
+*Divergent transitions*  are a technical issue that indicates something may be notably wrong with the data or model ([technical details](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)). They indicate that the sampling process has 'gone off the rails' and the divergent iteration's results and anything based on them (i.e. subsequent draws, parameter estimates) can't be trusted.  Unlike the other problems we've discussed, this is more difficult to navigate.
 
 Why might this happen?
 
@@ -602,7 +620,7 @@ Why might this happen?
 - any number of other things
 
 
-As an example, I'll make a relatively complex model with only a small random sample of the data, improper priors, and use very few warmups.
+As an example, I'll make an overly complex model with only a small random sample of the data, improper priors, and use very few warmups.
 
 ```{r divergent-model, warning=T, message = F, results='hide', cache.extra = 12}
 model_problem = brm(
@@ -620,6 +638,8 @@ model_problem = brm(
 )
 ```
 
+<br>
+
 So what do we do in this case? Well let's start with visual inspection.
 
 
@@ -635,7 +655,7 @@ Let's take a look at the pairs plot anyway.  I'll use `hex` bins instead of stan
 color_scheme_set()
 mcmc_plot(
   model_problem,
-  pars = c('b_b11', 'b_b21', 'sigma'),
+  pars = c('b_b11', 'b_b21', 'b_x1'),
   type = 'pairs',
   diag_fun = 'dens',
   off_diag_fun = 'hex',
@@ -717,7 +737,7 @@ model = brm(..., control = list(adapt_delta = .99))
 Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this problem often comes from poor data (e.g. not scaled, possible separation in logistic models, etc.) combined with a complex model, and beyond that, the priors may need to be amended.   You should at least not have uniform priors for any parameter, and as we'll see in Part II, you can use a simulation approach to help choose better priors.  Often the data and prior checks are better approach to solving the problem. You may also need to simplify the model.  As an example, for mixed models, it may be that some variance components are not necessary.
 
 
-Many solutions offered on the forums assume you are coding in Stan directly, such as reparameterizing your model, using specific types of priors, etc.  If you are writing Stan code rather than using a modeling package, you definitely need to double check it, as typos or other mistakes can certainly result in a problematic model. However, this post is for those using modeling packages, so I will not offer such remedies, and they are usually not obvious anyway.
+Some solutions offered on the forums assume you are coding in Stan directly, such as reparameterizing your model, using specific types of priors, etc.  If you are writing Stan code rather than using a modeling package, you definitely need to double check it, as typos or other mistakes can certainly result in a problematic model. However, this post is for those using modeling packages, so I will not offer such remedies, and they are usually not obvious anyway.
 
 
 
@@ -731,43 +751,43 @@ Resource: [Divergent Transitions A Primer](https://discourse.mc-stan.org/t/diver
 
 
 
-### Other messages
+## Other messages
 
 Certain builds of rstan for certain settings (e.g. specific operating systems) will often have warnings or other messages.  Oftentimes it looks like a bunch of gobbledygook, which is typically something happening at the C++ level. If your model runs and produces output, you can typically ignore most cases. However, even then you should look it up on the forums just to be sure.
 
-#### Parser warnings
+### Parser warnings
 
 Parser warnings are either a deprecation warning or another more serious kind (Jacobian). The latter will not happen if you're using higher level interfaces (e.g. brms), rather than programming in Stan directly. The other kind, deprecation warnings, are not something you can do anything about, but the developer of the package will likely need to make minor changes to the code to avoid them.  I've never seen parser warnings from using rstanarm or brms.
 
 
-#### Compilation warnings
+### Compilation warnings
 
 Compiler warnings happen regularly and indicate something going on at the compiler level, typically that something in Stan is being compiled but not used.  You can ignore these.
 
-#### Package warnings
+### Package warnings
 
 Like any good package, when things go unexpectedly, or just to be informative, modeling packages like rstanarm and brms  will provide you messages or warnings.  These do not have to do with the Stan part of things.  For example, brms will warn you that it will drop cases with missing values (`Rows containing NAs were excluded from the model.`). Some issues can be more subtle.  For example, you may get a message that the model is compiling but then nothing happens.  This might be because of a typo in a distribution name for your priors, or some similar goof.
 
-#### Solutions for other messages
+### Solutions for other messages
 
 If you are using a package to interface with Stan and not having an issue with the model (i.e. it runs), these messages can largely be ignored, unless it is a warning from the package itself, which typically should be investigated.
 
 - Resource: [Brief Guide to Stan's Warnings](https://mc-stan.org/misc/warnings.html#preruntime-warnings)
 
 
-### Model Comparison Problems
+## Model Comparison Problems
 
 For a discussion of loo and related issues, see PART II.
 
 
-## Other Issues
+# Other Issues
 
-### But it's slow!
+## But it's slow!
 
 Another problem people seem to be concerned with is the speed of the analysis.  If you have a lot of data, or more to the point, a lot of parameters, your model can be very slow.  For standard models with rstanarm and brms, there may be no real benefit if you have millions of data points and simpler models.  If your model is only taking a couple minutes, then you really have nothing to complain about- watch some YouTube or something while it runs. If your model takes on the order of hours, work with less data or simpler models until you have your modeling code, plots, etc. squared away.  At that point you can run your primary analysis and wait it out.
 
 
-#### Solutions for a slow model
+### Solutions for a slow model
 
 - Scale the data: for any model, Bayesian or otherwise, scaling the data will result in a more manageable estimation process.
 - Use more informative priors: why explore areas of the posterior that aren't going to lead to plausible results?
@@ -776,7 +796,7 @@ Another problem people seem to be concerned with is the speed of the analysis.  
 - If possible, work with a different version of the model that can still answer the question of interest. For example, if an ordinal model is causing a lot of issues, and you're not interested in category specific probabilities, just treat the target variable as numeric[^reparameterize].
 - Stop fishing/p-hacking/torturing your data so that you don't have to run dozens of models. You're likely not to care if the models takes hours if you only run them once.
 
-### shinystan
+## shinystan
 
 The shinystan package makes exploring model diagnostics actually fun! Using launch_shinystan opens a browser window, providing interactive visualizations to help you see what's going on with your model.  You can look at many of the previous plots, plus a few others we haven't shown.
 
@@ -793,7 +813,7 @@ All that said, luckily there is a nice walkthrough if you do have a hankering to
 
 
 
-## Summary: The Practical Approach to Diagnostics
+# Summary: The Practical Approach to Diagnostics
 
 For applied analysts, I would suggest first focusing on the density plots and trace plots for parameters.  You can then examine other visualizations that might be appropriate to the problem, and take the appropriate steps outlined to try and solve those issues.  Pay extra attention to parameters with relatively low effective sample sizes, as these are the ones the model is struggling more so to estimate.
 
@@ -807,9 +827,9 @@ In general, doing Bayesian analysis can be easy, and hopefully it will be for yo
 On to [PART II: Do Bayes Better](). 
 
 
-## Resources
+# Resources
 
-### General
+## General
 
 [Aki Vehtari's website](https://avehtari.github.io/) has demos and explanation for things like model comparison, Rhat/Neff, and more.
 
@@ -820,19 +840,19 @@ On to [PART II: Do Bayes Better]().
 [Bayesian Basics](m-clark.github.io/bayesian-basics/), an applied overview of Bayesian analysis with Stan as the backdrop.
 
 
-### Priors
+## Priors
 
 [Prior Choice Recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations) by the Stan group.
 
 [rstanarm vignette](https://cran.r-project.org/web/packages/rstanarm/vignettes/priors.html)
 
 
-### Rhat/ESS
+## Rhat/ESS
 
 [Stan Reference on Effective Sample Size](https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html)
 
 
-### Divergence
+## Divergence
 
 [Stan Reference on Divergent Transitions](https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html)
 
@@ -840,12 +860,12 @@ On to [PART II: Do Bayes Better]().
 
 [Case study: Divergences and Bias](https://mc-stan.org/users/documentation/case-studies/divergences_and_bias.html)
 
-### Model Comparison
+## Model Comparison
 
 [Aki Vehtari's A quick note what I infer from p_loo and Pareto k values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
 
 
-### Misc
+## Misc
 
 [brms vignettes](https://cran.r-project.org/web/packages/brms/)
 
@@ -863,7 +883,7 @@ On to [PART II: Do Bayes Better]().
 
 [^funnelcloud]: And I say this as someone with  experience detecting funnel clouds.
 
-[^adapt_delta]: In my experience, there isn't a need to guess between .80 and .99 as the time differences are typically negligble, unless your model already takes a very long time.  Also, if it doesn't work at .99, it won't at .9999 either.
+[^adapt_delta]: In my experience, there isn't a need to guess between .80 and .99 as the time differences are typically not great, unless your model already takes a very long time.  Also, if it doesn't work at .99, it won't at .9999 either.
 
 [^bigobjects]: With more posterior samples comes slower visualizations and possibly other computations.
 
