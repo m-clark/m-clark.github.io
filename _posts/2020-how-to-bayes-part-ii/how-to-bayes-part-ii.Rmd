@@ -48,12 +48,12 @@ rnd = tidyext::rnd
 ```
 
 
-## Better Bayesian Approaches, Part II
+# Better Bayesian Approaches, Part II
 
 We've talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of Part I.  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's engage in some better practices to outline an approach you can use every time to help things run more smoothly.
 
 
-### Outline for Better Bayesian Analysis
+## Outline for Better Bayesian Analysis
 
 <div style = 'text-align: center'>
 <i class="fas fa-list-ol fa-5x" style="padding: 20px"></i>
@@ -96,7 +96,7 @@ We've talked about the basics one can do to run a Bayesian model, and what to do
 
 We'll demonstrate each of these steps.
 
-## Example data
+# Example data
 
 
 <div style = 'text-align: center'>
@@ -235,7 +235,7 @@ main_df =
   )
 ```
 
-## Simulate from priors
+# Simulate from priors
 
 A first step is to produce some viable priors.  But the obvious question is, what priors should we choose?  Thankfully, for standard models there is not much guesswork involved. Bayesian analysis has been around a long time, so the bulk of the work has been done for you.  Even default settings should not affect things much, especially for rstanarm, which has some basic defaults that are informed by the data.  However, due to the flexibility of the brms modeling functions, some priors are unspecified and left flat (i.e. uniform), which is something we definitely don't want, and while others like rstanarm's defaults might be somewhat better, they could still cause problems for more complex situations.  So how might we choose better ones?
 
@@ -406,7 +406,7 @@ color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direc
 So given that our target variable is between `r round(min(main_df$y))` and `r round(max(main_df$y))`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will generally help our models be more efficient and better behaved. Note that if all else fails, for brms you can use a convenience function like <span class="func" style = "">auto_prior</span> demonstrated above.
 
 
-## Run and Summarize the Baseline Model
+# Run and Summarize the Baseline Model
 
 Now let's run a baseline model, one that's simple but plausible.  Given that there will eventually be additional complexities, I'll go ahead and add some iterations, and increase max tree depth and adapt delta now to make the code reusable.
 
@@ -491,13 +491,8 @@ tidy_plot_data_fe %>%
 ```
 
 
-```{r tidybayesdemo}
-```
 
-
-
-
-### Check priors
+## Check priors
 
 
 We might still be concerned about how our influential our priors were.  So how can we check whether our priors were informative? The following will do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation[^lakeland].  Having an informative prior isn't really a problem in my opinion, unless it's more informative than you wanted.  For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.
@@ -511,7 +506,7 @@ bayestestR::check_prior(model_baseline)
 
 
 
-### Explore and visualize effects
+## Explore and visualize effects
 
 We can plot effects easily with brms. The <span class="func" style = "">conditional_effects</span> function is what we want here.  Without interactions or other things going, on they aren't very interesting, but it's a useful tool nonetheless.
 
@@ -533,11 +528,11 @@ hypothesis(model_baseline, 'b11 + abs(b21) > 0')
 ```
 
 
-### Model Effectiveness
+## Model Effectiveness
 
 A natural question to ask is how useful our model actually is.  The next question is how to define such utility.  Such an assessment definitely cannot be made with something like 'statistical significance'. Science of any kind is nothing without prediction, so we we can start there.
 
-#### Posterior predictive checks
+### Posterior predictive checks
 
 Posterior predictive checks are a key component of bayesian analysis.  The prior checks we did before are just a special case of this.  Here we actually use the posterior distributions of parameters to generate the data to compare what the model implies and what we actually observe. Doing so can give insight to where the model fails.
 
@@ -573,7 +568,7 @@ pp_check(model_baseline, nsamples = 100, type ='stat_2d', stat = c('q10', 'q90')
 #       guides(fill = 'none')}
 ```
 
-#### Bayes R-squared
+### Bayes R-squared
 
 In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don't really recommend this beyond linear models assuming a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values to the observed, so can be seen as descriptive statistic.  Since we are Bayesians, we also get a ready-made interval for it, since it is based on the posterior predictive distribution.  But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional).  Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming the variance is notable in the first place.
 
@@ -653,7 +648,7 @@ tibble(
 
 
 
-## Prediction & Model Comparison
+# Prediction & Model Comparison
 
 In general, a model is judged most by whether it has practical value.  Even if we have judged a model effective, there still might be another model that can do better.  If we're doing what we should, we should have a couple models to compare against one another, and the best way to compare them is via prediction, and especially by predicting on data the model wasn't trained on.
 
@@ -674,7 +669,7 @@ model_interact_nonlin = update(
 ```
 
 
-### Basic prediction
+## Basic prediction
 
 With models in hand, let's look at your basic predictive capabilities.  We can get fitted values which include 'confidence' intervals, or predictions, which include 'prediction' intervals that include the uncertainty for a new observation.  We can specify these as follows.  First we create a small data set to make some predictions on.
 
@@ -742,7 +737,7 @@ main_df %>%
 ```
 
 
-### Model Comparisons
+## Model Comparisons
 
 Expected predictive accuracy, log probability for observing a new data point
 
@@ -790,7 +785,7 @@ map_df(mods, function(x) as.data.frame(bayes_R2(x)), .id = 'model') %>%
 
 
 
-#### Problems at the loo
+### Problems at the loo
 
 WAIC vs. LOO.  LOO has better diagnostics for noting whether there are potential issues using it.  But in practice, how much would it differ?
 
@@ -845,7 +840,7 @@ loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit')
 #               slice(which(pareto_probs$diagnostics$pareto_k > .5)))
 ```
 
-##### pareto stuff
+#### pareto stuff
 
 https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s
 
@@ -869,7 +864,7 @@ The usual cases are
 > These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ [Aki Vehtari](https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678)
 
 
-### Averaging models
+## Averaging models
 
 With the previous statistics for model comparison we can obtain relative model weights, using the <span class="func" style = "">model_weights</span> function. This essentially spreads the total probability of the models across all those being compared. These weights in turn allow us to obtain (weighted) average predictions.  The key idea being that we do not select a 'best' model, but rather combine their results for predictive purposes.
 
@@ -931,7 +926,7 @@ average_predictions %>%
 
 
 
-### Cross-validation
+## Cross-validation
 
 
 ```{r cv, eval = F}
@@ -958,7 +953,7 @@ rmse(y = test$y, yrep = test$yrep)
 
 
 
-## Solutions and their problems
+# Solutions and their problems
 
 It seems that the 'usual' approach is adding a level of complexity that is going well beyond what should be expected for new/applied users.  While some might actually enjoy such complexity (like me!), this turns applied users off, especially if there is no obvious gain over traditional approaches.
 
@@ -982,7 +977,7 @@ The model comparison situation has grown so complex there is a 20+ item FAQ that
 
 
 
-## Resources
+# Resources
 
 [Gelman's prior check approach](https://statmodeling.stat.columbia.edu/2019/08/10/)
 

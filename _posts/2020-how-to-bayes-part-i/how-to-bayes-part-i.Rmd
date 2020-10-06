@@ -119,7 +119,7 @@ Here is what we're going to do:
 - Provide quick solutions that should work most of the time
 - Outline a practical approach for future endeavors (Part II)
 
-
+Each section discusses a particular problem and ends with a general recommendation.
 
 
 # Installation issues
@@ -361,7 +361,7 @@ Once data is in hand there are basic steps to take for a practical modeling appr
 
 ##### Compare models using loo, posterior probabilities of models
 
-- Compare models via predictive capabilities (leave-one-out approaches).
+- Compare models via predictive capabilities (**l**eave-**o**ne-**o**ut approaches).
 - There is no 'best' model in Bayesian approach or otherwise. Consider model averaging for final predictions.
 - It is not necessary to lean on simpler models, though it may make things easier to do so.
 
@@ -394,39 +394,39 @@ model_start_100 = brm(
   y ~ b1 + b2 + x1 + x2 + x3, 
   data = main_df,
   iter = 100,
-  verbose = F
+  verbose = F,
+  seed = 123
 )
 ```
 
 
-```{r model-start-100-summary, message=TRUE}
+```{r model-start-100-summary, message=TRUE, cache.rebuild=FALSE}
 summary(model_start_100)
 ```
 
 
 The warnings about Rhat and effective sample size (ESS) are likely to pop up if you use default iterations for more complex models.  They mostly regard the efficiency of the sampling process, and whether you have enough samples to have stable parameter estimates.  Ideally Rhat is close to 1.0, and ESS is at least a notable percentage of the total posterior samples (e.g. 50%).
 
-The fix for these warnings is usually simple, just let the model run for more iterations beyond your warmup.  The default is 2000 iterations with warmup half of that.  Warmup iterations are not used in calculation of parameter estimates, so you can just increase the number of iterations relative to the warmup, or increase both by only increasing the `iter` argument.
+The fix for these warnings is usually simple, just let the model run for more iterations beyond your warmup.  The default is 2000 iterations with warmup half of that.  Warmup iterations are not used in calculation of parameter estimates, so you can just increase the number of iterations relative to the it, or increase both by only increasing the `iter` argument.
 
-As an example we can look at our short run model. If we plot the estimated values across each iteration for each chain, called a *trace plot*, as well as the *density plot*, and from this we  could see that things could be better, but only if you are used to looking at these things.  We'll 
+As an example we can look at our short run model. We plot the estimated values across each iteration for each chain, called a *trace plot*, as well as the *density plot* of the values from the entire chain.  From this we could see that things could be better, but only if you are used to looking at these things, so it will take some practice. 
 
 
-```{r model-start-trace-dens}
-# plot(model_start_100, par = 'x1') # examine specific parameters
+```{r model-start-trace-dens, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'combo')
 ```
 
-To see what you would expect, just plot a series from a normal distribution.
+To get some intuition for what you would expect, just plot a series from a normal distribution.
 
-```{r rnorm-trace-dens, out.width='50%'}
+```{r rnorm-trace-dens, out.width='50%', cache.rebuild=FALSE}
 ggplot2::qplot(x = 1:1000, y = rnorm(1000), geom = 'line')
 
 ggplot2::qplot(x = rnorm(1000), geom = 'density')
 ```
 
-Other plots that might be of interest allow us to look at the same things from a different perspective, or break out results by each chain.
+Other plots that might be of interest allow us to look at the same sorts of things from a different perspective, or break out results by each chain.
 
-```{r area-violin}
+```{r area-violin, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'areas')
 mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'violin')
 ```
@@ -434,7 +434,7 @@ mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'violin')
 
 While things seem okay, what happens if we single out a particular chain, we might think otherwise.  In this case, the `Intercept` and `b2` coefficients may be problematic.
 
-```{r trace-highlight}
+```{r trace-highlight, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, highlight = 2, type = 'trace_highlight')
 ```
 
@@ -442,7 +442,7 @@ mcmc_plot(model_start_100, highlight = 2, type = 'trace_highlight')
 
 Some suggest to look at *rank plots* instead of traditional traceplots.  Really, all we've changed is looking for something 'fuzzy' to looking for 'approximately uniform', so my opinion is that it's not much of an improvement visually or intuitively.  In general, histograms, which are variants of bar charts, are rarely an improvement for any visualization.  If you do use it, you can use an overlay approach to see if the ranks are mixing, but this looks a lot like what I'd be looking for from a traceplot.
 
-```{r rank-plots}
+```{r rank-plots, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'rank_hist')
 mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'rank_overlay')
 ```
@@ -457,14 +457,14 @@ The $\hat{R}$ statistic measures  the ratio of the average variance of samples w
 
 **What we want**: values near 1.0 and less than 1.05
 
-```{r rhat-plot}
+```{r rhat-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'rhat')
 ```
 
 
 #### ESS
 
-Effective sample size is an estimate of the effective number of independent draws from the posterior distribution of the parameter of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will be smaller than the total number of iterations.
+Effective sample size is an estimate of the effective number of independent draws from the posterior distribution of the parameter of interest. Because the draws within a chain are not independent if there is autocorrelation, the effective sample size will typically be smaller than the total number of iterations, but the calculation of this statistic is bit more art than science, and can even be greater than the number of posterior draws.  Note also that the plot is based on slightly different values than reported by brms.
 
 - *Bulk ESS*: ESS for the mean/median (`n_eff` in rstanarm)
 - *Tail ESS*: ESS for the 5% and 95% quantiles. Tail-ESS can help diagnose problems due to different scales of the chains and slow mixing in the tails.
@@ -472,7 +472,7 @@ Effective sample size is an estimate of the effective number of independent draw
 
 **What we want**: ESS > 10% percent of total posterior samples for sure, but > 50% is best. Bulk-ESS > 100 times the number of chains.
 
-```{r neff-plot}
+```{r neff-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'neff')  # < .1 problem
 ```
 
@@ -481,7 +481,7 @@ mcmc_plot(model_start_100, type = 'neff')  # < .1 problem
 
 Shows the estimated parameter values at each iteration.  In general you would like a random bouncing around an average value.
 
-```{r trace-plot}
+```{r trace-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'trace')
 ```
 
@@ -492,7 +492,7 @@ mcmc_plot(model_start_100, type = 'trace')
 
 Shows the density of the posterior draws for the parameters.
 
-```{r dens-plot}
+```{r dens-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'dens')
 ```
 
@@ -506,7 +506,7 @@ From bayesplot helpfile:
 > Whereas traditional trace plots visualize how the chains mix over the course of sampling, rank histograms visualize how the values from the chains mix together in terms of ranking. An ideal plot would show the rankings mixing or overlapping in a uniform distribution.  
 
 
-```{r rank-plot}
+```{r rank-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'rank_hist')
 ```
 
@@ -522,14 +522,14 @@ The *acf*, or *autocorrelation* function plot (see next section), is exactly the
 **What we want**: Quick drop off, but not really that important.
 
 
-```{r acf-plot}
+```{r acf-plot, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, type = 'acf')
 ```
 
 
 #### Efficiency plots
 
-I have seen these often recommended, but I'm not aware of a package does them.  Aki Vehtari has supplied a walkthrough and some code, but there isn't really documentation for the functions, and they likely won't work outside of rstan objects, or at least I had limited success with brms.  Furthermore, these are getting into weeds that are beyond what I'd expect applied users to be wading through.
+I have seen these often recommended, but I'm not aware of a package does them, though it seems they may make their way to shinystan at some point.  Aki Vehtari has supplied a walkthrough and some code, but there isn't really documentation for the functions, and they likely won't work outside of rstan objects, or at least I had limited success with brms.  Furthermore, these are getting into weeds that are beyond what I'd expect applied users to be wading through.
 
 [Vehtari's walkthrough](https://avehtari.github.io/rhat_ess/rhat_ess.html)
 
@@ -559,14 +559,13 @@ brm(model, warmup = 2000, iter = 4000, thin = 8)
 
 You may see a warning that says some number of chains had an `estimated Bayesian Fraction of Missing Information (BFMI) that was too low`. This implies that the adaptation phase of the Markov Chains did not turn out well, and those chains likely did not explore the posterior distribution efficiently. For more details on this diagnostic, you can see [Betancourt's article](https://arxiv.org/abs/1604.00695), but this will almost surely be too technical for many applied and even more advanced users.
 
-In this case, the problem here is often remedied by just adding more iterations as before. I typically keep to 1000 posterior samples, which makes for nicer visualizations of distributions without creating relatively large model objects.
+In this case, the problem here is often remedied by just adding more iterations as before. I typically keep to 1000 posterior samples, which makes for nicer visualizations of distributions without creating relatively large model objects. However, you may need more to get a satisfactory result.
 
 ```{r model-start-checks, results='hide', warning=TRUE}
 model_start = update(model_start_100, warmup = 2000, iter = 2250) # 1000 posterior draws
 ```
 
-
-We no longer have any warnings, and even one of our more problematic coefficients looks fine now.
+In this case, we no longer have any warnings, and even one of our more problematic coefficients looks fine now.
 
 ```{r model-start-checks-show}
 summary(model_start)
