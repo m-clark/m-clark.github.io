@@ -10,13 +10,22 @@ preview: ../../img/r_and_stan.png   # apparently no way to change the size displ
 output:
   distill::distill_article:
     self_contained: false
+    # highlight: pygments
     toc: true
     css: [../../styles.css, 'https://use.fontawesome.com/releases/v5.14.0/css/all.css']
 draft: true
-tags: [tags, taggy]
+tags: [bayesian, stan, rstanarm, brms]
 categories:
   - bayesian
 ---
+
+
+<!-- Thanks Michael! I had just a couple of notes: -->
+
+
+<!-- "In this case, the intercept and b2 coefficients may be problematic." It might help to state here what your visual clues were. -->
+<!-- "To keep posterior samples and model objects from becoming unwieldly in size, consider thinning also." It may be helpful to briefly summarize how thinning achieves this.  -->
+<!-- "Solutions for a slow model" I might suggest describing what scaling the data is, using an example, and also a pointer to how to set more informative priors. -->
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -148,6 +157,8 @@ Here are some discussions on the Stan forums for getting through installation pr
 - [Dealing with Catalina IV](https://discourse.mc-stan.org/t/dealing-with-catalina-iv/13502/) First post Mar 2020
 
 
+Aside from this, my impression is that Big Sur will likely even be less amenable to the average data scientist, so be prepared.
+
 ### Windows
 
 I rarely had installation issues on Windows' releases, though haven't had to use it lately.  It does require [rtools](https://cran.r-project.org/bin/windows/Rtools/) to be installed, which is good to install for R with Windows anyway.  If you are starting out, I would install it, then rstan, then your package of choice (e.g. brms). Again though, if you have issues, the Stan community will be very helpful.
@@ -201,7 +212,7 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
     # intercept
     1,
     X_mm,
-    # a quadratic effect
+    # a cubic effect
     scale(poly(X_mm[,5], 3))[,2:3],
     # interaction of binary variables
     X_mm[,1]*X_mm[,2], 
@@ -252,8 +263,6 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
   
   as_tibble(cbind(X_mm, y))
 }
-
-
 ```
 
 ```{r save-true-parameters, echo=FALSE}
@@ -300,7 +309,7 @@ mod = lme4::lmer(y ~ . -group + (1|group), data.frame(dat[,-1]))
 mixedup::summarise_model(mod, ci = FALSE)  # or just summary
 ```
 
-We do not need as much data for our purposes so we'll set the total sample size to 1000.  We'll drop unnecessary columns, and also make our binary covariates explicit factors, which will make things easier when we want to visualize grouped effects later.
+We do not need much data for our purposes so we'll set the total sample size to 1000.  We'll drop unnecessary columns, and also make our binary covariates explicit factors, which will make things easier when we want to visualize grouped effects later.
 
 ```{r create-data}
 # create the primary data frame
@@ -432,7 +441,7 @@ mcmc_plot(model_start_100, pars = c('b1', 'b2', 'x1'), type = 'violin')
 ```
 
 
-While things seem okay, what happens if we single out a particular chain, we might think otherwise.  In this case, the `Intercept` and `b2` coefficients may be problematic.
+While things seem okay, what happens if we single out a particular chain, we might think otherwise.  In this case, the `Intercept` and `b2` coefficients may be problematic, given they do not seem to vary as much as the others (chain 2 for example, but also for other chains).
 
 ```{r trace-highlight, cache.rebuild=FALSE}
 mcmc_plot(model_start_100, highlight = 2, type = 'trace_highlight')
@@ -540,7 +549,7 @@ I have seen these often recommended, but I'm not aware of a package does them, t
 
 ### Solution for Rhat/ESS warnings
 
-To summarize, the general solution to Rhat and ESS warnings is simply to do more iterations (relative to the warmup). To keep posterior samples and model objects from becoming unwieldy in size[^bigobjects], consider thinning also. Thinning will also reduce autocorrelation, as the draws retained after thinning are not as correlated with one another as successive draws would be.
+To summarize, the general solution to Rhat and ESS warnings is simply to do more iterations (relative to the warmup). To keep posterior samples and model objects from becoming unwieldy in size[^bigobjects], consider thinning also. Thinning saves only a select amount of the available posterior samples, e.g. `thin = 10` means only every tenth sample will be saved. This will also reduce autocorrelation, as the draws retained after thinning are not as correlated with one another as successive draws would be.  However, if you thin too much, you may not have enough for effective sample size.
 
 ```{r increase-iter, eval=F}
 # default with 4 chains, 1000 warmup 2000 total = 4*(2000 - 1000) = 4000 post-warmup draws
@@ -783,17 +792,21 @@ For a discussion of loo and related issues, see PART II.
 
 ## But it's slow!
 
-Another problem people seem to be concerned with is the speed of the analysis.  If you have a lot of data, or more to the point, a lot of parameters, your model can be very slow.  For standard models with rstanarm and brms, there may be no real benefit if you have millions of data points and simpler models.  If your model is only taking a couple minutes, then you really have nothing to complain about- watch some YouTube or something while it runs. If your model takes on the order of hours, work with less data or simpler models until you have your modeling code, plots, etc. squared away.  At that point you can run your primary analysis and wait it out.
+Another problem people seem to be concerned with is the speed of the analysis.  If you have a lot of data, or more to the point, a lot of parameters, your model can be very slow.  For standard models with rstanarm and brms, there may be no real benefit if you have millions of data points and simpler models.  If your model is only taking a couple minutes, then you really have nothing to complain about- watch some YouTube or something while it runs. If your model takes on the order of hours, work with less data or simpler models until you have your modeling code, plots, etc. squared away.  At that point you can run your primary analysis and wait it out.  A slow model may also be indicative of a poorly specified/understood model, so you may have to think hard about how you are approaching the problem.
 
 
 ### Solutions for a slow model
 
-- Scale the data: for any model, Bayesian or otherwise, scaling the data will result in a more manageable estimation process.
-- Use more informative priors: why explore areas of the posterior that aren't going to lead to plausible results?
+- Scale the data: for any model, Bayesian or otherwise, doing things like standardizing, logging or other variable transformations will put parameters in more reasonable domains, resulting in a more manageable estimation process.  For example, if you standardize predictors, then the coefficients are on similar scales and a `Normal(0, 1)` prior can be applied.
+- Use more informative priors: why explore areas of the posterior that aren't going to lead to plausible results? We will show how to do this in [Part 2]().
 - Possibly use less iterations if there are no other issues.
 - If possible, work with less data or simpler models until ready for the real deal.
 - If possible, work with a different version of the model that can still answer the question of interest. For example, if an ordinal model is causing a lot of issues, and you're not interested in category specific probabilities, just treat the target variable as numeric[^reparameterize].
 - Stop fishing/p-hacking/torturing your data so that you don't have to run dozens of models. You're likely not to care if the models takes hours if you only run them once.
+
+- Resource: [Gelman's advice for slow models](https://statmodeling.stat.columbia.edu/2020/10/21/model-takes-many-hours-to-fit-and-chains-dont-converge-what-to-do-my-advice-on-first-steps/)
+
+
 
 ## shinystan
 
