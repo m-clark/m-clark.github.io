@@ -11,6 +11,7 @@ output:
   distill::distill_article:
     self_contained: false
     toc: true
+    highlight: pygments
     css: [../../styles.css, 'https://use.fontawesome.com/releases/v5.14.0/css/all.css']
 draft: true
 tags: [tags, taggy]
@@ -50,43 +51,46 @@ rnd = tidyext::rnd
 
 # Better Bayesian Approaches, Part II
 
-We've talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of Part I.  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's engage in some better practices to outline an approach you can use every time to help things run more smoothly.
+We've talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of [Part I]().  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's engage in some better practices you can use every time to help things run more smoothly, and get more from your models.
 
 
 ## Outline for Better Bayesian Analysis
 
 <div style = 'text-align: center'>
-<i class="fas fa-list-ol fa-5x" style="padding: 20px"></i>
+<i class="fas fa-list-ol fa-5x" style="padding: 20px; color: #ff5500"></i>
 </div>
 
 <br>
 
 <div style = 'text-align: center'>
-<i class="fas fa-hat-wizard fa-5x" style="padding: 20px"></i>
+<i class="fas fa-hat-wizard fa-5x" style="padding: 20px; color: #ff5500"></i>
 </div>
 
 <br>
+
+We'll cover the following steps in more detail, but here is a general outline.
 
 - First generate 'fake data' to assess prior viability
 - With adequate priors, start with a simple, but plausible model
 - For simple models you do not need many iterations
     - If you are doing standard GLM or simpler versions of common extensions, even the defaults are likely overkill.  For example, a basic linear regression should converge almost immediately.
-- Problems (see Part I)
+- Problems (see [Part I]())
   - If Rhat/ESS is issue, run more iterations
-  - if `max_treedepth` is issue, increase the default
-  - if divergent transitions
-      - Check the data, has it been scaled? 
+  - If `max_treedepth` is issue, increase the default
+  - If divergent transitions
+      - Check the data, is there some problem that went undiscovered? 
+      - Check the data, has it been scaled properly? 
       - Can something more be done about priors?
-      - Use pairs plot
-      - Use parcoord plot
-      - reparameterize model (unlikely if using a higher level package)
-      - get more/better data (unlikely in practice)
-      - get a better model
+      - Use visualizations to aid diagnosis
+      - Reparameterize model (unlikely if using a higher level package)
+      - Get more/better data (unlikely in practice)
+      - Get a better model
   - Issues with loo ([see below][Problems at the loo])
 - Use posterior predictive checks
     - Nice, but what if it doesn't fit?
         - Get better data    (unlikely in practice)
         - Get a better model
+        - If nothing to do, advise others how to get better data/models in the future.
 - Explore a more viable model
   - Add interactions
   - Add nonlinear relations
@@ -94,13 +98,13 @@ We've talked about the basics one can do to run a Bayesian model, and what to do
 - Compare and/or average models
 
 
-We'll demonstrate each of these steps.
+We'll now demonstrate these steps.
 
 # Example data
 
 
 <div style = 'text-align: center'>
-<i class="fas fa-database fa-5x" style="padding: 20px"></i>
+<i class="fas fa-database fa-5x" style="padding: 20px; color: #ff5500"></i>
 </div>
 <br>
 
@@ -172,7 +176,7 @@ create_data <- function( N = 1000, ng = 100, seed = 1234) {
   # add random effect
   groups = sort(sample(1:ng, N, replace = T))
   
-  re = rnorm(ng, sd = .5)[groups]  # re sd = .5
+  re = rnorm(ng, sd = 1)[groups]  # re sd = 1
   
   # add re and residual noise
   y = y + re + rnorm(N)
@@ -220,7 +224,7 @@ true_params = data.frame(
 
 
 
-For our purposes so we'll create a data frame with the total sample size to 1000.  
+For our purposes so we'll create a data frame with the total sample size of 1000.  
 
 ```{r create-data}
 # create the primary data frame
@@ -237,7 +241,7 @@ main_df =
 
 # Simulate from priors
 
-A first step is to produce some viable priors.  But the obvious question is, what priors should we choose?  Thankfully, for standard models there is not much guesswork involved. Bayesian analysis has been around a long time, so the bulk of the work has been done for you.  Even default settings should not affect things much, especially for rstanarm, which has some basic defaults that are informed by the data.  However, due to the flexibility of the brms modeling functions, some priors are unspecified and left flat (i.e. uniform), which is something we definitely don't want, and while others like rstanarm's defaults might be somewhat better, they could still cause problems for more complex situations.  So how might we choose better ones?
+A first step is to produce some viable priors.  But the obvious question is, what priors should we choose?  Thankfully, for standard models there is not much guesswork involved. Bayesian analysis has been around a long time, so the bulk of the work has been done for you.  Even default settings should not affect things much, especially for rstanarm, which has some basic defaults that are informed by the data.  However, due to the flexibility of the brms modeling functions, some priors are unspecified and left flat (i.e. uniform), which is something we definitely don't want. And even defaults could still cause problems for more complex situations.  So how might we choose better ones?
 
 
 The basic idea here is to generate parameters (e.g. regression coefficients) based on the prior distributions for those parameters, predict data based on those prior draws, and then compare the predictions to our observed target variable.  The brms package makes this very easy to do.  We will check the following types of priors.
@@ -355,7 +359,7 @@ model_0_norm_b_0_1_norm_Int_sigma = brm(
   prior = pr_norm_b_norm_int_t_sigma
 )
 
-# pp_check(model_0_norm_b_0_1_norm_Int, nsamples = 50)
+# pp_check(model_0_norm_b_0_1_norm_Int_sigma, nsamples = 50)
 ```
 
 The following plot shows the model predictions based on priors only. We restrict the range of values for display purposes, so note that some of the priors would generate more extreme results.  For example, the default prior setting could generate values into the $\pm$ 500 and beyond. I also mark the boundaries of the observed target variable. 
@@ -403,14 +407,14 @@ color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direc
 ```
 
 
-So given that our target variable is between `r round(min(main_df$y))` and `r round(max(main_df$y))`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will generally help our models be more efficient and better behaved. Note that if all else fails, for brms you can use a convenience function like <span class="func" style = "">auto_prior</span> demonstrated above.
+So given that our target variable is between `r round(min(main_df$y))` and `r round(max(main_df$y))`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will generally help our models be more efficient and better behaved. Note that if all else fails, you can use a convenience function like <span class="func" style = "">auto_prior</span> demonstrated above.
 
 
 # Run and Summarize the Baseline Model
 
 Now let's run a baseline model, one that's simple but plausible.  Given that there will eventually be additional complexities, I'll go ahead and add some iterations, and increase max tree depth and adapt delta now to make the code reusable.
 
-```{r model-baseline}
+```{r model-baseline, results='hide'}
 library(brms)
 
 pr = c(
@@ -421,17 +425,17 @@ pr = c(
 
 model_baseline = brm(
   y ~ b1 + b2 + x1 + x2 + x3 + (1 | group), 
-  data   = main_df,
-  warmup = 5000,
-  iter   = 6000,
-  thin  = 4,
-  prior  = pr, 
-  cores  = 4,
+  data    = main_df,
+  warmup  = 5000,
+  iter    = 6000,
+  thin    = 4,
+  prior   = pr, 
+  cores   = 4,
   control = list(
-    adapt_delta = .95,
+    adapt_delta   = .95,
     max_treedepth = 15
   ),
-  save_all_pars = TRUE
+  save_pars = save_pars(all = TRUE)  # potentially allows for more  more post-processing functionality
 )
 ```
 
@@ -495,7 +499,7 @@ tidy_plot_data_fe %>%
 ## Check priors
 
 
-We might still be concerned about how our influential our priors were.  So how can we check whether our priors were informative? The following will do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation[^lakeland].  Having an informative prior isn't really a problem in my opinion, unless it's more informative than you wanted.  For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.
+We might still be concerned about how influential our priors were.  So how can we check whether our priors were informative? The following will do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation[^lakeland].  Having an informative prior isn't really a problem in my opinion, unless it's more informative than you wanted.  For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.
 
 
 
@@ -503,6 +507,8 @@ We might still be concerned about how our influential our priors were.  So how c
 prior_summary(model_baseline)
 bayestestR::check_prior(model_baseline)
 ```
+
+These results suggest that we might be more informative, but for the intercept, which we largely care less about, and for the factor that is highly unbalanced, which has no obvious solution.  I would be fine with this result.
 
 
 
@@ -521,7 +527,7 @@ We can also use the hypothesis function to test for specific types of effects.  
 hypothesis(model_baseline, 'b21 < 0')
 ```
 
-But we can really try anything. The following tests whether the combined effect of our categorical covariates is greater than zero.
+But we can really try anything, which is the power of this function. The following tests whether the combined effect of our categorical covariates is greater than zero.
 
 ```{r model-start-hype2}
 hypothesis(model_baseline, 'b11 + abs(b21) > 0')
@@ -530,7 +536,7 @@ hypothesis(model_baseline, 'b11 + abs(b21) > 0')
 
 ## Model Effectiveness
 
-A natural question to ask is how useful our model actually is.  The next question is how to define such utility.  Such an assessment definitely cannot be made with something like 'statistical significance'. Science of any kind is nothing without prediction, so we we can start there.
+A natural question to ask is how useful our model actually is, which then suggests we need to know how to define such utility.  Such an assessment definitely cannot be made with something like 'statistical significance'. Science of any kind is nothing without prediction, so we we can start there.
 
 ### Posterior predictive checks
 
@@ -541,7 +547,19 @@ pp_check(model_baseline, nsamples = 100)
 pp_check(model_baseline, nsamples = 10, type ='error_scatter_avg', alpha = .1)
 ```
 
-We can look at specific stats.  The following suggests our model typically underestimates the maximum value.
+In this case we see good alignment between model and data, and no obvious pattern to the types of errors we are getting. We do see that the model does not capture the most extreme value well, but that's not terribly surprising.
+
+Consider predictions with and without random effects.  You have to look closely, but the random effect predictions appear to do better with the predicting more in the tails.
+
+```{r model-baseline-ppcheck-re, echo=FALSE}
+library(patchwork)
+{pp_check(model_baseline, nsamples = 50, re_formula = NA) + labs(title = 'No RE') + guides(color = 'none') +
+pp_check(model_baseline, nsamples = 50) + labs(title = 'With RE')}  * lims(x = c(-3,10)) 
+```
+
+
+
+We can use the same approach to look at specific statistical measures.  The following suggests our model is okay with capturing the minimum value, but typically underestimates the maximum value, which we noted earlier.
 
 ```{r model-baseline-ppcheck-med-max}
 pp_check(model_baseline, nsamples = 100, type ='stat', stat='median')
@@ -549,7 +567,7 @@ pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'max')
 ```
 
 
-We can define any function to use for our posterior predictive check.  The following shows how to examine the 10th and 90th quantiles.  Minimum and maximum values are unlikely to be captured well due to their variability, so looking at extreme quantiles might be a better way to assess whether the model captures the tails of a distribution.
+We can define any function to use for our posterior predictive check.  The following shows how to examine the 10th and 90th quantiles.  Minimum and maximum values are unlikely to be captured very well due to their inherent variability, so looking at less extreme quantiles (e.g. 10^th^ or 90^th^ percentile) might be a better way to assess whether the model captures the tails of a distribution.
 
 ```{r model-baseline-ppcheck-qs, echo=1:6, eval=FALSE}
 q10 = function(y) quantile(y, 0.1)
@@ -570,7 +588,7 @@ pp_check(model_baseline, nsamples = 100, type ='stat_2d', stat = c('q10', 'q90')
 
 ### Bayes R-squared
 
-In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don't really recommend this beyond linear models assuming a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values to the observed, so can be seen as descriptive statistic.  Since we are Bayesians, we also get a ready-made interval for it, since it is based on the posterior predictive distribution.  But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional).  Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming the variance is notable in the first place.
+In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don't really recommend this beyond linear models assuming a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values to the observed, so can be seen as descriptive statistic.  Since we are Bayesians, we also get a ready-made interval for it, as it is based on the posterior predictive distribution.  But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional).  Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming the variance is notable in the first place.
 
 https://avehtari.github.io/bayes_R2/bayes_R2.html
 
@@ -612,7 +630,7 @@ However, a posterior predictive check shows clearly the failure of the modified 
   {pp_check(model_r2_vs_pp, re_formula = NA) + labs(subtitle = 'Modified Model')}
 ```
 
-A variant of R^2^, the 'LOO' R^2^, is also available via the loo_R2 function. LOO stands for *leave-one-out*, as in leave-one-out cross-validation.  It's based on the residuals from the leave one out predictions.  The results suggests that the LOO R^2^ actually picks up the difference in models, and would be lower for the modified model, even if we included the random effects.
+A variant of R^2^, the 'LOO' R^2^, is also available via the <span class="func" style = "">loo_R2</span> function. LOO stands for *leave-one-out*, as in leave-one-out cross-validation.  It's based on the residuals from the leave one out predictions.  You can think of it as a better 'adjusted R^2^'. The results suggests that the LOO R^2^ actually picks up the difference in models, and would be lower for the modified model, even if we included the random effects
 
 ```{r looR2, echo=FALSE}
 tibble(
@@ -650,7 +668,7 @@ tibble(
 
 # Prediction & Model Comparison
 
-In general, a model is judged most by whether it has practical value.  Even if we have judged a model effective, there still might be another model that can do better.  If we're doing what we should, we should have a couple models to compare against one another, and the best way to compare them is via prediction, and especially by predicting on data the model wasn't trained on.
+In general, a model is judged most by whether it has practical value.  Even if we think a model is effective, there still might be another model that can do better.  If we're doing what we should, we should have a couple models to compare against one another, and the best way to compare them is via prediction, and especially by predicting on data the model wasn't trained on to begin with.
 
 For our purposes, we will add two new models.  The first adds interactions, the second adds a nonlinear relationship for one of the variables to that model, and is the closest to the underlying data generating mechanism.
 
@@ -658,7 +676,8 @@ For our purposes, we will add two new models.  The first adds interactions, the 
 ```{r model-complex, results='hide'}
 model_interact = update(
   model_baseline,
-  . ~ . + b1:b2 + b2:x1
+  . ~ . + b1:b2 + b2:x1,
+  cores = 4
 )
 
 model_interact_nonlin = update(
@@ -682,42 +701,45 @@ prediction_data = crossing(
   x3 = 0
 )
 
-
 head(fitted(model_baseline))
   
 predict(model_baseline, newdata = prediction_data, re_formula = NA)
 ```
 
-A better approach is to visualize the predictions.  We can do so as we did before.  I modify the basic conditional effects plot that brms provides.
+A better approach is to visualize the predictions.  We can do so as we did before with the <span class="func" style = "">conditional_effects</span> function.  I  modify the basic conditional effects plot that brms provides for a slightly cleaner visualization.
 
-```{r}
+```{r conditional-effects-model-comparison, echo=1:3}
 conditional_effects(model_baseline, effects = 'x2')
 conditional_effects(model_interact, effects = 'x1:b2')
 init = conditional_effects(model_interact_nonlin, effects = 'x3', spaghetti = T)
-plot(
-  init,
-  # points = T, # this (nor rug) argument doesn't really make sense nor is consistent with other options
-  spaghetti_args = list(colour = alpha('#ff5500', .05)),
-  line_args = list(colour = alpha('#00aaff', .75)),
-  theme = theme_clean()
-) + 
-  geom_point(aes(x = x3, y = y), data = main_df)
+
+# plot(
+#   init,
+#   # points = T, # this (nor rug) argument doesn't really make sense nor is consistent with other options
+#   spaghetti_args = list(colour = alpha('#ff5500', .05)),
+#   line_args = list(colour = alpha('#00aaff', .75)),
+#   theme = theme_clean()
+# ) + 
+#   geom_point(aes(x = x3, y = y), data = main_df) +
+#   theme_clean()
 
 library(modelr)
-main_df %>%
-  group_by(b2) %>%
-  data_grid(
-    x1 = seq_range(x1, n = 101),
-    b1 = 0,
-    b2 = factor(0:1),
-    x2 = 0,
-    x3 = 0
-  ) %>%
-  add_fitted_draws(model_interact, n = 100, re_formula = NA) %>%
-  ggplot(aes(x = x1, color = b2)) +
-  geom_line(aes(y = .value, group = paste(b2, .draw)), alpha = .1) +
-  geom_point(aes(y = y), data = main_df, alpha = .25) +
-  scale_color_brewer(palette = "Dark2")
+
+# main_df %>%
+#   group_by(b2) %>%
+#   data_grid(
+#     x1 = seq_range(x1, n = 101),
+#     b1 = 0,
+#     b2 = factor(0:1),
+#     x2 = 0,
+#     x3 = 0
+#   ) %>%
+#   add_fitted_draws(model_interact, n = 100, re_formula = NA) %>%
+#   ggplot(aes(x = x1, color = b2)) +
+#   geom_line(aes(y = .value, group = paste(b2, .draw)), alpha = .1) +
+#   geom_point(aes(y = y), data = main_df, alpha = .25) +
+#   scale_color_brewer(palette = "Dark2") +
+#   theme_clean()
 
 main_df %>%
   group_by(b2) %>%
@@ -730,27 +752,38 @@ main_df %>%
   ) %>%
   add_fitted_draws(model_interact_nonlin, n = 100, re_formula = NA) %>%
   ggplot(aes(x = x3)) +
-  geom_line(aes(y = .value, color = x3, group = paste(b2, .draw)), alpha = .1) +
+  geom_line(aes(
+    y = .value,
+    color = x3,
+    group = paste(b2, .draw)
+  ),
+  alpha = .1,
+  show.legend = FALSE) +
   geom_point(aes(y = y), data = main_df,  alpha = .1) +
   scico::scale_color_scico() +
   theme_clean()
 ```
 
 
-## Model Comparisons
+## Model Comparison
 
-Expected predictive accuracy, log probability for observing a new data point
-
- In the Bayesian approach, we will use estimates like *WAIC* and *looic* for model comparison.  They are essentially used as you would AIC, or root mean squared error, to compare models in a predictive fashion.  The values themselves don't tell us much, but in comparing models, lower means less predictive error, which is what we want.  And since we're bayesian, we even have estimates of uncertainty for these values as well.
+> Sometimes a simple model will outperform a more complex model... Nevertheless, I believe that deliberately limiting the complexity of the model is not fruitful when the problem is evidently complex. Instead, if a simple model is found that outperforms some particular complex model, the appropriate response is to define a different complex model that captures whatever aspect of the problem led to the simple model performing well.  ~ Radford Neal
 
 
 
-With our new models in place, we can now make some comparisons using <span class="func" style = "">loo_compare</span>.  It shows the 'best', i.e. lowest valued, model first followed by the others.  The actual value is the total expected log probability for the leave-one-out observations.
+In typical situations it is good to have competing models, attempting to see if improvements can be made in one way or another.  In the Bayesian approach, we can use estimates like *WAIC* and *LOOIC* for model comparison, much like you would AIC to compare models in traditional frameworks.  The values themselves don't tell us much, but in comparing models, lower means less predictive error for 'ic' metrics, which is what we want. Like in the traditional framework, LOOIC is ~ -2\*expected log posterior density (*ELPD*)[^bayesaic], and since we're Bayesian, we even have estimates of uncertainty for these values as well.
+
+[^bayesaic]: Much like how AIC works with the -2*log likelihood.
+
+With our new models in place, we can now make some comparisons using <span class="func" style = "">loo_compare</span>.  It shows the 'best', i.e. lowest valued, model first followed by the others.  The result regards the total expected log probability for the leave-one-out observations.  We also get stuff like `p_loo`, which is the effective number of parameters, and `Pareto k values`, which we'll talk about soon.
 
 ```{r loo-compare}
 model_baseline = add_criterion(model_baseline,  'loo')
 model_interact = add_criterion(model_interact, 'loo')
 model_interact_nonlin = add_criterion(model_interact_nonlin, 'loo')
+
+# example
+loo(model_baseline) 
 
 loo_compare(
   model_baseline, 
@@ -759,7 +792,7 @@ loo_compare(
 )
 ```
 
-Let's compare the standard Bayes $\hat{R}^2$, WAIC, and LOOIC.  In this particular setting, all are generally in agreement in the rank order of the models.  However, there is no statistical difference in the model $\hat{R}^2$ between the baseline and interaction models, while both information criteria would more clearly prefer the later.
+Let's compare several metrics available to us.  In this particular setting, all are generally in agreement in the rank order of the models.  However, there is no meaningful difference between the baseline and interaction models, while information criteria would more clearly prefer the latter.
 
 ```{r loo-compare2, echo=FALSE}
 mods = list(
@@ -768,37 +801,37 @@ mods = list(
   interact_nonlin = model_interact_nonlin
 )
 
-map_df(mods, function(x) as.data.frame(bayes_R2(x)), .id = 'model') %>% 
+map_df(mods, function(x) data.frame(R2 = bayes_R2(x)[,'Estimate']), .id = 'model') %>% 
+  left_join(map_df(mods, function(x) data.frame(loo_R2 = loo_R2(x)[1]), .id = 'model')) %>% 
   left_join(map_df(mods, function(x) data.frame(WAIC = WAIC(x)$estimates[3]), .id = 'model')) %>% 
-  left_join(map_df(mods, function(x) data.frame(LOOIC = loo(x)$estimates[3]), .id = 'model')) %>% 
-  rename(`R2` = Estimate) %>% 
-  kable_df(digits = 2)
+  left_join(map_df(mods, function(x) data.frame(LOOIC = loo(x)$estimates[3], 
+                                                ELPD  = loo(x)$estimates[1]), .id = 'model')) %>% 
+  mutate(
+    weight = loo_model_weights(model_baseline, model_interact, model_interact_nonlin)) %>% 
+  kable_df(digits = 2) %>% 
+  add_footnote('Odds are relative to baseline')
 ```
 
 
-<!-- ```{r ppcheck} -->
-<!-- pp_check(model_baseline) -->
-<!-- pp_check(model_interact_nonlin) -->
-<!-- pp_check(model_baseline, nsamples = 100, type ='stat', stat = 'min') -->
-<!-- pp_check(model_interact_nonlin, nsamples = 100, type ='stat', stat = 'min') -->
-<!-- ``` -->
+While we have several metrics, for model comparison, we'd like to stick to the IC type appoach. As far as using WAIC vs. LOOIC, the latter has better diagnostics for noting whether there are potential problems in using it.  In practice, it likely wouldn't differ much.  As we noted, LOOIC reflects the ELPD, which is used in constructing the model weights[^waic_weights], the model weights can then be used in making final predictions.
+
+[^waic_weights]: Technically we can use WAIC to produce weights like we do with AIC, e.g. `exp(waic) / sum(exp(all_waics))`, but this isn't recommended.  The stacking approach allows similar models to share their weight, while more unique models will more or less keep their weight as additional models are added.
+
 
 
 
 ### Problems at the loo
-
-WAIC vs. LOO.  LOO has better diagnostics for noting whether there are potential issues using it.  But in practice, how much would it differ?
 
 https://mc-stan.org/loo/articles/loo2-weights.html
 
 
 issues- overfitting, time, complexity is more accurate portrayal of nature even if not 'best'
 
-After the model warnings discussed in Part I, the next most common point of confusion I see with clients is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation.  So what should we do here?
+After the model warnings discussed in [Part I](), the next most common point of confusion I see with clients is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation.  Another thing to think about from Gelman:
 
-As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic]
+>The general issue is that with *unregularized* estimation such as least squares or maximum likelihood, adding parameters to a model (or making a model more complex) leads to overfitting. With regularized estimation such as multilevel modeling, Bayesian inference, lasso, deep learning, etc etc, the regularization adds complexity but in a way that reduces the problem of overfitting. So traditional notions of model complexity and tradeoffs are overturned. ~ Andrew Gelman
 
-The following provides influence statistics, which are a way of saying which observations in the data are not capture well by the model. Larger values are bad, but you don't even have to worry much here, the function provides the breakdown for you. 
+So what should we do here? As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic].  We also get  influence statistics for our observed data.  
 
 ```{r loo-basic}
 loo(model_baseline)
@@ -809,7 +842,7 @@ loo(model_interact_nonlin)
 ```{r pareto-compare, echo=FALSE}
 pareto_probs = loo(model_interact_nonlin)
 
-str(pareto_probs)
+# str(pareto_probs)
 
 loo_pit_interact_nonlin = pp_check(model_interact_nonlin, type = 'loo_pit')
 loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit')
@@ -840,7 +873,34 @@ loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit')
 #               slice(which(pareto_probs$diagnostics$pareto_k > .5)))
 ```
 
-#### pareto stuff
+- Resource: [The LOO glossary](https://mc-stan.org/loo/reference/loo-glossary.html)
+
+#### Pareto values
+
+If you happen to see Pareto values in the 'bad' or 'very bad' group, what does it mean?  You can read the definition provide [here](https://mc-stan.org/loo/reference/loo-glossary.htmll#pareto-k-estimates), but I doubt it will help many due to the background knowledge needed to parse it.  However you can just understand it as an *outlier* diagnostic, and if it is a problem, it means your LOOIC may not be good for comparing models.  As in the standard model setting setting, outliers indicate *model incompetence*, or in other words, its inability to understand such observations.  Unless you have reason to suspect something wrong in the data (e.g. an incorrect value/typo), an outlier is a sign that your model is not able to capture the data fully.  It definitely is not a reason to remove the observation.
+
+If you have values > .7, you may recalculate LOOIC with the options provided by the loo function, getting a better estimate that could then be used in, for example, model stacking for prediction.  If you don't have many discovered outliers, it probably won't make much difference in your final estimates and conclusions.   The output for Pareto values doesn't even save the row identifying information that would make it easy to find which observations are the problem, but you can do something like the following.
+
+
+```{r pareto-obs}
+problems = pareto_probs$pointwise %>% 
+  data.frame() %>% 
+  rowid_to_column() %>% 
+  group_by(flag = influence_pareto_k > .5) %>% 
+  filter(flag) %>% 
+  pull(rowid)
+
+model_interact_nonlin$data %>% 
+  slice(problems)
+```
+
+As we probably would have expected, the observation with the highest marginal target value is one of the problems, but there is nothing to suggest why the others might be difficult, and it's even harder to speculate in typical modeling situations with more predictors and complexity. Furthermore, outside of additional interactions, which might then become difficult to interpret, there is little we can do about this.
+
+#### The rabbit hole of model comparsion
+
+If you start to look into this, there are numerous technical articles, whole websites, and various discussions regarding how to go about these results.  I'm guessing most don't want to try and parse technical information only to still feel confused about what to actually do with the results.  Furthermore, it's not clear to me that issues regarding statistics for model comparison should be a basis for altering a model, unless there is an obvious path for doing so (which begs the question of why you weren't already exploring that model).  The suggestions typically amount to 'Your model is misspecified' no matter what the outcome.  The are also suggestions that one should use posterior predictive checks (PPCs) are somehow to be used to detect the problem, but PPC don't 'detect' anything in and of themselves, nor have any standard metric to report. , so this is all kind of a mess here.
+
+
 
 https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s
 
