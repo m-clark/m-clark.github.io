@@ -668,9 +668,9 @@ tibble(
 
 # Prediction & Model Comparison
 
-In general, a model is judged most by whether it has practical value.  Even if we think a model is effective, there still might be another model that can do better.  If we're doing what we should, we should have a couple models to compare against one another, and the best way to compare them is via prediction, and especially by predicting on data the model wasn't trained on to begin with.
+In general, a model is judged most by whether it has practical value.  Even if we think a model is effective, there still might be another model that can do better.  So, if we're doing what we should, we generally will have a couple models to compare with one another. And one of the best ways to compare them is via prediction, especially by predicting on data the model wasn't trained on to begin with.
 
-For our purposes, we will add two new models.  The first adds interactions, the second adds a nonlinear relationship for one of the variables to that model, and is the closest to the underlying data generating mechanism.
+For our demonstration, we will add two new models.  The first adds interactions, the second adds a nonlinear relationship for one of the variables to that model, and is the closest to the underlying data generating mechanism.
 
 
 ```{r model-complex, results='hide'}
@@ -690,7 +690,7 @@ model_interact_nonlin = update(
 
 ## Basic prediction
 
-With models in hand, let's look at your basic predictive capabilities.  We can get fitted values which include 'confidence' intervals, or predictions, which include 'prediction' intervals that include the uncertainty for a new observation.  We can specify these as follows.  First we create a small data set to make some predictions on.
+With models in hand, let's look at our basic predictive capabilities.  We can get fitted values which include 'confidence' intervals, or predictions, which include 'prediction' intervals that include the uncertainty for a new observation.  We can specify these as follows.  First we create a small data set to make some predictions on.  It will include both values for of the binary covariates, and the means of the numeric (0).
 
 ```{r fitted-predict}
 prediction_data = crossing(
@@ -701,12 +701,14 @@ prediction_data = crossing(
   x3 = 0
 )
 
-head(fitted(model_baseline))
-  
+# fitted values
+head(fitted(model_baseline))  
+
+# new predictions
 predict(model_baseline, newdata = prediction_data, re_formula = NA)
 ```
 
-A better approach is to visualize the predictions.  We can do so as we did before with the <span class="func" style = "">conditional_effects</span> function.  I  modify the basic conditional effects plot that brms provides for a slightly cleaner visualization.
+In general, we'd always like to visualize the predictions.  We can do so as we did before with the <span class="func" style = "">conditional_effects</span> function.  For the third plot of the nonlinear effect, I  modify the basic conditional effects plot that brms provides for a slightly cleaner visualization.
 
 ```{r conditional-effects-model-comparison, echo=1:3}
 conditional_effects(model_baseline, effects = 'x2')
@@ -722,7 +724,10 @@ init = conditional_effects(model_interact_nonlin, effects = 'x3', spaghetti = T)
 # ) + 
 #   geom_point(aes(x = x3, y = y), data = main_df) +
 #   theme_clean()
+```
 
+
+```{r conditional-effects-model-comparison-show, echo=F, layout='l-body-outset'}
 library(modelr)
 
 # main_df %>%
@@ -746,12 +751,13 @@ main_df %>%
   data_grid(
     x3 = seq_range(x3, n = 101),
     b1 = 0,
-    b2 = factor(0:1),
+    b2 = 0,
     x2 = 0,
     x1 = 0
   ) %>%
   add_fitted_draws(model_interact_nonlin, n = 100, re_formula = NA) %>%
   ggplot(aes(x = x3)) +
+  geom_point(aes(y = y), data = main_df,  alpha = .05) +
   geom_line(aes(
     y = .value,
     color = x3,
@@ -759,10 +765,10 @@ main_df %>%
   ),
   alpha = .1,
   show.legend = FALSE) +
-  geom_point(aes(y = y), data = main_df,  alpha = .1) +
   scico::scale_color_scico() +
   theme_clean()
 ```
+
 
 
 ## Model Comparison
@@ -894,11 +900,12 @@ model_interact_nonlin$data %>%
   slice(problems)
 ```
 
-As we probably would have expected, the observation with the highest marginal target value is one of the problems, but there is nothing to suggest why the others might be difficult, and it's even harder to speculate in typical modeling situations with more predictors and complexity. Furthermore, outside of additional interactions, which might then become difficult to interpret, there is little we can do about this.
+As we might have expected, the observations with the more extreme target values are likely to be  problems, but for some of these, there is nothing to suggest why they might be difficult, and it's even harder to speculate in typical modeling situations with more predictors and complexity. Furthermore, outside of additional interactions, which might then become difficult to interpret, there is little we can do about this, or at least, is not obvious.
+
 
 #### The rabbit hole of model comparsion
 
-If you start to look into this, there are numerous technical articles, whole websites, and various discussions regarding how to go about these results.  I'm guessing most don't want to try and parse technical information only to still feel confused about what to actually do with the results.  Furthermore, it's not clear to me that issues regarding statistics for model comparison should be a basis for altering a model, unless there is an obvious path for doing so (which begs the question of why you weren't already exploring that model).  The suggestions typically amount to 'Your model is misspecified' no matter what the outcome.  The are also suggestions that one should use posterior predictive checks (PPCs) are somehow to be used to detect the problem, but PPC don't 'detect' anything in and of themselves, nor have any standard metric to report. , so this is all kind of a mess here.
+If you start to look more into this, there are numerous technical articles, whole websites, and various discussions regarding how to go about these results.  I'm guessing most don't want to try and parse technical information only to still feel confused about what to actually do with the results.  Furthermore, it's not clear to me that issues regarding specific statistics for model comparison should be a basis for altering a model, unless there is an obvious path for doing so (which begs the question of why you weren't already exploring that model).  The suggestions typically amount to 'Your model is misspecified' no matter what the outcome.  The are also suggestions that one should use posterior predictive checks (PPCs) are somehow to be used to detect the problem, but PPC don't 'detect' anything in and of themselves, nor have any standard metric to report. , so this is all kind of a mess here.
 
 
 
@@ -924,21 +931,46 @@ The usual cases are
 > These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ [Aki Vehtari](https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678)
 
 
+### Solutions with Model Comparison
+
+- Avoid the problem and fit the model that includes everything of interest, assuming you have a decent data size to do so.
+- If some application performance is obvious and available to assess, pick a model that does best there.
+- If trying to select among many competing models, e.g. feature selection, you should consider why you are in this situation.  If you don't have much data, then the usual model selection criteria may lead you notably astray.  If you have a lot of data, consider why you need to select a subset and not merely use all available.  If you are somewhere in between, note that you'll likely spend a lot more time here and still not be confident in the results.  However, there are approaches, such as those in the <span class="pack" style = "">projpred</span> package, that might be useful, but likely will only work for simpler models.
+- Use the metrics noted above, e.g. LOOIC, 
+
+https://avehtari.github.io/modelselection/CV-FAQ.html#5_How_to_use_cross-validation_for_model_selection
+
+
+```{r eval=FALSE, echo=FALSE}
+library(projpred)
+
+test_mod = update(model_interact, .~. - (1|group), cores = 4)
+ref_model = get_refmodel(test_mod)
+res = cv_varsel(ref_model)
+res
+suggest_size(res)
+# plot predictive performance on training data
+varsel_plot(res, stats = c('elpd', 'rmse'))
+```
+
+
 ## Averaging models
 
-With the previous statistics for model comparison we can obtain relative model weights, using the <span class="func" style = "">model_weights</span> function. This essentially spreads the total probability of the models across all those being compared. These weights in turn allow us to obtain (weighted) average predictions.  The key idea being that we do not select a 'best' model, but rather combine their results for predictive purposes.
+With the previous statistics for model comparison we can obtain relative model weights, using the <span class="func" style = "">model_weights</span> function. This essentially spreads the total probability of the models across all those being compared. These weights in turn allow us to obtain (weighted) average predictions.  The key idea being that we do not select a 'best' model, but rather combine their results for predictive purposes[^bma].
+
+[^bma]: Some might be familiar with Bayesian model averaging. Conceptually we aren't changing much, but BMA assumes that one of our models is the true model, while the stacking approach underlying these weights does not. It is also different from conventional stacking in machine learning in that we are trying to average posterior predictive distributions, rather than merely point estimates.
 
 We can start by comparing the first two models.  Adding the interactions helped, and comparing the weights suggests that it would be contributing most to averaged predictions.
 
 
 ```{r posterior-prob, echo=FALSE}
-model_weights(model_baseline, model_interact)
+loo_model_weights(model_baseline, model_interact)
 ```
 
 If we compare the baseline to our most complex model, almost the entirety of the weight is placed on the latter.
 
 ```{r posterior-prob-nonlin}
-model_weights(model_baseline, model_interact_nonlin) 
+loo_model_weights(model_baseline, model_interact_nonlin)
 ```
 
 Now we compare all three, with roughly the same conclusion.
@@ -946,10 +978,10 @@ Now we compare all three, with roughly the same conclusion.
 
 ```{r posterior-prob-all, echo=FALSE}
 model_weights(model_baseline,
-          model_interact,
-          model_interact_nonlin) %>%
-  t() %>% 
-  as_tibble() %>% 
+              model_interact,
+              model_interact_nonlin) %>%
+  t() %>%
+  as_tibble() %>%
   kable_df(digits = 5)
 ```
 
@@ -1012,22 +1044,6 @@ rmse(y = test$y, yrep = test$yrep)
 
 
 
-
-# Solutions and their problems
-
-It seems that the 'usual' approach is adding a level of complexity that is going well beyond what should be expected for new/applied users.  While some might actually enjoy such complexity (like me!), this turns applied users off, especially if there is no obvious gain over traditional approaches.
-
-Increasing adapt_delta seems to often does not solve the problem for which it is suggested (based on personal experience it's actually rare). I usually start at .99 anyway just to make it a non-issue. For applied users, having to deal with 'control' options usually shouldn't be a first step, especially if it's not likely to improve things. For example, would trying a simpler model for diagnostic purposes, or rescaling the data, be just as likely to improve things?
-
-
-Reparameterization/Change of variables
-    - Only those with notably advanced statistical knowledge would even know where to begin here.
-
-'Finding a better model' isn't usually helpful even if 100% accurate for every modeling situation.  Unless the advice is specific (e.g. to add an additional specific covariate, change a specific distribution, add some other complexity), it's likely not going to help an applied user.
-
-'Try different priors' Which and by how does one determine 'different'?  For many regression situations, normal(0, 1) vs. normal(0, 10) vs. student(df = X) would result in basically wasted time.  Is there a way to make a reasonable guess as to what should be tested to demonstrate sensitivity/improvement?
-
-The model comparison situation has grown so complex there is a 20+ item FAQ that still may not help in many cases.  What is someone to do if there are 'pareto issues' and they have no other obvious modeling options? Abandon model comparison?
 
 
 
