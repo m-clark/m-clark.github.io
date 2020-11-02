@@ -746,7 +746,7 @@ library(modelr)
 #   scale_color_brewer(palette = "Dark2") +
 #   theme_clean()
 
-main_df %>%
+plot_dat = main_df %>%
   group_by(b2) %>%
   data_grid(
     x3 = seq_range(x3, n = 101),
@@ -755,9 +755,11 @@ main_df %>%
     x2 = 0,
     x1 = 0
   ) %>%
-  add_fitted_draws(model_interact_nonlin, n = 100, re_formula = NA) %>%
+  add_fitted_draws(model_interact_nonlin, n = 100, re_formula = NA) 
+
+plot_dat %>%
   ggplot(aes(x = x3)) +
-  geom_point(aes(y = y), data = main_df,  alpha = .05) +
+  # geom_point(aes(y = y), data = main_df,  alpha = .05) +
   geom_line(aes(
     y = .value,
     color = x3,
@@ -765,6 +767,11 @@ main_df %>%
   ),
   alpha = .1,
   show.legend = FALSE) +
+  geom_line(aes(
+    y = .value
+  ),
+  color = '#b0012d88',
+  show.legend = FALSE, data = plot_dat %>% group_by(x3) %>% summarise(.value = mean(.value))) +
   scico::scale_color_scico() +
   theme_clean()
 ```
@@ -773,13 +780,19 @@ main_df %>%
 
 ## Model Comparison
 
-> Sometimes a simple model will outperform a more complex model... Nevertheless, I believe that deliberately limiting the complexity of the model is not fruitful when the problem is evidently complex. Instead, if a simple model is found that outperforms some particular complex model, the appropriate response is to define a different complex model that captures whatever aspect of the problem led to the simple model performing well.  ~ Radford Neal
-
-
-
 In typical situations it is good to have competing models, attempting to see if improvements can be made in one way or another.  In the Bayesian approach, we can use estimates like *WAIC* and *LOOIC* for model comparison, much like you would AIC to compare models in traditional frameworks.  The values themselves don't tell us much, but in comparing models, lower means less predictive error for 'ic' metrics, which is what we want. Like in the traditional framework, LOOIC is ~ -2\*expected log posterior density (*ELPD*)[^bayesaic], and since we're Bayesian, we even have estimates of uncertainty for these values as well.
 
 [^bayesaic]: Much like how AIC works with the -2*log likelihood.
+
+However, we will have to consider things a little differently in the Bayesian context.  Consider the following two thoughts.
+
+
+>The general issue is that with *unregularized* estimation such as least squares or maximum likelihood, adding parameters to a model (or making a model more complex) leads to overfitting. With regularized estimation such as multilevel modeling, Bayesian inference, lasso, deep learning, etc., the regularization adds complexity but in a way that reduces the problem of overfitting. So traditional notions of model complexity and tradeoffs are overturned. ~ Andrew Gelman
+
+> Sometimes a simple model will outperform a more complex model... Nevertheless, I believe that deliberately limiting the complexity of the model is not fruitful when the problem is evidently complex. Instead, if a simple model is found that outperforms some particular complex model, the appropriate response is to define a different complex model that captures whatever aspect of the problem led to the simple model performing well.  ~ Radford Neal
+
+The take-home message here is that simpler is not always better.  And to be frank, using penalized approaches in the non-Bayesian approach should probably be our default model.  Such approaches approximate a Bayesian one with specific priors.  In our fully Bayesian situation, we will have to 
+
 
 With our new models in place, we can now make some comparisons using <span class="func" style = "">loo_compare</span>.  It shows the 'best', i.e. lowest valued, model first followed by the others.  The result regards the total expected log probability for the leave-one-out observations.  We also get stuff like `p_loo`, which is the effective number of parameters, and `Pareto k values`, which we'll talk about soon.
 
@@ -835,7 +848,7 @@ issues- overfitting, time, complexity is more accurate portrayal of nature even 
 
 After the model warnings discussed in [Part I](), the next most common point of confusion I see with clients is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation.  Another thing to think about from Gelman:
 
->The general issue is that with *unregularized* estimation such as least squares or maximum likelihood, adding parameters to a model (or making a model more complex) leads to overfitting. With regularized estimation such as multilevel modeling, Bayesian inference, lasso, deep learning, etc etc, the regularization adds complexity but in a way that reduces the problem of overfitting. So traditional notions of model complexity and tradeoffs are overturned. ~ Andrew Gelman
+
 
 So what should we do here? As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic].  We also get  influence statistics for our observed data.  
 
