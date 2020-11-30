@@ -121,7 +121,6 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
       var header = $('header').get(0);
       var headerHeight = header.offsetHeight;
       var headroom = new Headroom(header, {
-        tolerance: 5,
         onPin : function() {
           if (window.headroom_prevent_pin) {
             window.headroom_prevent_pin = false;
@@ -469,19 +468,22 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
     return offset ? offset + '/' + url : url;
   }
 
+  function createIndex() {
+    var options = {
+      keys: [
+        "title",
+        "categories",
+        "description",
+        "contents"
+      ]
+    };
+    return new window.Fuse([],options);
+  }
+
   function createFuseIndex() {
 
     // create fuse index
-    var options = {
-      keys: [
-        { name: 'title', weight: 20 },
-        { name: 'categories', weight: 15 },
-        { name: 'description', weight: 10 },
-        { name: 'contents', weight: 5 },
-      ],
-      ignoreLocation: true,
-      threshold: 0
-    };
+    var options = { keys: ["title", "description", "contents"] };
     var fuse = new window.Fuse([], options);
 
     // fetch the main search.json
@@ -549,6 +551,12 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
               shouldSort: true,
               minMatchCharLength: 2,
               limit: 10,
+              keys: [
+                { name: 'title', weight: 20 },
+                { name: 'categories', weight: 15 },
+                { name: 'description', weight: 10 },
+                { name: 'contents', weight: 5 },
+              ],
             };
             var results = fuse.search(query, searchOptions);
             callback(results
@@ -846,7 +854,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
   d-article pre,
   d-article div.sourceCode,
   d-article div.sourceCode pre {
-    overflow: auto;
+    overflow: hidden;
   }
 
   d-article div.sourceCode {
@@ -2519,11 +2527,11 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 <h2 id="current">Current</h2>
 <p>As of mid 2019. Primary researcher in parenthesis.</p>
 <p><a href="https://medicine.umich.edu/dept/lhs/brian-c-george-md">Surgical Training and Education</a> (Brian George)</p>
-<p><a href="https://www.researchgate.net/profile/Ronald_Chervin">Sleep Disorders in Youth after Adenotonsillectomy</a> (Ronald Chervin)</p>
 <p><a href="https://libraryanalytics.org/">Library Learning Analytics Project</a> (Felix Kabo)</p>
 <p><a href="https://www.uofmhealth.org/profile/1695/markus-bitzer-md">Image detection and classification of kidney glomeruli</a> (Markus Bitzer)</p>
-<p><a href="https://www.umflint.edu/nursing/beverly-dabney">Development of a tool to assessed missed nursing care</a> (Beverly Dabney)</p>
 <h2 id="past">Past</h2>
+<p><a href="https://www.researchgate.net/profile/Ronald_Chervin">Sleep Disorders in Youth after Adenotonsillectomy</a> (Ronald Chervin)</p>
+<p><a href="https://www.umflint.edu/nursing/beverly-dabney">Development of a tool to assessed missed nursing care</a> (Beverly Dabney)</p>
 <p><a href="http://sites.lsa.umich.edu/bis/research/">Longitudinal Study of Health and Survival in the Dogon of Mali</a> (Beverly Strassmann)</p>
 <p><a href="https://sites.lsa.umich.edu/king-lab/">Youth Depression and Suicide Prevention Program</a> (Cheryl King)</p>
 <p><a href="http://rspb.royalsocietypublishing.org/content/281/1793/20141261.short">Baboon Social Affiliation</a> (Beth Archie) This led me down a path in which I’ve consulted on research involving baboons, macaques, chimps, geladas, etc., which I find can be kind of fun.</p>
