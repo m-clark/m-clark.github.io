@@ -145,6 +145,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
     var header = $('header').get(0);
     var headerHeight = header.offsetHeight;
     var headroom = new Headroom(header, {
+      tolerance: 5,
       onPin : function() {
         if (window.headroom_prevent_pin) {
           window.headroom_prevent_pin = false;
@@ -492,22 +493,19 @@ function offsetURL(url) {
   return offset ? offset + '/' + url : url;
 }
 
-function createIndex() {
-  var options = {
-    keys: [
-      "title",
-      "categories",
-      "description",
-      "contents"
-    ]
-  };
-  return new window.Fuse([],options);
-}
-
 function createFuseIndex() {
 
   // create fuse index
-  var options = { keys: ["title", "description", "contents"] };
+  var options = {
+    keys: [
+      { name: 'title', weight: 20 },
+      { name: 'categories', weight: 15 },
+      { name: 'description', weight: 10 },
+      { name: 'contents', weight: 5 },
+    ],
+    ignoreLocation: true,
+    threshold: 0
+  };
   var fuse = new window.Fuse([], options);
 
   // fetch the main search.json
@@ -575,12 +573,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             shouldSort: true,
             minMatchCharLength: 2,
             limit: 10,
-            keys: [
-              { name: 'title', weight: 20 },
-              { name: 'categories', weight: 15 },
-              { name: 'description', weight: 10 },
-              { name: 'contents', weight: 5 },
-            ],
           };
           var results = fuse.search(query, searchOptions);
           callback(results
@@ -878,7 +870,7 @@ d-article pre code {
 d-article pre,
 d-article div.sourceCode,
 d-article div.sourceCode pre {
-  overflow: hidden;
+  overflow: auto;
 }
 
 d-article div.sourceCode {
@@ -2038,7 +2030,6 @@ gtag('config', 'UA-79528685-1');
 @import url("https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono|Roboto+Condensed|Open+Sans|Open+Sans+Condensed:300|Open+Sans+Condensed:light|Lato|Lora|Fira+Sans|Fira+Mono");
 
 
-
 body {
   font-family: Roboto, 'Libre Baskerville', sans-serif; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
   font-size: 15px;
@@ -2046,115 +2037,6 @@ body {
   color: #404040;        /* #404040*/
   position: relative;
   background: #FFFFF8;      /* {{ site.page-col }}; */
-  {% if site.page-img %}
-  background-image: url({{ site.page-img }});
-  background-attachment: fixed;
-  {% endif %}
-}
-
-p {
-  color: #404040;  
-  font-family: Roboto, 'Libre Baskerville', 'Helvetica Neue' ; /*, et-book, "Palatino Linotype", "Palatino LT STD", 'Lora', serif*/
-  line-height: 1.5;
-  font-weight: 300;
-  margin: 30px 0;
-}
-
-p a {
-  /* text-decoration: underline */
-  color: #03b3ff;
-}
-
-
-
-/* link effects; appendix apply to footnote return links */
-p a, li a, d-appendix a, a.footnote-backlink {
-    color: #03b3ff;
-    display: inline-block;
-    text-decoration: none;
-    transition: background-size .4s ease;
-    border-bottom: 0px solid;
-}
-
-p a:after, li a:after, d-appendix a:after {
-    content: '';
-    display: block;
-    width: 0;
-    height: 1.5px;
-    background: #FF4F03;
-    transition: width .3s;
-}
-
-
-p a:hover::after, li a:hover::after, d-appendix a:hover::after {
-  width: 100%;
-  //transition: width .3s;
- }
-
-/* for twitter etc icon links */
-.social-icon {
-  color: #03b3ff;
-  background-image: none;  /* remove hover line*/
-  background-size: 0 100%;
-  background-repeat: no-repeat;
-  text-decoration: none;
-  transition: background-size .4s ease;
-  border-bottom: 0px solid;
-}
-
-
-d-footnote-list a.footnote-backlink {
-    color:  #03b3ff !important; /* otherwise some inline injection will occur*/
-    padding-left: 0.5em;
-}
-
-.categories li > a:hover {
-  border-bottom: none !important;
-}
-
-/* remove underline for TOC */
-.d-contents nav a:hover {
-    text-decoration: none;
-}
-
-
-
-
-.img-cscar {
-  width: 10%;
-}
-
-
-/* text highlights */
-.emph, em {
-  color: #E32D00 ;  /*#ff5500 #D14300*/
-  font-style: normal;
-  font-weight: 450;
-}
-
-strong {
-  color: #404040;  
-}
-
-/* pack func and objclass colors initially come from hcl(seq(90,360, length.out=4), c=80, l=80); redone for contrast*/
-.pack {
-  color: #1f65b7; /* #990071 #AC9CFF #e41a1c*/
-  font-weight: 400;
-}
-
-.func {
-  color: #007020;   /*#007199 #00CBB6; #984ea3; can just use `` instead*/
-  font-weight: 400;
-}
-
-.objclass {
-  color:  #947100;  /*#AAB400 #4daf4a; #FFC5D0*/
-  font-weight: 400;
-}
-
-/* object/class via inline code */
-p code {
-  color: #947100;
 }
 
 /* distill specific */
@@ -2251,46 +2133,8 @@ d-article  h5 {
 }
 
 
-.posts-list .post-preview h2 {
-  font-family: 'Open Sans Condensed', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 150%;
-  color: #ff5500;
-  margin-top: 2.1rem;
-  margin-bottom: 1.2rem;
-  line-height: 1;
-}
 
-.posts-list .description h2 {
-  font-family: 'Open Sans Condensed', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
-  font-style: normal;
-  font-weight: 400;
-  font-size: 150%;
-  color: #ff5500;
-  margin-top: 2.1rem;
-  margin-bottom: 1.2rem;
-  line-height: 1;
-}
-
-
-
-
-
-
-d-article a:hover {
-  text-decoration: none;
-  border-bottom: none;
-  background-size: 100% 100%;
-  cursor: pointer;
-}
-
-/* changing this will bork the phone; revisit later
-.base-grid, distill-header, d-title, d-abstract, d-article, d-appendix, distill-appendix, d-byline, d-footnote-list, d-citation-list, distill-footer {
-    grid-template-columns: [screen-start] 1fr [page-start kicker-start] 80px [middle-start] 80px [text-start kicker-end] 80px 80px 80px 80px 80px 80px 80px 80px [text-end gutter-start] 80px [middle-end] 80px [page-end gutter-end] 1fr [screen-end];
-    grid-column-gap: 32px;
-}
-*/
+/* Nav bar */
 
 .distill-site-nav {
   color: #404040;
@@ -2298,6 +2142,7 @@ d-article a:hover {
   font-size: 20px;
   font-weight: 300;
 }
+
 
 .distill-site-nav a {
   color: inherit;
@@ -2308,32 +2153,28 @@ d-article a:hover {
   color: #0085a1;
 }
 
-.distill-site-header {
+/* sidebar on front page with category listing */
+
+.posts-with-sidebar .posts-sidebar {
+  float: right;
+  width: 10%;    /* default 20, made narrow */
+  margin-top: 60px;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 
-.distill-site-footer {
+/* attempt to make result not so wide/spacious */ 
+
+.posts-with-sidebar .posts-list {
+  width: 66%;
+  margin-left: 11%;
 }
 
-@media print {
-  .distill-site-nav {
-    display: none;
-  }
+.posts-sidebar {
+  font-size: 75%;
+  margin-right: 10%;
 }
 
-.posts-list .post-preview .thumbnail img {
-    width: 100%;
-    background: transparent;
-    display: block;
-}
-
-
-
-/* latex */
-.math {
-  color: #404040;  
-  font-weight: normal;
-  font-size: 90%;
-}
 
 /* code */
 
@@ -2344,6 +2185,7 @@ d-article div.sourceCode code, d-article pre code {
   color: #404040FF;
   font-size: 90%;
 }
+
 
 d-article pre {
   background-color: #FFFFF8;
@@ -2361,113 +2203,122 @@ pre.text-output {
 }
 
 
-/* is read to a point, only the space before the code */
-d-code {
-  font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 100%;
-  margin: 0px 0 10px 0;
-}
 
-/* override arbitrary conversion of base R functions to colored links to rdrr.io */
-code span.fu {
-  color: #007020;
-  font-weight: bold;
+/* latex */
+.math {
+  color: #404040;  
+  font-weight: normal;
+  font-size: 90%;
 }
 
 
-/* this is literally the css path copied from firefox dev tools, useless */
-code#code-container.language-clike {
-  font-size: 500%;
-  color: red;
+/* link effects; appendix apply to footnote return links */
+
+/*remove old line*/
+d-article a:hover {
+  text-decoration: none;
+  border-bottom: none;
+  background-size: 100% 100%;
+  cursor: pointer;
 }
 
-#shadowroot pre code#code-container.language-clike {
-  font-size: 500%;
-  color: red;
+
+/* add new effects */
+p a, aside a, li a, d-appendix a, a.footnote-backlink {
+    color: #03b3ff;
+    display: inline-block;
+    text-decoration: none;
+    transition: background-size .4s ease;
+    border-bottom: 0px solid;
 }
 
-.token.function {
-  font-size: 200%;
+p a {
+  /* text-decoration: underline */
+  color: #03b3ff;
 }
 
-pre, xmp, plaintext, listing {
+p a:after, aside a:after, li a:after, d-appendix a:after {
+    content: '';
     display: block;
-    font-family: 'Roboto Mono', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-    white-space: pre;
-    margin: 1em 0px;
+    width: 0;
+    height: 1.5px;
+    background: #FF4F03;
+    transition: width .3s;
 }
 
-/* to fix aside; see issue #39 https://github.com/rstudio/distill/issues/39*/ 
-@media(min-width:768px) {
-  aside {
-      margin-top: -00px;
-      margin-bottom: -500px;
-  }
+p a:hover::after, aside a:hover::after, li a:hover::after, d-appendix a:hover::after {
+  width: 100%;
+  //transition: width .3s;
+ }
+
+/* for twitter etc icon links */
+.social-icon {
+  color: #03b3ff;
+  background-image: none;  /* remove hover line*/
+  background-size: 0 100%;
+  background-repeat: no-repeat;
+  text-decoration: none;
+  transition: background-size .4s ease;
+  border-bottom: 0px solid;
+}
+
+d-footnote-list a.footnote-backlink {
+    color:  #03b3ff !important; /* otherwise some inline injection will occur*/
+    padding-left: 0.5em;
+}
+
+.categories li > a:hover {
+  border-bottom: none !important;
+}
+
+/* remove underline for TOC */
+.d-contents nav a:hover {
+    text-decoration: none;
 }
 
 
-/* images */
-img {
-  background: transparent;
+
+/* text highlights */
+.emph, em {
+  color: #E32D00 ;  /*#ff5500 #D14300*/
+  font-style: normal;
+  font-weight: 450;
 }
 
-/* list */
-
-ul {
-  list-style: none; /* Remove default bullets */
+/* don't do color for references */
+.references em {
+  color: rgba(0,0,0,0.5);
+  font-style: normal;
+  font-weight: 450;
 }
 
-ul li::before {
-  content: "\2022";  /* Add content: \2022 is the CSS Code/unicode for a bullet */
-  color: #ff5500BF; /* Change the color */
-  size: 5;
-  font-weight: bold; /* If you want it to be bold */
-  display: inline-block; /* Needed to add space between the bullet and the text */
-  width: 1em; /* Also needed for space (tweak if needed) */
-  /*margin-left: 0em;  Also needed for space (tweak if needed) */
+strong {
+  color: #404040;  
+}
+
+/* pack func and objclass colors initially come from hcl(seq(90,360, length.out=4), c=80, l=80); redone for contrast*/
+.pack {
+  color: #1f65b7; /* #990071 #AC9CFF #e41a1c*/
+  font-weight: 400;
+}
+
+.func {
+  color: #007020;   /*#007199 #00CBB6; #984ea3; can just use `` instead*/
+  font-weight: 400;
+}
+
+.objclass {
+  color:  #947100;  /*#AAB400 #4daf4a; #FFC5D0*/
+  font-weight: 400;
+}
+
+/* object/class via inline code */
+p code {
+  color: #947100;
 }
 
 
-
-/* main part on front page with description */
-
-/*
-
-.posts-with-sidebar .posts-list {
-  float: left;
-  width: 72%;
-}
-
-.posts-list {
-  margin-top: 60px;
-  margin-bottom: 24px;
-}
-
-*/
-
-/* sidebar on front page with category listing */
-
-.posts-with-sidebar .posts-sidebar {
-  float: right;
-  width: 10%;    /* default 20, made narrow */
-  margin-top: 60px;
-  padding-top: 24px;
-  padding-bottom: 24px;
-}
-
-/* attempt to make result not so wide/spacious */ 
-
-.posts-with-sidebar .posts-list {
-  width: 66% !important;
-  margin-left: 11%;
-}
-
-.posts-sidebar {
-  font-size: 12px;
-  margin-right: 10%;
-}
-
-/* tables */
+/* figures and tables */
 
 d-article table {
     border-collapse: collapse;
@@ -2482,11 +2333,6 @@ start right up at their border */
   margin-top: 20px;
   margin-bottom: 20px;
 }
-
-/* font-awesome probably best to do inline for articles as these are spread around */
-
-.fas, .fab, .far, .fa {
-}
 </style>
 <!--/radix_placeholder_site_in_header-->
 
@@ -2499,7 +2345,7 @@ start right up at their border */
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Models by Example","description":"Roll your own to understand more.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#","orcidID":""}],"publishedDate":"2020-11-30T00:00:00.000-05:00","citationText":"Clark, 2020"}
+{"title":"Models by Example","description":"Roll your own to understand more.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#","orcidID":""}],"publishedDate":"2020-11-30T00:00:00.000+00:00","citationText":"Clark, 2020"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -2518,7 +2364,6 @@ start right up at their border */
 <a href="../../documents.html">Documents</a>
 <a href="../../workshops.html">Workshops</a>
 <a href="../../code.html">Code</a>
-<a href="../../projects.html">Projects</a>
 <a href="../../resources.html">Resources</a>
 <a href="https://github.com/m-clark">
 <i class="fab fa-github-alt fa-1x" aria-hidden="true"></i>
@@ -2664,7 +2509,7 @@ start right up at their border */
   <div>
 
 
-Michael Clark • 2020 •  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
+Michael Clark • 2021 •  <a href="https://m-clark.github.io">https://m-clark.github.io/</a>
 </div>
 </div>
 <!--/radix_placeholder_navigation_after_body-->
