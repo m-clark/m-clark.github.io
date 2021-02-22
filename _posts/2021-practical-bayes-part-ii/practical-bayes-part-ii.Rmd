@@ -51,13 +51,13 @@ theme_set(visibly::theme_clean())
 ```
 
 
-# Overview
+## Overview
 
 We've talked about the basics one can do to run a Bayesian model, and what to do if there is a problem, which was the primary goal of [Part I]().  But it might be nice if we could avoid the problems in the first place, and our model might still be inadequate without any warnings.  So let's engage in some better practices you can use every time to help things run more smoothly, and get more from your models.
 
 <aside>This is part two of two posts on doing practical modeling with R and Stan in an applied fashion. Due to unforseen circumstances (and plenty of procrastination), the bulk of the content of these posts was created many months before actual posting. It's hoped that most of this will still be applicable and have some continuity as originally intended, but apologies in advance if some parts seem a little disjointed, off topic, etc.</aside>
 
-## Outline for Better Bayesian Analysis
+### Outline for Better Bayesian Analysis
 
 <div style = 'text-align: center'>
 <i class="fas fa-list-ol fa-5x" style="padding: 20px; color: #ff5500"></i>
@@ -445,6 +445,7 @@ model_baseline = brm(
   thin    = 4,
   prior   = pr, 
   cores   = 4,
+  seed    = 1234, 
   control = list(
     adapt_delta   = .95,
     max_treedepth = 15
@@ -510,7 +511,7 @@ tidy_plot_data_fe %>%
 
 
 
-## Check Priors
+### Check Priors
 
 Though we did some work to select our prior distributions beforehand, we might still be concerned about how influential our priors were.  So how can we check whether our priors were informative? The following uses the <span class="pack" style = "">bayestestR</span> package to do a simple check of whether the posterior standard deviation is greater than 10% of the prior standard deviation[^lakeland].  Having an informative prior isn't really a problem in my opinion, unless it's more informative than you wanted.  For example, shrinkage of a coefficient towards zero will generally help avoid overfitting.
 
@@ -526,7 +527,7 @@ These results suggest that we might be more informative, but for the intercept, 
 
 
 
-## Explore and Visualize Results
+### Explore and Visualize Results
 
 Now that we are feeling pretty good about the results we have, we can explore the model further. We can plot covariate effects easily with brms. The <span class="func" style = "">conditional_effects</span> function is what we want here.  I show results for one effect below. Without interactions or other things going, on they aren't very interesting, but it's a useful tool nonetheless.  We'll come back to this later.
 
@@ -550,11 +551,11 @@ hypothesis(model_baseline, 'abs(b11) + abs(b21) > 2*x1')
 One should get used to whatever tools are available for further understanding covariate effects or other parameters.  This will likely lead to some of the more interesting discussion of your findings, or at least, notably more interesting than a standard regression table.
 
 
-## Model Effectiveness
+### Model Effectiveness
 
 A natural question to ask is how useful our model actually is, which then suggests we need to know how to define such utility.  Such an assessment definitely cannot be made with something like 'statistical significance'. Science of any kind is nothing without prediction, so we we can start there.
 
-### Posterior predictive checks
+#### Posterior predictive checks
 
 Posterior predictive checks are a key component of bayesian analysis.  The prior checks we did before are just a special case of this.  Here we actually use the posterior distributions of parameters to generate the data, and compare this model-implied data and what we actually observe. Doing so can give insight to where the model fails.
 
@@ -604,7 +605,7 @@ pp_check(model_baseline, nsamples = 100, type ='stat_2d', stat = c('q10', 'q90')
 #       guides(fill = 'none')}
 ```
 
-### Bayes R-squared
+#### Bayes R-squared
 
 In this scenario, we can examine the amount of variance accounted for in the target variable by the covariates. I don't really recommend this beyond linear models that assume a normal distribution for the target, but people like to report it. Conceptually, it is simply a (squared) correlation of fitted values with the observed target values, so can be seen as descriptive statistic.  Since we are Bayesians, we also get a ready-made interval for it, as it is based on the posterior predictive distribution.  But to stress the complexity in trying to assess this, in this mixed model we can obtain the result with the random effect included (conditional) or without (unconditional).  Both are reasonable ways to express the statistic, but the one including the group effect naturally will be superior, assuming the variance is notable in the first place.
 
@@ -664,7 +665,7 @@ tibble(
 
 
 
-<!-- ### Model comparison -->
+<!-- #### Model comparison -->
 
 <!-- We will use estimates like WAIC and loo for model comparison later.  They are essentially used as you would AIC, or root mean squared error to compare models in a predictive fashion.  In addition We only really have our  -->
 
@@ -698,18 +699,20 @@ For our demonstration, we will add two new models.  The first adds interactions,
 model_interact = update(
   model_baseline,
   . ~ . + b1:b2 + b2:x1,
-  cores = 4
+  cores = 4,
+  seed  = 1234
 )
 
 model_interact_nonlin = update(
   model_interact,
   . ~ . + s(x3),
-  cores = 4
+  cores = 4,
+  seed  = 1234
 )
 ```
 
 
-## Basic prediction
+### Basic prediction
 
 With models in hand, let's look at our basic predictive capabilities.  We can get fitted values which include 'confidence' intervals, or predictions, which include 'prediction' intervals that include the uncertainty for a new observation.  We can specify these as follows.  First we create a small data set to make some predictions on.  It will include both values for of the binary covariates, and the means of the numeric covariates (0).
 
@@ -802,37 +805,39 @@ plot_dat %>%
 Expanding your story through prediction is essential to helping your audience understand the model on a practical level.  You would do well to spend time looking at specific scenarios, and especially in the case of nonlinear models (e.g. GLM) and models with interactions.
 
 
-## Model Comparison
+### Model Comparison
 
-In typical situations it is good to have competing models, and having additional models allows to see if improvements can be made in one way or another.  In traditional contexts, we can use some approach to pit competing models against one another, selecting the 'best' model based on a particular metric (e.g. AIC, cross-validation error, etc.).
-
-
-### Choosing a model
-
-If two models aren't very different from one another, the usual response is to go with the simpler model.  However, we will have to consider things a little differently in the Bayesian context.  Consider the following two thoughts.
+In typical situations it is good to have competing models, and having additional models allows to see if improvements can be made in one way or another, both to our models, and potentially to our way of thinking about them.  In a general sense, we will go about things very similarly in the Bayesian context that we would elsewhere.  However, we'll also more easily apply other approaches that are not so commonly used (even if they can be).
 
 
->The general issue is that with *unregularized* estimation such as least squares or maximum likelihood, adding parameters to a model (or making a model more complex) leads to overfitting. With regularized estimation such as multilevel modeling, Bayesian inference, lasso, deep learning, etc., the regularization adds complexity but in a way that reduces the problem of overfitting. So traditional notions of model complexity and tradeoffs are overturned. ~ Andrew Gelman
+#### Choosing a model
 
-> Sometimes a simple model will outperform a more complex model... Nevertheless, I believe that deliberately limiting the complexity of the model is not fruitful when the problem is evidently complex. Instead, if a simple model is found that outperforms some particular complex model, the appropriate response is to define a different complex model that captures whatever aspect of the problem led to the simple model performing well.  ~ Radford Neal
-
-The take-home message here is that *simpler is not always better*.  And to be frank, using penalized approaches (e.g. lasso, ridge, mixed models) should probably be our default model in the non-Bayesian context, and it turns out that such approaches actually approximate a Bayesian one with specific priors.  In our fully Bayesian situation, we will have more to work with in assessing our models, so let's get to it. 
-
-In the Bayesian approach, we can use estimates like *WAIC* and *LOOIC* for model comparison, much like you would *AIC* to compare models in traditional frameworks.  The values themselves don't tell us much, but in comparing models, lower means less predictive error for these 'information criteria' metrics, which is what we want. Like in the traditional framework, LOOIC is ~ -2\*expected log posterior density (*ELPD*)[^bayesaic], and since we're Bayesian, we even have estimates of uncertainty for these values as well.
-
-[^bayesaic]: Much like how AIC works with the -2*log likelihood.
+In traditional contexts, we can use an approach to pit competing models against one another, selecting the 'best' model based on a particular metric, for example, AIC, cross-validation error, etc. With 'error metrics', the model with the lowest value is the winner.  In this case, nothing is new in the Bayesian world. Here, we can use estimates like *WAIC* and *LOOIC* for model comparison, much like you would *AIC* to compare models in traditional frameworks.  The values themselves don't tell us much, but in comparing models, lower means less predictive error for these 'information criteria' metrics, which is what we want[^looic], and since we're Bayesian, we will even have estimates of uncertainty for these values as well.  We also have cross-validation approaches (which IC metrics approximate), which we'll demonstrate later.
 
 
-With our new models in place, we can now make some comparisons using <span class="func" style = "">loo_compare</span>.  It shows the 'best', i.e. lowest valued, model first, followed by the others.  The result regards the total expected log probability for the leave-one-out observations.  We also get stuff like `p_loo`, which is the effective number of parameters, and `Pareto k values`, which we'll talk about soon.
+[^looic]: Similar to AIC, LOOIC is ~ -2\*expected log posterior density (*ELPD*), similar to how we use -2*log likelihood (a.k.a. deviance) in standard approaches for AIC. We don't add a penalty for parameters here, and I think this is because the regularization is already built in to the modeling process, and the number of parameters might be more difficult to define in the Bayesian context with priors.
 
-```{r loo-compare}
+
+With our new models added to the mix, we can now make some comparisons using <span class="func" style = "">loo_compare</span>.   First, we'll add LOOIC estimates to our models, which are not done by default. 
+
+```{r loo-add}
 model_baseline = add_criterion(model_baseline,  'loo')
 model_interact = add_criterion(model_interact, 'loo')
 model_interact_nonlin = add_criterion(model_interact_nonlin, 'loo')
+```
 
+Next we'll estimate the LOOIC for the baseline model.  The result shows the total expected log probability (`elpd_loo`) for the leave-one-out observations.  We also get stuff like `p_loo`, which is the effective number of parameters.  For those familiar with penalized maximum likelihood, these are familiar analogues.  However we also get a summary regarding `Pareto k values`, which we'll talk about soon.
+
+```{r loo-baseline}
 # example
-loo(model_baseline) 
+loo(model_baseline)
+```
 
+
+Let's now compare the baseline model to the others models using <span class="func" style = "">loo_compare</span>. It shows the 'best' (lowest-valued) model first, followed by the others.  We get the difference of each elpd vs. the lowest, also get a standard error for this difference, which you could use to help assess how different the values are statistically.  Just by this standard, the model that is based on the underlying data generating model is the clear winner, as we would expect.
+
+
+```{r loo-compare}
 loo_compare(
   model_baseline, 
   model_interact,
@@ -840,7 +845,7 @@ loo_compare(
 )
 ```
 
-Let's compare several metrics available to us.  In this particular setting, all are generally in agreement in the rank order of the models.  However, there is no meaningful difference between the baseline and interaction models, while information criteria would more clearly prefer the latter.
+Now let's compare several metrics available to us.  In this particular setting, all are generally in agreement in the rank order of the models, though there appears to be no meaningful difference between the baseline and interaction models.
 
 ```{r loo-compare2, echo=FALSE}
 mods = list(
@@ -861,148 +866,126 @@ map_df(mods, function(x) data.frame(R2 = bayes_R2(x)[,'Estimate']), .id = 'model
 ```
 
 
-While we have several metrics, for model comparison, we'd like to stick to the IC type approach. As far as using WAIC vs. LOOIC, the latter has better diagnostics for noting whether there are potential problems in using it.  In practice, it likely wouldn't differ much.  As we noted, LOOIC reflects the ELPD, which is used in constructing the model weights[^waic_weights], the model weights can then be used in making final predictions.
+For actual model comparison we'd like to stick to using the IC values. As far as choosing between WAIC vs. LOOIC, the latter has better diagnostics for noting whether there are potential problems in using it.  In practice, they will almost always agree with one another.  As we noted previously, LOOIC reflects the ELPD, and this value is used in constructing the model weights shown in the last column[^waic_weights]. The model weights can then be used in making final predictions (i.e. [model averaging]), or just providing a different way for your audience to gauge which model might be preferred.
 
 [^waic_weights]: Technically we can use WAIC to produce weights like we do with AIC, e.g. `exp(waic) / sum(exp(all_waics))`, but this isn't recommended.  The stacking approach allows similar models to share their weight, while more unique models will more or less keep their weight as additional models are added.
 
 
 
 
-### Problems at the loo
+#### Problems at the loo
+
 
 https://mc-stan.org/loo/articles/loo2-weights.html
 
 
 issues- overfitting, time, complexity is more accurate portrayal of nature even if not 'best'
 
-After the model warnings discussed in [Part I](), the next most common point of confusion I see with clients is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation.  Another thing to think about from Gelman:
+After the model issues discussed in [Part I](), the next most common point of confusion I see people have is with model comparison.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation. 
+
+So in general, no tool is perfect, but in the real world we have to get things, so let's address a couple issues.
+
+
+###### Not so different models
+
+Let's start with the case where models do not appear to perform very differently. If two models aren't very different from one another, the usual response is to go with the simpler model.  For example, if we were only comparing the baseline model vs. the interaction model, there really isn't much difference in terms of LOOIC/ELPD.  However, we will have to consider things a little differently in the Bayesian context.  Consider the following two thoughts.
+
+
+>The general issue is that with *unregularized* estimation such as least squares or maximum likelihood, adding parameters to a model (or making a model more complex) leads to overfitting. With regularized estimation such as multilevel modeling, Bayesian inference, lasso, deep learning, etc., the regularization adds complexity but in a way that reduces the problem of overfitting. So traditional notions of model complexity and tradeoffs are overturned. ~ Andrew Gelman
+
+> Sometimes a simple model will outperform a more complex model... Nevertheless, I believe that deliberately limiting the complexity of the model is not fruitful when the problem is evidently complex. Instead, if a simple model is found that outperforms some particular complex model, the appropriate response is to define a different complex model that captures whatever aspect of the problem led to the simple model performing well.  ~ Radford Neal
+
+The take-home message here is that *simpler is not always better*.  And to be frank, using *penalized* (a.k.a. *regularized*) approaches (e.g. lasso, ridge, mixed models) should probably be our default model in the non-Bayesian context, and it turns out that such approaches actually approximate a Bayesian one with specific priors. In the end, you may have to think about things a little more carefully, and given that you are using methods that can help avoid overfitting, you may instead lean on a more complex model with otherwise similar performing models. And that would be closer to how nature works anyway, which is always more complex than our brains can easily understand.
 
 
 
-So what should we do here? As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic].  We also get  influence statistics for our observed data.  
+<!-- ###### Loo warnings -->
 
-[^looic]: The `looic` is just -2*`elpd_loo`, as we often use -2*log likelihood (a.k.a. deviance) in standard approaches for AIC.  In this case, `elpd_loo`, is a leave-one-out density.  `p_loo` is the 'effective number of parameters', which users of penalized regression and mixed models will have some familiarity with.
 
-```{r loo-basic}
-loo(model_baseline)
-loo(model_interact_nonlin)
+<!-- So what should we do here? As an example, let's start with our complex model and get the leave-one-out criterion measure.  I will avoid as much technical jargon as possible so that the applied modeler can get on with things.  The first part are the stats that are used in the previous model comparison and weighting, particularly the elpd_loo[^looic].  We also get  influence statistics for our observed data.   -->
+
+
+
+<!-- ```{r loo-basic} -->
+<!-- loo(model_baseline) -->
+<!-- loo(model_interact_nonlin) -->
+<!-- ``` -->
+
+
+<!-- ```{r pareto-compare, echo=FALSE} -->
+<!-- pareto_probs = loo(model_interact_nonlin) -->
+
+<!-- # str(pareto_probs) -->
+
+<!-- loo_pit_interact_nonlin = pp_check(model_interact_nonlin, type = 'loo_pit') -->
+<!-- loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit') -->
+
+<!-- # bind_rows( -->
+<!-- #   loo_pit_baseline %>% layer_data(), -->
+<!-- #   loo_pit_interact_nonlin %>% layer_data(), -->
+<!-- #   .id = 'model' -->
+<!-- # ) %>%  -->
+<!-- #   mutate( -->
+<!-- #     model = factor(model, labels = c('baseline', 'complex')), -->
+<!-- #     alpha = rep(c(1, .5), e = 1000) -->
+<!-- #     ) %>%  -->
+<!-- #   rename(Uniform = x, `LOO-PIT` = y) %>%  -->
+<!-- #   ggplot(aes(Uniform, `LOO-PIT`)) + -->
+<!-- #   geom_line(aes(color = model, alpha = I(alpha)), size = 2) + -->
+<!-- #   geom_line(aes(y = theoretical), color = '#990021', alpha = .5) + -->
+<!-- #   scico::scale_color_scico_d(begin = .25, end = .75) + -->
+<!-- #   theme_clean() -->
+
+<!-- # main_df %>%  -->
+<!-- #   slice(which(pareto_probs$diagnostics$pareto_k > .5)) %>%  -->
+<!-- #   bind_cols(pareto_probs$diagnostics %>% -->
+<!-- #               as_tibble() %>% -->
+<!-- #               slice(which(pareto_probs$diagnostics$pareto_k > .5))) %>%  -->
+<!-- #   bind_cols(pareto_probs$pointwise %>% -->
+<!-- #               as_tibble() %>% -->
+<!-- #               slice(which(pareto_probs$diagnostics$pareto_k > .5))) -->
+<!-- ``` -->
+
+
+###### Pareto values
+
+Let's look again at the basic result from using the <span class="func" style = "">loo</span> function.
+
+```{r pareto-init}
+loo(model_interact)
 ```
 
+We haven't yet discussed *Pareto values*, but it is not uncommon to get a result with some values that are not 'good' or 'ok'. If you happen to see Pareto values in the 'bad' or 'very bad' group, what does it mean?  You can read the definition provided [here](https://mc-stan.org/loo/reference/loo-glossary.html#pareto-k-estimates), but it maynot help many due to the background knowledge needed to parse it.  However, you can just understand it as an (leave-one-out) *extreme value* diagnostic, and if it is a problem, it mostly means your LOOIC may not be good for comparing models.  
 
-```{r pareto-compare, echo=FALSE}
-pareto_probs = loo(model_interact_nonlin)
+As in the standard model setting setting, 'outliers' indicate *model incompetence*, or in other words, the model's inability to understand such observations.  Unless you have reason to suspect something inherently wrong in the data (e.g. an incorrect value/typo), an outlier is a sign that your model is not able to capture the data fully.  It definitely is not a reason to remove the observation!
 
-# str(pareto_probs)
-
-loo_pit_interact_nonlin = pp_check(model_interact_nonlin, type = 'loo_pit')
-loo_pit_baseline = pp_check(model_baseline, type = 'loo_pit')
-
-# bind_rows(
-#   loo_pit_baseline %>% layer_data(),
-#   loo_pit_interact_nonlin %>% layer_data(),
-#   .id = 'model'
-# ) %>% 
-#   mutate(
-#     model = factor(model, labels = c('baseline', 'complex')),
-#     alpha = rep(c(1, .5), e = 1000)
-#     ) %>% 
-#   rename(Uniform = x, `LOO-PIT` = y) %>% 
-#   ggplot(aes(Uniform, `LOO-PIT`)) +
-#   geom_line(aes(color = model, alpha = I(alpha)), size = 2) +
-#   geom_line(aes(y = theoretical), color = '#990021', alpha = .5) +
-#   scico::scale_color_scico_d(begin = .25, end = .75) +
-#   theme_clean()
-
-# main_df %>% 
-#   slice(which(pareto_probs$diagnostics$pareto_k > .5)) %>% 
-#   bind_cols(pareto_probs$diagnostics %>%
-#               as_tibble() %>%
-#               slice(which(pareto_probs$diagnostics$pareto_k > .5))) %>% 
-#   bind_cols(pareto_probs$pointwise %>%
-#               as_tibble() %>%
-#               slice(which(pareto_probs$diagnostics$pareto_k > .5)))
-```
-
-- Resource: [The LOO glossary](https://mc-stan.org/loo/reference/loo-glossary.html)
-
-#### Pareto values
-
-If you happen to see Pareto values in the 'bad' or 'very bad' group, what does it mean?  You can read the definition provided [here](https://mc-stan.org/loo/reference/loo-glossary.htmll#pareto-k-estimates), but I doubt it will help many due to the background knowledge needed to parse it.  However you can just understand it as an *outlier* diagnostic, and if it is a problem, it means your LOOIC may not be good for comparing models.  As in the standard model setting setting, outliers indicate *model incompetence*, or in other words, its inability to understand such observations.  Unless you have reason to suspect something wrong in the data (e.g. an incorrect value/typo), an outlier is a sign that your model is not able to capture the data fully.  It definitely is not a reason to remove the observation.
-
-If you have values > .7, you may recalculate LOOIC with the options provided by the <span class="func" style = "">loo</span> function, getting a better estimate that could then be used in, for example, model stacking for prediction.  If you don't have many discovered outliers, it probably won't make much difference in your final estimates and conclusions.   The output for Pareto values doesn't even save the row identifying information that would make it easy to find which observations are the problem, but you can do something like the following.
+If you have values > .7, you may recalculate LOOIC with the options provided by the <span class="func" style = "">loo</span> function or use the reloo function, getting a better estimate that could then be used in, for example, [model stacking][model averaging] for prediction.  If you don't discover many outliers, it probably won't make much difference in your final estimates and conclusions.   The output for Pareto values doesn't even save the row identifying information that would make it easy to find which observations are the problem, but you can do something like the following.
 
 
 ```{r pareto-obs}
-problems = pareto_probs$pointwise %>% 
+pareto = loo(model_interact_nonlin)
+
+problems = pareto$pointwise %>% 
   data.frame() %>% 
   rowid_to_column() %>% 
-  group_by(flag = influence_pareto_k > .5) %>% 
-  filter(flag) %>% 
+  filter(influence_pareto_k > .5) %>% 
   pull(rowid)
 
 model_interact_nonlin$data %>% 
+  mutate(rank = rank(y)) %>% 
   slice(problems)
 ```
 
-As we might have expected, the observations with the more extreme target values are likely to be  problems, but for some of these, there is nothing to suggest why they might be difficult, and it's even harder to speculate in typical modeling situations with more predictors and complexity. Furthermore, outside of additional interactions, which might then become difficult to interpret, there is little we can do about this, or at least, is not obvious.
-
-
-#### The rabbit hole of model comparsion
-
-If you start to look more into this, there are numerous technical articles, whole websites, and various discussions regarding how to go about these results.  I'm guessing most don't want to try and parse technical information only to still feel confused about what to actually do with the results.  Furthermore, it's not clear to me that issues regarding specific statistics for model comparison should be a basis for altering a model, unless there is an obvious path for doing so (which begs the question of why you weren't already exploring that model).  The suggestions typically amount to 'Your model is misspecified' no matter what the outcome.  The are also suggestions that one should use posterior predictive checks (PPCs) are somehow to be used to detect the problem, but PPC don't 'detect' anything in and of themselves, nor have any standard metric to report. , so this is all kind of a mess here.
-
-
-
-https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s
-
-
-The usual cases are
-
-- misspecified models MC: all models are misspecified, so how will knowing this help us finish the project?
-- models with parameters which see the information only from one observation each (e.g. 'random' effect models)  MC: sorry, but this is reality for many such models.  Assuming we can't increase this, which is practically every situation, what are we to do about it?
-- otherwise flexible models  MC: how is 'flexible' defined? Overly vague priors?
-- [A quick note what I infer from p_loo and Pareto km values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
-- [Recommendations for what to do when k exceeds 0.5 in the loo package?](https://discourse.mc-stan.org/t/recommendations-for-what-to-do-when-k-exceeds-0-5-in-the-loo-package/3417)
-- [Improve model with some observations Pareto >0.7](https://discourse.mc-stan.org/t/improve-model-with-some-observations-pareto-0-7/17500)
-- [Bayesian data analysis - roaches cross-validation demo](https://rawgit.com/avehtari/modelselection_tutorial/master/roaches.html#22_cross-validation_checking)
-- [16 What to do if I have many high Pareto k’s?](https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s)
-- [Pareto K for outlier detection 1](https://discourse.mc-stan.org/t/pareto-k-for-outlier-detection/12177/9)
+As we might have expected, the observations with the more extreme target values are likely to be  problems (rank closer to 1 or 1000), but for some of these, there is nothing to suggest why they might be difficult, and it's even harder to speculate in typical modeling situations with more predictors and complexity. Furthermore, outside of additional model complexity, which might then hamper interpretation, there is often little we can do about this, or at least, what we can do is generally not obvious.
 
 
 
 
-
-> These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ [Aki Vehtari](https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678)
-
-
-### Solutions with Model Comparison
-
-- Avoid the problem and fit the model that includes everything of interest, assuming you have a decent data size to do so.
-- If some application performance is obvious and available to assess, pick a model that does best there.
-- If trying to select among many competing models, e.g. feature selection, you should consider why you are in this situation.  If you don't have much data, then the usual model selection criteria may lead you notably astray.  If you have a lot of data, consider why you need to select a subset and not merely use all available.  If you are somewhere in between, note that you'll likely spend a lot more time here and still not be confident in the results.  However, there are approaches, such as those in the <span class="pack" style = "">projpred</span> package, that might be useful, but likely will only work for simpler models.
-- Use the metrics noted above, e.g. LOOIC, 
-
-https://avehtari.github.io/modelselection/CV-FAQ.html#5_How_to_use_cross-validation_for_model_selection
-
-
-```{r eval=FALSE, echo=FALSE}
-library(projpred)
-
-test_mod = update(model_interact, .~. - (1|group), cores = 4)
-ref_model = get_refmodel(test_mod)
-res = cv_varsel(ref_model)
-res
-suggest_size(res)
-# plot predictive performance on training data
-varsel_plot(res, stats = c('elpd', 'rmse'))
-```
-
-
-## Averaging models
+#### Model Averaging
 
 With the previous statistics for model comparison we can obtain relative model weights, using the <span class="func" style = "">model_weights</span> function. This essentially spreads the total probability of the models across all those being compared. These weights in turn allow us to obtain (weighted) average predictions.  The key idea being that we do not select a 'best' model, but rather combine their results for predictive purposes[^bma].
 
-[^bma]: Some might be familiar with Bayesian model averaging. Conceptually we aren't changing much, but BMA assumes that one of our models is the true model, while the stacking approach underlying these weights does not. It is also different from conventional stacking in machine learning in that we are trying to average posterior predictive distributions, rather than merely point estimates.
+[^bma]: Some might be familiar with Bayesian model averaging. Conceptually we aren't changing much, but BMA assumes that one of our models is the true model, while the stacking approach underlying these weights does not. It is also different from conventional stacking in machine learning in that we are trying to average posterior predictive distributions, rather than point estimates.
 
 We can start by comparing the first two models.  Adding the interactions helped, and comparing the weights suggests that it would be contributing most to averaged predictions.
 
@@ -1029,8 +1012,9 @@ model_weights(model_baseline,
   kable_df(digits = 5)
 ```
 
-Now what about those average predictions?  Let's create a data frame that sets the continuous covariates at their means, and at each level of the categorical covariates.  We then will make average predictions for those observations using <span class="func" style = "">pp_average</span>.
+Now what about those average predictions?  Let's create a data frame that sets the continuous covariates at their means, and at each level of the categorical covariates.  For our purposes here, we will also ignore group effects[^re_na].  We then will make average predictions for those observations using <span class="func" style = "">pp_average</span>. 
 
+[^re_na]: In other words, for prediction we set `re_formula = NA`.
 
 ```{r ppaverage}
 prediction_data = crossing(
@@ -1052,45 +1036,146 @@ average_predictions = pp_average(
 
 
 ```{r ppaverage-show, echo=FALSE}
-average_predictions %>% 
-  as_tibble() %>% 
-  bind_cols(prediction_data, .) %>% 
+average_predictions %>%
+  as_tibble() %>%
+  bind_cols(prediction_data, .) %>%
+  mutate(
+    `Baseline Estimate` = fitted(model_baseline, newdata = prediction_data, re_formula = NA)[, 'Estimate'],
+    `Model Nonlin Est.` = fitted(
+      model_interact_nonlin,
+      newdata = prediction_data,
+      re_formula = NA
+    )[, 'Estimate']
+  ) %>%
+  kable_df(digits = 2)
+```
+
+We can see that the averaged predictions are essentially just the model with all the weight.
+
+
+
+
+
+#### Cross-Validation
+
+In machine learning contexts, cross-validation is the default approach to considerations of model performance.  We can do so easily within the Bayesian context as well. I go ahead and do so for a single model, as well as all three models, so we can see how our previous performance metrics might change.  In general, prediction on a validation set will be expected to be worse[^furrr].
+
+[^furrr]: At the time of this writing, the underlying use of the <span class="pack" style = "">furrr</span> package defaults to not using a seed in it's parallelization process, and then warns you that a seed has not been set for each repeated use of a cluster.  Passing a seed through the seed argument will actually do anything presently, so one will hope that <span class="pack" style = "">furrr</span> will change their default behavior.  It's a nuisance that can be ignored though.
+
+```{r cv}
+library(future)
+
+plan(multisession)
+
+model_interact_nonlin_cv = kfold(
+  model_interact_nonlin,
+  K = 5,
+  chains = 1,
+  save_fits = TRUE
+)
+
+model_all_cv = kfold(
+  model_baseline,
+  model_interact,
+  model_interact_nonlin,
+  K = 5,
+  chains = 1,
+  save_fits = TRUE
+)
+
+plan(sequential)
+```
+
+With a single cross-validation model in place, we can then make predictions with it to get the test error or other metrics of interest.  As we expect, the training error, i.e. that on the original/full data is better than the test error, but the latter is the better estimate of our model error, and thus a better metric for comparing models.
+
+
+```{r cv-explore}
+test_predictions = kfold_predict(model_interact_nonlin_cv)
+
+test_error = yardstick::rmse_vec(truth = test_predictions$y,
+                                 estimate = colMeans(test_predictions$yrep))
+
+train_error = yardstick::rmse_vec(model_interact_nonlin$data$y,
+                                  fitted(model_interact_nonlin)[, 1])
+```
+
+
+```{r cv-explore-table, echo=FALSE}
+tibble(train_error, test_error) %>% 
   kable_df()
 ```
 
 
+Now let's revisit our LOOIC comparison, only now it is based on LOOIC via the cross-validation process.  We would come to the same conclusions, but we can see that the differences, while still substantial, are not as great.  In addition, other standard metrics can help validate the Bayesian-specific metrics, as RMSE does here.
 
 
+```{r cv-loo-compare, echo = 1, eval=-1}
+model_all_cv$diffs
 
-## Cross-validation
-
-
-```{r cv, eval = F}
-library(future)
-plan(multiprocess)
-model_interact_nonlin_cv = kfold(model_interact_nonlin, K = 5, chains = 1, save_fits = TRUE)
-plan(sequential)
-
-str(model_interact_nonlin_cv, 0)
-test = kfold_predict(model_interact_nonlin_cv, newdata = prediction_data)
-
-rmse <- function(y, yrep) {
-  yrep_mean <- colMeans(yrep)
-  sqrt(mean((yrep_mean - y)^2))
+get_rmse = function(x){
+  res  = map(x$loos, kfold_predict)
+  rmse = map_dbl(res, function(x) 
+    yardstick::rmse_vec(x$y, colMeans(x$yrep)))
+  x = data.frame(model = names(rmse), rmse = rmse)
+  x
 }
-rmse(y = test$y, yrep = test$yrep)
+
+as.data.frame(model_all_cv$diffs[, 1:3]) %>%
+  rownames_to_column('model') %>% 
+  left_join(get_rmse(model_all_cv), by = 'model') %>% 
+  kable_df(digits = 2)
+```
+
+
+##### Variable Selection
+
+If desired, and most times it shouldn't be, we can use cross-validation to help with feature selection. We've already discussed why this really shouldn't be an issue, namely because there rarely is a reason to throw out variables regardless of how minimally important they might be. Furthermore, interactions among variables are the norm, not the exception.  So while a variable might not do well on its own, it can be extremely important in how it interacts with another feature.
+
+In any case, one can use the <span class="pack" style = "">projpred</span> package to get a sense of this, and also why it can be problematic.  For one, we cannot test our nonlinear model due to its complexity[^projpred].  But we can also see that, we would not choose the underlying model using this approach.  In addition, for expediency I had to turn off the random effects, otherwise this would take more time than I wanted to spend for this demo.  Be prepared for this sort of thing with any complexities you might be dealing with.
+
+
+[^projpred]: Perhaps this might be possible in a future release, but there are other complications that might make it problematic still.
+
+```{r cv-feature-selection, results='hide'}
+library(projpred)
+
+model_feature_select_cv = update(model_interact, .~. - (1|group), cores = 4)
+ref_model = get_refmodel(model_feature_select_cv)  # reference model structure
+
+var_select = cv_varsel(ref_model)   # will take a long time
+```
+
+
+```{r cv-feature-selection-show}
+var_select
+
+# plot predictive performance on training data
+plot(var_select, stats = c('elpd', 'rmse'))
 ```
 
 
 
 
+#### The rabbit hole of model comparsion
+
+If you start to look more into this, there are numerous technical articles, whole websites, and various discussions regarding how to go about these results. I'm guessing most don't want to try and parse technical information only to still feel confused about what to actually do. Many suggestions typically amount to 'your model is probably misspecified', but without additional thoughts on how to proceed. Some of the data issues that lead to problems are just the reality of data doing what data does. The are also suggestions that posterior predictive checks (PPCs) can somehow to be used to detect the problem, but these don't detect anything in and of themselves without very specific directed action, nor do they typically have a standard metric to report, so the practical utility does have its limits. In addition, it's not clear to me that issues regarding specific statistics for model comparison (e.g. LOOIC estimation) should be a basis for altering a model, unless there is an obvious path for doing so, and if there was, you'd probably already be taking it. 
+
+For those that do want to go down the rabbit hole I have numerous links in the [resources section][Resources].
 
 
 
 
 
+#### Solutions for Model Comparison
 
+When doing model comparison, the following summarizes some basic steps you can take to help yourself in this situation.
 
+- Don't assume you'll have any certainty about some model being 'best'.
+- Avoid the problem and fit the model that includes everything of interest, assuming you have a decent data size to do so.  It is likely you can still learn some things about the model by comparing it to others.
+- Variable selection is typically just a model comparison problem restated differently, and in most cases I've come across, a very misguided endeavor.  If something is even minimally important, there is no reason to throw it out, as you'd just have worse predictions doing so.  With complex models, you can't assess one variable without consideration of others, so trying to say that one is more important than the others doesn't really make sense.
+- If some application performance measure is obvious and available to assess, pick a model that does best in that setting.
+- If trying to select among many competing models, e.g. feature selection, you should consider why you are in this situation.  If you don't have much data, then the usual model selection criteria may lead you notably astray.  If you have a lot of data, consider why you need to select a subset and not merely use all available.  If you are somewhere in between, note that you'll likely spend a lot more time here and still not be confident in the results.  However, there are approaches, such as those in the <span class="pack" style = "">projpred</span> package, that might be useful, but likely will only work for simpler models.
+- Use the metrics noted above, e.g. LOOIC.
 
 
 
@@ -1099,37 +1184,70 @@ rmse(y = test$y, yrep = test$yrep)
 
 # Resources
 
-[Gelman's prior check approach](https://statmodeling.stat.columbia.edu/2019/08/10/)
 
-https://mc-stan.org/docs/2_24/stan-users-guide/problematic-posteriors-chapter.html
+### Prior Checks
 
-Vehtari, A., Gelman, A., and Gabry, J. (2017a). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. Statistics and Computing. 27(5), 1413–1432. doi:10.1007/s11222-016-9696-4 ([journal version](http://link.springer.com/article/10.1007%2Fs11222-016-9696-4), [preprint arXiv:1507.04544](https://arxiv.org/abs/1507.04544)).
+- [Gelman's prior check approach](https://statmodeling.stat.columbia.edu/2019/08/10/)
+- [Stan Group's Prior Choice Recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations)
 
-Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using stacking to average Bayesian predictive distributions. Bayesian Analysis, advance publication, doi:10.1214/17-BA1091. ([online](https://projecteuclid.org/euclid.ba/1516093227)).
+### Model Averaging
 
-Vehtari, A., Simpson, D., Gelman, A., Yao, Y., and Gabry, J. (2019). Pareto smoothed importance sampling. [preprint arXiv:1507.02646](https://arxiv.org/abs/1507.02646/)
+- Vehtari, A., Gelman, A., and Gabry, J. (2017a). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. Statistics and Computing. 27(5), 1413–1432. doi:10.1007/s11222-016-9696-4 ([journal version](http://link.springer.com/article/10.1007%2Fs11222-016-9696-4), [preprint arXiv:1507.04544](https://arxiv.org/abs/1507.04544)).
+
+- Yao, Y., Vehtari, A., Simpson, D., and Gelman, A. (2018) Using stacking to average Bayesian predictive distributions. Bayesian Analysis, advance publication, doi:10.1214/17-BA1091. ([online](https://projecteuclid.org/euclid.ba/1516093227)).
+
+
+### Pareto values
+
+- Vehtari, A., Simpson, D., Gelman, A., Yao, Y., and Gabry, J. (2019). Pareto smoothed importance sampling. [preprint arXiv:1507.02646](https://arxiv.org/abs/1507.02646/)
+
+- [Aki Vehtari's A quick note what I infer from p_loo and Pareto k values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
+
+- [What to do if I have many high Pareto k?](https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s)
+
+### Cross-Validation
+
+- [CV FAQ](https://avehtari.github.io/modelselection/CV-FAQ.html)
+
+### Model Comparison
+
+- [The LOO glossary](https://mc-stan.org/loo/reference/loo-glossary.html)
+- [Understanding LOOIC](https://discourse.mc-stan.org/t/understanding-looic/13409/6)
+- [Can WAIC/LOOIC be used to compare models with different likelihoods?](https://discourse.mc-stan.org/t/can-waic-looic-be-used-to-compare-models-with-different-likelihoods/7380)
+
+
+
+
+The usual cases are
+
+- misspecified models MC: all models are misspecified, so how will knowing this help us finish the project?
+- models with parameters which see the information only from one observation each (e.g. 'random' effect models)  MC: sorry, but this is reality for many such models.  Assuming we can't increase this, which is practically every situation, what are we to do about it?
+- otherwise flexible models  MC: how is 'flexible' defined? Overly vague priors?
+- [A quick note what I infer from p_loo and Pareto km values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
+- [Recommendations for what to do when k exceeds 0.5 in the loo package?](https://discourse.mc-stan.org/t/recommendations-for-what-to-do-when-k-exceeds-0-5-in-the-loo-package/3417)
+- [Improve model with some observations Pareto >0.7](https://discourse.mc-stan.org/t/improve-model-with-some-observations-pareto-0-7/17500)
+- [Bayesian data analysis - roaches cross-validation demo](https://rawgit.com/avehtari/modelselection_tutorial/master/roaches.html#22_cross-validation_checking)
+- [16 What to do if I have many high Pareto k’s?](https://avehtari.github.io/modelselection/CV-FAQ.html#16_What_to_do_if_I_have_many_high_Pareto_(k)%E2%80%99s)
+- [Pareto K for outlier detection 1](https://discourse.mc-stan.org/t/pareto-k-for-outlier-detection/12177/9)
+
+
+> These measures are not independent. If there are many high Pareto k values as in case of model 4, then elpd_loo (or looic) can’t be trusted. Even if there would be no high Pareto k values, R^2 can’t be trusted if p_loo is relatively high compared to the total number of parameters or the number of observations as in case of model 2-4. So there is no contradiction here, but you need to take into account if diagnostics tell you that some other measures can’t be used. ~ [Aki Vehtari](https://discourse.mc-stan.org/t/good-pp-check-and-r-square-but-large-pareto-k-values/17678)
+
+
+### R^2^
+
+- [Bayesian R2 and LOO-R2](https://avehtari.github.io/bayes_R2/bayes_R2.html) Vehtari et al. 
+
+- Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared for Bayesian regression models. The American Statistician, doi:10.1080/00031305.2018.1549100. [Online Preprint](http://www.stat.columbia.edu/~gelman/research/unpublished/bayes_R2_v3.pdf).
+
+
+### Misc
+
+[Problematic Posteriors](https://mc-stan.org/docs/2_26/stan-users-guide/problematic-posteriors-chapter.html)
 
 Gabry, J. , Simpson, D. , Vehtari, A. , Betancourt, M. and Gelman, A. (2019), Visualization in Bayesian workflow. J. R. Stat. Soc. A, 182: 389-402. doi:10.1111/rssa.12378. (journal version, arXiv preprint, code on GitHub)
 
-[Aki Vehtari's A quick note what I infer from p_loo and Pareto k values](https://discourse.mc-stan.org/t/a-quick-note-what-i-infer-from-p-loo-and-pareto-k-values/3446)
-
-https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations
-
-https://mc-stan.org/docs/2_24/reference-manual/divergent-transitions.html
-
-https://discourse.mc-stan.org/t/divergent-transitions-a-primer/17099
-
-https://mc-stan.org/docs/2_24/reference-manual/effective-sample-size-section.html
-
-https://mc-stan.org/bayesplot/articles/visual-mcmc-diagnostics.html
 
 [Use CmdStan to save memory](http://mc-stan.org/cmdstanr/articles/cmdstanr.html)
 
 - [Jeffrey Arnold's Bayesian Notes](https://jrnold.github.io/bayesian_notes/) has nice examples of many models and good summaries otherwise
-
-### R^2^
-
-[Bayesian R2 and LOO-R2](https://avehtari.github.io/bayes_R2/bayes_R2.html) Vehtari et al. 
-
-Andrew Gelman, Ben Goodrich, Jonah Gabry, and Aki Vehtari (2018). R-squared for Bayesian regression models. The American Statistician, doi:10.1080/00031305.2018.1549100. [Online Preprint](http://www.stat.columbia.edu/~gelman/research/unpublished/bayes_R2_v3.pdf).
-
