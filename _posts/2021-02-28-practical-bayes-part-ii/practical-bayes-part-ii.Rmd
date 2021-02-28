@@ -13,8 +13,8 @@ output:
     toc: true
     # highlight: pygments
     css: [../../styles.css, 'https://use.fontawesome.com/releases/v5.14.0/css/all.css']
-draft: true
-tags: [tags, taggy]
+draft: false
+tags: [bayesian, stan, <span class="pack" style = "">rstanarm</span>, brms, errors, warnings, posterior predictive checks, model averaging, loo, waic]
 categories:
   - bayesian
 ---
@@ -53,7 +53,7 @@ theme_set(visibly::theme_clean())
 
 # Overview
 
-In [Part I](), we talked about the basics one can do to run a Bayesian model with a high-level Stan package like <span class="pack" style = "">brms</span>, and what to do if there is a problem.  But it might be nice if we could take steps to avoid the problems in the first place, and what's more, our model might still be inadequate without any warnings, and we'll still need to inspect diagnostics regardless.  So let's engage in some better practices you can use every time to help things run more smoothly, and get more from your models after you've run them.
+In [Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/), we talked about the basics one can do to run a Bayesian model with a high-level Stan package like <span class="pack" style = "">brms</span>, and what to do if there is a problem.  But it might be nice if we could take steps to avoid the problems in the first place, and what's more, our model might still be inadequate without any warnings, and we'll still need to inspect diagnostics regardless.  So let's engage in some better practices you can use every time to help things run more smoothly, and get more from your models after you've run them.
 
 <aside>This is part two of two posts on doing practical modeling with R and Stan in an applied fashion. Due to unforeseen circumstances (and plenty of procrastination), the bulk of the content of these posts was created many months before actual posting. It's hoped that most of this will still be applicable and have the conceptual continuity as originally intended, but apologies in advance if some parts seem a little disjointed, off topic, etc.</aside>
 
@@ -65,7 +65,7 @@ We'll cover the following steps in more detail, but here is a general outline.
 - First generate 'fake data' to assess viability of our priors
 - With adequate priors, start with a simple, but plausible model
 - For simple models you likely do not need many iterations, and for debugging/troubleshooting, starting with few iterations can possibly give you a sense of whether there will be problems[^oneiter]. If you are doing standard GLM or simpler versions of common extensions, even the defaults are likely overkill.  For example, a basic linear regression should converge almost immediately.
-- If you have problems at this point, see [Part I]()
+- If you have problems at this point, see [Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/)
 
 [^oneiter]: If you were coding in Stan directly, you can run a single iteration to see if your code compiles at all.
 
@@ -90,7 +90,7 @@ We'll now demonstrate these steps.
 # Example data
 
 
-[As in Part I](), I'm going to create some data for us to run some basic models with, the same as Part I. As a reminder, the true underlying model has categorical and continuous covariates, interactions, nonlinear relationships, random effects (observations are clustered in groups), and some variables are collinear.  
+[As in Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/), I'm going to create some data for us to run some basic models with, the same as Part I. As a reminder, the true underlying model has categorical and continuous covariates, interactions, nonlinear relationships, random effects (observations are clustered in groups), and some variables are collinear.  
 
 ```{r create-data-setup, echo=FALSE}
 library(tidyverse)
@@ -392,7 +392,7 @@ color_scheme_set(scico::scico(6, palette = 'batlow', begin = .1, end = .9, direc
   lims(y = c(0,.35))
 ```
 
-We can see in the visualization that the left side using defaults or notably diffuse priors results in nonsensical ranges for our target variable.  When we actually run the model, this means we'd explore possible (the space of) parameter values that aren't going to be useful for prediction. We would likely still should come to the same conclusions, it's just that we might need many more iterations, and as we know from [Part I](), not having enough iterations can lead to many warnings.
+We can see in the visualization that the left side using defaults or notably diffuse priors results in nonsensical ranges for our target variable.  When we actually run the model, this means we'd explore possible (the space of) parameter values that aren't going to be useful for prediction. We would likely still should come to the same conclusions, it's just that we might need many more iterations, and as we know from [Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/), not having enough iterations can lead to many warnings.
 
 So given that our target variable is between `r round(min(main_df$y))` and `r round(max(main_df$y))`, it seems that just adding some basic, data-informed information to our priors resulted in more plausible results.  This will generally help our models be more efficient and better behaved. Note that if all else fails, you can use a convenience function like <span class="func" style = "">auto_prior</span> demonstrated above.
 
@@ -431,7 +431,7 @@ model_baseline = brm(
 summary(model_baseline)
 ```
 
-For reporting purposes, generally all you need are the `Estimate` and lower and upper bounds.  You might also mention that the basic diagnostics suggested no problems, but you'll still want to explore this a bit for yourself (as in [Part I]()).  If you want a visual approach to these basic results, you can use something like the following types of plots.
+For reporting purposes, generally all you need are the `Estimate` and lower and upper bounds.  You might also mention that the basic diagnostics suggested no problems, but you'll still want to explore this a bit for yourself (as in [Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/)).  If you want a visual approach to these basic results, you can use something like the following types of plots.
 
 ```{r model-baseline-summary-plots}
 mcmc_plot(model_baseline, type = 'areas')
@@ -839,7 +839,7 @@ For our ultimate model comparison we want to stick to using the IC values. As fa
 
 
 
-After the model issues discussed in [Part I](), the next most common point of confusion I see people have is with model comparison, and using LOO in particular.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation. 
+After the model issues discussed in [Part I](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-i/), the next most common point of confusion I see people have is with model comparison, and using LOO in particular.  Part of the reason is that this is an area of ongoing research and development, and most of the tools and documentation are notably technical.  Another reason is that these are not perfect tools.  They can fail to show notable problems for models that are definitely misspecified, and flag models that are essentially okay.  Sometimes they flag models that other indicators may suggest are better models relatively speaking, which actually isn't a contradiction, but which may indicate an overfit situation. 
 
 So in general, no tool is perfect, but in the real world we have to get things, so let's address a couple issues.
 

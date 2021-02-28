@@ -13,8 +13,8 @@ output:
     # highlight: pygments
     toc: true
     css: [../../styles.css, 'https://use.fontawesome.com/releases/v5.14.0/css/all.css']
-draft: true
-tags: [bayesian, stan, <span class="pack" style = "">rstanarm</span>, brms]
+draft: false
+tags: [bayesian, stan, <span class="pack" style = "">rstanarm</span>, brms, errors, warnings, effective sample size, bfmim, tree, divergent]
 categories:
   - bayesian
 ---
@@ -120,7 +120,7 @@ Here is what we're going to do:
 - Discuss some of the more common problems
 - Explain conceptually what they indicate
 - Provide quick solutions that should work most of the time
-- Outline a practical approach for future endeavors (Part II)
+- Outline a practical approach for future endeavors ([Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/))
 
 Each section discusses a particular problem and ends with a general recommendation, and potentially, specific links to look further into the issue.
 
@@ -341,7 +341,7 @@ Once data is in hand there are basic steps to take for a practical modeling appr
 - For common regression models, normal or student t for the (fixed effect) coefficients. You will have to explicitly set this if using <span class="pack" style = "">brms</span>, but <span class="pack" style = "">rstanarm</span> will have viable defaults already.
 - Use (half) normal/student-t for variances (esp. hierarchical models). Defaults are usually fine.
 - Otherwise, look at the [recommendations](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations).
-- See [Part II]() for more on choosing priors.
+- See [Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/) for more on choosing priors.
 
 
 ##### Build models in increasing complexity
@@ -367,7 +367,7 @@ Once data is in hand there are basic steps to take for a practical modeling appr
 
 ##### Compare models using loo, posterior probabilities of models
 
-- Compare models via predictive capabilities (*l*eave-*o*ne-*o*ut approaches, see [Part II]()).
+- Compare models via predictive capabilities (*l*eave-*o*ne-*o*ut approaches, see [Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/)).
 
 - There is no 'best' model in Bayesian approach or otherwise. Consider model averaging for final predictions.
 
@@ -635,7 +635,7 @@ Why might this happen?
 - any number of other things
 
 
-As an example, I'll make an overly complex model with only a small random sample of the data, improper priors, and use very few warmups.
+As an example, I'll make an overly complex model with only a small random sample of the data, improper priors, and use very few warmups/iterations.
 
 ```{r divergent-model, warning=T, message = F, results='hide', cache.extra = 12}
 model_problem = brm(
@@ -649,7 +649,7 @@ model_problem = brm(
   warmup = 5,
   iter   = 1005,
   thin   = 4,
-  seed   = 12
+  seed   = 123
 )
 ```
 
@@ -668,7 +668,7 @@ Another issue is that it isn't what you think it is at first glance.  The upper 
 
 Let's take a look at the pairs plot anyway.  I'll use `hex` bins instead of standard points because the point plots have no transparency by default.  In addition, we'll use a density plot on the diagonal, instead of the histogram.
 
-```{r pairs-plot-model-start-complex, echo=-1, cache.rebuild=F}
+```{r pairs-plot-model-start-complex, echo=-1, cache.rebuild=T}
 color_scheme_set()
 mcmc_plot(
   model_problem,
@@ -719,7 +719,7 @@ As in our pairs plot, we'd be looking for a pattern among the divergences, speci
 
 [^FPdiv]: This seems counter to the common suggestion on forums and GitHub issues that even 1 divergent transition renders results suspect.  I've never seen results meaningfully change for something with just a couple divergent transitions to one that has none, and often when there are that few, even rerunning the model will result in no divergences.
 
-```{r par-coord}
+```{r par-coord, cache.rebuild=T}
 mcmc_parcoord(
   model_problem,
   pars = vars(matches('^b')),
@@ -756,7 +756,7 @@ Unfortunately the solution to divergent transitions is usually not straightforwa
 model = brm(..., control = list(adapt_delta = .99))
 ```
 
-Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this problem often comes from poor data (e.g. not scaled, possible separation in logistic models, etc.), combined with a complex model (e.g. complicated random effects structure), and beyond that, the priors may need to be amended.   You should at least not have uniform priors for any parameter, and as we'll see in [Part II](), you can use a simulation approach to help choose better priors.  Often these data and prior checks are a better approach to solving the problem than doing something after the fact. You may also need to simplify the model to better deal with your data nuances.  As an example, for mixed models, it may be that some variance components are not necessary.
+Aside from that you will have to look more deeply, including issues with priors, model specification, and more.  I find this problem often comes from poor data (e.g. not scaled, possible separation in logistic models, etc.), combined with a complex model (e.g. complicated random effects structure), and beyond that, the priors may need to be amended.   You should at least not have uniform priors for any parameter, and as we'll see in [Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/), you can use a simulation approach to help choose better priors.  Often these data and prior checks are a better approach to solving the problem than doing something after the fact. You may also need to simplify the model to better deal with your data nuances.  As an example, for mixed models, it may be that some variance components are not necessary.
 
 
 Some solutions offered on the forums assume you are coding in Stan directly, such as reparameterizing your model, using specific types of priors, etc.  If you are writing Stan code rather than using a modeling package, you definitely need to double check it, as typos or other mistakes can certainly result in a problematic model. However, this post is for those using modeling packages, so I will not offer such remedies, and they are usually not obvious anyway.
@@ -799,7 +799,7 @@ If you are using a package to interface with Stan and not having an issue with t
 
 ## Model Comparison Problems
 
-For a discussion of loo and related issues, see [PART II]().
+For a discussion of loo and related issues, see [Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/).
 
 
 # Other Issues
@@ -812,7 +812,7 @@ Another problem people seem to be concerned with is the speed of the analysis.  
 ### Solutions for a slow model
 
 - For any model, Bayesian or otherwise, doing things like standardizing, logging or other variable transformations will put parameters in more reasonable domains, resulting in a more manageable estimation process.  For example, if you standardize predictors, then the coefficients are on similar scales and a `Normal(0, 1)` prior can typically be applied.
-- Using more informative priors can avoid exploring areas of the posterior that aren't going to lead to plausible results. We will show how to do this in [Part II]().
+- Using more informative priors can avoid exploring areas of the posterior that aren't going to lead to plausible results. We will show how to do this in [Part II](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/).
 - Use less iterations if there are no other issues.
 - If possible, work with less data or simpler models until ready for the full model.
 - If possible, work with a different version of the model that can still answer the question of interest. For example, if an ordinal model is causing a lot of issues, and you're not interested in category specific probabilities, just treat the target variable as numeric[^reparameterize].
@@ -856,7 +856,7 @@ In general, doing Bayesian analysis can be easy, and hopefully it will be for yo
 
 
 
-On to [PART II: Do Bayes Better](). 
+On to [PART II: Do Bayes Better](https://m-clark.github.io/posts/2021-02-28-practical-bayes-part-ii/). 
 
 
 # Resources
