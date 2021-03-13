@@ -51,7 +51,7 @@ kable_df <- function(..., digits=3) {
 }
 ```
 
-<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`.</aside>
+<aside>Last updated `r format(Sys.Date(), "%B %d, %Y")`. Timings based on original date of posting.</aside>
 
 ## Introduction
 
@@ -187,28 +187,34 @@ summary(mixed_model, cor = FALSE)
 summary(ga_model)
 ```
 
-I don't want to go into the details of the printout for <span class="pack" style = "">mgcv</span>, but it is worth noting that the parametric part is equivalent to the fixed effects portion of the <span class="pack" style = "">lme4</span> output. Likewise the smooth terms output is related to the random effects, but we'll extract them in a manner more suited to typical mixed model output instead.  So let's compare the variance components, and get them ready for later comparison to <span class="func" style = "">bam</span> results.  Note, I've been using <span class="pack" style = "">mgcv</span> a lot for mixed models lately, so I created a package called <span class="pack" style = "">gammit</span> to provide tidier output in general, and which is more similar to <span class="pack" style = "">lme4</span>.   I note the corresponding <span class="pack" style = "">mgcv</span> function where appropriate.
+I don't want to go into the details of the printout for <span class="pack" style = "">mgcv</span>, but it is worth noting that the parametric part is equivalent to the fixed effects portion of the <span class="pack" style = "">lme4</span> output. Likewise the smooth terms output is related to the random effects, but we'll extract them in a manner more suited to typical mixed model output instead.  So let's compare the variance components, and get them ready for later comparison to <span class="func" style = "">bam</span> results.  Note, I've use several packages for mixed models, so I created a package called <span class="pack" style = "">mixedup</span> to provide tidier and consistent output, and which is more similar to <span class="pack" style = "">lme4</span>.   I note the corresponding <span class="pack" style = "">mgcv</span> function where appropriate.
 
-<aside>The <span class="pack" style = "">gammit</span> package is available on [GitHub](https://m-clark/github.com/gammit).</aside>
+<aside>The <span class="pack" style = "">mixedup</span> package is available on [GitHub](https://m-clark/github.com/mixedup).</aside>
 
 
 
 ```{r initial-vc}
-library(gammit)
+library(mixedup)
 
 # extract just the fixed effects for later.
-mixed_fe = fixef(mixed_model)
-gam_fe   = extract_fixed(ga_model)  # coefs with se and confidence interval
+mixed_fe = extract_fixed_effects(mixed_model, digits = 5)
+gam_fe   = extract_fixed_effects(ga_model, digits = 5)  # coefs with se and confidence interval
 
 # variance components
-lmer_vcov = data.frame(VarCorr(mixed_model))
-gam_vcov  = extract_vc(ga_model)    # cleaner gam.vcomp
+lmer_vcov = extract_vc(mixed_model, digits = 5)
+gam_vcov  = extract_vc(ga_model, digits = 5)    # cleaner gam.vcomp
 ```
 
-```{r initial-vc-show, echo=FALSE}
-kable_df(lmer_vcov %>% select(-var2), caption = 'LME Result')
+```{r initial-vc-show-lmer, echo=FALSE}
+kable_df(lmer_vcov, caption = 'LME Result')
+```
+
+
+```{r initial-vc-show-gam, echo=FALSE}
 kable_df(gam_vcov, caption = 'GAM Result')
 ```
+
+
 
 
 
@@ -224,8 +230,8 @@ ba_model = bam(
   data = sleepstudy
 )
 
-bam_fe   = extract_fixed(ba_model)
-bam_vcov = extract_vc(ba_model)
+bam_fe   = extract_fixed_effects(ba_model, digits = 5)
+bam_vcov = extract_vc(ba_model, digits = 5)
 ```
 
 How does it work? The function uses a parallelized approach where possible, essentially working on subsets of the model matrices simultaneously. Details can be found in the references[@li_faster_2019][@wood_generalized_2015][@wood_generalized_2017-1], but basically <span class="pack" style = "">mgcv</span> parallelizes the parts that can be, and additionally provides an option to discretize the data to work with the minimal information necessary to produce viable estimates.  The following uses the discrete option.  As there isn't really anything to discretize with so little data, this is just to demonstrate the syntax. 
@@ -237,8 +243,8 @@ ba_d_model = bam(
   discrete = TRUE
 )
 
-bam_d_fe   = extract_fixed(ba_d_model)
-bam_d_vcov = extract_vc(ba_d_model)
+bam_d_fe   = extract_fixed_effects(ba_d_model, digits = 5)
+bam_d_vcov = extract_vc(ba_d_model, digits = 5)
 ```
 
 ### Fixed effects comparison
@@ -246,15 +252,14 @@ bam_d_vcov = extract_vc(ba_d_model)
 We start by comparing the fixed effects of all models run thus far.  No surprises here, the results are the same.
 
 ```{r compare-fixef, echo=FALSE}
-rbind(
-  mixed = mixed_fe,
-  gam   = gam_fe$Estimate,
-  bam   = bam_fe$Estimate,
-  bam_d = bam_d_fe$Estimate
+bind_rows(
+  mixed = mixed_fe[['value']],
+  gam   = gam_fe[['value']],
+  bam   = bam_fe[['value']],
+  bam_d = bam_d_fe[['value']]
 ) %>% 
-  data.frame() %>% 
-  rownames_to_column('Model') %>% 
-  rename(Intercept = X.Intercept.) %>% 
+  rownames_to_column('term') %>% 
+  mutate(term = mixed_fe$term) %>% 
   kable_df(caption = 'Fixed Effects Estimates')
 ```
 
@@ -273,15 +278,14 @@ Under ML or REML smoothing parameter estimation it is possible to correct the co
  We will use the Bayesian estimates (`Vp`), but for this setting there are no appreciable differences.  I expand the digits to show they are in fact different to some decimal place.
  
 ```{r compare-fixef-se, echo=FALSE}
-rbind(
-  mixed = summary(mixed_model)$coefficients[,'Std. Error'],
-  gam   = gam_fe$SE,
-  bam   = bam_fe$SE,
-  bam_d = bam_d_fe$SE
-  ) %>% 
-  data.frame() %>% 
-  rownames_to_column('Model') %>% 
-  rename(Intercept = X.Intercept.) %>% 
+bind_rows(
+  mixed = mixed_fe[['se']],
+  gam   = gam_fe[['se']],
+  bam   = bam_fe[['se']],
+  bam_d = bam_d_fe[['se']]
+) %>% 
+  rownames_to_column('term') %>% 
+  mutate(term = mixed_fe$term) %>% 
   kable_df(caption = 'Fixed Effects Standard Errors', digits = 5)
 ```
 
@@ -291,10 +295,10 @@ Now we move to the variance component estimates. Reported are the standard devia
 
 ```{r compare-vc, echo=FALSE}
 rbind(
-  mixed = lmer_vcov$sd,
-  gam   = gam_vcov[['std.dev']],
-  bam   = bam_vcov[['std.dev']],
-  bam_d = bam_d_vcov[['std.dev']]
+  mixed = lmer_vcov[['sd']],
+  gam   = gam_vcov[['sd']],
+  bam   = bam_vcov[['sd']],
+  bam_d = bam_d_vcov[['sd']]
   ) %>% 
   data.frame() %>% 
   rename(Intercept = X1, Days = X2, Residual = X3) %>% 
@@ -305,29 +309,16 @@ rbind(
 We can also look at their interval estimates.  We use the profile likelihood for the <span class="pack" style = "">lme4</span> mixed model.  In this case we can see slightly wider and somewhat different boundary estimates for the variance components, but not too dissimilar.
 
 
-```{r compare-vc-int, echo=FALSE}
-mixed_vc_int = confint(mixed_model)
-mixed_vc_int = mixed_vc_int %>% 
-  data.frame() %>% 
-  filter(str_detect(rownames(.), 'sig')) %>% 
-  mutate(sd = c('Intercept', 'Days', 'scale')) %>% 
-  rename(
-    component = sd,
-    lower     = X2.5.., 
-    upper     = X97.5..
-    ) %>% 
-  select(component, everything())
-```
-
 ```{r compare-vc-int-table, echo=FALSE}
-list(mixed = mixed_vc_int,
+list(mixed = lmer_vcov,
      gam   = gam_vcov,
      bam   = bam_vcov,
      bam_d = bam_d_vcov) %>% 
   bind_rows(.id = 'Model') %>% 
-  mutate(component = if_else(component=='scale', 'Residual', component)) %>% 
-  select(Model:upper) %>%  
-  mutate(width = upper-lower) %>% 
+  as_tibble() %>% 
+  mutate(group = if_else(group=='Subject.1', 'Subject', group)) %>%
+  select(Model:sd_97.5) %>%  
+  mutate(width = sd_97.5-sd_2.5) %>% 
   kable_df(caption = 'Interval Estimates for Variance Components', digits = 4) %>% 
   collapse_rows(valign = 'top')
 ```
@@ -337,54 +328,23 @@ list(mixed = mixed_vc_int,
 
 Now let's look at the random effect estimates.
 
-```{r re, echo=1:5}
-mixed_re = ranef(mixed_model)[[1]] %>% 
-  rename(mixed_Subject = `(Intercept)`, `mixed_Days|Subject` = Days)
+```{r re, echo=1:4}
+mixed_re_init = extract_ranef(mixed_model, digits = 5)
+gam_re_init   = extract_ranef(ga_model, digits = 5)
+bam_re_init   = extract_ranef(ba_model, digits = 5)
+bam_d_re_init = extract_ranef(ba_d_model, digits = 5)
 
-gam_re_init   = extract_ranef(ga_model)
-bam_re_init   = extract_ranef(ba_model)
-bam_d_re_init = extract_ranef(ba_d_model)
-
-gam_re = gam_re_init %>% 
-  pivot_wider(
-    names_from = component, 
-    values_from = re, 
-    names_prefix = 'gam_',
-    -(se:upper)
-  ) %>% 
-  select(-group)
-
-bam_re = bam_re_init %>% 
-  pivot_wider(
-    names_from = component, 
-    values_from = re, 
-    names_prefix = 'bam_',
-    -(se:upper)
-  ) %>% 
-  select(-group)
-
-bam_d_re = bam_d_re_init %>% 
-  pivot_wider(
-    names_from = component, 
-    values_from = re, 
-    names_prefix = 'bam_d_',
-    -(se:upper)
-  ) %>% 
-  select(-group)
-
-all_re = bind_cols(mget(ls(pattern = '_re$')))
+all_re = bind_rows(mget(ls(pattern = '_re_init$')), .id = 'Model')
 ```
 
 We'll start with the random effects for the intercept. To several decimal places, we start to see differences, so again we know they aren't doing exactly the same thing, but they are coming to the same conclusion.
 
 ```{r re-int, echo=FALSE}
 all_re %>% 
-  select(
-    `mixed_Subject`,
-    `gam_Subject`,
-    `bam_Subject`,
-    `bam_d_Subject`
-    ) %>% 
+  filter(effect == 'Intercept') %>% 
+  select(Model, value) %>%
+  pivot_wider(names_from = Model, values_from = value) %>% 
+  unnest(everything()) %>% 
   kable_df(digits = 5, caption = 'Estimated Random Intercepts')
 ```
 
@@ -393,13 +353,11 @@ Random effects for the Days coefficient.
 
 ```{r re-days, echo=FALSE}
 all_re %>% 
-  select(
-    `mixed_Days|Subject`,
-    `gam_Days|Subject`,
-    `bam_Days|Subject`,
-    `bam_d_Days|Subject`
-    ) %>% 
-  kable_df(digits = 5, caption = 'Estimated Random Effects')
+  filter(effect == 'Days') %>% 
+  select(Model, value) %>%
+  pivot_wider(names_from = Model, values_from = value) %>% 
+  unnest(everything()) %>% 
+  kable_df(digits = 5, caption = 'Estimated Random Intercepts')
 ```
 
 Standard errors for the random effects.  In the balanced design these are essentially constant across clusters. We can see that the Bayesian estimates from <span class="pack" style = "">mgcv</span> reflect greater uncertainty.
@@ -410,7 +368,7 @@ Standard errors for the random effects.  In the balanced design these are essent
 
 ```{r re-int-se, echo=FALSE}
 list(
-  mixed = unique(data.frame(ranef(mixed_model))$condsd, 2),
+  mixed = unique(round(mixed_re_init$se, 5)),
   gam   = unique(round(gam_re_init$se, 5)),
   bam   = unique(round(bam_re_init$se, 5)),
   bam_discrete = unique(round(bam_d_re_init$se, 5))
@@ -435,34 +393,38 @@ bayes = stan_lmer(Reaction ~ Days + (1|Subject) + (0 + Days|Subject),
                   data = sleepstudy,
                   cores = 4)
 
-bayes_fe = broom::tidy(bayes)
-bayes_vc = broom::tidy(bayes, 'hierarchical')
-bayes_re = broom::tidy(bayes, 'varying')
+bayes_fe = extract_fixed_effects(bayes)
+bayes_vc = extract_vc(bayes)
+bayes_re = extract_random_effects(bayes)
 ```
 
 ```{r bayes-compare, echo=FALSE}
-bind_rows(bayes_fe, bayes_vc) %>% 
-  kable_df(caption = 'Bayesian fixed effects and variance components')
+bayes_fe %>% 
+  kable_df(caption = 'Bayesian fixed effects')
+
+bayes_vc %>% 
+  kable_df(caption = 'Bayesian variance components')
 
 bayes_re %>% 
-  pivot_wider(names_from = term, values_from = estimate, -std.error) %>% 
+  select(-group_var) %>% 
   kable_df(caption = 'Bayesian random effects')
 
 bayes_re %>% 
-  pivot_wider(names_from = term, values_from = std.error, -estimate)  %>% 
+  select(-group_var) %>% 
   kable_df(caption = 'Random effect standard errors')
 
 avg_re_se_bayes = bayes_re %>% 
-  pivot_wider(names_from = term, values_from = std.error, -estimate) %>% 
-  mutate_if(is.numeric, mean) %>% 
-  distinct(`(Intercept)`, Days)
+  group_by(effect) %>% 
+  summarise(se = mean(se)) %>% 
+  data.frame()
 
 avg_re_se_mgcv = gam_re_init %>% 
-  group_by(component) %>% 
-  summarise(se = mean(se)) 
+  group_by(effect) %>% 
+  summarise(se = mean(se)) %>% 
+  data.frame()
 ```
 
-We can see that the <span class="pack" style = "">mgcv</span> estimates for standard errors of the random effects are close to the average standard errors from the fully Bayesian approach. For the Bayesian result we have (`r rnd(avg_re_se_bayes[['(Intercept)']])` and `r rnd(avg_re_se_bayes$Days)` for Intercept and Days coefficient respectively, while for <span class="pack" style = "">mgcv</span> this is `r rnd(avg_re_se_mgcv$se[2])` and `r rnd(avg_re_se_mgcv$se[1])`.
+We can see that the <span class="pack" style = "">mgcv</span> estimates for standard errors of the random effects are close to the average standard errors from the fully Bayesian approach. For the Bayesian result we have `r avg_re_se_bayes[avg_re_se_bayes$effect=='Intercept', 'se']` and `r avg_re_se_bayes[avg_re_se_bayes$effect=='Days', 'se']` for Intercept and Days coefficient respectively, while for <span class="pack" style = "">mgcv</span> this is `r avg_re_se_mgcv[avg_re_se_mgcv$effect=='Intercept', 'se']` and `r avg_re_se_mgcv[avg_re_se_mgcv$effect=='Days', 'se']`.
 
 
 ## Back to the initial problem
@@ -470,7 +432,7 @@ We can see that the <span class="pack" style = "">mgcv</span> estimates for stan
 
 So we've established that both default <span class="func" style = "">gam</span> and <span class="func" style = "">bam</span> functions are providing what we want.  However, the reason we're here is to use demonstrate the speed gain we'll get with big data using <span class="pack" style = "">mgcv</span> for mixed models.  So let's return to the binary outcome example that took over a minute for <span class="pack" style = "">lme4</span> to run.
 
-```{r bam_big, cache.rebuild=FALSE}
+```{r bam_big, cache.rebuild=FALSE, eval=FALSE}
 system.time({
   bam_big <- bam(
     y_bin ~ x + b + s(g, bs='re'), 
@@ -481,13 +443,28 @@ system.time({
 })
 ```
 
+
+```{r save-bam_big, echo=FALSE, eval=FALSE}
+save(bam_big, '_posts/2019-10-20-big-mixed-models/bam_big.RData')
+```
+
+
+```{r print-bam_big, echo=FALSE}
+# original timings so you don't have to re-run; also bam seems to have changed
+# and is notably different (slower) now for some reason.
+cat("
+    user   system  elapsed 
+8164.817  120.570 1298.584 
+")
+```
+
 That didn't actually improve our situation, and was much worse in time- more than 20 minutes!  Remember though, that the <span class="pack" style = "">mgcv</span> approach has to estimate all those random effect coefficients, while <span class="pack" style = "">lme4</span> is able to take advantage of design for mixed models among other things.
 
 However, even here we haven't used all our secret weapons.  Another option with <span class="func" style = "">bam</span> works on a modified data set using binned/rounded values for continuous covariates, and working with only the minimum data necessary to estimate the coefficients[@wood_generalized_2015]. With large enough data, as is the case here, the estimated parameters might not be different at all, while the efficiency gains could be tremendous.  Let's add `discrete = TRUE` and see what happens.
 
 <aside>We just need the distinct set of values after rounding.</aside>
 
-```{r bam_big_discrete, cache.rebuild=FALSE}
+```{r bam_big_discrete, cache.rebuild=FALSE, eval=FALSE}
 system.time({
   bam_big_d <- bam(
     y_bin ~ x + b + s(g, bs='re'), 
@@ -499,7 +476,16 @@ system.time({
 })
 ```
 
-**Wow!** That was as fast almost as <span class="pack" style = "">lme4</span> with the linear mixed model! Let's check the results.  We'll start with the fixed effects.  I add some digits to the result so we can see the very slight differences.
+```{r print-bam_big-discrete, echo=FALSE}
+# original timings
+cat("
+   user  system elapsed 
+ 43.542   2.649  12.387 
+    ")
+```
+
+
+**Wow!** That was almost as fast as <span class="pack" style = "">lme4</span> with the linear mixed model! Let's check the results.  We'll start with the fixed effects.  I add some digits to the result so we can see the very slight differences.
 
 ```{r mixed_big_glmm_fe_results, echo=FALSE}
 # don't want to rerun if possible, as confint will take forever for some methods
@@ -514,25 +500,20 @@ mixed_big_ci = confint(mixed_big_glmm, parm = 'beta_', method = 'Wald')
 ```
 
 ```{r bam-fe-results, echo=FALSE}
-big_results = list(bam_big = bam_big, bam_big_d = bam_big_d)
+big_results = list(bam_big = bam_big,
+                   bam_big_d = bam_big_d,
+                   mixed_big_glmm = mixed_big_glmm)
 
 tibble(
   Model = rep('True', 3),
-  Term  = c('(Intercept)', 'x', 'b'),
-  Estimate = c(0, .5, .25)
+  term  = c('(Intercept)', 'x', 'b'),
+  value = c(0, .5, .25)
 ) %>% 
   bind_rows(
     big_results %>% 
-      map(extract_fixed) %>% 
-      bind_rows(
-        .id = 'Model'
-      ) 
+      map_df(extract_fixed_effects, digits = 8, .id = 'Model') 
   ) %>% 
-  bind_rows(
-    mixed_big_glmm_fe %>% 
-      select(-z.value, -Pr...z..) %>% 
-      mutate(LL = mixed_big_ci[,1], UL = mixed_big_ci[,2])
-  ) %>% 
+  select(-t, -z, -p_value) %>% 
   kable_df(caption = 'Fixed Effects', digits = 8)
 ```
 
@@ -540,15 +521,15 @@ Now for the variance components.
 
 ```{r big-vc-results, echo=FALSE}
 bind_rows(
-  true = tibble(std.dev = .5, variance = std.dev^2),
-  bam_big   = extract_vc(bam_big) %>% select(std.dev, variance),
-  bam_big_d = extract_vc(bam_big_d) %>% select(std.dev, variance),
-  lme4 = data.frame(VarCorr(mixed_big_glmm)) %>% 
-    select(sdcor, vcov) %>% 
-    rename(std.dev=sdcor, variance = vcov),
+  true = tibble(sd = .5, variance = sd^2),
+  bam_big   = extract_vc(bam_big) %>% select(sd, variance),
+  bam_big_d = extract_vc(bam_big_d) %>% select(sd, variance),
+  lme4 = extract_vc(mixed_big_glmm, ci_level = FALSE) %>% select(sd, variance),
   .id = 'Model'
 ) %>% 
-  kable_df(caption = 'Variance Components', digits = 6)
+  kable_df(caption = 'Variance Components',
+           digits = 6,
+           row.names = FALSE)
 ```
 
 And finally, let's look at the estimated random effects for the first 5 clusters.
@@ -558,9 +539,9 @@ And finally, let's look at the estimated random effects for the first 5 clusters
 ```{r big-re-results, echo=FALSE}
 re_big = tibble(
   true = re0[1:5],
-  bam_big   = extract_ranef(bam_big) %>% slice(1:5) %>% pull(re),
-  bam_big_d = extract_ranef(bam_big_d) %>% slice(1:5) %>% pull(re),
-  lme4 = ranef(mixed_big_glmm)[['g']][1:5, 1]
+  bam_big   = extract_ranef(bam_big) %>% slice(1:5) %>% pull(value),
+  bam_big_d = extract_ranef(bam_big_d) %>% slice(1:5) %>% pull(value),
+  lme4 = extract_ranef(mixed_big_glmm) %>% slice(1:5) %>% pull(value)
 ) 
 
 re_big %>% 
@@ -593,6 +574,7 @@ summary(test)
 
 
 So we're getting what we should in general.
+
 
 ## When to use bam
 
@@ -780,7 +762,7 @@ Here is a summary of other timings of various tools for mixed models.
 These are the results from McCoach et al.[@mccoach2018] with a standard linear mixed model. Sample size fixed at 10000, with a single grouping factor with only 50 levels. Models included five covariates each with a random slope. In the first five cases, a true variance parameter was set to zero, a situation <span class="pack" style = "">lme4</span> handles well[^mccoach].  SAS is very speedy for such settings if data is well-behaved. 
 
 ```{r mccoach, echo=FALSE, background='transparent'}
-knitr::include_graphics("../../img/bam/mccoach.png")
+knitr::include_graphics("../../img/bam/mccoach.png", error = FALSE)
 ```
 
 ##### Brooks et al. 2018 timing as a function of sample size
@@ -788,7 +770,7 @@ knitr::include_graphics("../../img/bam/mccoach.png")
 Brooks et al. uses the Salamander data from the <span class="pack" style = "">glmmTMB</span> package. It has a single grouping factor for the random effect with `r nlevels(glmmTMB::Salamanders$site)` levels. Starting sample size is `r nrow(glmmTMB::Salamanders)`, which is then replicated to produce larger data. This is a negative binomial count model.  In this particular setting <span class="pack" style = "">glmmTMB</span> has an advantage.
 
 ```{r brooksn, echo=FALSE, background='transparent'}
-knitr::include_graphics("../../img/bam/brooks_n.png")
+knitr::include_graphics("../../img/bam/brooks_n.png", error = FALSE)
 ```
 
 ##### Brooks et al. 2018 timing as a function of number of levels
@@ -796,7 +778,7 @@ knitr::include_graphics("../../img/bam/brooks_n.png")
 This data is simulated based on models from the previous, and adds increasing numbers of (balanced) levels to the random effect. This shows a similar effect of the number of levels on <span class="pack" style = "">mgcv</span> as the simulation presented in this post, though they are not using the functionality of <span class="func" style = "">bam</span>.
 
 ```{r brooksnlev, echo=FALSE, background='transparent'}
-knitr::include_graphics("../../img/bam/brooks_nlevels.png")
+knitr::include_graphics("../../img/bam/brooks_nlevels.png", error = FALSE)
 ```
 
 ##### glmmTMB timings
@@ -804,8 +786,8 @@ knitr::include_graphics("../../img/bam/brooks_nlevels.png")
 As previously noted, depending on the data, and whether the target is assumed gaussian or not, <span class="pack" style = "">glmmTMB</span> might be preferable.  For the following, in the first case a small data set was replicated to create larger data, and in the second, a larger data set was sub-sampled[^bolker_summary].  The advantage is to <span class="pack" style = "">glmmTMB</span> in the first case, and <span class="pack" style = "">lme4</span> in the second.
 
 ```{r tmb_vignette, echo=FALSE, background='transparent'}
-knitr::include_graphics("../../img/bam/tmb_vignette_larger_contra.png")
-knitr::include_graphics("../../img/bam/tmb_vignette_larger_insteval.png")
+knitr::include_graphics("../../img/bam/tmb_vignette_larger_contra.png", error = FALSE)
+knitr::include_graphics("../../img/bam/tmb_vignette_larger_insteval.png", error = FALSE)
 ```
 
 
@@ -815,7 +797,6 @@ There are limitations to the use of the <span class="pack" style = "">mgcv</span
     
 - The number of parameters to estimate increases with the number of random effect levels, which may void any gains until very large data with complex models
 - No estimation of random effect correlations, e.g. between slopes and intercepts
-- When `discrete = TRUE`, some <span class="func" style = "">predict.gam</span> functionality may be lost 
 
 All in all, these are pretty minor, and the last one likely will be remedied in a future release.
 

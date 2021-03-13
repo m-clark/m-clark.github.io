@@ -53,35 +53,35 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #545454; font-weight: bold; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #a1024a; } /* BaseN */
+code span.al { color: #ad0000; } /* Alert */
+code span.an { color: #5e5e5e; } /* Annotation */
+code span.at { color: #20794d; } /* Attribute */
+code span.bn { color: #ad0000; } /* BaseN */
 code span.bu { } /* BuiltIn */
-code span.cf { color: #007faa; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #008000; } /* Char */
-code span.cn { color: #d91e18; } /* Constant */
-code span.co { color: #545454; } /* Comment */
-code span.cv { color: #545454; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #aa5d00; } /* DataType */
-code span.dv { color: #a1024a; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.cf { color: #007ba5; } /* ControlFlow */
+code span.ch { color: #20794d; } /* Char */
+code span.cn { color: #8f5902; } /* Constant */
+code span.co { color: #5e5e5e; } /* Comment */
+code span.cv { color: #5e5e5e; font-style: italic; } /* CommentVar */
+code span.do { color: #5e5e5e; font-style: italic; } /* Documentation */
+code span.dt { color: #ad0000; } /* DataType */
+code span.dv { color: #ad0000; } /* DecVal */
+code span.er { color: #ad0000; } /* Error */
 code span.ex { } /* Extension */
-code span.fl { color: #a1024a; } /* Float */
-code span.fu { color: #4254a7; } /* Function */
+code span.fl { color: #ad0000; } /* Float */
+code span.fu { color: #4758ab; } /* Function */
 code span.im { } /* Import */
-code span.in { color: #545454; font-weight: bold; } /* Information */
-code span.kw { color: #007faa; font-weight: bold; } /* Keyword */
-code span.op { color: #696969; } /* Operator */
-code span.ot { color: #007faa; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #008000; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #008000; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #008000; } /* VerbatimString */
-code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warning */
+code span.in { color: #5e5e5e; } /* Information */
+code span.kw { color: #007ba5; } /* Keyword */
+code span.op { color: #5e5e5e; } /* Operator */
+code span.ot { color: #007ba5; } /* Other */
+code span.pp { color: #ad0000; } /* Preprocessor */
+code span.sc { color: #20794d; } /* SpecialChar */
+code span.ss { color: #20794d; } /* SpecialString */
+code span.st { color: #20794d; } /* String */
+code span.va { color: #111111; } /* Variable */
+code span.vs { color: #20794d; } /* VerbatimString */
+code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 </style>
 
   <!--radix_placeholder_meta_tags-->
@@ -268,7 +268,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
   d-article pre,
   d-article div.sourceCode,
   d-article div.sourceCode pre {
-    overflow: hidden;
+    overflow: auto;
   }
 
   d-article div.sourceCode {
@@ -310,6 +310,11 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
   d-article pre a:hover {
     border-bottom: none;
     text-decoration: underline;
+  }
+
+  d-article details {
+    grid-column: text;
+    margin-bottom: 0.8em;
   }
 
   @media(min-width: 768px) {
@@ -466,6 +471,17 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 
   div.hanging-indent{
     margin-left: 1em; text-indent: -1em;
+  }
+
+  /* Citation hover box */
+
+  .tippy-box[data-theme~=light-border] {
+    background-color: rgba(250, 250, 250, 0.95);
+  }
+
+  .tippy-content > p {
+    margin-bottom: 0;
+    padding: 2px;
   }
 
 
@@ -1133,7 +1149,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
       var layout = $(this).attr('data-layout');
 
       // apply layout to markdown level block elements
-      var elements = $(this).children().not('div.sourceCode, pre, script');
+      var elements = $(this).children().not('details, div.sourceCode, pre, script');
       elements.each(function(i, el) {
         var layout_div = $('<div class="' + layout + '"></div>');
         if (layout_div.hasClass('shaded')) {
@@ -1248,6 +1264,20 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
       // move appendix-bottom entries to the bottom
       $('.appendix-bottom').appendTo('d-appendix').children().unwrap();
       $('.appendix-bottom').remove();
+
+      // hoverable references
+      $('span.citation[data-cites]').each(function() {
+        var refHtml = $('#ref-' + $(this).attr('data-cites')).html();
+        window.tippy(this, {
+          allowHTML: true,
+          content: refHtml,
+          maxWidth: 500,
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'light-border',
+          placement: 'bottom-start'
+        });
+      });
 
       // clear polling timer
       clearInterval(tid);
@@ -1408,14 +1438,18 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
   </script>
 
   <!--/radix_placeholder_distill-->
-  <script src="micro-macro_files/header-attrs-2.5/header-attrs.js"></script>
-  <script src="micro-macro_files/htmlwidgets-1.5.1/htmlwidgets.js"></script>
+  <script src="micro-macro_files/header-attrs-2.6/header-attrs.js"></script>
+  <script src="micro-macro_files/htmlwidgets-1.5.3/htmlwidgets.js"></script>
   <script src="micro-macro_files/viz-1.8.2/viz.js"></script>
   <link href="micro-macro_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
   <script src="micro-macro_files/grViz-binding-1.0.6.1/grViz.js"></script>
   <script src="micro-macro_files/kePrint-0.0.1/kePrint.js"></script>
   <link href="micro-macro_files/lightable-0.0.1/lightable.css" rel="stylesheet" />
   <script src="micro-macro_files/jquery-1.11.3/jquery.min.js"></script>
+  <script src="micro-macro_files/popper-2.6.0/popper.min.js"></script>
+  <link href="micro-macro_files/tippy-6.2.7/tippy.css" rel="stylesheet" />
+  <link href="micro-macro_files/tippy-6.2.7/tippy-light-border.css" rel="stylesheet" />
+  <script src="micro-macro_files/tippy-6.2.7/tippy.umd.min.js"></script>
   <script src="micro-macro_files/anchor-4.2.2/anchor.min.js"></script>
   <script src="micro-macro_files/bowser-1.9.3/bowser.min.js"></script>
   <script src="micro-macro_files/webcomponents-2.0.0/webcomponents.js"></script>
@@ -1432,7 +1466,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 <!--radix_placeholder_front_matter-->
 
 <script id="distill-front-matter" type="text/json">
-{"title":"Micro-macro models","description":"An analysis in the wrong direction? Predicting group level targets with lower level covariates.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#","orcidID":""}],"publishedDate":"2020-08-31T00:00:00.000-04:00","citationText":"Clark, 2020"}
+{"title":"Micro-macro models","description":"An analysis in the wrong direction? Predicting group level targets with lower level covariates.","authors":[{"author":"Michael Clark","authorURL":"https://m-clark.github.io","affiliation":"&nbsp;","affiliationURL":"#","orcidID":""}],"publishedDate":"2020-08-31T00:00:00.000+00:00","citationText":"Clark, 2020"}
 </script>
 
 <!--/radix_placeholder_front_matter-->
@@ -1495,8 +1529,8 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 <p>where <span class="math inline">\(x_{ig}\)</span> are the (possibly repeated) observations <span class="math inline">\(i\)</span> for a group/individual <span class="math inline">\(g\)</span>, <span class="math inline">\(\lambda\)</span> are the factor loadings and variances are constant. We can now see the full model as a structural equation model as follows for a situation with five observations per group.</p>
 <div class="layout-chunk" data-layout="l-body">
 <div class="figure" style="text-align: center"><span id="fig:sem-plot"></span>
-<div id="htmlwidget-efb0aa0f6c7fa2e42672" style="width:624px;height:436.8px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-efb0aa0f6c7fa2e42672">{"x":{"diagram":"digraph Factor  {\n  // basically everything about this is ignored besides the most basic attributes\n  graph [rankdir=TB  bgcolor=transparent splines=\"line\"]\n  \n  subgraph structural {\n    rank=min // puts z and y first\n    node [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 shape=box width=.5 color=\"#ff5500\"];\n    edge [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 color=\"#00aaff80\" minlen=3 arrowsize=.5];\n   \n    node [shape=square width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#00aaff80\" style=filled fontsize=12];\n  \n    Z;\n    \n    node [shape=square width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#ff5500\" style=filled fontsize=12];\n    Z -> Y ;\n  }\n\n  subgraph lv {\n    node [shape=circle width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#00aaff80\" style=filled fontsize=12];\n     \n    X [label = <&xi;>];\n    \n    node [shape=square width=.25 fontcolor=\"#ff5500\" color=\"#ff5500\" fillcolor=\"#ffffff\" style=filled fontsize=12];\n    edge [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 color=\"#00aaff80\" arrowsize=.25];\n\n    X1  [label = \"X1\"];\n    X2  [label = \"X2\"];\n    X3  [label = \"X3\"];\n    X4  [label = \"X4\"];\n    X5  [label = \"X5\"];\n    \n    X -> X1, X2, X3, X4, X5; \n    \n    edge [arrowsize=.5]\n    X -> Y ;\n    \n    Z -> X [dir=\"both\" splines=\"curved\" color=\"#00aaff20\"]\n  }\n  \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-da1fae50569a30c318ca" style="width:624px;height:436.8px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-da1fae50569a30c318ca">{"x":{"diagram":"digraph Factor  {\n  // basically everything about this is ignored besides the most basic attributes\n  graph [rankdir=TB  bgcolor=transparent splines=\"line\"]\n  \n  subgraph structural {\n    rank=min // puts z and y first\n    node [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 shape=box width=.5 color=\"#ff5500\"];\n    edge [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 color=\"#00aaff80\" minlen=3 arrowsize=.5];\n   \n    node [shape=square width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#00aaff80\" style=filled fontsize=12];\n  \n    Z;\n    \n    node [shape=square width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#ff5500\" style=filled fontsize=12];\n    Z -> Y ;\n  }\n\n  subgraph lv {\n    node [shape=circle width=.5 fontcolor=\"#fffff8\" color=\"transparent\" \n    fillcolor=\"#00aaff80\" style=filled fontsize=12];\n     \n    X [label = <&xi;>];\n    \n    node [shape=square width=.25 fontcolor=\"#ff5500\" color=\"#ff5500\" fillcolor=\"#ffffff\" style=filled fontsize=12];\n    edge [fontname=\"Roboto\" fontsize=10 fontcolor=gray50 color=\"#00aaff80\" arrowsize=.25];\n\n    X1  [label = \"X1\"];\n    X2  [label = \"X2\"];\n    X3  [label = \"X3\"];\n    X4  [label = \"X4\"];\n    X5  [label = \"X5\"];\n    \n    X -> X1, X2, X3, X4, X5; \n    \n    edge [arrowsize=.5]\n    X -> Y ;\n    \n    Z -> X [dir=\"both\" splines=\"curved\" color=\"#00aaff20\"]\n  }\n  \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p class="caption">
 Figure 1: The structural equation model
 </p>
@@ -1513,34 +1547,40 @@ Figure 1: The structural equation model
 <p>It turns out that factor models and mixed models share a lot in common. Those familiar with <em>growth curve models</em> know that they are equivalent to mixed models, but the comparison is a more general one of random effects methods. To demonstrate the equivalence, I’ll use a cleaned up version of the <a href="https://en.wikipedia.org/wiki/Big_Five_personality_traits">Big 5</a> data in the <span class="pack" style="">psych</span> package. Specifically, we’ll use the five items that belong to the Agreeableness measure.</p>
 <p>First we make the data in both wide and long. The former makes it amenable to factor analysis, while the latter is what we need for a mixed model.</p>
 <div class="layout-chunk" data-layout="l-body">
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># data prep for long and wide format</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>agree_df <span class="ot">=</span> noiris<span class="sc">::</span>big_five <span class="sc">%&gt;%</span> </span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(A1<span class="sc">:</span>A5) <span class="sc">%&gt;%</span> </span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>agree_long <span class="ot">=</span> agree_df <span class="sc">%&gt;%</span> </span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">id =</span> <span class="fu">factor</span>(<span class="fu">row_number</span>())) <span class="sc">%&gt;%</span> </span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>id, <span class="at">names_to =</span> <span class="st">&#39;variable&#39;</span>, <span class="at">values_to =</span> <span class="st">&#39;value&#39;</span>)</span></code></pre></div>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='co'># data prep for long and wide format</span>
+
+<span class='va'>agree_df</span> <span class='op'>=</span> <span class='fu'>noiris</span><span class='fu'>::</span><span class='va'><a href='https://rdrr.io/pkg/noiris/man/big_five.html'>big_five</a></span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>select</span><span class='op'>(</span><span class='va'>A1</span><span class='op'>:</span><span class='va'>A5</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>drop_na</span><span class='op'>(</span><span class='op'>)</span>
+
+<span class='va'>agree_long</span> <span class='op'>=</span> <span class='va'>agree_df</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>mutate</span><span class='op'>(</span>id <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/factor.html'>factor</a></span><span class='op'>(</span><span class='fu'>row_number</span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>pivot_longer</span><span class='op'>(</span><span class='op'>-</span><span class='va'>id</span>, names_to <span class='op'>=</span> <span class='st'>'variable'</span>, values_to <span class='op'>=</span> <span class='st'>'value'</span><span class='op'>)</span>
+</code></pre>
+</div>
 </div>
 <p>The standard factor model will have to be constrained to have equal loadings and item variances. In addition, we’ll estimate the intercepts, but otherwise this is your basic factor analysis.</p>
 <div class="layout-chunk" data-layout="l-body">
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># or use growth() to save some of the model tedium</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>cfa_model_agree <span class="ot">=</span> <span class="st">&quot;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">  agree =~ a*A1 + a*A2 + a*A3 + a*A4 + a*A5</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">  A1 ~~ var*A1</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">  A2 ~~ var*A2</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">  A3 ~~ var*A3</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">  A4 ~~ var*A4</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">  A5 ~~ var*A5</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lavaan)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>cfa_fit_agree <span class="ot">=</span> <span class="fu">cfa</span>(cfa_model_agree, <span class="at">data =</span> agree_df, <span class="at">meanstructure =</span> T) </span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cfa_fit_agree)</span></code></pre></div>
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"> <span class='co'># or use growth() to save some of the model tedium</span>
+<span class='va'>cfa_model_agree</span> <span class='op'>=</span> <span class='st'>"
+  agree =~ a*A1 + a*A2 + a*A3 + a*A4 + a*A5
+  
+  A1 ~~ var*A1
+  A2 ~~ var*A2
+  A3 ~~ var*A3
+  A4 ~~ var*A4
+  A5 ~~ var*A5
+"</span>
+
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='http://lavaan.org'>lavaan</a></span><span class='op'>)</span>
+
+<span class='va'>cfa_fit_agree</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/lavaan/man/cfa.html'>cfa</a></span><span class='op'>(</span><span class='va'>cfa_model_agree</span>, data <span class='op'>=</span> <span class='va'>agree_df</span>, meanstructure <span class='op'>=</span> <span class='cn'>T</span><span class='op'>)</span> 
+
+<span class='fu'><a href='https://rdrr.io/r/base/summary.html'>summary</a></span><span class='op'>(</span><span class='va'>cfa_fit_agree</span><span class='op'>)</span>
+</code></pre>
+</div>
 <pre><code>lavaan 0.6-7 ended normally after 11 iterations
 
   Estimator                                         ML
@@ -1591,17 +1631,14 @@ Variances:
 </div>
 <p>When we run the mixed model, we get the same variance and intercept estimates.</p>
 <div class="layout-chunk" data-layout="l-body">
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span></code></pre></div>
-<pre><code>Loading required package: Matrix</code></pre>
-<pre><code>
-Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:tidyr&#39;:
+<div class="sourceCode">
+<pre class="sourceCode r"><code class="sourceCode r"><span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://github.com/lme4/lme4/'>lme4</a></span><span class='op'>)</span>
+<span class='kw'><a href='https://rdrr.io/r/base/library.html'>library</a></span><span class='op'>(</span><span class='va'><a href='https://m-clark.github.io/mixedup'>mixedup</a></span><span class='op'>)</span> <span class='co'># for post-processing</span>
 
-    expand, pack, unpack</code></pre>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mixedup) <span class="co"># for post-processing</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>mixed_fit <span class="ot">=</span> <span class="fu">lmer</span>(value <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> variable <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span>id), <span class="at">data =</span> agree_long,  <span class="at">REML =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise_model</span>(mixed_fit, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<span class='va'>mixed_fit</span> <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/pkg/lme4/man/lmer.html'>lmer</a></span><span class='op'>(</span><span class='va'>value</span> <span class='op'>~</span> <span class='op'>-</span><span class='fl'>1</span> <span class='op'>+</span> <span class='va'>variable</span> <span class='op'>+</span> <span class='op'>(</span><span class='fl'>1</span> <span class='op'>|</span><span class='va'>id</span><span class='op'>)</span>, data <span class='op'>=</span> <span class='va'>agree_long</span>,  REML <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span>
+<span class='fu'><a href='https://m-clark.github.io/mixedup/reference/summarize_model.html'>summarise_model</a></span><span class='op'>(</span><span class='va'>mixed_fit</span>, digits <span class='op'>=</span> <span class='fl'>3</span><span class='op'>)</span>
+</code></pre>
+</div>
 <pre><code>Computing profile confidence intervals ...</code></pre>
 <pre><code>
 Variance Components:</code></pre>
@@ -2214,7 +2251,7 @@ Unadjusted
 </div>
 <h2 id="summary">Summary</h2>
 <p>In the end we relearn a valuable, but very old lesson. The take home story here, at least to me, is to have a reliable measure and/or get more observations per group if you can, which would be the same advice for any clustered data situation. If you do have a reliable measure, such as a proportion of simple counts, or a known scale with good properties, using the mean should not give you too much pause. As a precaution, you might go ahead and use White’s correction as suggested by FJK. If you have enough data and the model isn’t overly complicated, consider doing the SEM.</p>
-<p>last updated: 2020-11-30</p>
+<p>last updated: 2021-03-13</p>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
 <div id="ref-croon2007predicting" class="csl-entry" role="doc-biblioentry">
 Croon, Marcel A, and Marc JPM van Veldhoven. 2007. <span>“Predicting Group-Level Outcome Variables from Variables Measured at the Individual Level: A Latent Variable Multilevel Model.”</span> <em>Psychological Methods</em> 12 (1): 45.
@@ -2235,7 +2272,7 @@ Revelle, William, and David M Condon. 2019. <span>“Reliability from <span clas
 <li id="fn1" role="doc-endnote"><p>I wasn’t sure in the mixed model whether to include the item and or group level Z as fixed effects. Results did not change much, so I went with a mixed model with no fixed effects to make them closer to the scale of the mean scores.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn2" role="doc-endnote"><p>All code is contained within the <a href="https://github.com/m-clark/m-clark.github.io/blob/master/_posts/2020-08-31-micro-macro-mlm/micro-macro.Rmd">R markdown file</a> that produced this post.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn3" role="doc-endnote"><p>For those who may not have access to the article, the values for percentage bias in CV were as follows: for the unadjusted model, the bias for the coefficients under these conditions was 0.6, 15.3, -50.4, and for the adjusted model, -1.1, -1.3, 5.0.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></li>
 <li id="fn4" role="doc-endnote"><p>A typical cutoff for coefficient <span class="math inline">\(\alpha\)</span> for a good measure is .8. We can actually use a ‘G-theory’ approach and calculate this by hand <span class="math inline">\(\frac{1}{1+9/10}\)</span>, where 1 is the variance CV fixed for the true score, and 9 is residual variance. <span class="math inline">\(\frac{1}{1+9}\)</span> is the <span class="math inline">\(\rho_x\)</span>, i.e. intraclass correlation, that they have in Table 1. In the better scenario <span class="math inline">\(\rho_x\)</span> = <span class="math inline">\(\frac{1}{1+4}\)</span> = .2 and the reliability is <span class="math inline">\(\frac{1}{1+4/10}\)</span> = .71, which is notably better, though still substandard. Even then we can see from their table dramatic decreases in bias from that improvement in reliability.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn5" role="doc-endnote"><p>The lack of reliability is likely the culprit behind the wider range in the estimated factor scores as well.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
