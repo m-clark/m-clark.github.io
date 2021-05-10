@@ -18,7 +18,7 @@ bibliography:
   # - ../../bibs/mixed.bib  # old issue of multiple biblios with relative paths never fixed in rmd
   - ../../bibs/ts.bib
 draft: true
-tags: [time series, mixed models, torch, deep learning, RNN, seq2seq, prophet, pytorch]
+tags: [time series, generalized additive models, mixed models, torch, deep learning, RNN, seq2seq, prophet, fable, pytorch]
 categories:
   - [mixed models, time series, deep learning]
 ---
@@ -54,24 +54,30 @@ theme_set(visibly::theme_clean())
 
 ## Intro
 
-It is extremely common to have data that exists over a period of time, for example, yearly sports statistics, daily manufacturing records, server logs that might be occurring many times per second, and similar.  There are many approaches we could use to model the data in these scenarios.  When there are few time points and they are clustered within other units, like repeated observations of exercise data for many individuals, we often use tools like mixed models for example, and even with many observations in a series, we can still use tools like that. But sometimes there may be no natural clustering, or we might want to use other approaches to handle additional complexity.
+It is extremely common to have data that exists over a period of time. For example, we might have yearly sports statistics, daily manufacturing records, server logs that might be occurring many times per second, and similar.  There are many approaches we could use to model the data in these scenarios.  When there are few time points and they are clustered within other units, like repeated observations of exercise data for many individuals, we often use tools like [mixed models](https://m-clark.github.io/mixed-models-with-R/) for example, and even with many observations in a series, we can still use tools like that. But sometimes there may be no natural clustering, or we might want to use other approaches to handle additional complexity.
 
-This post was inspired by a co-worker's efforts in using PyTorch to analyze  Chicago Transit data. Cody Dirks has written a post where he used a Python module developed by our group at [Strong Analytics](https://strong.io) to analyze the ridership across all the 'L'.  This post can be seen as showing simpler models which might also be viable for a given situation such as this, allowing for quick dives, or even as ends in themselves.
+This post is inspired by a co-worker's efforts in using PyTorch to analyze  Chicago Transit data. [Cody Dirks](https://twitter.com/codydirks) was writing [a post](https://www.strong.io/blog) where he used a Python module developed by our group at [Strong Analytics](https://strong.io) to analyze the ridership across all the '[L](https://en.wikipedia.org/wiki/Chicago_%22L%22)'.  This post can be seen as a demonstration of some simpler models which might also be viable for a given situation such as this, allowing for quick dives, or even as ends in themselves.
+
+
 
 ## Outline
+
+The models we'll go through are the following:
 
 - Error models and random effects
 - GAM
 - More elaborate time series with seasonal and other effects
 - Deep learning
 
-In what follows I will show some more detailed code regarding the output, e.g. how I obtain the basic plot shown, but won't show it later for conciseness, focusing mostly just on the basic model code. You can always find the code for these posts on my [GitHub](https:://github.com/m-clark/m-clark.github.io).
+In what follows I will show some more detailed code in the beginning, but won't show it later for conciseness, focusing mostly just on the basic model code. You can always find the code for these posts on my [GitHub](https:://github.com/m-clark/m-clark.github.io).
+
 
 
 ## Data Description
 
-As mentioned on Cody's post, over 750,000 riders use the Chicago Transit Authority's 'L' system to get around the city. There are 8 interconnected rail lines (named after colors- the Red, Blue, Green, Brown, Pink, Orange, Purple, and Yellow lines), 145 entry/exit stations, and over 2,300 combined trips by its railcars every day[^express].
+As will be seen with Cody's post[^codypost], over 750,000 people use the Chicago Transit Authority's 'L' system to get around the city. There are 8 interconnected rail lines named after colors- the Red, Blue, Green, Brown, Pink, Orange, Purple, and Yellow, 145 entry/exit stations, and over 2,300 combined trips by its railcars every day[^express].
 
+[^codypost]: As of publishing this, Cody's post had not yet been pushed to the Strong website.  I will update with a link when it's available.
 [^express]: There is also the Purple express line, which is very irregular compared to the others.
 
 The city of Chicago provides ridership data that can be accessed publicly.
@@ -79,26 +85,22 @@ The city of Chicago provides ridership data that can be accessed publicly.
 - [ridership](https://data.cityofchicago.org/Transportation/CTA-Ridership-L-Station-Entries-Daily-Totals/5neh-572f)
 - [station info](https://data.cityofchicago.org/Transportation/CTA-System-Information-List-of-L-Stops/8pix-ypme)
 
-In Cody's post, he added pertinent information regarding weather, sporting events, and more.  I have saved the processed data here.
+In Cody's exploration, he added pertinent information regarding weather, sporting events, and more.  You can access the [processed data](https://github.com/m-clark/m-clark.github.io/tree/master/data/time-series/processed_df.csv).
 
-`TODO: NEED LINK`   
+`TODO: NEED LINK`
 
-So we have daily ridership from 2012-2018, and want to model this in some fashion.  We will use a normalized ride count (mean zero, standard deviation 1) as our primary focus.
+For our demonstrations we have daily ridership from 2012-2018, and we will use a variety of methods to model this.  We will use a normalized ride count (mean of 0, standard deviation of 1) as our target variable.
+
 
 ### Import & Setup
+
+To get things started we'll use the tidyverse for some additional data processing, and lubridate for any date processing, for example, converting to weekdays.
 
 ```{r pkg-load-misc, cache=FALSE}
 # Data Processing
 
 library(tidyverse)
 library(lubridate)
-library(glue)
-
-# Visualization
-library(ggrepel)
-library(scico)
-
-# Tables
 
 
 # Misc
@@ -108,16 +110,16 @@ END_DT   = '2018-12-31'
 SPLIT_DT = '2017-06-01'
 ```
 
-#### Main data 
 
-I start with data having already been processed, but as mentioned, the original data can be found [here](), and the source is publicly available.
+##### Main data 
 
-`TODO: ADD LINK`
+I start with data having already been processed, but as mentioned the source is publicly available.  I use <span class="pack" style = "">data.table</span> to read it in more quickly, but it's default date class can cause issues with other packages, so I deal with that.  I also extract the year, month, weekday, etc.
+
 
 ```{r data-processed}
 df = data.table::fread('data/time-series/processed_df.csv')
 
-df_min = df %>% 
+df_start = df %>% 
   as_tibble() %>% 
   select(-contains('_attributes'), -(tsun:wt22)) %>% 
   mutate(
@@ -129,21 +131,30 @@ df_min = df %>%
     day       = factor(wday(date, label = TRUE), ordered = FALSE),
     year_day  = lubridate::yday(date),
     line = factor(line),
-    snow_scaled = scale(snow)[,1],
+    snow_scaled = scale(snow)[, 1],
     colors = as.character(line),
-    colors = ifelse(colors == 'purple_express', 'purple4', colors)
+    colors = ifelse(colors == 'purple_express', 'purple4', colors),
+    red_line_modernization = 
+      ifelse(
+        between(date, as_date('2013-05-19'), as_date('2013-10-20')), 
+        1, 
+        0
+      )
   ) %>% 
   arrange(date, line)
 ```
 
+
 ### Training and Validation
 
-```{r train-test-split}
-df_train = df_min %>% 
-  filter(date <= SPLIT_DT, !is.na(rides))
+We split our data into training and validation sets, such that everything before `r SPLIT_DT` is used for training, while everything after will be used for testing model performance.
 
-df_validate = df_min %>% 
-  filter(date > SPLIT_DT, !is.na(rides))
+```{r train-test-split}
+df_train = df_start %>% 
+  filter(date < SPLIT_DT, !is.na(rides))
+
+df_validate = df_start %>% 
+  filter(date >= SPLIT_DT, !is.na(rides))
 
 red_line_train = df_train %>% 
   filter(line == 'red')
@@ -155,7 +166,7 @@ red_line_validate = df_validate %>%
 
 ### Other
 
-Holidays are available via the <span class="pack" style = "">prophet</span> package, which we'll be demonstrating later.  The data we're using already has a 'holiday vs. not' variable for simplicity though.  It comes from a different source.  The <span class="pack" style = "">prophet</span> version has both the actual date and the observed date counted as a holiday.
+Holidays are available via the <span class="pack" style = "">prophet</span> package, which we'll be demonstrating a model with later.  The data we're using already has a 'holiday vs. not' variable for simplicity, though it comes from a different source.  The <span class="pack" style = "">prophet</span> version has both the actual date and the observed date counted as a holiday, and I prefer to use both.
 
 ```{r misc-processing}
 holidays = prophet::generated_holidays %>% 
@@ -164,28 +175,56 @@ holidays = prophet::generated_holidays %>%
   droplevels()
 ```
 
-A quick look at the red line similar to Cody's post.
+We'll take a quick look at the red line similar to Cody's post, so we can feel we have the data processed as we should.
 
-```{r dupe-plot}
+```{r dupe-plot, echo=FALSE}
 red_line_train %>%
-  filter(line == 'red', date >= '2012-01-01', date < '2016-01-01') %>% 
+  filter(line == 'red', date >= '2012-01-01', date <= '2016-01-01') %>% 
   ggplot(aes(date, rides)) +
-  geom_line(alpha = .25) +
+  geom_rect(
+    aes(
+      xmin = as_date('2013-05-19'),
+      xmax = as_date('2013-10-20'),
+      ymin = 0,
+      ymax = Inf
+    ), 
+    fill = 'gray90'
+  ) +
+  geom_line(color = 'darkred', alpha = .5) +
   geom_vline(
     aes(xintercept = date),
-    data  = . %>% filter(date == floor_date(date, unit = 'year')) %>% distinct(),
+    data  = . %>% 
+      filter(date == floor_date(date, unit = 'year')) %>% 
+      distinct(),
     lty   = 'dashed',
+    color = 'gray50',
     size  = .5,
     alpha = .5
   ) +
+  annotate(
+    geom = 'text',
+    x = as_date('2013-05-19'),
+    y = 1,
+    label = 'Red Line South\nModernization Project',
+    color = 'gray25',
+    size  = 2,
+    hjust = 0,
+    vjust = 0
+  ) +
   scale_x_date(
-    breaks = seq.Date(as_date('2012-01-01'), as_date('2017-07-01'), by = '6 months'),
+    breaks = seq.Date(as_date('2012-01-01'), as_date('2016-01-01'), by = '6 months'),
     date_labels = '%Y-%m'
   ) +
-  scale_y_log10(breaks = seq(0, 3e5, 5e4)) +
-  labs(x = '') +
-  guides(x = guide_axis(n.dodge = 2))
+  scale_y_continuous(breaks = seq(0, 3e5, 5e4), limits = c(0, 250000)) +
+  labs(x = '', y = '', subtitle = 'Daily Riders') +
+  guides(x = guide_axis(n.dodge = 2)) +
+  theme(
+    axis.ticks.x = element_line(color = 'gray90')
+  )
 ```
+
+
+With the data ready to go, we are ready for modeling, so let's get started!
 
 
 
@@ -193,9 +232,9 @@ red_line_train %>%
 
 ### Intro
 
-Classical times series from an econometrics perspective considers a error model that accounts for the correlation a current observation has with past observations.  A traditional example is the so-called *autoregressive*, or *AR*, model, which let's a current observation be predicted by past observations up to a certain point. For example, would could start by just using the last observation. Next we extend this to predict the current based on the previous two observations, and so on. How many *lags* we use is part of the model exploration.
+Classical times series from an econometrics perspective often considers a error model that accounts for the correlation a current observation has with past observations.  A traditional example is the so-called *autoregressive*, or *AR*, model, which let's a current observation be predicted by past observations up to a certain point. For example, would could start by just using the last observation to predict the current one. Next we extend this to predict the current based on the previous two observations, and so on. How many *lags* we use is part of the model exploration.
 
-$$y_t = \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + \varepsilon_t$$$
+$$y_t = \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + \varepsilon_t$$
 
 We can extend this to include not just past observation but also past residuals, called a *moving average*.  So formally, our *ARMA* (p, q) model now looks like this for an observation $y$ at time $t$:
 
@@ -295,7 +334,7 @@ Adding these is not exactly straightforward, since it requires a matrix rather t
 mm = model.matrix(
   ~ . - 1, 
   data = red_line_train %>% 
-    select(is_weekend:is_sox_game, tmax_scaled, prcp_scaled)
+    select(is_weekend:is_sox_game, tmax_scaled, prcp_scaled, red_line_modernization)
 )
 
 model_arima_xreg = forecast::auto.arima(
@@ -318,7 +357,7 @@ In the following code, we create a model matrix similar to the training data tha
 
 ```{r arima-model-xreg-explore}
 nd = red_line_validate %>%
-  select(is_weekend:is_sox_game, tmax_scaled, prcp_scaled) %>% 
+  select(is_weekend:is_sox_game, tmax_scaled, prcp_scaled, red_line_modernization) %>% 
   model.matrix( ~ . - 1, data = .)
 
 preds = predict(model_arima_xreg, newxreg = nd, n.ahead = nrow(red_line_validate))$pred
@@ -403,6 +442,7 @@ Putting it all together, we're just adding the AR random effect to the standard 
 
 $$ y_{tl} \sim X\beta + z^{ar}_t +z^{line}_{l} + e_{tl}$$
 
+
 ### Data Prep
 
 So let's try this! First some minor data prep to add holidays.
@@ -424,6 +464,8 @@ df_validate_mixed = df_validate %>%
 For the model, we can now easily think of it as we do other standard modeling scenarios.  Along with standard covariates, we'll add random effects for line, day, day x line interaction, etc.  Finally we also add an AR random effect. For each line, we have an autoregressive structure for days, such that days right next to each other are correlated, and this correlation tapers off as days are further apart.  This is not our only option, but seems straightforward to me. 
 
 
+Depending on what you include in the model, you may have convergence issues, so feel free to reduce the complexity if needed.  For example, most of the day effect is captured by weekend vs. not, and a by line year trend wasn't really necessary. In addition, the way the AR random effect variance is estimated as noted above, this essentially captures the line intercept variance.
+
 ```{r mixed-ar-model}
 model_mixed = 
   rides_scaled ~ 
@@ -433,13 +475,15 @@ model_mixed =
   tmax_scaled + 
   prcp_scaled + 
   snow_scaled +
-  year_day +
+  # year_day +
   ar1(0 + day|line) +     # the 0 + is a nuance of tmb's approach
   (1|holiday) +           # as RE with all holidays instead of just holiday vs. not
-  (1|year) +              # doing year as factor will cause issues since 2018 isn't in train
-  (1|day) + 
-  (1|day:line) + 
-  (1 + year_day|line)
+  (1|year) +     
+  (1 | red_line_modernization:line) +  # the project shifted ridership from red to other lines
+  # (1|day) #+ 
+  # (1|line) +
+  (1|day:line) #+
+  # (1 + year_day|line)
 
 library(glmmTMB)
 
@@ -451,7 +495,7 @@ fit_mixed = glmmTMB(model_mixed, data = df_train_mixed)
 
 The mixed model approach is nice because it is highly interpretable.  We get both standard regression coefficients, and variance components to help us understand how the rest of the variance breaks down.  For example, I would interpret the following that that line and weekend are the biggest contributors to the variability seen, and that we have high autocorrelation, as expected.
 
-```{r mixed-ar-explore, message=TRUE}
+```{r mixed-ar-explore, message=TRUE, cache.rebuild=TRUE}
 library(mixedup)
 
 summarise_model(fit_mixed, digits = 4)
@@ -460,7 +504,7 @@ extract_cor_structure(fit_mixed, which_cor = 'ar1')
 ```
 
 
-```{r mixed-vis}
+```{r mixed-vis, cache.rebuild=TRUE}
 p_mixed = df_validate_mixed %>% 
   droplevels() %>% 
   mutate(pred = predict(fit_mixed, newdata = .)) %>%
@@ -515,12 +559,12 @@ For more on autocorrelation structure in the mixed model setting, [see my mixed 
 
 
 
-## Structured Additive Regression Models
+## Generalized Additive  Models
 
 ### Intro
 
 We can generalize mixed models even further to incorporate nonlinear components, which may include cyclic or other effects. Such models are typically referred to as [generalized additive models](https://m-clark.github.io/generalized-additive-models/) (GAMs).
-AR processes themselves can be seen as a special case of [gaussian processes](http://www.gaussianprocess.org/), which can potentially be approximated via GAMs.  As they can accommodate spatial, temporal, nonlinear, and other effects, they are sometimes more generally referred to as structured additive regression models, or STARs.
+AR processes themselves can be seen as a special case of [gaussian processes](http://www.gaussianprocess.org/), which can potentially be approximated via GAMs.  As they can accommodate spatial, temporal, nonlinear, and other effects, they are sometimes more generally referred to as *structured additive regression models*, or STARs.
 
 
 ### Data Prep
@@ -528,8 +572,6 @@ AR processes themselves can be seen as a special case of [gaussian processes](ht
 The data prep for the GAM is the same as with the mixed model, so we'll just use that data.
 
 ```{r gam-data-prep}
-library(mgcv)
-
 df_train_gam = df_train_mixed
 
 df_validate_gam = df_validate_mixed
@@ -540,6 +582,8 @@ df_validate_gam = df_validate_mixed
 With data in place we are ready to conduct the model. We have numerous options for how we'd like to take this.  However, as an example, I tried various smooths, but didn't really see much difference, which is actually a good thing. For any further improvements we'd likely have to tweak the core model itself.  I also use <span class="func" style = "">bam</span> for a quicker result, but this isn't really necessary, as it didn't even take a minute to run.  As with the mixed model, we will use holiday as a random effect.
 
 ```{r gam-model}
+library(mgcv)
+
 # for year, use year (numeric) or use year_fac, but for latter, it will not be
 # able to predict any year not in the training data unless you use
 # drop.unused.levels.
@@ -551,6 +595,7 @@ model_gam =
   s(tmax_scaled) + 
   s(prcp_scaled) + 
   s(snow_scaled) +
+  s(red_line_modernization, line, bs = 're') +
   s(holiday,  bs = 're') +
   s(year_fac, bs = 're') +      
   s(day,  bs = 're') + 
