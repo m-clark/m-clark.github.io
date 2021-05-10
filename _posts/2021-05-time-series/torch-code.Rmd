@@ -1,0 +1,383 @@
+---
+title: "Time Series Supplemental"
+date: "`r Sys.Date()`"
+output:
+  distill::distill_article:
+    self_contained: true
+    toc: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = T, 
+  eval      = FALSE,
+  message   = F, 
+  warning   = F, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = F,
+  cache = T,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+```
+
+All of this code was copied from the [GitHub repo](https://github.com/mlverse/torchbook_materials/blob/master/scripts/rnn_attention.R) corresponding to the [RStudio AI blog](https://blogs.rstudio.com/ai/posts/2021-03-19-forecasting-time-series-with-torch_4/), not the blog itself, which has a couple bugs that will mean it likely won't work for you.
+
+
+This assumes you've run the data setup in the post.  After these you can then create, run, and evaluate the model.
+
+
+#### Encoder
+
+works the same way. It wraps an RNN, and returns the final state
+
+```{r torch-encoder}
+encoder_module <- nn_module(
+  
+  initialize = function(
+    type,
+    input_size,
+    hidden_size,
+    num_layers = 1,
+    dropout    = 0
+  ) {
+    
+    self$type <- type
+    
+    self$rnn <- if (self$type == "gru") {
+      nn_gru(
+        input_size  = input_size,
+        hidden_size = hidden_size,
+        num_layers  = num_layers,
+        dropout     = dropout,
+        batch_first = TRUE
+      )
+    } else {
+      # MC Note: As per one of the comments on the blog, I have no evidence that running with option lstm will work
+      nn_lstm(
+        input_size  = input_size,
+        hidden_size = hidden_size,
+        num_layers  = num_layers,
+        dropout     = dropout,
+        batch_first = TRUE
+      )
+    }
+    
+  },
+  
+  forward = function(x) {
+    
+    # return outputs for all timesteps, as well as last-timestep states for all layers
+    x %>% self$rnn()
+    
+  }
+  
+)
+```
+
+#### Attention
+
+In basic seq2seq, whenever it had to generate a new value, the decoder took into account two things: its prior state, and the previous output generated. In an attention-enriched setup, the decoder additionally receives the complete output from the encoder. In deciding what subset of that output should matter, it gets help from a new agent, the attention module.
+
+This, then, is the attention module’s raison d’être: Given current decoder state and well as complete encoder outputs, obtain a weighting of those outputs indicative of how relevant they are to what the decoder is currently up to. This procedure results in the so-called attention weights: a normalized score, for each time step in the encoding, that quantify their respective importance.
+
+##### Additive
+
+In additive attention, encoder outputs and decoder state are commonly either added or concatenated (we choose to do the latter, below). The resulting tensor is run through a linear layer, and a softmax is applied for normalization.
+
+
+```{r torch-additive}
+attention_module_additive <- nn_module(
+  
+  initialize = function(hidden_dim, attention_size) {
+    
+    self$attention <- nn_linear(2 * hidden_dim, attention_size)
+    
+  },
+  
+  forward = function(state, encoder_outputs) {
+    
+    # function argument shapes
+    # state: (1, bs, hidden_dim)
+    # encoder_outputs: (bs, timesteps, hidden_dim)
+    
+    # multiplex state to allow for concatenation (dimensions 1 and 2 must agree)
+    seq_len <- dim(encoder_outputs)[2]
+    # resulting shape: (bs, timesteps, hidden_dim)
+    state_rep <- state$permute(c(2, 1, 3))$repeat_interleave(seq_len, 2)
+    
+    # concatenate along feature dimension
+    concat <- torch_cat(list(state_rep, encoder_outputs), dim = 3)
+    
+    # run through linear layer with tanh
+    # resulting shape: (bs, timesteps, attention_size)
+    scores <- self$attention(concat) %>% 
+      torch_tanh()
+    
+    # sum over attention dimension and normalize
+    # resulting shape: (bs, timesteps) 
+    attention_weights <- scores %>%
+      torch_sum(dim = 3) %>%
+      nnf_softmax(dim = 2)
+    
+    # a normalized score for every source token
+    attention_weights
+  }
+)
+```
+
+
+
+##### Multiplicative
+
+In multiplicative attention, scores are obtained by computing dot products between decoder state and all of the encoder outputs. Here too, a softmax is then used for normalization.
+
+```{r torch-multiplicative}
+attention_module_multiplicative <- nn_module(
+  
+  initialize = function() {
+    NULL
+  },
+  
+  forward = function(state, encoder_outputs) {
+    
+    ##################################################################################
+    # calculate attention weights == weight encoder outputs from all timesteps
+    # (KEYS) as to their importance for the CURRENT decoder hidden state (QUERY)
+    # 
+    # this is done through:
+    # - calculating the dot products between key and query vectors
+    # - dividing by square root of number of features to achieve unit variance
+    #
+    # this is a form of multiplicative attention
+    ##################################################################################
+    
+    # function argument shapes
+    # encoder_outputs: (bs, timesteps, hidden_dim)
+    # state: (1, bs, hidden_dim)
+    
+    # allow for matrix multiplication with encoder_outputs
+    state <- state$permute(c(2, 3, 1))
+    
+    # prepare for scaling by number of features
+    d <- torch_tensor(dim(encoder_outputs)[3], dtype = torch_float())
+    
+    # scaled dot products between state and outputs
+    # resulting shape: (bs, timesteps, 1)
+    scores <- torch_bmm(encoder_outputs, state) %>%
+      torch_div(torch_sqrt(d))
+    
+    # normalize
+    # resulting shape: (bs, timesteps) 
+    attention_weights <- scores$squeeze(3) %>%
+      nnf_softmax(dim = 2)
+    
+    # a normalized score for every source token
+    attention_weights
+  }
+)
+```
+
+
+#### Decoder
+
+Concretely, the method in question, weighted_encoder_outputs(), computes a product of weights and encoder outputs, making sure that each output will have appropriate impact.
+
+The rest of the action then happens in forward(). A concatenation of weighted encoder outputs (often called “context”) and current input is run through an RNN. Then, an ensemble of RNN output, context, and input is passed to an MLP. Finally, both RNN state and current prediction are returned.
+
+```{r torch-decoder}
+decoder_module <- nn_module(
+  
+  initialize = function(
+    type,
+    input_size,
+    hidden_size,
+    attention_type,
+    attention_size = 8,
+    num_layers = 1
+  ) {
+    
+    self$type <- type
+    
+    self$rnn <- if (self$type == "gru") {
+      nn_gru(
+        input_size  = input_size,
+        hidden_size = hidden_size,
+        num_layers  = num_layers,
+        batch_first = TRUE
+      )
+    } else {
+      nn_lstm(
+        input_size  = input_size,
+        hidden_size = hidden_size,
+        num_layers  = num_layers,
+        batch_first = TRUE
+      )
+    }
+    
+    self$linear <- nn_linear(2 * hidden_size + 1, 1)
+    
+    if (attention_type == "multiplicative") {
+      self$attention <- attention_module_multiplicative()
+    } else {
+      self$attention <- attention_module_additive(hidden_size, attention_size)
+    }
+    
+  },
+  
+  weighted_encoder_outputs = function(state, encoder_outputs) {
+    
+    ##################################################################################
+    # perform attention pooling == create current context (variable/vector) 
+    #
+    # == apply attention weights to encoder outputs (VALUES)
+    #
+    # this is done through:
+    # - getting the attention weights from the attention module and 
+    # - batch-multiplying them with the encoder outputs
+    ##################################################################################
+    
+    # encoder_outputs is (bs, timesteps, hidden_dim)
+    # state is (1, bs, hidden_dim)
+    # resulting shape: (bs * timesteps)
+    attention_weights <- self$attention(state, encoder_outputs)
+    
+    # resulting shape: (bs, 1, seq_len)
+    attention_weights <- attention_weights$unsqueeze(2)
+    
+    # resulting shape: (bs, 1, hidden_size)
+    weighted_encoder_outputs <- torch_bmm(attention_weights, encoder_outputs)
+    
+    weighted_encoder_outputs
+    
+  },
+  
+  forward = function(x, state, encoder_outputs) {
+    
+    ##################################################################################
+    # calculate prediction based on input (the last value predicted) as well as
+    # current context
+    #
+    # this is done through:
+    # - getting the weighted encoder outputs (context) from self$weighted_encoder_outputs,
+    # - concatenating with the input, 
+    # - running the result through an RNN, and
+    # - feeding the ensemble of RNN output, context, and input through an MLP
+    ##################################################################################
+    
+    # encoder_outputs is (bs, timesteps, hidden_dim)
+    # state is (1, bs, hidden_dim)
+    
+    # resulting shape: (bs, 1, hidden_size)
+    context <- self$weighted_encoder_outputs(state, encoder_outputs)
+    
+    # concatenate input and context
+    # NOTE: this repeating is done to compensate for the absence of an embedding module
+    # that, in NLP, would give x a higher proportion in the concatenation
+    x_rep <- x$repeat_interleave(dim(context)[3], 3) 
+    rnn_input <- torch_cat(list(x_rep, context), dim = 3)
+    
+    # resulting shapes: (bs, 1, hidden_size) and (1, bs, hidden_size)
+    rnn_out <- self$rnn(rnn_input, state)
+    rnn_output <- rnn_out[[1]]
+    next_hidden <- rnn_out[[2]]
+    
+    mlp_input <- torch_cat(list(rnn_output$squeeze(2), context$squeeze(2), x$squeeze(2)), dim = 2)
+    
+    output <- self$linear(mlp_input)
+    
+    # shapes: (bs, 1) and (1, bs, hidden_size)
+    list(output, next_hidden)
+  }
+  
+)
+```
+
+#### seq2seq
+
+
+
+```{r torch-seq2seq}
+seq2seq_module <- nn_module(
+  
+  initialize = function(
+    type,
+    input_size,
+    hidden_size,
+    attention_type,
+    attention_size,
+    n_forecast,
+    num_layers = 1,
+    encoder_dropout = 0
+  ) {
+    
+    self$encoder <-
+      encoder_module(
+        type = type,
+        input_size  = input_size,
+        hidden_size = hidden_size,
+        num_layers,
+        encoder_dropout
+      )
+    
+    self$decoder <-
+      decoder_module(
+        type = type,
+        input_size  = 2 * hidden_size,
+        hidden_size = hidden_size,
+        attention_type = attention_type,
+        attention_size = attention_size,
+        num_layers
+      )
+    
+    self$n_forecast <- n_forecast
+  },
+  
+  
+  forward = function(x, y, teacher_forcing_ratio) {
+    
+    outputs <- torch_zeros(dim(x)[1], self$n_forecast)
+    encoded <- self$encoder(x)
+    encoder_outputs <- encoded[[1]]
+    hidden <- encoded[[2]]
+    
+    # list of (batch_size, 1), (1, batch_size, hidden_size)
+    out <- self$decoder(x[ , n_timesteps, , drop = FALSE], hidden, encoder_outputs)
+    
+    # (batch_size, 1)
+    pred <- out[[1]]
+    
+    # (1, batch_size, hidden_size)
+    state <- out[[2]]
+    
+    outputs[ , 1] <- pred$squeeze(2)
+    
+    for (t in 2:self$n_forecast) {
+      
+      teacher_forcing <- runif(1) < teacher_forcing_ratio
+      input <- if (teacher_forcing == TRUE) y[ , t - 1, drop = FALSE] else pred
+      input <- input$unsqueeze(3)
+      out <- self$decoder(input, state, encoder_outputs)
+      pred <- out[[1]]
+      state <- out[[2]]
+      outputs[ , t] <- pred$squeeze(2)
+      
+    }
+    
+    outputs
+  }
+  
+)
+
+```
+
+
+When instantiating the top-level model, we now have an additional choice: that between additive and multiplicative attention. In the “accuracy” sense of performance, my tests did not show any differences. However, the multiplicative variant is a lot faster.
+
+
+
+
