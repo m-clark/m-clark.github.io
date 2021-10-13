@@ -20,17 +20,17 @@ categories:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo      = T, 
-  message   = F, 
-  warning   = F, 
+  echo      = TRUE, 
+  message   = FALSE, 
+  warning   = FALSE, 
   comment   = NA,
-  R.options = list(width = 120),
-  cache.rebuild = F,
-  cache = T,
+  cache.rebuild = FALSE,
+  cache         = TRUE,
   fig.align = 'center',
   fig.asp = .7,
   dev = 'svg',
-  dev.args = list(bg = 'transparent')
+  dev.args = list(bg = 'transparent'),
+  R.options = list(width = 120),
 )
 
 library(tidyverse)
@@ -38,8 +38,44 @@ library(broom)
 library(kableExtra)
 library(visibly)
 
-kable_df <- function(..., digits=3) {
-  kable(..., digits=digits) %>% 
+library(tidyverse)
+
+# set the theme as default
+theme_set(theme_clean())
+
+# set other point/line default colors; in most cases, we can use the color from
+# default discrete scale for more consistency across plots.
+update_geom_defaults('vline',  list(colour = 'gray25',  alpha = .25))  # vlines and hlines are typically not attention grabbers so set alpha
+update_geom_defaults('hline',  list(colour = 'gray25',  alpha = .25))  # usually a zero marker
+update_geom_defaults('point',  list(colour = '#E69F00', alpha = .5))   # alpha as usually there are many points
+update_geom_defaults('line',   list(colour = '#E69F00'))
+update_geom_defaults('bar',    list(color  = '#E69F00', fill = '#E69F00'))  
+update_geom_defaults('col',    list(color  = '#E69F00', fill = '#E69F00'))
+update_geom_defaults('smooth', list(color  = '#E69F00', alpha = .15))
+update_geom_defaults('dotplot', list(color  = '#E69F00', fill = '#E69F00'))
+
+
+ggplot <- function(...) ggplot2::ggplot(...) + 
+  # brewer bonus is that it is already part of ggplot2
+  # scale_color_brewer(palette = 'Dark2', drop = FALSE, aesthetics = c('color', 'fill'))
+  # okabe ito colorblind safe scheme
+  scale_color_manual(
+    values = c(
+      '#E69F00',
+      '#56B4E9',
+      '#009E73',
+      '#F0E442',
+      '#0072B2',
+      '#D55E00',
+      '#CC79A7',
+      '#999999'
+    ),
+    drop = FALSE,
+    aesthetics = c('color', 'fill')
+  )
+
+kable_df <- function(..., digits = 3) {
+  kable(..., digits = digits) %>%
     kable_styling(full_width = F)
 }
 
