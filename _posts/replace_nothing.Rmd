@@ -1,0 +1,58 @@
+---
+title: "Replacing Nothing with Something"
+description: |
+  A new article created using the Distill format.
+author:
+  - name: Nora Jones 
+    url: https://example.com/norajones
+    affiliation: Spacely Sprockets
+    affiliation_url: https://example.com/spacelysprokets
+date: "`r Sys.Date()`"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Distill is a publication format for scientific and technical writing, native to the web. 
+
+Learn more about using Distill for R Markdown at <https://rstudio.github.io/distill>.
+
+
+
+
+
+bench::mark(
+  colasce   = df_test %>%
+    mutate(across(c(x, y), ~coalesce(., 0))),
+  colasce2  = df_test %>%
+    mutate(
+      x = coalesce(x, 0),
+      y = coalesce(y, 0),
+    ),
+  if_else_dplyr = df_test %>%
+    mutate(
+      x = if_else(is.na(x), 0, x),
+      y = if_else(is.na(y), 0, y),
+    ),
+  ifelse_base = df_test %>%
+    mutate(
+      x = ifelse(is.na(x), 0, x),
+      y = ifelse(is.na(y), 0, y),
+    ),
+  ifelse_dt = df_test %>%
+    mutate(
+      x = data.table::fifelse(is.na(x), 0, x),
+      y = data.table::fifelse(is.na(y), 0, y),
+    ),
+  relace_na = df_test %>%
+    replace_na(
+      list(
+        x = 0,
+        y = 0
+      )
+    ),
+  time_unit = 'ms'
+) %>% 
+  autoplot()
