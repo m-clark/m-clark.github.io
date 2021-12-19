@@ -184,9 +184,7 @@ ggsave(p_dd_over,  file = 'img/double-descent/dd_mtcars_over.png')
 
 # p_dd_under +
 #   p_dd_over
-```
 
-```{r pure-random, echo=FALSE, eval=FALSE}
 # just to make sure
 fit_reshuffle <- function(n, scale = TRUE) {
   nr = nrow(mtcars)

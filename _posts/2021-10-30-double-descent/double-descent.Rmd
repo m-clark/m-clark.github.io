@@ -77,9 +77,13 @@ ggplot <- function(...) ggplot2::ggplot(...) +
     aesthetics = c('color', 'fill')
   )
 
-kable_df <- function(..., digits=3) {
-  kable(..., digits=digits) %>% 
-    kable_styling(full_width = F)
+gt <- function(..., decimals = 2) {
+  gt::gt(...) %>% 
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = decimals
+    ) %>% 
+    gtExtras::gt_theme_nytimes()
 }
 
 rnd = tidyext::rnd
@@ -128,7 +132,10 @@ nc = ncol(mtcars)
 nr = nc
 fit_perfect = lm(mpg ~ ., mtcars[1:nr, ])
 # summary(fit_perfect) # not shown, all inferential estimates are NaN
+```
 
+
+```{r vis-fit-perfect, echo=FALSE}
 tibble(
   Prediction = fitted(fit_perfect), 
   y   = mtcars$mpg[1:nr]
@@ -136,9 +143,10 @@ tibble(
   qplot(data = ., Prediction, y, geom = c('line', 'point'))
 ```
 
+
 Now let's look at the test error, our prediction on the unseen data we didn't use in fitting the model. When we do, we see the usual bias-variance trade-off.  Our generalizability capabilities have plummeted, as we have overfit the training data and were unable to accommodate unseen observations. We are even predicting negative mpg in some cases!
 
-```{r fit-perfect-test}
+```{r vis-fit-perfect-test, echo=FALSE}
 tibble(
   Prediction = predict(fit_perfect, mtcars[-(1:nr),]), 
   y = mtcars$mpg[-(1:nr)]
@@ -164,7 +172,7 @@ So with one of the simpler data sets around we were able to demonstrate the bias
 The basic linear model approach we might typically use fails to estimate the additional parameters in this situation, so we need a different estimator. Some are familiar with penalized regression techniques such as *lasso* and *ridge* regression, and we could use those here. However, I'll use *ridgeless regression*, as depicted in @hastie2019surprises, and which, like ridge regression, is a straightforward variant of the usual least squares regression^[Ridgeless regression has the same form as the 'normal' equations for least squares, but instead of $\beta \sim (X^TX)^{-1} \cdot X^Ty$, we have $\beta \sim (X^TX)^{+} \cdot X^Ty$ where the first part is the pseudo-inverse of $X$.  It is similar to equations for ridge regression (see my demo [here](https://m-clark.github.io/models-by-example/penalized-maximum-likelihood.html#l2-ridge-regularization)) and can be seen as an approximation to it as the ridge penalty tends toward zero.].  I estimate the coefficients/weights on the training data, and make predictions for the training and test set, calculating their respective errors.  Here is an example of the primary function used.
 
 
-```{r function-fit-ridgless, echo = -(1:2)}
+```{r function-fit-ridgless, echo = -(1:2), code_folding=TRUE}
 pseudo_inv = psych::Pinv
 
 fit_ridgeless = function(X_train, y, X_test, y_test){
@@ -192,7 +200,7 @@ fit_ridgeless = function(X_train, y, X_test, y_test){
 
 We can test the function as follows with as little as 10 observations, where p (all predictor coefficients plus intercept = 11 parameters) is greater than N (10). This demonstrates that the ridgeless approach can provide an estimate for all the parameters (unlike the standard `lm` function), and we also see very low training error, but relatively high test error (in terms of the root mean square error.)
 
-```{r test-fit-ridgeless}
+```{r test-fit-ridgeless, code_folding=TRUE}
 n = 10
 
 X = as.matrix(cbind(1, mtcars[, -1]))
@@ -204,11 +212,19 @@ X_test  = X[-(1:n),]
 y_test  = y[-(1:n)]
 
 result = fit_ridgeless(X_train, y_train, X_test, y_test)
-
-pluck(result, 'b')
-pluck(result, 'rmse_train')
-pluck(result, 'rmse_test')
 ```
+
+
+```{r tbl-test-fit-ridgeless, echo=FALSE}
+tibble(b = result$b[,1]) %>% 
+  gt()
+tibble(
+  rmse_train = result$rmse_train,
+  rmse_test = result$rmse_test,
+  ) %>% 
+  gt()
+```
+
 
 If we do this for more complex models (max linear features, plus each additional set of features associated with a cubic spline basis expansions), we obtain the following. Now we see the second descent in test error takes form! 
 
