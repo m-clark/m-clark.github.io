@@ -1,0 +1,785 @@
+---
+title: "Untitled"
+output: html_document
+date: '2022-04-16'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Questions possibly answered:
+ 
+- odds of complexity winning on hetero vs. non-hetero data
+- odds of complexity winning with numeric vs. classification
+
+Model Categories
+
+Simplest  = standard glm*
+Boost = any boost
+MLP
+Complicated
+
+Other
+N
+N features
+
+Feature Categories
+
+All num
+All cat
+Hetero slight
+Hetero >=20%
+
+Target Categories
+
+Bin
+Multicat
+Num
+
+NO CV considered
+
+
+## Gorishniy 2022
+
+Consider dropping SA, possibly others, where models were indistinguishable and very high acc. But in general, GE, CH, OT, SA, CO, and MI were practically indistinguishable across all model.s
+
+```{r data-embed}
+# GE Gesture Phase 6318 1580 1975 32 0 Multiclass 128
+# CH Churn Modelling 6400 1600 2000 10 1 Binclass 128
+# EY Eye Movements 6998 1750 2188 26 0 Multiclass 128
+# CA California Housing 13209 3303 4128 8 0 Regression 256
+# HO House 16H 14581 3646 4557 16 0 Regression 256
+# AD Adult 26048 6513 16281 6 8 Binclass 256
+# OT Otto Group Products 39601 9901 12376 93 0 Multiclass 512
+# HI Higgs Small 62751 15688 19610 28 0 Binclass 512
+# FB Facebook Comments Volume 157638 19722 19720 50 1 Regression 512
+# SA Santander Customer Transactions 128000 32000 40000 200 0 Binclass 1024
+# CO Covertype 371847 92962 116203 54 0 Multiclass 1024
+# MI MSLR-WEB10K (Fold 1) 723412 235259 241521 136 0 Regression 1024
+
+
+
+
+# not including validation set N
+data_gor_2022 = tibble(
+  dataset = c(
+    'GE',
+    'CH',
+    'EY',
+    'CA',
+    'HO',
+    'AD',
+    'OT',
+    'HI',
+    'FB',
+    'SA',
+    'CO',
+    'MI'
+  ),
+  n_train = c(
+    6318,
+    6400,
+    6998,
+    13209,
+    14581,
+    26048,
+    39601,
+    62751,
+    157638,
+    128000,
+    371847,
+    723412
+  ),
+  n_validation  = c(
+    1580,
+    1600,
+    1750,
+    3303,
+    3646,
+    6513,
+    9901,
+    15688,
+    19722,
+    32000,
+    92962,
+    235259
+  ),
+  n_test  = c(
+    1975,
+    2000,
+    2188,
+    4128,
+    4557,
+    16281,
+    12376,
+    19610,
+    19720,
+    40000,
+    116203,
+    241521
+  ),
+  n_total = n_train + n_validation + n_test,
+  n_feature_num = c(32, 10, 26, 8, 16, 6, 93, 28, 50, 200, 54, 136),
+  n_feature_cat = c(0, 1, 0, 0, 0, 8, 0, 0, 1, 0, 0, 0),
+  n_features = n_feature_cat + n_feature_num,
+  feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  ),
+  target_type = c(
+    'mc',
+    'bin',
+    'mc',
+    'num',
+    'num',
+    'bin',
+    'mc',
+    'bin',
+    'num',
+    'bin',
+    'mc',
+    'num'
+  ),
+  winner_model_type = c(
+    'MLP',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'MLP',
+    'Boost',
+    'MLP',
+    '-',
+    'MLP',
+    '-',
+    '-',
+    '-'
+  ),
+  source = 'embedding'
+)
+
+data_gor_2022 %>% 
+  count(feature_type, winner_model_type)
+```
+
+
+
+
+## SAINT
+
+Note it was difficult to find an actual description of the Volkert data, but apparently it is an image classification thing too. Dropped KDD99 because models were indistinguishable and mostly perfect on test.
+
+Annoying in that data isn't presented alphabetically, and spread across two tables.
+
+```{r data-saint}
+data_saint_2021 = tibble(
+  dataset = c(
+    'Income',
+    'Arcene',
+    'Arrhythmia',
+    'Bank',
+    'Blastchar',
+    'Credit',
+    'Forest',
+    'HTRU2',
+    # 'KDD99',
+    'Shoppers',
+    # additional ones from table 7
+    'Phillipine',
+    'QSAR',
+    'Shrutime',
+    'Spambase'
+  ),
+  # n_train = c(
+  #   6318,
+  #   6400,
+  #   6998,
+  #   13209,
+  #   14581,
+  #   26048,
+  #   39601,
+  #   62751,
+  #   157638,
+  #   128000,
+  #   371847,
+  #   723412
+  # ),
+  # n_validation  = c(
+  #   1580,
+  #   1600,
+  #   1750,
+  #   3303,
+  #   3646,
+  #   6513,
+  #   9901,
+  #   15688,
+  #   19722,
+  #   32000,
+  #   92962,
+  #   235259
+  # ),
+  # n_test  = c(
+  #   1975,
+  #   2000,
+  #   2188,
+  #   4128,
+  #   4557,
+  #   16281,
+  #   12376,
+  #   19610,
+  #   19720,
+  #   40000,
+  #   116203,
+  #   241521
+  # ),
+  n_total = c(
+    32561,
+    200,
+    452,
+    45211,
+    7043,
+    284807,
+    495141,
+    17898,
+    # 494021,
+    12330,
+    5832,
+    10550,
+    10000,
+    4601
+  ),
+  n_feature_num = c(6, 783, 226, 7, 3, 29, 49, 8, 15, 308, 41, 8, 57),
+  n_feature_cat = c(8, 0, 0, 9, 17, 0, 0, 0, 2, 0, 0, 3, 0),
+  n_features = n_feature_cat + n_feature_num,
+  feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  ),
+  target_type = rep('bin', length(n_features)),
+  winner_model_type = c(
+    'Boost',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'Boost',
+    'DL_complex',
+    # forest
+    'DL_complex',
+    'Boost',
+    'Boost',
+    'DL_complex',
+    'DL_complex',
+    'Boost'
+  ),
+  source = 'SAINT'
+)
+
+data_saint_2021 %>%
+  bind_rows(data_gor_2022) %>%
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(id_cols = feature_type,
+              names_from = winner_model_type,
+              values_from = n)
+```
+
+## NPT
+
+Used only classification accuracy results for consistency.
+
+```{r data-npt}
+data_npt_2021 = tibble(
+  dataset = c(
+    'higgs_boson',
+    'poker',
+    'forest',
+    'income',
+    'kick',
+    'breast_cancer',
+    'protein',
+    'concrete',
+    'boston',
+    'yacht'
+  ),
+  # n_train = c(
+  #   6318,
+  #   6400,
+  #   6998,
+  #   13209,
+  #   14581,
+  #   26048,
+  #   39601,
+  #   62751,
+  #   157638,
+  #   128000,
+  #   371847,
+  #   723412
+  # ),
+  # n_validation  = c(
+  #   1580,
+  #   1600,
+  #   1750,
+  #   3303,
+  #   3646,
+  #   6513,
+  #   9901,
+  #   15688,
+  #   19722,
+  #   32000,
+  #   92962,
+  #   235259
+  # ),
+  # n_test  = c(
+  #   1975,
+  #   2000,
+  #   2188,
+  #   4128,
+  #   4557,
+  #   16281,
+  #   12376,
+  #   19610,
+  #   19720,
+  #   40000,
+  #   116203,
+  #   241521
+  # ),
+  n_total = c(
+    11000000,
+    1025010,
+    581012,
+    299285,
+    72983,
+    569,
+    45730,
+    1030,
+    506,
+    308
+  ),
+  n_feature_num = c(28, 0, 10, 6, 14, 31, 9, 9, 11, 1),
+  n_feature_cat = c(0, 10, 44, 36, 18, 0, 0, 0, 2, 5),
+  n_features = n_feature_cat + n_feature_num,
+  feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  ),
+  target_type = c('bin', 'mc', 'mc', 'bin', 'bin', 'bin', 'num', 'num', 'num', 'num'),
+  winner_model_type = c(
+    'DL_complex',
+    'MLP',
+    'Boost',
+    'Boost',
+    'Boost',
+    'Boost',
+    'DL_complex',
+    'Boost',
+    'DL_complex',
+    'Boost'
+  ),
+  source = 'NPT'
+)
+
+data_npt_2021 %>%
+  bind_rows(data_gor_2022) %>%
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(id_cols = feature_type,
+              names_from = winner_model_type,
+              values_from = n)
+```
+
+## DL is not all you need
+
+Dataset descriptions were minimal for this purpose, and honestly, too minimal for scientific reporting, and sometimes were unable to be clearly matched to the data description in the provided urls. If the source and severely rounded numbers were even close, I used the source.
+
+For Rossman, it's not clear which features they used, since there are more than 10 features listed in the data, and even Kaggle doesn't provide a total N in the description even.  I just used the first 10 'non-id/non-target' features. For the description (two were definitely numeric, the rest bin/cat/date).
+
+For forest, there are actually 12 numeric features, 1 wilderness type of 4 categories, and 1 soil type with 40 categories. 12 + 4 + 40 = 56, but if dummy coded it'd equal 54, which is what's reported in the paper. I will report as 12 numeric + 2 categorical.
+
+Shrutime again is a case where n features don't match n columns. At least 6 were  numeric and would definitely have been used (not bin or cat), so I put the rest as cat.
+
+As a final note, I don't consider the ensemble results, only the 'winner' among the delineated models.
+
+```{r data-no_need}
+data_no_need_2021 = tibble(
+  dataset = c(
+    'gesture',
+    'gas',
+    'eye',
+    'epsilon',
+    'year_pred',
+    'mslr',
+    'rossman',
+    'forest',
+    'higgs_boson',
+    'shrutime',
+    'blastchar'
+  ),
+  # n_train = c(
+  #   6318,
+  #   6400,
+  #   6998,
+  #   13209,
+  #   14581,
+  #   26048,
+  #   39601,
+  #   62751,
+  #   157638,
+  #   128000,
+  #   371847,
+  #   723412
+  # ),
+  # n_validation  = c(
+  #   1580,
+  #   1600,
+  #   1750,
+  #   3303,
+  #   3646,
+  #   6513,
+  #   9901,
+  #   15688,
+  #   19722,
+  #   32000,
+  #   92962,
+  #   235259
+  # ),
+  # n_test  = c(
+  #   1975,
+  #   2000,
+  #   2188,
+  #   4128,
+  #   4557,
+  #   16281,
+  #   12376,
+  #   19610,
+  #   19720,
+  #   40000,
+  #   116203,
+  #   241521
+  # ),
+  # rounded in paper
+  n_total = c(
+    9873,
+    13910,
+    10936,
+    500000,
+    515345,
+    964000,
+    1018000,
+    581012,
+    800000,
+    10000,
+    7043
+  ),
+  n_feature_num = c(32, 129, 24, 2000, 90, 136, 2, 12, 30, 6, 3),
+  n_feature_cat = c(0, 0, 3, 0, 0, 0, 8, 2, 0, 5, 17),
+  n_features = n_feature_cat + n_feature_num,
+  feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  ),
+  target_type = c('mc', 'mc', 'mc', 'bin', 'num', 'mc', 'num', 'mc', 'bin', 'bin', 'bin'),
+  winner_model_type = c(
+    'Boost',
+    'DL_complex',
+    'Boost',
+    'DL_complex',
+    'DL_complex',
+    'Boost',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'Boost',
+    'Boost'
+  ),
+  source = 'DL is not all you need'
+)
+
+
+
+data_no_need_2021 %>%
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(id_cols = feature_type,
+              names_from = winner_model_type,
+              values_from = n)
+```
+
+
+
+## reg is all you need
+
+Had to download info from openml to complete this task. Authors did not correctly name several datasets and their task id doesn't appear to be very useful. It appeared that a couple were just different versions, but others took a bit of work to match.
+
+
+
+```{r data-regular}
+library("OpenML")
+## temporarily set API key to read only key
+setOMLConfig(apikey = "c1994bdb7ecb3c6f3c8f3b35f4b47f1f")
+openml_datasets = listOMLDataSets()  # returns active data sets
+openml_datasets %>% filter(str_detect(name, 'Australian'), number.of.instances == 399482)
+openml_tasks = listOMLTasks()
+openml_tasks %>% filter(task.id == '233088')
+
+df_results = read_csv('data/dl-tab/regularization-paper-results.csv', na = 'N/A')
+df_data = read_csv('data/dl-tab/reg_is_all_you_need_data_desc.csv')
+
+data_reg_2021 = df_data %>% 
+  rename(
+    dataset = dataset_name,
+    n_total = n_instances
+    ) %>% 
+  mutate(
+    target_type = ifelse(total == 100, 'bin', 'mc'),
+    source = 'regularization'
+    ) %>% 
+  select(-task_id, -(majority_class_perc:total))
+
+df_results = df_results %>%
+  rowwise() %>% 
+  mutate(winner_model_type = colnames(df_results[, -1])[which.max(across(MLP:`MLP+C`))],
+         winner_model_type = case_when(
+           str_detect(winner_model_type, 'MLP') ~ 'MLP',
+           str_detect(winner_model_type, 'ASK|XG') ~ 'Boost',
+           TRUE ~ 'DL_complex' 
+         )
+  )
+
+data_reg_2021['winner_model_type'] = df_results$winner_model_type
+
+openml_datasets = openml_datasets %>%
+  mutate(version_keep = case_when(
+    str_detect(name, 'connect-4|numerai|C.C.FraudD.') ~ 2,
+    name == 'car' ~ 3,
+    str_detect(name,'Click_prediction_small|Australian') ~ 4,
+    TRUE ~ 1
+  ))
+
+data_reg_2021 = data_reg_2021 %>%
+  mutate(
+    dataset = case_when(
+      dataset == 'click_prediction' ~ 'Click_prediction_small',
+      dataset == 'blood-transfusion' ~ 'blood-transfusion-service-center',
+      dataset == 'Jungle-Chess-2pcs' ~ 'jungle_chess_2pcs_raw_endgame_complete',
+      dataset == 'C.C.FraudD.' ~ 'CreditCardFraudDetection',
+      TRUE ~ dataset
+    ),
+    
+  ) %>% 
+  left_join(openml_datasets %>% filter(version == version_keep),
+            by = c('dataset' = 'name')) %>%
+  rename(n_feature_num = number.of.numeric.features,
+         n_feature_cat = number.of.symbolic.features) %>%
+  mutate(n_feature_openml = n_feature_num + n_feature_cat) %>% # all match n_features
+  mutate(
+    feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  )
+  ) %>% 
+  select(-matches('\\.')) %>% 
+  select(-(version:tags), -version_keep, -n_feature_openml)
+
+data_reg_2021 %>% 
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(id_cols = feature_type,
+              names_from = winner_model_type,
+              values_from = n)
+```
+
+
+## Revisiting Deep Learning Models for Tabular Data
+
+Several of these appear to be identical to the 2022 paper data and splits, e.g. 'CA', 'Adult', 'higgs', 'MI', 'Yahoo'.  In addition, I don't include their supplemental datasets, since the results were indistinguishable across models. I use their 'tuned' results since it is what one would do in practice and includes the resnet model.  This paper does not test compare simple MLP.
+
+```{r data-revisiting}
+# California Housing (CA, real estate data, Kelley Pace and Barry (1997)), Adult
+# (AD, income estimation, Kohavi (1996)), Helena (HE, anonymized dataset, Guyon
+# et al. (2019)), Jannis (JA, anonymized dataset, Guyon et al. (2019)), Higgs
+# (HI, simulated physical particles, Baldi et al. (2014); we use the version
+# with 98K samples available at the OpenML repository (Vanschoren et al.,
+# 2014)), ALOI (AL, images, Geusebroek et al. (2005)), Epsilon (EP, simulated
+# physics experiments), Year (YE, audio features, Bertin-Mahieux et al. (2011)),
+# Covertype (CO, forest characteristics, Blackard and Dean. (2000)), Yahoo (YA,
+# search queries, Chapelle and Chang (2011)), Microsoft (MI, search queries, Qin
+# and Liu (2013)).
+
+
+# not including validation set N
+data_gor_2021 = tibble(
+  dataset = c(
+    'CA',
+    'AD',
+    'HE',
+    'JA',
+    'HI',
+    'AL',
+    'EP',
+    'YE',
+    'CO',
+    'YA',
+    'MI'
+  ),
+  n_train = c(
+    13209,
+    26048,
+    41724,
+    53588,
+    62752,
+    69120,
+    320000,
+    370972,
+    371847,
+    473134,
+    723412
+  ),
+  n_validation  = c(
+    3303,
+    6513,
+    10432,
+    13398,
+    15688,
+    17280,
+    80000,
+    92743,
+    92962,
+    71083,
+    235259
+  ),
+  n_test  = c(
+    4128,
+    16281,
+    13040,
+    16747,
+    19610,
+    21600,
+    100000,
+    51630,
+    116203,
+    165660,
+    241521
+  ),
+  n_total = n_train + n_validation + n_test,
+  n_feature_num = c(8,6,27,54,28,128,2000,90,54,699,136),
+  n_feature_cat = c(0, 8, rep(0, 9)),
+  n_features = n_feature_cat + n_feature_num,
+  feature_type = case_when(
+    n_feature_cat > 0 & n_feature_num == 0 ~ 'All Cat',
+    n_feature_num > 0 & n_feature_cat == 0 ~ 'All Num',
+    n_feature_num / n_feature_cat <= .10 |
+      n_feature_cat / n_feature_num <= .10 ~ 'Some hetero',
+    n_feature_num / n_feature_cat > .10 |
+      n_feature_cat / n_feature_num > .10 ~ 'Heterogeneous',
+  ),
+  target_type = c(
+    'num',
+    'bin',
+    'mc',
+    'mc',
+    'bin',
+    'mc',
+    'bin',
+    'num',
+    'mc',
+    'num',
+    'num'
+  ),
+  winner_model_type = c(
+    'Boost',
+    'Boost',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'DL_complex',
+    'Boost',
+    'Boost'
+  ),
+  source = 'revisiting'
+)
+
+data_gor_2021 %>% 
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(id_cols = feature_type,
+              names_from = winner_model_type,
+              values_from = n)
+
+data_gor_2022 %>% 
+  count(feature_type, winner_model_type)
+```
+
+
+## All
+
+```{r tbl-all}
+full_data = mget(ls(pattern = '^data_')) %>% 
+  bind_rows() %>% 
+  filter(winner_model_type != '-')
+
+full_data %>% 
+  count(feature_type, winner_model_type) %>%
+  pivot_wider(
+    id_cols = feature_type,
+    names_from = winner_model_type,
+    values_from = n,
+    values_fill = 0
+  )
+
+full_data %>% 
+  count(source, feature_type, winner_model_type) %>%
+  pivot_wider(
+    id_cols = c(source, feature_type),
+    names_from = winner_model_type,
+    values_from = n,
+    values_fill = 0
+  ) %>% 
+  group_by(source) %>% 
+  gt(decimals = 0)
+
+
+full_data %>% 
+  group_by(winner_model_type) %>% 
+  summarize(
+    n_features = mean(n_features),
+    n_total = mean(n_total),
+  )
+
+
+library(mgcv)
+
+?mgcv::family.mgcv
+fit_mod = gam(
+  list(
+    winner_model_type ~ s(n_total) + s(n_feature_num, n_feature_cat),
+    ~ s(n_total) + s(n_feature_num, n_feature_cat)
+    ),
+  data = full_data %>% mutate(winner_model_type = as.numeric(factor(winner_model_type))-1),
+  family = multinom(K=2)
+)
+
+summary(fit_mod)
+plot(fit_mod)
+
+visibly::plot_gam_2d(fit_)
+```
