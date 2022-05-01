@@ -8,42 +8,63 @@ date: '2022-04-16'
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(tidyverse)
+```
+
 
 Questions possibly answered:
  
 - odds of complexity winning on hetero vs. non-hetero data
 - odds of complexity winning with numeric vs. classification
 
-Model Categories
+*Model Categories*
 
-Simplest  = standard glm*
-Boost = any boost
-MLP
-Complicated
+- Boost = any boost
+- MLP = any MLP
+- DL Complex (usually the method of focus)
 
-Other
-N
-N features
+Others are simpler but they never perform best. 
 
-Feature Categories
 
-All num
-All cat
-Hetero slight
-Hetero >=20%
+*Other stats*:
 
-Target Categories
+- N sample size reported
+- N features
 
-Bin
-Multicat
-Num
+*Feature Categories*:
 
-NO CV considered
+- All num
+- All cat
+- Hetero slight
+- Hetero >=20%
+
+*Target Categories*
+
+- Bin
+- Multicat
+- Num
+
+*Data issues*
+
+- Removed results of image classification data. This data isn't what one would normally be referring to for this context, nor would you use something besides the well tested and high performing methods available. 
+- I attempted to note where differences were exceedingly small, e.g. from simplest to most complex less than 1% accuracy difference. If found, I attempted to remove, but there might be others.
+
+*Determining a win*
+
+- Best peformance on a given metric
+- Aside from this, tie goes to XGB, since beating it is the whole point.
+
+
+
+
 
 
 ## Gorishniy 2022
 
-Consider dropping SA, possibly others, where models were indistinguishable and very high acc. But in general, GE, CH, OT, SA, CO, and MI were practically indistinguishable across all model.s
+Consider dropping SA, possibly others, where models were indistinguishable and very high acc. But in general, GE, CH, OT, SA, CO, and MI were practically indistinguishable across all models. 
+
+Key tables are 4 through 6, but mostly table 6.
 
 ```{r data-embed}
 # GE Gesture Phase 6318 1580 1975 32 0 Multiclass 128
@@ -160,7 +181,7 @@ data_gor_2022 = tibble(
     '-',
     '-'
   ),
-  source = 'embedding'
+  source = 'Embedding'
 )
 
 data_gor_2022 %>% 
@@ -174,7 +195,9 @@ data_gor_2022 %>%
 
 Note it was difficult to find an actual description of the Volkert data, but apparently it is an image classification thing too. Dropped KDD99 because models were indistinguishable and mostly perfect on test.
 
-Annoying in that data isn't presented alphabetically, and spread across two tables.
+Annoying in that data isn't presented alphabetically, and spread across two tables, the primary of which is on the previous page from the main results section.
+
+Key table is number 2, but also table 7 in the appendix (section E).
 
 ```{r data-saint}
 data_saint_2021 = tibble(
@@ -294,7 +317,7 @@ data_saint_2021 %>%
 
 ## NPT
 
-Used only classification accuracy results for consistency.
+Used only classification accuracy results (as opposed to roc or loglik) for consistency with other papers. Key table is table 1 for summary, table 8 for accuracy details, 9 for numeric target details.
 
 ```{r data-npt}
 data_npt_2021 = tibble(
@@ -380,7 +403,7 @@ data_npt_2021 = tibble(
     'DL_complex',
     'MLP',
     'Boost',
-    'Boost',
+    '-',
     'Boost',
     'Boost',
     'DL_complex',
@@ -399,6 +422,7 @@ data_npt_2021 %>%
               values_from = n)
 ```
 
+
 ## DL is not all you need
 
 Dataset descriptions were minimal for this purpose, and honestly, too minimal for scientific reporting, and sometimes were unable to be clearly matched to the data description in the provided urls. If the source and severely rounded numbers were even close, I used the source.
@@ -410,6 +434,8 @@ For forest, there are actually 12 numeric features, 1 wilderness type of 4 categ
 Shrutime again is a case where n features don't match n columns. At least 6 were  numeric and would definitely have been used (not bin or cat), so I put the rest as cat.
 
 As a final note, I don't consider the ensemble results, only the 'winner' among the delineated models.
+
+Key tables are 1 and 2.
 
 ```{r data-no_need}
 data_no_need_2021 = tibble(
@@ -521,11 +547,12 @@ data_no_need_2021 %>%
 
 
 
-## reg is all you need
+## Regularization is all you need
 
-Had to download info from openml to complete this task. Authors did not correctly name several datasets and their task id doesn't appear to be very useful. It appeared that a couple were just different versions, but others took a bit of work to match.
+Had to download info from openml to complete this task. Authors did not correctly name several datasets, and their task id doesn't appear to be very useful. It appeared that a couple were just different versions, but others took a bit of work to match.
 
 
+Aside from this, tie goes to XGB, since not beating it is the whole point. 
 
 ```{r data-regular}
 library("OpenML")
@@ -546,18 +573,22 @@ data_reg_2021 = df_data %>%
     ) %>% 
   mutate(
     target_type = ifelse(total == 100, 'bin', 'mc'),
-    source = 'regularization'
+    source = 'Regularization'
     ) %>% 
   select(-task_id, -(majority_class_perc:total))
 
 df_results = df_results %>%
   rowwise() %>% 
-  mutate(winner_model_type = colnames(df_results[, -1])[which.max(across(MLP:`MLP+C`))],
-         winner_model_type = case_when(
-           str_detect(winner_model_type, 'MLP') ~ 'MLP',
-           str_detect(winner_model_type, 'ASK|XG') ~ 'Boost',
-           TRUE ~ 'DL_complex' 
-         )
+  mutate(
+    max_value = max(across(MLP:`MLP+C`), na.rm = TRUE),
+    winner_model_type = colnames(df_results[, -1])[which.max(across(MLP:`MLP+C`))],
+    winner_model_type = case_when(
+      str_detect(winner_model_type, 'MLP') ~ 'MLP',
+      str_detect(winner_model_type, 'ASK|XG') ~ 'Boost',
+      TRUE ~ 'DL_complex' 
+    ),
+    winner_model_type = ifelse(XGB. == max_value | `ASK-G.` == max_value, 'Boost', winner_model_type),
+    winner_model_type= ifelse(rowSums(across(MLP:`MLP+C`), na.rm = TRUE) < 1, '-', winner_model_type)
   )
 
 data_reg_2021['winner_model_type'] = df_results$winner_model_type
@@ -610,6 +641,8 @@ data_reg_2021 %>%
 ## Revisiting Deep Learning Models for Tabular Data
 
 Several of these appear to be identical to the 2022 paper data and splits, e.g. 'CA', 'Adult', 'higgs', 'MI', 'Yahoo'.  In addition, I don't include their supplemental datasets, since the results were indistinguishable across models. I use their 'tuned' results since it is what one would do in practice and includes the resnet model.  This paper does not test compare simple MLP.
+
+Key table is table 2 and 4, especially latter.
 
 ```{r data-revisiting}
 # California Housing (CA, real estate data, Kelley Pace and Barry (1997)), Adult
@@ -716,7 +749,7 @@ data_gor_2021 = tibble(
     'Boost',
     'Boost'
   ),
-  source = 'revisiting'
+  source = 'Revisiting'
 )
 
 data_gor_2021 %>% 
@@ -747,6 +780,16 @@ full_data %>%
   )
 
 full_data %>% 
+  mutate(feature_type = fct_collapse(feature_type, Heterogeneous = 'Some hetero')) %>%
+  count(feature_type, winner_model_type) %>% 
+  pivot_wider(
+    id_cols = feature_type,
+    names_from = winner_model_type,
+    values_from = n,
+    values_fill = 0
+  )
+
+full_data %>% 
   count(source, feature_type, winner_model_type) %>%
   pivot_wider(
     id_cols = c(source, feature_type),
@@ -764,8 +807,10 @@ full_data %>%
     n_features = mean(n_features),
     n_total = mean(n_total),
   )
+```
 
 
+```{r tbl-all}
 library(mgcv)
 
 ?mgcv::family.mgcv
@@ -774,12 +819,13 @@ fit_mod = gam(
     winner_model_type ~ s(n_total) + s(n_feature_num, n_feature_cat),
     ~ s(n_total) + s(n_feature_num, n_feature_cat)
     ),
-  data = full_data %>% mutate(winner_model_type = as.numeric(factor(winner_model_type))-1),
-  family = multinom(K=2)
+  data = full_data %>% 
+    mutate(winner_model_type = as.numeric(factor(winner_model_type))-1),
+  family = multinom(K = 2)
 )
 
 summary(fit_mod)
 plot(fit_mod)
 
-visibly::plot_gam_2d(fit_)
+gratia::draw(fit_mod)
 ```
