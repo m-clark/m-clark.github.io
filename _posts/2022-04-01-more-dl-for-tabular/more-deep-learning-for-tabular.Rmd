@@ -1,0 +1,359 @@
+---
+title: "Deep Learning for Tabular Data"
+description: |
+  A continuing exploration
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: 2022-05-01
+preview: ../../img/nnet.png
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+bibliography: ../../bibs/dl-tab.bib
+draft: false
+tags: [deep learning, embeddings, TabNet, XGBoost, gradient boosting, SAINT, non-parametric transformer]
+categories:
+  - deep learning
+  - machine learning
+nocite: | 
+  @gorishniy2021tabular, @kadra2021tabular, @shwartz2021tabular
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = FALSE, 
+  eval      = TRUE, 
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = NA,
+  R.options = list(width = 120),
+  cache         = TRUE,
+  cache.rebuild = FALSE,
+  cache.lazy    = FALSE,
+  fig.align = 'center',
+  fig.asp   = .7,
+  dev       = 'svglite',
+  dev.args  = list(bg = 'transparent')
+)
+
+library(tidyverse)
+
+gt <- function(..., decimals = 0, title = NULL, subtitle = NULL) {
+  gt::gt(...) %>% 
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = decimals
+    ) %>% 
+    gt::tab_header(title = title, subtitle = subtitle) %>% 
+    gtExtras::gt_theme_nytimes()
+}
+
+gt_theme <-   
+  list(
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({sd})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p})"
+  )
+
+
+gtsummary::set_gtsummary_theme(gt_theme)
+
+tbl_summary <- function(..., title = '', butcher = TRUE) {
+  tbl_out <- gtsummary::tbl_summary(
+    ..., 
+    digits = list(
+    all_continuous() ~ c(1, 1),
+    all_categorical() ~ c(0, 1)
+    )
+  ) %>% 
+    gtsummary::modify_caption(caption = title)
+  # 
+  # # trim dataset etc from table; may lose other functionality
+  if (butcher)
+    tbl_out <- tbl_out %>% 
+      gtsummary::tbl_butcher()
+  # 
+  tbl_out
+}
+```
+
+## Introduction
+
+In a previous post, I offered [a summary of several articles](../2021-07-15-dl-for-tabular/) that came out over the summer of 2021 regarding the application of deep learning (DL) methods to tabular data.  DL has shown astounding success in the natural language processing, computer vision, and other fields, but when it comes to the sorts of data common in other situations, especially where data is usually smaller and of mixed source and type (e.g. demographic, social science, biological data), results were mostly unimpressive for complex DL architectures.  In particular, it did not appear that DL methods could consistently compete with, much less consistently beat, common machine learning (ML) approaches such as gradient boosting (e.g. XGBoost).  Here I provide a bit of an update, as another few articles have come along continuing the fight.
+
+
+## TLDR: the meta-analysis
+
+```{r load-tables, cache=FALSE}
+load('data/dl_for_tabular_summary_tables.RData')
+```
+
+
+I collected most of the results from the summarized articles here and those covered in the previous post to see if we come to any general conclusions about which methods are best or work best in certain settings.  In the following tables, I excluded those I knew to be image data, as well as datasets where I thought results were indistinguishable across all models tested (e.g. less than 1% difference in accuracy). This left comparisons for `r sum(tbl_list$tbl_feature_type[,-1])` datasets across six articles. However, it's important to note that these were not independent datasets or studies.  For example, Gorishniy et al. are the source of two papers and essentially the same testing situations, and other datasets were common across papers (e.g. Higgs Boson).  In the rare situations there was a tie, I gave the nod to boosting methods as a. the whole point is to do better than those, b. they are the easier model to implement, and c. they are not always given the same advantages in these studies (e.g. pre-processing).
+
+
+##### Feature Type
+
+The following shows results by feature type.  
+
+- *Heterogeneous*: at least 10% of categorical or numeric data with the rest of the other
+- *Minimal combo*: means any feature inclusion of a different type.  In the second table I collapse to 'any heterogeneous'. 
+- *Boost*: Any boosting method (most of the time it's XGBoost but could include lightGBM or other variant)
+- *MLP*: multilayer perceptron or some variant
+- *DL_complex*: A DL method more complex than MLP and which is typically the focus of the paper
+
+The results suggest that current DL approaches' strength is mostly with purely numeric data, and for heterogeneous data, simpler MLP or Boosting will generally prevail.  I initially thought that boosting would do even better with heterogeneous data, and I still suspect that with more heterogeneous data and on more equal footing, results would tilt even more.
+
+```{r tbl-feature-type}
+tbl_list$tbl_feature_type %>% 
+  rename(`Min. Combo` = `Some hetero`) %>% 
+  gt()
+
+tbl_list$tbl_feature_type_collapsed %>% 
+  rename(`Any Combo` = Heterogeneous) %>% 
+  gt()
+```
+
+
+##### Sample/Feature Set Size
+
+The following suggests that complex DL methods are going to require a lot of data to perform better. This isn't that surprising but the difference here is quite dramatic. Interestingly, MLP methods worked well for fewer features. N total in this case means total size reported (not just training).
+
+```{r tbl-feature-size}
+tbl_list$tbl_n_features %>% 
+  rename(`N features` = n_features, `N total` = n_total) %>% 
+  gt()
+```
+
+
+##### Target Type
+
+In the following we compare binary (bin), multiclass (mc), and numeric (num) target results[^not_regression], but there's no strong conclusion for this. The main thing to glean from this is that these papers do not test numeric targets nearly enough.  Across dozens of disciplines and countless datasets that I've come across in various settings, if anything, this ratio should be reversed.
+
+[^not_regression]: I don't refer to numeric targets as 'regression' because that's silly for so many reasons. 😄
+
+```{r tbl-target}
+tbl_list$tbl_target %>% 
+  gt()
+```
+
+
+##### Combinations
+
+In the following I look at any heterogeneous, smaller data (N < 200,000).   A complex DL model will likely not do great in this setting.
+
+```{r tbl-combo}
+full_data %>% 
+  filter(str_detect(feature_type, 'etero'), n_total < 200000) %>% 
+  count(winner_model_type) %>% 
+  gt()
+```
+
+
+
+Now, on to the details of some of the recent results that were included.
+
+
+
+##  On Embeddings for Numerical Features in Tabular Deep Learning
+
+- *Authors*: Gorishniy, Rubachev, & Babenko
+- *Year*: 2022
+- [Arxiv Link](https://arxiv.org/abs/2203.05556)
+
+
+### Overview
+
+@gorishniy2022embeddings pit several architectures against one another, such as standard multilayer perceptron (MLP), ResNet, and their own transformer approach (see @gorishniy2021tabular). Their previous work, which was summarized in my earlier post, was focused on the architecture, while here they focus on  *embedding* approaches. The primary idea is to take the value of some feature and expand it to some embedding space, then use the embedding in lieu of the raw feature. It can essentially be seen as a pre-processing task. 
+
+One approach they use is *piecewise linear encoding* (PLE), which they at one point describe as 'a continuous alternative to the one-hot encoding'[^bspline].  Another embedding they use is basically a fourier transform.
+
+[^bspline]: A quick look suggests it's not too  dissimilar from a [b-spline](https://en.wikipedia.org/wiki/B-spline#Definition). 
+
+
+### Data
+
+- 12 public datasets mostly from  previous works on tabular DL and Kaggle competitions.
+- Sizes were from ~10K to >1M. 
+- Target variables were binary, multiclass, or numeric. 
+- The number of features ranged from 8 to 200.  
+- 9 of 12 data sets had only numeric features, two had a single categorical feature, and unfortunately, only one of these might be called truly *heterogeneous*, i.e., with a notable mix of categorical and numeric features[^heteroboost].  
+
+
+[^heteroboost]: I'll let you go ahead and make your own prediction about which method was best on that data set.
+
+
+### Models Explored
+
+
+- *CatBoost*
+- *XGBoost*
+- *MLP*, *MLP\**
+- *ResNet*, *ResNet\**
+- *Transformer\**
+
+\* Using proposed embeddings
+
+
+### Quick Summary
+
+- A mix of results with no clear/obvious winners (results are less distinguishable if one keeps to the actual precision of the performance metrics, and even less so if talking about statistical differences in performance).
+  - Several datasets showed no practical difference across any model (e.g. all accuracy results within ~.01 of each other).
+- Embedding-based approaches generally tend to improve over their non-embedding counter parts (e.g. MLP + embedding > MLP), this was possibly the clearest result of the paper.
+- I'm not sure we could say the same for ResNet, where results were similar with or without embedding
+- XGBoost was best on the one truly heterogeneous dataset.
+
+<!-- see code/dl_for_tabular/tbl_processing.rmd -->
+
+<!-- ![Results Table](../../img/dl-for-tab/primary_results.png)  -->
+
+In general this was an interesting paper, and I liked the simple embedding approaches used. It was nice to see that they may be useful in some contexts.  The fourier transform is something that analysts (including our team at [Strong](https://strong.io)) have used in boosting, so I'm a bit curious why they don't do Boosting + embeddings for comparison for that or both embedding types. These embeddings can be seen as a pre-processing step, so nothing would keep someone from using them for any model. 
+
+Another interesting aspect was how little difference there was in model performance. It seemed half the datasets showed extremely small differences between any model type.
+
+
+
+## SAINT: Improved neural networks for tabular data via row attention and contrastive pre-training
+
+- *Authors*: Somepalli, Goldblum, Schwarzschild, Bayan-Bruss, & Goldstein
+- *Year*: 2021
+- [Arxiv Link](https://arxiv.org/abs/2106.01342)
+
+
+### Overview
+
+This paper applies BERT-style attention over rows and columns, along with embedding/data augmentation.  They distinguish the standard attention over features, with intersample attention of rows.  In addition, they use *CutMix* for data augmentation (originally devised for images), which basically combines pairs of observations to create a new observation[^smote].  Their model is called *SAINT*, the Self-Attention and Intersample Attention Transformer.
+
+[^smote]: It's not clear to me how well this CutUp approach would actually preserve feature correlations. My gut tells me the feature correlations of this approach would be reduced relative to the observed, since the variability of the new observations is likely reduced.  This ultimately may not matter for predictive purposes or their ultimate use in embeddings. However, I wonder if something like SMOTE, random (bootstrap) sampling, other DL methods like autoencoders, or similar approaches might do the same or better.
+
+
+### Data
+
+- 16 data sets
+- All classification, 2 multiclass 
+- 6 are heterogeneous, 2 notably so
+- Sizes 200 to almost 500K
+
+
+### Models Explored
+
+- Logistic Regression (!)
+- Random Forest
+- Boosting
+  - CatBoost
+  - XGBoost
+  - LightGBM
+- MLP
+- TabNet
+- VIME
+- TabTransformer
+- SAINT
+
+
+### Quick Summary
+
+- It seems the SAINT does quite well on some of the data, and average AUROC across all datasets is higher than XGB.
+
+- Main table shows only 9 datasets though, which they call 'representative' but it's not clear what that means when you only have 16 to start. One dataset showed near perfect classification for all models so will not be considered. Of the 15 total remaining:
+
+  - SAINT wins 10 (including 3 heterogeneous)
+  - Boosting wins 5 (including 2 heterogeneous)
+
+- SAINT benefits from *data augmentation*. This could have been applied to any of the other models, but doesn't appear to have been done.
+
+- At least they also used some form of logistic regression as a baseline, though I couldn't find details on its implementation (e.g. regularization, including interactions). I don't think this sort of simple baseline is utilized enough.
+
+This is an interesting result, but somewhat dampened by lack of including numeric targets and more heterogeneous data.  The authors include small data settings which is great, and are careful to not generalize despite some good results, which I can appreciate.
+
+I really like the fact they also compare a simple logistic regression to these models, because if you're not able to perform notably better relative to the simplest model one could do, then why would we care?  The fact that logistic regression is at times competitive and even beats boosting/SAINT methods occasionally gives me pause though. Perhaps some of these data are not sufficiently complex to be useful in distinguishing these methods? It is realistic though.  While it's best not to assume as such, sometimes a linear model is appropriate given the features and target at hand.
+
+
+
+## Self-Attention Between Datapoints: Going Beyond Individual Input-Output Pairs in Deep Learning
+
+- *Authors*: Kossen, Band, Lyle, Gomez, Rainforth, & Gal
+- *Year*: 2021
+- [Arxiv Link](https://arxiv.org/abs/2106.02584)
+
+
+### Overview
+
+This paper introduces *Non-Parametric Transformers*, which focus on holistic processing of multiple inputs, and attempts to consider an entire dataset as input as opposed to a single row. Their model attempts to learn relations between data points to aid prediction. They use a mask to identify prediction points from the non-masked data, i.e. the entire $X_{\textrm{not masked}}\text{ }$ data used to predict $X_{\textrm{masked}}\text{ }$. The X matrix actually includes the target (also masked vs. not).  At prediction, the model is able to make use of the correlations of inputs of training to ultimately make a prediction.
+
+
+###  Data
+
+- 10 datasets from UCI, 2 are image (CIFAR MNIST)
+- 4 binary, 2 multiclass, 4 numeric targets
+
+
+### Models Explored
+
+- NPT
+- Boosting
+  - GB
+  - XGB
+  - CatBoost
+  - LightGBM
+- Random Forest
+- TabNet
+- Knn
+
+
+### Quick Summary
+
+- Good performance of these models, but not too different from best boosting model for any type of data.
+  - NPT best on binary classification, but similar to CatBoost
+  - Same as XGB and similar to MLP on multiclass
+  - Boosting slightly better on numeric targets, but NPT similar
+- As seen several times now, TabNet continues to underperform
+- k-nn regression worst (not surprising)
+
+When I first read the abstract where they say "We challenge a common assumption underlying most supervised deep learning: that a model makes a prediction depending only on its parameters and the features of a single input.", I immediately was like 'What about this, that, and those?'. The key phrase was 'deep learning', because the authors note later that this has a very long history in the statistical modeling realm. I was glad to see  in their background of the research that they explicitly noted the models that came to my mind, like gaussian processes, kernel regression, etc. Beyond that, many are familiar with techniques like knn-regression and predictive mean matching, so it's definitely not new to consider more than a single data point for prediction.  I thought it was good of them to add k-nn regression to the model mix, even though it was not going to do well compared to the other approaches.
+
+
+Though the author's acknowledge a clear thread/history here, I'm not sure this result is the fundamental shift they claim, versus a further extension/expansion into the DL domain.  Even techniques that may work on a single input at a time may ultimately be taking advantage of correlations among the inputs (e.g. spatial correlations in images). Also, automatic learning of feature interactions is standard even in basic regularized regression settings, but here their focus is on observation interactions (but see k-nn regression).
+
+
+## Conclusion
+
+
+In the two reviews on DL for tabular data that I've done, it appears there is more work in store for DL methods applied to tabular data. While it'd be nice to have any technique that would substantially improve prediction for such settings, I do have a suspicion results are likely rosier than they are, since that is just about the case for any newly touted technique, and at least in some cases, I don't think we're even making apple to apple comparisons.
+
+That said, I do feel like some ground has been made for DL applications for tabular data, in that architectures can now more consistently performing as well as boosting methods in certain settings, especially if we include MLP.  In the end though, results don't appear strong enough to warrant a switch from boosting for truly heterogeneous data, or even tabular data in general.  I feel like someday we'll maybe have a breakthrough, but in the meantime, we can just agree that messy data is hard stuff to model, and the best tool is whichever one  works for your specific situation.
+
+
+
+## Guidelines for future research
+
+I was thinking about what would be a convincing result, the type of setting and setup where if a DL technique was consistently performing statistically better than boosting methods, I'd be impressed.   So I've made a list of things I'd like to see more of, and which would make for a better story if the DL method were to beat out other techniques.
+
+- Always use heterogeneous data. For giggles let's say 20%+ of the  minority feature type.
+- Features should at least be minimally correlated, if not notably so.
+- Image data results are not interesting (why would we use boosting on this in practice?).
+- Numeric targets should at least be as much of focus as categorical targets.
+- Include 'small' datasets.
+- Include very structured data (e.g. clustered with repeated observations, geographical points, time series).
+- Use a flexible generalized additive or similar penalized regression with interactions as a baseline statistical model.
+- Maybe add survival targets to the mix.
+- If using a pre-processing step that is done outside of modeling, this likely should be applied to non-DL methods for better comparison, especially, if we're only considering predictive accuracy and don't care too much about interpretation.
+- Note your model variants **before** analyzing any data. Tweaking/torturing model architecture after results don't pan out is akin to p-hacking in the statistical realm, and likewise wastes both researcher and reader's time.
+
+- Regarding results...
+  - Don't claim differences that you don't have precision to do so, or at least back them up with an actual statistical test.
+  - If margin of error in the metrics is overlapping, while statistically they could be different, practically they probably aren't to most readers. Don't make a big deal about it.
+  - It is unlikely anyone will be interested in three decimal place differences for rmse/acc type metrics, and statistically, results often don't even support two decimal precision.
+  - Report how you are obtaining uncertainty in any error estimates.
+  - If straightforward, try to give an estimate of total tuning/run times.
+  
+- With the datasets
+  - Name datasets exactly how they are named at the source you obtained them from, provide direct links
+  - Provide a breakdown for both feature and target types
+  - Provide clear delineation of total/training/validation/test sizes
+  
+
+
+

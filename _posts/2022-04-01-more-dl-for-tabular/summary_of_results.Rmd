@@ -5,7 +5,7 @@ date: '2022-04-16'
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE)
 ```
 
 ```{r}
@@ -315,9 +315,11 @@ data_saint_2021 %>%
               values_from = n)
 ```
 
+
+
 ## NPT
 
-Used only classification accuracy results (as opposed to roc or loglik) for consistency with other papers. Key table is table 1 for summary, table 8 for accuracy details, 9 for numeric target details.
+Used only classification accuracy results (as opposed to roc or loglik) for consistency with other papers. Key table is table 1 for summary, table 8 for accuracy details, 11 for numeric target details.
 
 ```{r data-npt}
 data_npt_2021 = tibble(
@@ -588,7 +590,7 @@ df_results = df_results %>%
       TRUE ~ 'DL_complex' 
     ),
     winner_model_type = ifelse(XGB. == max_value | `ASK-G.` == max_value, 'Boost', winner_model_type),
-    winner_model_type= ifelse(rowSums(across(MLP:`MLP+C`), na.rm = TRUE) < 1, '-', winner_model_type)
+    winner_model_type = ifelse(rowSums(across(MLP:`MLP+C`), na.rm = TRUE) < 1, '-', winner_model_type)
   )
 
 data_reg_2021['winner_model_type'] = df_results$winner_model_type
@@ -770,26 +772,26 @@ full_data = mget(ls(pattern = '^data_')) %>%
   bind_rows() %>% 
   filter(winner_model_type != '-')
 
-full_data %>% 
+tbl_feature_type = full_data %>% 
   count(feature_type, winner_model_type) %>%
   pivot_wider(
-    id_cols = feature_type,
-    names_from = winner_model_type,
+    id_cols     = winner_model_type,
+    names_from  = feature_type,
     values_from = n,
     values_fill = 0
   )
 
-full_data %>% 
+tbl_feature_type_collapsed = full_data %>% 
   mutate(feature_type = fct_collapse(feature_type, Heterogeneous = 'Some hetero')) %>%
   count(feature_type, winner_model_type) %>% 
   pivot_wider(
-    id_cols = feature_type,
-    names_from = winner_model_type,
+    id_cols     = winner_model_type,
+    names_from  = feature_type,
     values_from = n,
     values_fill = 0
   )
 
-full_data %>% 
+tbl_feature_type_by_source = full_data %>% 
   count(source, feature_type, winner_model_type) %>%
   pivot_wider(
     id_cols = c(source, feature_type),
@@ -801,19 +803,36 @@ full_data %>%
   gt(decimals = 0)
 
 
-full_data %>% 
+tbl_n_features = full_data %>% 
   group_by(winner_model_type) %>% 
   summarize(
     n_features = mean(n_features),
     n_total = mean(n_total),
   )
+
+tbl_target = full_data %>% 
+  count(winner_model_type, target_type) %>% 
+  pivot_wider(
+    id_cols     = winner_model_type,
+    names_from  = target_type,
+    values_from = n,
+    values_fill = 0
+  ) 
+
+tbl_list = mget(ls(pattern = '^tbl'))
+
+save(
+  tbl_list,
+  full_data,
+  file = 'data/dl_for_tabular_summary_tables.RData'
+)
 ```
 
 
 ```{r tbl-all}
 library(mgcv)
 
-?mgcv::family.mgcv
+# ?mgcv::family.mgcv
 fit_mod = gam(
   list(
     winner_model_type ~ s(n_total) + s(n_feature_num, n_feature_cat),
