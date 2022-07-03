@@ -525,7 +525,7 @@ summarize_bm(bm_coalesce, digits = 6)
 
 ## Conditional Slide
 
-I recently had a problem where I wanted to do a apply a certain function that required taking the difference between the current and last value.  The problem was that 'last' depended on a specific condition being met. The basic idea is that we want to take x - lag(x) but where cond is `FALSE`, we need to basically ignore that value for consideration, and use the previous for our lagged value (assuming the condition is `TRUE`). So for the first two values where the condition is met, this is straightforward (6 - 10). But for the fourth row, 4 should subtract 6, rather than 5. 
+I recently had a problem where I wanted to do a apply a certain function that required taking the difference between the current and last value as we did in the lag demo.  The problem was that 'last' depended on a specific condition being met. The basic idea is that we want to take x - lag(x) but where the condition is `FALSE`, we need to basically ignore that value for consideration as the last value, and only use the previous value for which the condition is `TRUE`. In the following, for the first two values where the condition is met, this is straightforward (6 - 10). But for the fourth row, 4 should subtract 6, rather than 5. 
 
 ```{r df-cs}
 set.seed(1234)
@@ -536,11 +536,11 @@ df = tibble(
   group = rep(c('a', 'b'), e = 5)
 )
 
-df
+df 
 ```
 
 
-While somewhat simple in concept, it doesn't really work with simple lags, as the answer would be wrong, or sliding functions, because the where the window is adaptive. I wrote the following to deal with this. By default, it basically takes our vector under consideration, `x`, makes it `NA` where the condition doesn't hold, then fills in the NA values with the last value using the `vec_fill_missing` (or a supplied constant/single value). However there is flexibility beyond that type of fill. In addition, the function applied is generic, and might just work on the newly created variable, or use both the original and the newly created variable.
+While somewhat simple in concept, it doesn't really work with simple lags, as the answer would be wrong, or sliding functions, because the window is adaptive. I wrote the following to deal with this. By default, it basically takes our vector under consideration, `x`, makes it `NA` where the condition doesn't hold, then fills in the NA values with the last value using the `vec_fill_missing` (or a supplied constant/single value). However there is flexibility beyond that type of fill. In addition, the function applied is generic, and could be applied to the newly created variable (`.x`), or use both the original (`x`) and the newly created variable.
 
 ```{r fun-conditional_slide}
 conditional_slide <-
@@ -597,53 +597,59 @@ df %>%
      fill = 0
    ),
    
-   # demo constant
-   .x_0 =  conditional_slide(
+   # demo fill last
+   simple_fill_last = vec_fill_missing(x),
+   cond_fill_last = conditional_slide(
      x,
      cond,
      fun = \(x, .x) .x,
-     direction = 'constant',
-     fill = 0
+     direction = 'down'
    )
  )
 ```
 
 
-This is one of those things that comes up from time to time, and trying to apply a standard tool likely won't cut it. You may find similar situations where you need to modify what's available and create some functionality tailored to your needs.
+This is one of those things that comes up from time to time where trying to apply a standard tool likely won't cut it. You may find similar situations where you need to modify what's available and create some functionality tailored to your needs.
 
 
 ## Take the first TRUE
 
-Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number > than some value.   We've already investigated using <span class="pack">dplyr</span> or <span class="pack">data.table's</span> `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R.  Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the first position of the first `FALSE`).
+Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number > than some value.   We've already investigated using <span class="pack">dplyr</span> or <span class="pack">data.table's</span> `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R.  Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the first position of the first `FALSE`). In addition, there is there is the `Position` function, which I didn't even know about until messing with this problme. 
 
 ```{r bm_first_true, eval=FALSE}
 set.seed(123)
 
-x = 1:10000
+x = sort(rnorm(10000))
 
-marker = 5000
+marker = 2
 
 
 bm_first_true_1 = bench::mark(
-  which = which(x > marker)[1],
+  which     = which(x > marker)[1],
   which_max = which.max(x > marker),
-  pos = Position(\(x) x > marker, x)
+  pos       = Position(\(x) x > marker, x)
 )
 
 
 # make it slightly more challenging
-x = 1:1e6
+x = sort(rnorm(1e6))
 
-marker = 5e5  
+marker = 4 
 
 bm_first_true_2 = bench::mark(
-  which = which(x > marker)[1],
+  which     = which(x > marker)[1],
   which_max = which.max(x > marker),
-  pos = Position(\(x) x > marker, x)
+  pos       = Position(\(x) x > marker, x)
 )
+```
 
+
+```{r bm_first_true-save, echo=FALSE, eval=FALSE}
 save(bm_first_true_1, bm_first_true_2, file = 'data/programming/first_true.RData')
 ```
+
+
+Interestingly `Position` provides the best memory performance, but is prohibitively slower. `which.max` is probably your best bet.
 
 ```{r show-bm_first_true, echo=FALSE}
 load('data/programming/first_true.RData')
@@ -652,8 +658,32 @@ summarize_bm(bm_first_true_1, digits = 6)
 summarize_bm(bm_first_true_2, digits = 5)
 ```
 
+But not so fast?  The following makes the first case come very quickly, where `Position` blows the other options out of the water!  I guess if you knew this was going to be the case you could take serious advantage.
+
+```{r bm-first-quick, eval=FALSE}
+set.seed(123)
+
+x = sort(rnorm(100000), decreasing = TRUE)
+
+x[1:30] = 4
 
 
+bm_first_true_3 = bench::mark(
+  which     = which(x < marker)[1],
+  which_max = which.max(x < marker),
+  pos       = Position(\(x) x < marker, x) 
+)
+```
+
+```{r bm_first_true-save-quick, echo=FALSE, eval=FALSE}
+save(bm_first_true_1, bm_first_true_2, bm_first_true_3, file = 'data/programming/first_true.RData')
+```
+
+
+```{r show-bm_first_true-quick, echo=FALSE}
+load('data/programming/first_true.RData')
+summarize_bm(bm_first_true_3, digits = 5)
+```
 <!-- ```{r} -->
 <!-- set.seed(1234) -->
 
@@ -690,7 +720,7 @@ summarize_bm(bm_first_true_2, digits = 5)
 
 ## Group by filtering/slicing
 
-The previous situation was the basis for this demo.  Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this case the the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
+The previous situation was the basis for this next demo where we utilize which.max.  Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this case the the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
 
 For the example data, we want to drop group 1 entirely, the initial part of group 2, and retain all of group 3.
 
@@ -701,7 +731,11 @@ set.seed(12345)
 
 df = tibble(
   group = rep(1:3, e = 10),
-  value = c(rep(0, 10), c(rep(0, 3), sample(0:5, 7, replace = TRUE)), sample(0:10, 10, replace = TRUE))
+  value = c(
+    rep(0, 10),
+    c(rep(0, 3), sample(0:5, 7, replace = TRUE)), 
+    sample(0:10, 10, replace = TRUE)
+  )
 )
 
 
@@ -711,7 +745,7 @@ df %>%
   slice(which.max(value > 0):n())
 ```
 
-In the above we take two steps to illustrate our desired outcome conceptually. Ideally though, we'd like one step, because it is just a general filtering.  You might think maybe to change `which.max` to `which` and just slice, but this would remove all zeros, when we want to retain zeros after the point where at least some values are greater than zero.
+In the above we take two steps to illustrate our desired outcome conceptually. Ideally though, we'd like one step, because it is just a general filtering.  You might think maybe to change `which.max` to `which` and just slice, but this would remove all zeros, when we want to retain zeros after the point where at least some values are greater than zero.  Using `row_number` was a way I thought to get around things.
 
 ```{r bm_filter_slice, eval = FALSE}
 df %>% 
@@ -777,8 +811,6 @@ summarize_bm(bm_filter_slice2, digits = 4)
 
 
 ## Tidy timings
-
-
 
 
 
@@ -948,3 +980,6 @@ test_result = timeit.timeit(stmt="test()", setup="from __main__ import test", nu
 test_result/100*1000  # per 
 ```
 
+## Summary
+
+Programming is a challenge, and programming in a computationally efficient manner is even harder.  Depending on your situation, you may need to switch tools or just write your own to come up with the best solution.
