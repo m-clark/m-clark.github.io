@@ -1,0 +1,436 @@
+---
+title: "Title"
+description: |
+  blah blah
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: true
+tags: [tags, taggy]
+categories:
+  - ?
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE, 
+  message   = FALSE, 
+  warning   = FALSE, 
+  comment   = NA,
+  cache.rebuild = FALSE,
+  cache         = TRUE,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent'),
+  R.options = list(width = 120),
+)
+
+library(tidyverse)
+library(broom)
+library(kableExtra)
+library(visibly)
+
+library(tidyverse)
+
+# set the theme as default
+theme_set(theme_clean())
+
+# set other point/line default colors; in most cases, we can use the color from
+# default discrete scale for more consistency across plots.
+update_geom_defaults('vline',  list(colour = 'gray25',  alpha = .25))  # vlines and hlines are typically not attention grabbers so set alpha
+update_geom_defaults('hline',  list(colour = 'gray25',  alpha = .25))  # usually a zero marker
+update_geom_defaults('point',  list(colour = '#E69F00', alpha = .5))   # alpha as usually there are many points
+update_geom_defaults('line',   list(colour = '#E69F00'))
+update_geom_defaults('bar',    list(color  = '#E69F00', fill = '#E69F00'))  
+update_geom_defaults('col',    list(color  = '#E69F00', fill = '#E69F00'))
+update_geom_defaults('smooth', list(color  = '#E69F00', alpha = .15))
+update_geom_defaults('dotplot', list(color  = '#E69F00', fill = '#E69F00'))
+
+
+ggplot <- function(...) ggplot2::ggplot(...) + 
+  # brewer bonus is that it is already part of ggplot2
+  # scale_color_brewer(palette = 'Dark2', drop = FALSE, aesthetics = c('color', 'fill'))
+  # okabe ito colorblind safe scheme
+  scale_color_manual(
+    values = c(
+      '#E69F00',
+      '#56B4E9',
+      '#009E73',
+      '#F0E442',
+      '#0072B2',
+      '#D55E00',
+      '#CC79A7',
+      '#999999'
+    ),
+    drop = FALSE,
+    aesthetics = c('color', 'fill')
+  )
+
+kable_df <- function(..., digits = 3) {
+  kable(..., digits = digits) %>%
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd
+```
+
+This was based on another repo and only serves as skeleton where none of the code will run.  It shows a group by date sampling approach where when creating validation sets, all observations within a date are selected.
+
+
+```{r}
+
+# Preliminaries -----------------------------------------------------------
+
+library(tidyverse)
+
+library(mlr3verse)
+# task = tsk("iris")
+# learner = lrn("classif.rpart")
+# 
+# # train a model of this learner for a subset of the task
+# learner$train(task, row_ids = 1:120)
+# # this is what the decision tree looks like
+# learner$model
+
+# X_train = df_train %>% 
+#   select()
+
+
+load('model.RData')
+
+cnames = colnames(model_list$fit_main$model)
+prep_dat = df %>% select(date, cnames)
+cat_features =  cnames[map_lgl(prep_dat, is.factor)]
+
+
+prep_dat = prep_dat %>% mutate(across(is.factor, as.numeric), date = as.POSIXct.Date(date))
+
+task = as_task_regr(prep_dat, target = 'y')
+
+task$col_roles$group = "date" # for cv sampling by date
+# Remove group ID from feature
+task$col_roles$feature = setdiff(task$col_roles$feature, "date")
+
+task$task_type
+task$col_roles
+task$formula
+task$data() %>% head()
+
+
+mlr3extralearners::list_mlr3learners() %>% distinct(name)
+
+learner_gbm = lrn(
+  'regr.lightgbm',
+  num_threads = 4,
+  lambda_l2 = 10,
+  lambda_l1 = .1,
+  nrounds = 2000,
+  objective = 'poisson',
+  categorical_feature = na.omit(cat_features), # na omit for dates I guess
+  predict_sets
+)
+
+learner_gbm
+
+learner_gbm$param_set
+
+
+# also 
+# learner$param_set$values = list(cp = 0.01, xval = 0)
+# learner
+
+library(lubridate)
+min_date = '2018-01-01'
+max_date = '2021-05-31'
+
+available_dates = between(df$date,
+                          as_date(min_date),
+                          as_date(max_date))
+
+post_2017_dates = 
+  unique(df$date[available_dates])
+
+set.seed(1234)
+train_idx = sample(post_2017_dates, floor(.66*length(post_2017_dates)))
+test_idx  = as_date(setdiff(post_2017_dates, train_idx))
+
+train_id = (1:nrow(df))[df$date %in% train_idx]
+test_id  = (1:nrow(df))[df$date %in% test_idx]
+
+learner_gbm$train(task, row_ids = train_id)
+
+prediction = learner_gbm$predict(task, row_ids = test_id)
+prediction
+
+autoplot(prediction)
+
+perf_measures = msrs(c('regr.mae', 'regr.rmse', 'regr.mse'))
+prediction$score(perf_measures)
+
+
+
+# resampling --------------------------------------------------------------
+
+
+cv5 = rsmp("cv", folds = 5)
+set.seed(123)
+cv5$instantiate(task)
+cv5$instance
+
+rr = resample(task, learner_gbm, cv5, store_models = TRUE)
+
+# boxplot of measure values across the 10 folds
+autoplot(rr, measure = msr('regr.mse'))
+
+rr$prediction(predict_sets = 'test')
+prediction = rr$predict(task, row_ids = test_id)
+prediction
+
+```
+
+
+```{r}
+library(tidymodels)  
+
+# Helper packages
+library(readr)       # for importing data
+library(vip)         # for variable importance plots
+
+
+library(readr)
+
+hotels <- 
+  read_csv('https://tidymodels.org/start/case-study/hotels.csv') %>%
+  mutate(across(where(is.character), as.factor))
+
+dim(hotels)
+#> [1] 50000    23
+
+
+# step1: splitting data ---------------------------------------------------
+set.seed(123)
+splits      <- initial_split(hotels, strata = children)
+
+hotel_other <- training(splits)
+hotel_test  <- testing(splits)
+
+set.seed(234)
+val_set <- validation_split(hotel_other, 
+                            strata = children, 
+                            prop = 0.80)
+val_set
+
+
+
+# step2: set engine -------------------------------------------------------
+
+lr_mod <- logistic_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+
+
+# step3: recipe (formula, data processing) --------------------------------
+
+holidays <- c("AllSouls", "AshWednesday", "ChristmasEve", "Easter", 
+              "ChristmasDay", "GoodFriday", "NewYearsDay", "PalmSunday")
+lr_recipe <- 
+  recipe(children ~ ., data = hotel_other) %>% 
+  step_date(arrival_date) %>% 
+  step_holiday(arrival_date, holidays = holidays) %>% 
+  step_rm(arrival_date) %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+
+
+# combine step2 and step3
+lr_workflow <- 
+  workflow() %>% 
+  add_model(lr_mod) %>% 
+  add_recipe(lr_recipe)
+
+
+
+# st†ep4: tuning -----------------------------------------------------------
+lr_reg_grid <- tibble(penalty = 10^seq(-4, -1, length.out = 30))
+
+lr_reg_grid %>% top_n(-5) # lowest penalty values
+#> Selecting by penalty
+#> # A tibble: 5 × 1
+#>    penalty
+#>      <dbl>
+#> 1 0.0001  
+#> 2 0.000127
+#> 3 0.000161
+#> 4 0.000204
+#> 5 0.000259
+lr_reg_grid %>% top_n(5)  # highest penalty values
+#> Selecting by penalty
+#> # A tibble: 5 × 1
+#>   penalty
+#>     <dbl>
+#> 1  0.0386
+#> 2  0.0489
+#> 3  0.0621
+#> 4  0.0788
+#> 5  0.1
+#> 
+
+# find best tune
+lr_res <- 
+lr_workflow %>% 
+  tune_grid(val_set,
+            grid = lr_reg_grid,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+
+top_models <-
+  lr_res %>% 
+  show_best("roc_auc", n = 15) %>% 
+  arrange(penalty) 
+top_models
+#> # A tibble: 15 × 7
+#>     penalty .metric .estimator  mean     n std_err .config              
+#>       <dbl> <chr>   <chr>      <dbl> <int>   <dbl> <chr>                
+#>  1 0.000127 roc_auc binary     0.872     1      NA Preprocessor1_Model02
+#>  2 0.000161 roc_auc binary     0.872     1      NA Preprocessor1_Model03
+#>  3 0.000204 roc_auc binary     0.873     1      NA Preprocessor1_Model04
+#>  4 0.000259 roc_auc binary     0.873     1      NA Preprocessor1_Model05
+#>  5 0.000329 roc_auc binary     0.874     1      NA Preprocessor1_Model06
+#>  6 0.000418 roc_auc binary     0.874     1      NA Preprocessor1_Model07
+#>  7 0.000530 roc_auc binary     0.875     1      NA Preprocessor1_Model08
+#>  8 0.000672 roc_auc binary     0.875     1      NA Preprocessor1_Model09
+#>  9 0.000853 roc_auc binary     0.876     1      NA Preprocessor1_Model10
+#> 10 0.00108  roc_auc binary     0.876     1      NA Preprocessor1_Model11
+#> 11 0.00137  roc_auc binary     0.876     1      NA Preprocessor1_Model12
+#> 12 0.00174  roc_auc binary     0.876     1      NA Preprocessor1_Model13
+#> 13 0.00221  roc_auc binary     0.876     1      NA Preprocessor1_Model14
+#> 14 0.00281  roc_auc binary     0.875     1      NA Preprocessor1_Model15
+#> 15 0.00356  roc_auc binary     0.873     1      NA Preprocessor1_Model16
+
+lr_res %>% 
+  select_best()
+
+
+lr_best <- 
+  lr_res %>% 
+  collect_metrics() %>% 
+  arrange(penalty) %>% 
+  slice(12)
+lr_best
+
+# apply best tune
+lr_auc <- 
+  lr_res %>% 
+  collect_predictions(parameters = lr_best) %>% 
+  roc_curve(children, .pred_children) %>% 
+  mutate(model = "Logistic Regression")
+
+autoplot(lr_auc)
+
+
+
+# models: random forest ---------------------------------------------------
+cores <- parallel::detectCores()
+cores
+#> [1] 10
+
+
+
+# step1: set engine -------------------------------------------------------
+rf_mod <- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores) %>% 
+  set_mode("classification")
+
+
+
+
+# step2: recipe and data processing ------------------------------
+rf_recipe <- 
+  recipe(children ~ ., data = hotel_other) %>% 
+  step_date(arrival_date) %>% 
+  step_holiday(arrival_date) %>% 
+  step_rm(arrival_date) 
+
+
+# step3: workflow (recipe + engine) ---------------------------------------
+rf_workflow <- 
+  workflow() %>% 
+  add_model(rf_mod) %>% 
+  add_recipe(rf_recipe)
+
+
+
+# step4: tuning -----------------------------------------------------------
+
+set.seed(345)
+rf_res <- 
+  rf_workflow %>% 
+  tune_grid(val_set,
+            grid = 25,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+
+# select best tune
+rf_best <- 
+  rf_res %>% 
+  select_best(metric = "roc_auc")
+rf_best
+
+# best AUC
+rf_auc <- 
+  rf_res %>% 
+  collect_predictions(parameters = rf_best) %>% 
+  roc_curve(children, .pred_children) %>% 
+  mutate(model = "Random Forest")
+
+
+# compare glm with RF -----------------------------------------------------
+bind_rows(rf_auc, lr_auc) %>% 
+  ggplot(aes(x = 1 - specificity, y = sensitivity, col = model)) + 
+  geom_path(lwd = 1.5, alpha = 0.8) +
+  geom_abline(lty = 3) + 
+  coord_equal() + 
+  scale_color_viridis_d(option = "plasma", end = .6)
+
+
+# test with test data -----------------------------------------------------
+# set engine
+last_rf_mod <- 
+  rand_forest(mtry = 8, min_n = 7, trees = 1000) %>% 
+  set_engine("ranger", num.threads = cores, importance = "impurity") %>%  # provide variable importance scores 
+  set_mode("classification")
+
+# the last workflow
+last_rf_workflow <- 
+  rf_workflow %>% 
+  update_model(last_rf_mod)
+
+# the last fit
+set.seed(345)
+last_rf_fit <- 
+  last_rf_workflow %>% 
+  last_fit(splits)
+
+
+last_rf_fit %>% 
+  extract_fit_parsnip() %>% 
+  vip(num_features = 5)
+
+
+last_rf_fit %>% 
+  collect_predictions() %>% 
+  roc_curve(children, .pred_children) %>% 
+  autoplot()
+```
+
+

@@ -5,7 +5,7 @@ description: |
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
+date: '2022-07-25'
 preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
@@ -13,10 +13,10 @@ output:
     toc: true
     toc_float: true
     css: ../../styles.css
-draft: true
-tags: [tags, taggy]
+draft: false
+tags: [R, speed, memory, lag, lead, antijoin, group by, coalesce, filter, slice, missing values, conditional, dplyr, data.table, tidyr, vctrs, tidyfast]
 categories:
-  - ?
+  - programming
 ---
 
 ```{r setup, include=FALSE}
@@ -160,12 +160,12 @@ rnd = tidyext::rnd
 
 ## Introduction
 
-Oftentimes I'm looking to gain speed/memory advantages, or maybe just exploring how to do the same thing differently in case it becomes useful later on. I thought I'd start posting them, but then I don't get around to it.  Here are a few that have come up over the past year (or two 😞), and even as I wrote this, more examples kept coming up so I may have more to add in the future.
+Oftentimes I'm looking to gain speed/memory advantages, or maybe just exploring how to do the same thing differently in case it becomes useful later on. I thought I'd start posting them, but then I don't get around to it.  Here are a few that have come up over the past year (or two 😞), and even as I wrote this, more examples kept coming up, so I may come back to add more in the future.
 
 
 ## Quick summary
 
-Data processing efficiency really depends on context.  Faster doesn't mean memory efficient, and what may be the best in a standard setting can be notably worse in others. Some approaches won't show their value until the data is very large, or there are many groups to deal with, while others will get notably worse. Also, you may not want an additional package dependency beyond what you're using, and may need a base R approach.  The good news is you'll have options.
+Data processing efficiency really depends on context.  Faster doesn't mean memory efficient, and what may be the best in a standard setting can be notably worse in others. Some approaches won't show their value until the data is very large, or there are many groups to deal with, while others will get notably worse. Also, you may not want an additional package dependency beyond what you're using, and may need a base R approach.  The good news is you'll always have options!
 
 One caveat: I'm not saying that the following timed approaches are necessarily the best/fastest, I mostly stuck to ones I'd try first.  You may find even better for your situation!
 
@@ -184,7 +184,7 @@ library(vctrs)
 library(bench)   # for timings
 ```
 
-Also, in the following bench marks I turn off checking if the results are equivalent (i.e. `check = FALSE`) because even if the resulting data is the same, the objects may be different classes, or some objects may even be of the same class but have different attributes. You are welcome to double check that you would get the same thing as I did. Also, you might want to look at the `autoplot` of the bench mark summaries, as many results have some variability that isn't captured by just looking at median/best times.
+Also, in the following bench marks I turn off checking if the results are equivalent (i.e. `check = FALSE`) because even if the resulting data is the same, the objects may be different classes, or some objects may even be of the same class, but have different attributes. You are welcome to double check that you would get the same thing as I did. Also, you might want to look at the `autoplot` of the bench mark summaries, as many results have some variability that isn't captured by just looking at median/best times.
 
 
 ```{r funs, echo = FALSE}
@@ -267,7 +267,7 @@ bm_fill <-
 saveRDS(bm_fill, 'data/programming/bm_fill.rds')
 ```
 
-This is a great example of where there is a notable speed/memory tradeoff. Very surprising how much memory <span class="pack">data.table</span> uses[^dt_modify], while not giving much speed advantage relative to the <span class="pack">tidyr</span>.  Perhaps there is something I'm missing (😏)? Also note that we can get an even 'tidier' advantage by using <span class="pack">vctrs</span> directly, rather than wrapping it via <span class="pack">tidyr</span>.
+This is a great example of where there is a notable speed/memory trade-off. Very surprising how much memory <span class="pack">data.table</span> uses[^dt_modify], while not giving much speed advantage relative to the <span class="pack">tidyr</span>.  Perhaps there is something I'm missing (😏)? Also note that we can get an even 'tidier' advantage by using <span class="pack">vctrs</span> directly, rather than wrapping it via <span class="pack">tidyr</span>, and seeing how easy it is to use, it's probably the best option.
 
 ```{r show-bm-fill, echo=FALSE}
 bm_fill = read_rds('data/programming/bm_fill.rds')
@@ -279,7 +279,7 @@ summarize_bm(bm_fill)
 
 ## Antijoins
 
-Sometimes you just don't want that! In the following we have a situation where we want to filter values based on the negation of some condition.  Think of a case where certain person IDs are not viable for consideration for analysis.  Many times, a natural approach would be to use something like a filter where instead of using `vals %in% values_desired`, we just negate that.  However, another approach is to create a data frame of the undesired values and use an `anti_join`.  When using joins in general, you get a relative advantage by explicitly noting the variables you're joining on, so I compare that as well for demonstration. Finally, in this particular example we could use <span class="pack">data.table's</span> builtin character match, `chin`.
+Sometimes you just don't want that! In the following we have a situation where we want to filter values based on the negation of some condition.  Think of a case where certain person IDs are not viable for consideration for analysis.  Many times, a natural approach would be to use something like a filter where instead of using `vals %in% values_desired`, we just negate that with a bang (`!`) operator.  However, another approach is to create a data frame of the undesired values and use an `anti_join`.  When using joins in general, you get a relative advantage by explicitly noting the variables you're joining on, so I compare that as well for demonstration. Finally, in this particular example we could use <span class="pack">data.table's</span> built-in character match, `chin`.
 
 
 ```{r anti-join, eval=FALSE}
@@ -329,7 +329,7 @@ summarize_bm(bm_antijoin, digits = 6)
 ```
 
 
-## Lag/lead
+## Lag/lead/differences
 
 Here we are interested in getting the difference in the current value of some feature from it's last (or next) value, typically called a lag (lead).  Note that it doesn't have to be the last value, but that is most common.  In the tidyverse we have `lag`/`lead` functions, or with <span class="pack">data.table</span>, we have the generic `shift` function that can do both. In the following I look at using that function in the fully <span class="pack">data.table</span> situation or within a tibble.
 
@@ -373,7 +373,7 @@ bm_lag = read_rds('data/programming/bm_lag.rds')
 summarize_bm(bm_lag, digits = 6)
 ```
 
-What about a grouped scenario? To keep it simple we'll just look at lag
+What about a grouped scenario? To keep it simple we'll just look at using lagged values.
 
 ```{r lag-grp, eval=FALSE}
 bm_lag_grp = bench::mark(
@@ -434,7 +434,7 @@ bm_first = bench::mark(
 saveRDS(bm_first, 'data/programming/bm_first_1.rds')
 ```
 
-The first result is actually not too surprising, in that the fully dt approaches are clear winners. Somewhate interesting is that the base last is a bit faster than <span class="pack">dplyr's</span> `last` (technically `nth`) approach.
+The first result is actually not too surprising, in that the fully dt approaches are clear winners. Somewhat interesting is that the base last is a bit faster than <span class="pack">dplyr's</span> `last` (technically `nth`) approach.
 
 ```{r first-last-show, echo=FALSE}
 bm_first = read_rds('data/programming/bm_first_1.rds')
@@ -474,7 +474,7 @@ bm_first_more_groups = bench::mark(
 saveRDS(bm_first_more_groups, 'data/programming/bm_first_more_groups.rds')
 ```
 
-Now what the heck? The base R approach is way faster than even <span class="pack">data.table</span>, while not using any more memory than what <span class="pack">dplyr</span> is doing (because of the group by summarize).  However, in your situation you might want the additional options that come with <span class="pack">dplyr</span> or <span class="pack">data.table</span>, or memory is a concern.
+Now what the heck is going on here? The base R approach is way faster than even <span class="pack">data.table</span>, while not using any more memory than what <span class="pack">dplyr</span> is doing (because of the group-by-summarize).  However, in your situation you might want the additional options that come with <span class="pack">dplyr</span> or <span class="pack">data.table</span>, or memory is a concern.
 
 
 ```{r first-last-2-show, echo=FALSE}
@@ -525,7 +525,7 @@ summarize_bm(bm_coalesce, digits = 6)
 
 ## Conditional Slide
 
-I recently had a problem where I wanted to do a apply a certain function that required taking the difference between the current and last value as we did in the lag demo.  The problem was that 'last' depended on a specific condition being met. The basic idea is that we want to take x - lag(x) but where the condition is `FALSE`, we need to basically ignore that value for consideration as the last value, and only use the previous value for which the condition is `TRUE`. In the following, for the first two values where the condition is met, this is straightforward (6 - 10). But for the fourth row, 4 should subtract 6, rather than 5. 
+I recently had a problem where I wanted to do a apply a certain function that required taking the difference between the current and last value as we did in the lag demo.  The problem was that 'last' depended on a specific condition being met. The basic idea is that we want to take x - lag(x) but where the condition is `FALSE`, we need to basically ignore that value for consideration as the last value, and only use the previous value for which the condition is `TRUE`. In the following, for the first two values where the condition is met, this is straightforward (6 minus 10). But for the fourth row, 4 should subtract 6, rather than 5, because the condition is `FALSE`.
 
 ```{r df-cs}
 set.seed(1234)
@@ -540,7 +540,7 @@ df
 ```
 
 
-While somewhat simple in concept, it doesn't really work with simple lags, as the answer would be wrong, or sliding functions, because the window is adaptive. I wrote the following to deal with this. By default, it basically takes our vector under consideration, `x`, makes it `NA` where the condition doesn't hold, then fills in the NA values with the last value using the `vec_fill_missing` (or a supplied constant/single value). However there is flexibility beyond that type of fill. In addition, the function applied is generic, and could be applied to the newly created variable (`.x`), or use both the original (`x`) and the newly created variable.
+While somewhat simple in concept, it doesn't really work with simple lags, as the answer would be wrong, or sliding functions, because the window is adaptive. I wrote the following function to deal with this. By default, it basically takes our vector under consideration, `x`, makes it `NA` where the condition doesn't hold, then fills in the NA values with the last value using the `vec_fill_missing` (or a supplied constant/single value). However there is flexibility beyond that type of fill. In addition, the function applied is generic, and could be applied to the newly created variable (`.x`), or use both the original (`x`) and the newly created variable.
 
 ```{r fun-conditional_slide}
 conditional_slide <-
@@ -614,7 +614,7 @@ This is one of those things that comes up from time to time where trying to appl
 
 ## Take the first TRUE
 
-Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number > than some value.   We've already investigated using <span class="pack">dplyr</span> or <span class="pack">data.table's</span> `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R.  Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the first position of the first `FALSE`). In addition, there is there is the `Position` function, which I didn't even know about until messing with this problme. 
+Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number > than some value.   We've already investigated using <span class="pack">dplyr</span> or <span class="pack">data.table's</span> `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R.  Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the position of the first `FALSE`). In addition, there is the `Position` function, which I didn't even know about until messing with this problem. 
 
 ```{r bm_first_true, eval=FALSE}
 set.seed(123)
@@ -684,45 +684,13 @@ save(bm_first_true_1, bm_first_true_2, bm_first_true_3, file = 'data/programming
 load('data/programming/first_true.RData')
 summarize_bm(bm_first_true_3, digits = 5)
 ```
-<!-- ```{r} -->
-<!-- set.seed(1234) -->
-
-<!-- N = 100000 -->
-
-<!-- df = tibble( -->
-<!--   x  = rpois(N, 10), -->
-<!--   id = sample(1:100, N, replace = TRUE) -->
-<!-- ) %>% -->
-<!--   group_by(id) -->
-
-<!-- bm_first_true_gp_1 = bench::mark( -->
-<!--   # no_which = (x > marker)[1], -->
-<!--   which =  df %>% group_by(id) %>% slice(which(x > 5)[1]:n()), -->
-<!--   which_max =  df %>% group_by(id) %>% slice(which.max(x > 5):n()), -->
-<!--   pos = df %>% group_by(id) %>% slice(Position(\(x) x > 5, x):n()) -->
-<!-- ) -->
-
-
-<!-- df = tibble( -->
-<!--   x  = rpois(N, 10), -->
-<!--   id = sample(1:1000, N, replace = TRUE) -->
-<!-- ) %>% -->
-<!--   group_by(id) -->
-
-<!-- bm_first_true_gp_2 = bench::mark( -->
-<!--   # no_which = (x > marker)[1], -->
-<!--   which =  df %>% group_by(id) %>% slice(which(x > 5)[1]:n()), -->
-<!--   which_max =  df %>% group_by(id) %>% slice(which.max(x > 5):n()), -->
-<!--   pos = df %>% group_by(id) %>% slice(Position(\(x) x > 5, x):n()) -->
-<!-- ) -->
-<!-- ``` -->
 
 
 ## Group by filtering/slicing
 
-The previous situation was the basis for this next demo where we utilize which.max.  Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this case the the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
+The previous situation was the basis for this next demo where we utilize `which.max`.  Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this latter case, the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
 
-For the example data, we want to drop group 1 entirely, the initial part of group 2, and retain all of group 3.
+To make things more clear, for the example data that follows, we want to drop group 1 entirely, the initial part of group 2, and retain all of group 3.
 
 ```{r filter-slice}
 library(tidyverse)
@@ -745,7 +713,7 @@ df %>%
   slice(which.max(value > 0):n())
 ```
 
-In the above we take two steps to illustrate our desired outcome conceptually. Ideally though, we'd like one step, because it is just a general filtering.  You might think maybe to change `which.max` to `which` and just slice, but this would remove all zeros, when we want to retain zeros after the point where at least some values are greater than zero.  Using `row_number` was a way I thought to get around things.
+In the above scenario, we take two steps to illustrate our desired outcome conceptually. Ideally though, we'd like one step, because it is just a general filtering. You might think maybe to change `which.max` to `which` and just slice, but this would remove all zeros, when we want to retain zeros after the point where at least some values are greater than zero.  Using `row_number` was a way I thought to get around things.
 
 ```{r bm_filter_slice, eval = FALSE}
 df %>% 
@@ -763,7 +731,10 @@ bm_filter_slice = bench::mark(
     group_by(group) %>% 
     filter(!all(value == 0) & row_number() >= which.max(value > 0))
 )
+```
 
+
+```{r bm_filter_slice-save, eval = FALSE, echo=FALSE}
 save(bm_filter_slice, file = 'data/programming/bm_filter_slice.RData')
 ```
 
@@ -797,7 +768,10 @@ bm_filter_slice2 = bench::mark(
     group_by(group) %>% 
     filter(!all(value == 0) & row_number() >= which.max(value > 0))
 )
+```
 
+
+```{r bm_filter_slice2-save, eval = FALSE, echo=FALSE}
 save(bm_filter_slice2, file = 'data/programming/bm_filter_slice2.RData')
 ```
 
@@ -823,8 +797,8 @@ Here I take a look at some timings for data processing tasks.  My reason for doi
 
 So we have the following:
 
-- *Base R*:  Just kidding. If you're using base R approaches you will always be slower.  Functions like aggregate, tapply and similar could be used in these demos, but I leave that as an exercise to the reader.  I've done them, and it isn't pretty.
-- *dplyr*: Standard data wrangling workhorse package
+- *Base R*:  Just kidding. If you're using base R approaches for this `aggregate` you will always be slower.  Functions like `aggregate`, `tapply` and similar could be used in these demos, but I leave that as an exercise to the reader.  I've done them, and it isn't pretty.
+- *dplyr*: standard data wrangling workhorse package
 - *tidyr*: has some specific functionality not included in dplyr
 - *data.table*: another commonly used data processing package that purports to be faster and more memory efficient (usually but not always)
 - *tidyfast*: can only do a few things, but does them quickly.
@@ -832,7 +806,7 @@ So we have the following:
 
 ### Standard grouped operation
 
-The following demonstrates some timings from [here](http://stackoverflow.com/questions/3505701/r-grouping-functions-sapply-vs-lapply-vs-apply-vs-tapply-vs-by-vs-aggrega/34167477#34167477).  I reproduced it on my own machine based on 50 million observations. The grouped operations that are applied are just a sum and length on a vector. As this takes several seconds to do even once, I only do it one time.
+The following demonstrates some timings from [this post on stackoverflow](http://stackoverflow.com/questions/3505701/r-grouping-functions-sapply-vs-lapply-vs-apply-vs-tapply-vs-by-vs-aggrega/34167477#34167477).  I reproduced it on my own machine based on 50 million observations. The grouped operations that are applied are just a sum and length on a vector. As this takes several seconds to do even once, I only do it one time.
 
 ```{r dttimings_big, eval=FALSE, echo=TRUE}
 set.seed(123)
@@ -872,8 +846,10 @@ timing_group_by_big = timing_group_by_big %>%
   do.call(rbind, .) %>% 
   data.frame() %>% 
   rownames_to_column('package')
-  
+```
 
+
+```{r dttimings_big-save, eval=FALSE, echo=FALSE}
 save(timing_group_by_big, file = 'data/programming/timing_group_by_big.RData')
 ```
 
@@ -887,12 +863,12 @@ timing_group_by_big %>%
   gt()
 ```
 
-We can see that all options are notable improvements on <span class="pack">dtplyr</span>.  Tidyfast is a little optimistic, as it can count but does not appear to do a summary operation like means or sums.
+We can see that all options are notable improvements on <span class="pack">dplyr</span>.  <span class="pack">tidyfast</span> is a little optimistic, as it can count but does not appear to do a summary operation like means or sums.
 
 
 ### Count
 
-To make things more evenly matched, we'll just do a simple grouped count. In the following, I add a different option for <span class="pack">dplyr</span> if all we want are group sizes. In addition, you have to 'collect' the data for a  <span class="pack">dtplyr</span> object, otherwise it is not actually usable yet, and we don't want to count the timing until it actually performs the operation. You can do this with the <span class="func">collect</span> function or <span class="func">as_tibble</span>.
+To make things more evenly matched, we'll just do a simple grouped count. In the following, I add a different option for <span class="pack">dplyr</span> if all we want are group sizes. In addition, you have to 'collect' the data for a  <span class="pack">dtplyr</span> object, otherwise the resulting object is not actually a usable tibble, and we don't want to count the timing until it actually performs the operation. You can do this with the `collect` function or `as_tibble`.
 
 
 ```{r flights, echo=-10, eval=FALSE}
@@ -912,11 +888,14 @@ bm_count_flights = bench::mark(
   iterations = 100,
   check = FALSE
 )
+```
 
+
+```{r flights-save, echo=-10, eval=FALSE, echo=FALSE}
 save(bm_count_flights, file = 'data/programming/timing_count_flights.RData')
 ```
 
-Here are the results with a visual representation (extreme times shown alternate colors). It's important to note the memory as well as the time. The faster functions here are actually taking a lot more memory to do it.  If dealing with very large data this could be more important if operations timings aren't too different.
+Here are the results. It's important to note the memory as well as the time. The faster functions here are taking a bit more memory to do it.  If dealing with very large data this could be more important if operations timings aren't too different.
 
 ```{r flights-show, echo=FALSE}
 load('data/programming/timing_count_flights.RData')
@@ -927,23 +906,11 @@ summarize_bm(bm_count_flights)
 
 
 
-```{r count-timings, echo=FALSE, eval=FALSE}
+Just for giggles I did the same in Python with a <span class="pack">pandas</span> `DataFrame`</span>, and depending on how you go about it you could be notably slower than all these methods, or less than half the standard <span class="pack">dplyr</span> approach.  Unfortunately I can't reproduce it here[^reticulate], but I did run it on the same machine using a `df.groupby().size()` approach to create the same type of data frame. Things get worse as you move to something not as simple, like summarizing with a custom function, even if that custom function is still simple arithmetic.
 
-# bm_count_flights %>%
-#   arrange(desc(median)) %>%
-#   gt() %>% 
-#   kableExtra::add_footnote('Median time in milliseconds to do a count of arr_time on nycflights::flights')
-# 
-# ggplot(test, aes(expr, time, color = expr, fill = expr)) +
-#   geom_violin(alpha = .6)  +
-#   # ggbeeswarm::geom_beeswarm(dodge.width = 5, alpha = .6)  +
-#   visibly::theme_clean()
-```
+[^reticulate]: This is because [reticulate still has issues with M1 out of the box](https://github.com/rstudio/reticulate/issues/1019), and even then getting it to work can be a pain.
 
-Just for giggles I did the same in Python with a <span class="pack">pandas</span> <span class="objclass">DataFrame</span>, and depending on how you go about it you could be notably slower than all these methods, or less than half the base <span class="pack">dplyr</span> approach.  Unfortunately I can't reproduce it here because [reticulate still has issues with M1 out of the box](https://github.com/rstudio/reticulate/issues/1019), but I did run it on the same machine using a `df.groupby().size()` approach to create the same type of data frame.  Things get worse as you move to something not as simple, like summarizing with a custom function, even if that custom function is still simple arithmetic.
-
-
-A lot of folks that use Python primarily still think R is slow, but that is mostly because they don't know how to effectively program with R for data science.  I know folks who use Python more, but also use tidyverse, and I use R more but also use pandas quite a bit. It's not really a debate - tidyverse is easier, less verbose, and almost always faster relative to pandas, especially for more complicated operations.  If you start using tools like <span class="pack">data.table</span>, then there is really no comparison for speed and efficiency.
+A lot of folks that use Python primarily still think R is slow, but that is mostly just a sign that they don't know how to effectively program with R for data science.  I know folks who use Python more, but also use tidyverse, and I use R more but also use pandas quite a bit. It's not really a debate - tidyverse is easier, less verbose, and generally faster relative to pandas, especially for more complicated operations.  If you start using tools like <span class="pack">data.table</span>, then there is really no comparison for speed and efficiency.
 
 
 ```{r for-py, echo=FALSE, eval=FALSE}
@@ -955,7 +922,7 @@ arrow::write_parquet(flights, 'data/flights')
 ```
 
 
-```{python timing, engine = '/Users/micl/opt/anaconda3/bin/python', eval = FALSE, echo = FALSE}
+```{python timing, engine = '/Users/micl/opt/anaconda3/bin/python', eval = FALSE, echo = TRUE}
 import pandas as pd
 
 
@@ -977,8 +944,10 @@ timeit.timeit() # see documentation
 test_result = timeit.timeit(stmt="test()", setup="from __main__ import test", number = 100)
 
 # default result is in seconds for the total number of 100 runs
-test_result/100*1000  # per 
+test_result/100*1000  # ms per run 
 ```
+
+
 
 ## Summary
 
