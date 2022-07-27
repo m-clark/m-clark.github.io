@@ -6,7 +6,7 @@ author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: '2022-07-25'
-preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: ../../img/198R_small.png  
 output:
   distill::distill_article:
     self_contained: false
@@ -167,7 +167,7 @@ Oftentimes I'm looking to gain speed/memory advantages, or maybe just exploring 
 
 Data processing efficiency really depends on context.  Faster doesn't mean memory efficient, and what may be the best in a standard setting can be notably worse in others. Some approaches won't show their value until the data is very large, or there are many groups to deal with, while others will get notably worse. Also, you may not want an additional package dependency beyond what you're using, and may need a base R approach.  The good news is you'll always have options!
 
-One caveat: I'm not saying that the following timed approaches are necessarily the best/fastest, I mostly stuck to ones I'd try first.  You may find even better for your situation!
+One caveat: I'm not saying that the following timed approaches are necessarily the best/fastest, I mostly stuck to ones I'd try first.  You may find even better for your situation!  A great resource to keep in mind is the [fastverse](https://github.com/fastverse), which is a collection of packages with speed and efficiency in mind, and includes a couple that are demonstrated here.
 
 
 ## Setup and orientation
@@ -180,6 +180,7 @@ library(tidyr)
 library(dtplyr)
 library(tidyfast)
 library(data.table)
+library(collapse)
 library(vctrs)
 library(bench)   # for timings
 ```
@@ -242,11 +243,12 @@ df_missing = tibble(grp = rep(1:Ng, e = N / Ng)) %>%
 
 df_missing %>% head(5)
 
-dt_missing  = as.data.table(df_missing) %>% setkey(grp)
-tf_missing  = copy(dt_missing)
+dt_missing = as.data.table(df_missing) %>% setkey(grp)
+tf_missing = copy(dt_missing)
 
 bm_fill <-
   bench::mark(
+    %!in%
     tidyr    = fill(group_by(df_missing, grp), x:z),  
     tidyfast = dt_fill(tf_missing, x, y, z, id = grp),
     vctrs    = df_missing %>% group_by(grp) %>% mutate(across(x:z, vec_fill_missing)),
@@ -304,7 +306,8 @@ suppressMessages({
     in_     = filter(df1, !id %in% letters[1:10]),
     in_dtp  = collect(filter(df1_lazy, !id %in% letters[1:10])),     # not usable until collected/as_tibbled
     chin    = filter(df1, !id %chin% letters[1:10]),                 # chin for char vector only, from data.table
-    chin_dt = df1_dt[!df1_dt$id %chin% letters[1:10],],              # won't match other results due to class diff, but checked equality
+    chin_dt = df1_dt[!df1_dt$id %chin% letters[1:10],],              
+    coll    = fsubset(df1, id %!in% letters[1:10]),                  # can work with dt or tidyverse
     aj      = anti_join(df1, df2, by = 'id'),
     aj_noby = anti_join(df1, df2),
 
@@ -320,13 +323,15 @@ saveRDS(bm_antijoin, 'data/programming/bm_antijoin.rds')
 ```
 
 
-In this case, the fully <span class="pack">data.table</span> approach is best in speed and memory.  In addition, if you are in the tidyverse, the `anti_join` function is a very good option. Hopefully the lesson about explicitly setting the `by` argument is made clear.
+In this case, the fully <span class="pack">data.table</span> approach is best in speed and memory, but <span class="pack">collapse</span> is not close behind[^collapse].  In addition, if you are in the tidyverse, the `anti_join` function is a very good option. Hopefully the lesson about explicitly setting the `by` argument is made clear.
 
 ```{r anti-join-show, echo=FALSE}
 bm_antijoin = read_rds('data/programming/bm_antijoin.rds')
 
 summarize_bm(bm_antijoin, digits = 6)
 ```
+
+[^collapse]: As of this writing, I'm new to the <span class="pack">collapse</span> package, and so might be missing other uses that might be more efficient.
 
 
 ## Lag/lead/differences
@@ -354,7 +359,8 @@ bm_lag = bench::mark(
   dt_lead    = dt[, x_diff := x - shift(x, n = -1)],
   dt_dp_lag  = mutate(df, x_diff = x - shift(x)),
   dt_dp_lead = mutate(df, x_diff = x - shift(x, n = -1)),
-  
+  coll_lag   = ftransform(df, x_diff = x - flag(x)),
+  coll_lead  = ftransform(df, x_diff = x - flag(x, n = -1)),
   iterations = 100,
   check      = FALSE
 )
@@ -365,7 +371,7 @@ bm_lag = bench::mark(
 saveRDS(bm_lag, 'data/programming/bm_lag.rds')
 ```
 
-In this case, <span class="pack">data.table</span> is best, but using the `shift` function within the tidy approach is a very solid gain.  Oddly, `lag` and `lead` seem somewhat different in terms of speed and memory.
+In this case, <span class="pack">collapse</span> is best, with <span class="pack">data.table</span> not far behind, but using the `shift` function within the tidy approach is a very solid gain.  Oddly, `lag` and `lead` seem somewhat different in terms of speed and memory.
 
 ```{r lag-lead-show, echo=FALSE}
 bm_lag = read_rds('data/programming/bm_lag.rds')
@@ -379,7 +385,8 @@ What about a grouped scenario? To keep it simple we'll just look at using lagged
 bm_lag_grp = bench::mark(
   dt_lag    = dt[, x_diff := x - shift(x), by = grp],
   dt_dp_lag = mutate(group_by(df, grp), x_diff = x - shift(x)),
-  dplyr_lag = mutate(group_by(df, grp), x_diff = x - lead(x)),
+  dplyr_lag = mutate(group_by(df, grp), x_diff = x - lag(x)),
+  coll_lag  = fmutate(fgroup_by(df, grp), x_diff = x - flag(x)),
   
   iterations = 10,
   check      = FALSE
@@ -391,7 +398,7 @@ bm_lag_grp = bench::mark(
 saveRDS(bm_lag_grp, 'data/programming/bm_lag_grp.rds')
 ```
 
-Even in the grouped situation, using a <span class="pack">data.table</span> approach is best.
+In the grouped situation, using a <span class="pack">collapse</span> isn't best for memory, but the speed gain is ridiculous!!
 
 ```{r lag-grp-show, echo=FALSE}
 bm_lag_grp = read_rds('data/programming/bm_lag_grp.rds')
@@ -423,6 +430,8 @@ bm_first = bench::mark(
   dplyr_last  = summarize(group_by(df, id), x = dplyr::last(x)),
   dt_first    = dt[, .(x = data.table::first(x)), by = id],
   dt_last     = dt[, .(x = data.table::last(x)),  by = id],
+  coll_first  = ffirst(fgroup_by(df, id)),
+  coll_last   = flast(fgroup_by(df, id)),
   
   iterations  = 100,
   check       = FALSE
@@ -434,7 +443,7 @@ bm_first = bench::mark(
 saveRDS(bm_first, 'data/programming/bm_first_1.rds')
 ```
 
-The first result is actually not too surprising, in that the fully dt approaches are clear winners. Somewhat interesting is that the base last is a bit faster than <span class="pack">dplyr's</span> `last` (technically `nth`) approach.
+The first result is actually not too surprising, in that the fully dt approaches are fast and memory efficient, though <span class="pack">collapse</span> is notably faster. Somewhat interesting is that the base last is a bit faster than <span class="pack">dplyr's</span> `last` (technically `nth`) approach.
 
 ```{r first-last-show, echo=FALSE}
 bm_first = read_rds('data/programming/bm_first_1.rds')
@@ -464,6 +473,8 @@ bm_first_more_groups = bench::mark(
   dplyr_last  = summarize(group_by(df, id), x = dplyr::last(x)),
   dt_first    = dt[, .(x = data.table::first(x)), by = id],
   dt_last     = dt[, .(x = data.table::last(x)),  by = id],
+  coll_first  = ffirst(group_by(df, id)),
+  coll_last   = flast(group_by(df, id)),
   iterations  = 100,
   check       = FALSE
 )
@@ -474,7 +485,7 @@ bm_first_more_groups = bench::mark(
 saveRDS(bm_first_more_groups, 'data/programming/bm_first_more_groups.rds')
 ```
 
-Now what the heck is going on here? The base R approach is way faster than even <span class="pack">data.table</span>, while not using any more memory than what <span class="pack">dplyr</span> is doing (because of the group-by-summarize).  However, in your situation you might want the additional options that come with <span class="pack">dplyr</span> or <span class="pack">data.table</span>, or memory is a concern.
+Now what the heck is going on here? The base R approach is way faster than even <span class="pack">data.table</span>, while not using any more memory than what <span class="pack">dplyr</span> is doing (because of the group-by-summarize). More to the point is that <span class="pack">collapse</span> is notably faster than the other options, but still a bit heavy memory-wise relative to <span class="pack">data.table</span>.  
 
 
 ```{r first-last-2-show, echo=FALSE}
@@ -505,7 +516,8 @@ bm_coalesce = bench::mark(
   fifelse   = fifelse(is.na(x), 0, x),
   coalesce  = coalesce(x, 0),
   fcoalesce = fcoalesce(x, 0),
-  nafill    = nafill(x, fill = 0)
+  nafill    = nafill(x, fill = 0),
+  coll      = replace_NA(x)   # default is 0
 )
 ```
 
@@ -514,13 +526,14 @@ bm_coalesce = bench::mark(
 saveRDS(bm_coalesce, 'data/programming/bm_coalesce.rds')
 ```
 
-The key result here to me is just how much memory the <span class="pack">dplyr</span> `if_else` approach is using, as well as how fast and memory efficient the base R approach is even with a second step. While providing type safety, `if_else` is both slow and a memory hog, so probably anything else is better.  <span class="pack">tidyr</span> itself would be a good option here, and while it makes up for the memory issue, it's relatively slow compared to <span class="pack">data.table</span> and the function it's a wrapper for (`vec_assign`), which is also demonstrated. Interestingly, `fcoalesce` and `fifelse` would both be better options than <span class="pack">data.table's</span> other approach that is explicitly for this task.
+The key result here to me is just how much memory the <span class="pack">dplyr</span> `if_else` approach is using, as well as how fast and memory efficient the base R approach is even with a second step. While providing type safety, `if_else` is both slow and a memory hog, so probably anything else is better.  <span class="pack">tidyr</span> itself would be a good option here, and while it makes up for the memory issue, it's relatively slow compared to other approaches, including the function it's a wrapper for (`vec_assign`), which is also demonstrated. Interestingly, `fcoalesce` and `fifelse` would both be better options than <span class="pack">data.table's</span> other approach that is explicitly for this task.
 
 ```{r ifelse1-show, echo = FALSE}
 bm_coalesce = read_rds('data/programming/bm_coalesce.rds')
 
 summarize_bm(bm_coalesce, digits = 6)
 ```
+
 
 
 ## Conditional Slide
@@ -612,9 +625,11 @@ df %>%
 This is one of those things that comes up from time to time where trying to apply a standard tool likely won't cut it. You may find similar situations where you need to modify what's available and create some functionality tailored to your needs.
 
 
+
 ## Take the first TRUE
 
 Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number > than some value.   We've already investigated using <span class="pack">dplyr</span> or <span class="pack">data.table's</span> `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R.  Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the position of the first `FALSE`). In addition, there is the `Position` function, which I didn't even know about until messing with this problem. 
+
 
 ```{r bm_first_true, eval=FALSE}
 set.seed(123)
@@ -622,7 +637,6 @@ set.seed(123)
 x = sort(rnorm(10000))
 
 marker = 2
-
 
 bm_first_true_1 = bench::mark(
   which     = which(x > marker)[1],
@@ -686,6 +700,7 @@ summarize_bm(bm_first_true_3, digits = 5)
 ```
 
 
+
 ## Group by filtering/slicing
 
 The previous situation was the basis for this next demo where we utilize `which.max`.  Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this latter case, the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
@@ -744,7 +759,7 @@ load('data/programming/bm_filter_slice.RData')
 summarize_bm(bm_filter_slice, digits = 4)
 ```
 
-Well we got it to one operation, but now it takes longer and has no memory advantage.  Now let's try with a realistically sized data set with a lot of groups. 
+Well we got it to one operation, but now it takes longer and has no memory advantage.  Are we on the wrong track? Let's try with a realistically sized data set with a lot of groups. 
 
 
 ```{r bm_filter_slice2, eval = FALSE}
@@ -784,13 +799,12 @@ summarize_bm(bm_filter_slice2, digits = 4)
 ```
 
 
+
 ## Tidy timings
-
-
 
 ### Overview
 
-> This tidy timings section comes from a notably old exploration (I think it was originally Jan 2020), but it looks like tidyfast still has some functionality beyond dtplyr, and it doesn't hurt to revisit. My original timings were on a nicely suped up pc, but the following are on a year and a half old macbook with an M1 processer, and were almost 2x faster. 
+> This tidy timings section comes from a notably old exploration I rediscovered (I think it was originally Jan 2020), but it looks like tidyfast still has some functionality beyond dtplyr, and it doesn't hurt to revisit.  I added a result for collapse. My original timings were on a nicely suped up pc, but the following are on a year and a half old macbook with an M1 processer, and were almost 2x faster. 
 
 
 Here I take a look at some timings for data processing tasks.  My reason for doing so is that <span class="pack">dtplyr</span> has recently arisen from the dead, and <span class="pack">tidyfast</span> has come on the scene, so I wanted a quick reference for myself and others to see how things stack up against <span class="pack">data.table</span>.
@@ -802,6 +816,7 @@ So we have the following:
 - *tidyr*: has some specific functionality not included in dplyr
 - *data.table*: another commonly used data processing package that purports to be faster and more memory efficient (usually but not always)
 - *tidyfast*: can only do a few things, but does them quickly.
+- *collapse*: many replacements for base R functions.
 
 
 ### Standard grouped operation
@@ -840,6 +855,12 @@ timing_group_by_big[["tidyfast"]] = system.time({
 timing_group_by_big[["data.table"]] = system.time({
     dt = setnames(setDT(list(x, grp)), c("x","grp"))
     r.data.table = dt[, .(sum(x), .N), grp]
+})
+
+# collapse
+timing_group_by_big[["collapse"]] = system.time({
+     df = tibble(x, grp)
+    r.data.table = fsummarise(fgroup_by(df, grp), x = fsum(x),  n = fnobs(x))
 })
 
 timing_group_by_big = timing_group_by_big %>% 
