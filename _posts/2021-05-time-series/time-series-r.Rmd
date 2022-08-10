@@ -1,12 +1,12 @@
 ---
-title: "Exploring Time with R"
+title: "Exploring Time"
 description: |
   Multiple avenues to time-series analysis
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
-preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+preview: ../../img/time-series/dalle_mini_time_series_seasonal_effect.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
@@ -17,10 +17,14 @@ output:
 bibliography:
   # - ../../bibs/mixed.bib  # old issue of multiple biblios with relative paths never fixed in rmd
   - ../../bibs/ts.bib
-draft: true
-tags: [time series, generalized additive models, mixed models, torch, deep learning, RNN, seq2seq, prophet, fable, pytorch]
+draft: false
+tags: [time series, generalized additive models, mixed models, torch, deep learning, RNN, seq2seq, prophet, fable, lightgbm, gradient boosting, pytorch]
 categories:
-  - [mixed models, time series, deep learning]
+  - mixed models
+  - GAM
+  - boosting
+  - time series
+  - deep learning
 ---
 
 ```{r setup, include=FALSE}
@@ -52,11 +56,15 @@ rnd = tidyext::rnd
 theme_set(visibly::theme_clean())
 ```
 
+
+
 ## Intro
+
+> This post was mostly complete around May 2021, but for various reasons not actually posted until August of 2022.  I haven't changed much aside from adding a section on boosting, and have used the results I conjured up previously (for the most part). However, many package updates since then may mean that parts of the code may not work as well, especially for the torch code.  
 
 It is extremely common to have data that exists over a period of time. For example, we might have yearly sports statistics, daily manufacturing records, server logs that might be occurring many times per second, and similar.  There are many approaches we could use to model the data in these scenarios.  When there are few time points and they are clustered within other units, like repeated observations of exercise data for many individuals, we often use tools like [mixed models](https://m-clark.github.io/mixed-models-with-R/) for example, and even with many observations in a series, we can still use tools like that. But sometimes there may be no natural clustering, or we might want to use other approaches to handle additional complexity.
 
-This post is inspired by a co-worker's efforts in using PyTorch to analyze  Chicago Transit data. [Cody Dirks](https://twitter.com/codydirks) was writing [a post](https://www.strong.io/blog) where he used a Python module developed by our group at [Strong Analytics](https://strong.io) to analyze the ridership across all the '[L](https://en.wikipedia.org/wiki/Chicago_%22L%22)'.  This post can be seen as a demonstration of some simpler models which might also be viable for a given situation such as this, allowing for quick dives, or even as ends in themselves.
+This post is inspired by a co-worker's efforts in using PyTorch to analyze  Chicago Transit data. [Cody Dirks](https://twitter.com/codydirks) was writing [a post](https://www.strong.io/blog/forecasting-public-transport-utilization-in-chicago) where he used a [Python module](https://github.com/strongio/torchcast) developed by our group at [Strong Analytics](https://strong.io/) to analyze the ridership across all the '[L](https://en.wikipedia.org/wiki/Chicago_%22L%22)'.  This post can be seen as a demonstration of some simpler models which might also be viable for a given situation such as this, allowing for quick dives, or even as ends in themselves.
 
 
 
@@ -67,17 +75,25 @@ The models we'll go through are the following:
 - Error models and random effects
 - GAM
 - More elaborate time series with seasonal and other effects
-- Deep learning
+- Boosting and Deep learning
 
 In what follows I will show some more detailed code in the beginning, but won't show it later for conciseness, focusing mostly just on the basic model code. You can always find the code for these posts on my [GitHub](https:://github.com/m-clark/m-clark.github.io).
 
 
+## Quick Summary
+
+- Classical econometrics approaches like ARIMA models may take notable effort to match the flexibility of other approaches one might take with time series.  It's also difficult to believe a specific lag/ma number will hold up with any data change.
+
+- GAMs extend mixed models, and should probably be preferred if a probabilistic approach is desired. Prophet-style approaches would likely take notable effort and still likely lack performance, without adding interpretability.
+
+- For black box methods, boosting can do very well without much feature engineering, but possibly take a bit more for parameter tuning.  Deep learning methods may be your best bet given data size and other data modeling needs.
+
 
 ## Data Description
 
-As will be seen with Cody's post[^codypost], over 750,000 people use the Chicago Transit Authority's 'L' system to get around the city. There are 8 interconnected rail lines named after colors- the Red, Blue, Green, Brown, Pink, Orange, Purple, and Yellow, 145 entry/exit stations, and over 2,300 combined trips by its railcars every day[^express].
+As noted in [Cody's post](https://www.strong.io/blog/forecasting-public-transport-utilization-in-chicago), over 750,000 people use the Chicago Transit Authority's 'L' system to get around the city. There are 8 interconnected rail lines named after colors- the Red, Blue, Green, Brown, Pink, Orange, Purple, and Yellow, 145 entry/exit stations, and over 2,300 combined trips by its railcars every day[^express].
 
-[^codypost]: As of publishing this, Cody's post had not yet been pushed to the Strong website.  I will update with a link when it's available.
+
 [^express]: There is also the Purple express line, which is very irregular compared to the others.
 
 The city of Chicago provides ridership data that can be accessed publicly.
@@ -86,8 +102,6 @@ The city of Chicago provides ridership data that can be accessed publicly.
 - [station info](https://data.cityofchicago.org/Transportation/CTA-System-Information-List-of-L-Stops/8pix-ypme)
 
 In Cody's exploration, he added pertinent information regarding weather, sporting events, and more.  You can access the [processed data](https://github.com/m-clark/m-clark.github.io/tree/master/data/time-series/processed_df.csv).
-
-`TODO: NEED LINK`
 
 For our demonstrations we have daily ridership from 2012-2018, and we will use a variety of methods to model this.  We will use a normalized ride count (mean of 0, standard deviation of 1) as our target variable.
 
@@ -130,7 +144,7 @@ df_start = df %>%
     month     = month(date, label = TRUE),
     day       = factor(wday(date, label = TRUE), ordered = FALSE),
     year_day  = lubridate::yday(date),
-    line = factor(line),
+    line      = factor(line),
     snow_scaled = scale(snow)[, 1],
     colors = as.character(line),
     colors = ifelse(colors == 'purple_express', 'purple4', colors),
@@ -147,7 +161,9 @@ df_start = df %>%
 
 ### Training and Validation
 
-We split our data into training and validation sets, such that everything before `r SPLIT_DT` is used for training, while everything after will be used for testing model performance.
+We split our data into training and validation sets, such that everything before `r SPLIT_DT` is used for training, while everything after will be used for testing model performance[^scaletest].
+
+[^scaletest]: Technically we should scale the test set using the mean/sd of the training set, and though with very large data this should not matter, for time series it's a particular concern as data can 'shift' over time.
 
 ```{r train-test-split}
 df_train = df_start %>% 
@@ -211,10 +227,7 @@ red_line_train %>%
     hjust = 0,
     vjust = 0
   ) +
-  scale_x_date(
-    breaks = seq.Date(as_date('2012-01-01'), as_date('2016-01-01'), by = '6 months'),
-    date_labels = '%Y-%m'
-  ) +
+  scale_x_date(date_breaks = '3 months', label = scales::label_date_short()) +
   scale_y_continuous(breaks = seq(0, 3e5, 5e4), limits = c(0, 250000)) +
   labs(x = '', y = '', subtitle = 'Daily Riders') +
   guides(x = guide_axis(n.dodge = 2)) +
@@ -232,19 +245,19 @@ With the data ready to go, we are ready for modeling, so let's get started!
 
 ### Intro
 
-Classical times series from an econometrics perspective often considers a error model that accounts for the correlation a current observation has with past observations.  A traditional example is the so-called *autoregressive*, or *AR*, model, which let's a current observation be predicted by past observations up to a certain point. For example, would could start by just using the last observation to predict the current one. Next we extend this to predict the current based on the previous two observations, and so on. How many *lags* we use is part of the model exploration.
+Classical times series from an econometrics perspective often considers a error model that accounts for the correlation a current observation has with past observations.  A traditional example is the so-called *autoregressive*, or *AR*, model, which lets a current observation be predicted by past observations up to a certain point. For example, would could start by just using the last observation to predict the current one. Next we extend this to predict the current based on the previous two observations, and so on. How many *lags* we use is part of the model exploration.
 
 $$y_t = \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + \varepsilon_t$$
 
-We can extend this to include not just past observation but also past residuals, called a *moving average*.  So formally, our *ARMA* (p, q) model now looks like this for an observation $y$ at time $t$:
+We can extend this to include not just past observations but also past residuals, called a *moving average*.  So formally, our *ARMA* (p, q) model now looks like this for an observation $y$ at time $t$:
 
 $$y_t = \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + (\varepsilon_t + \theta_1 \varepsilon_{t-1} + \cdots +\theta_q \varepsilon_{t-q})$$
 
-We can also use [differencing](https://otexts.com/fpp3/stationarity.html), for example subtracting previous time value from the current observation value for all values, to come to the final [*ARIMA* (p, d, q) model](https://en.wikipedia.org/wiki/Autoregressive_integrated_moving_average). See @Hyndman2021 for more details.
+We can also use [differencing](https://otexts.com/fpp3/stationarity.html), for example subtracting the previous time value from the current observation value for all values, to come to the final [*ARIMA* (p, d, q) model](https://en.wikipedia.org/wiki/Autoregressive_integrated_moving_average). See @Hyndman2021 for more details.
 
 ### Model
 
-Even base R comes with basic time series models such as this.  However, as mentioned, we typically don't know what to set the values of an ARIMA(p, d, q) to.  A quick way to explore this is via the <span class="" style = "">forecast</span> package, which will search over the various hyperparameters and select one based on AIC. Note that <span class="pack" style = "">fable</span>, a package we will be using later, will also allow such an approach, and if you'd like to go ahead and start using it I show some commented code below.
+Even base R comes with basic time series models such as this.  However, as mentioned, we typically don't know what to set the values of an ARIMA(p, d, q) to.  A quick way to explore this is via the <span class="pack" style = "">forecast</span> package, which will search over the various hyperparameters and select one based on AIC. Note that <span class="pack" style = "">fable</span>, a package we will be using later, will also allow such an approach, and if you'd like to go ahead and start using it I show some commented code below.
 
 ```{r arima-model}
 model_arima = forecast::auto.arima(
@@ -265,8 +278,7 @@ model_arima = forecast::auto.arima(
 
 ### Explore
 
-In this case we have an selected AR of `r model_arima$arma[1]` and MA of `r model_arima$arma[2]` for the centered value.  But looking at the predictions, we can see this is an almost useless result for any number of days out, and does little better than guessing.
-
+In this case we have a selected AR of `r model_arima$arma[1]` and MA of `r model_arima$arma[2]` for the centered value.  But looking at the predictions, we can see this is an almost useless result for any number of days out, and does little better than guessing.
 
 
 ```{r arima-tidy, eval=FALSE}
@@ -323,11 +335,11 @@ data.frame(
 ```
 
 
-One nice thing about the <span class="pack" style = "">forecast</span> package is that it can include additional covariates via the `xreg` argument, which is exactly what we need- additional information. Now our model looks something like this, where $X$ is our model matrix of covariates and $\beta$ their corresponding regression weights.
+One nice thing about the <span class="pack" style = "">forecast</span> package is that it can include additional features via the `xreg` argument, which is exactly what we need- additional information. Now our model looks something like this, where $X$ is our model matrix of features and $\beta$ their corresponding regression weights.
 
 $$y_t = X_t\beta + \alpha_1y_{t-1} + \dots +\alpha_{p}y_{t-p} + (\varepsilon_t + \theta_1 \varepsilon_{t-1} + \cdots +\theta_q \varepsilon_{t-q})$$
 
-Adding these is not exactly straightforward, since it requires a matrix rather than a data frame, but not a big deal once you are used to creating model matrices.
+Adding these is not exactly straightforward, since it requires a matrix rather than a data frame, but this is not too big a deal once you are used to creating model matrices.
 
 
 ```{r arima-model-xreg}
@@ -351,7 +363,7 @@ broom::tidy(model_arima_xreg) %>%
 ```
 
 
-This is looking much better!  We can also see how notably different the ARMA structure is relative to the previous model.  We also see that weekends and holidays results in a huge drop in ridership as expected, while baseball games and good weather will lead to an increase.
+This is looking much better!  We can also see how notably different the ARMA structure is relative to the previous model.  We also see that adding weekend and holiday effects result in a huge drop in ridership as expected, while baseball games and good weather will lead to an increase.
 
 In the following code, we create a model matrix similar to the training data that we can feed into the <span class="func" style = "">predict</span> function.  The forecast package also offers a <span class="func" style = "">glance</span> method if desired.
 
@@ -459,9 +471,10 @@ df_validate_mixed = df_validate %>%
   mutate(holiday = factor(ifelse(is.na(holiday), '0', as.character(holiday))))
 ```
 
+
 ### Model
 
-For the model, we can now easily think of it as we do other standard modeling scenarios.  Along with standard covariates, we'll add random effects for line, day, day x line interaction, etc.  Finally we also add an AR random effect. For each line, we have an autoregressive structure for days, such that days right next to each other are correlated, and this correlation tapers off as days are further apart.  This is not our only option, but seems straightforward to me. 
+For the model, we can now easily think of it as we do other standard modeling scenarios.  Along with standard features, we'll add random effects for line, day, day x line interaction, etc.  Finally we also add an AR random effect. For each line, we have an autoregressive structure for days, such that days right next to each other are correlated, and this correlation tapers off as days are further apart.  This is not our only option, but seems straightforward to me. 
 
 
 Depending on what you include in the model, you may have convergence issues, so feel free to reduce the complexity if needed.  For example, most of the day effect is captured by weekend vs. not, and a by line year trend wasn't really necessary. In addition, the way the AR random effect variance is estimated as noted above, this essentially captures the line intercept variance.
@@ -503,8 +516,10 @@ summarise_model(fit_mixed, digits = 4)
 extract_cor_structure(fit_mixed, which_cor = 'ar1')
 ```
 
+We can visually inspect how well it matches the data. In the following the colored lines are the predictions, while the observed is gray. It looks like performance tapers for more recent time periods, and holiday effects are not as prevalent for some lines (e.g. yellow). The latter could be helped by adding a `holiday:line` random effect.
 
-```{r mixed-vis, cache.rebuild=TRUE}
+
+```{r mixed-vis}
 p_mixed = df_validate_mixed %>% 
   droplevels() %>% 
   mutate(pred = predict(fit_mixed, newdata = .)) %>%
@@ -535,7 +550,7 @@ p_mixed_red = df_validate_mixed %>%
 As before we can measure performance via yardstick.  This model does appears to do very well.
 
 
-```{r mixed-ar-performance}
+```{r mixed-ar-performance, eval=FALSE}
 # validation
 data.frame(
   pred = predict(fit_mixed, newdata = df_validate_mixed, allow.new.levels = TRUE),
@@ -543,6 +558,18 @@ data.frame(
 ) %>%
   metric_score(truth = observed, estimate = pred)
 ```
+
+```{r mixed-ar-performance-show, echo=FALSE}
+# validation
+data.frame(
+  pred = predict(fit_mixed, newdata = df_validate_mixed, allow.new.levels = TRUE),
+  observed = df_validate_mixed$rides_scaled
+) %>%
+  metric_score(truth = observed, estimate = pred) %>% 
+  kable_df()
+```
+
+
 
 ```{r mixed-model-save, echo=FALSE}
 save(
@@ -555,7 +582,7 @@ save(
 
 For more on autocorrelation structure in the mixed model setting, [see my mixed model document here](https://m-clark.github.io/mixed-models-with-R/extensions.html#autocorrelation)[^brady]. 
 
-[^brady]: I always appreciated the depiction of this topic in @west2014 quite a bit.
+[^brady]: I always appreciated the depiction of this topic in @west2022 quite a bit.
 
 
 
@@ -564,7 +591,7 @@ For more on autocorrelation structure in the mixed model setting, [see my mixed 
 ### Intro
 
 We can generalize mixed models even further to incorporate nonlinear components, which may include cyclic or other effects. Such models are typically referred to as [generalized additive models](https://m-clark.github.io/generalized-additive-models/) (GAMs).
-AR processes themselves can be seen as a special case of [gaussian processes](http://www.gaussianprocess.org/), which can potentially be approximated via GAMs.  As they can accommodate spatial, temporal, nonlinear, and other effects, they are sometimes more generally referred to as *structured additive regression models*, or STARs.
+AR processes themselves can be seen as a special case of [gaussian processes](http://www.gaussianprocess.org/), which can potentially be approximated via GAMs.  As GAMs can accommodate spatial, temporal, nonlinear, and other effects, they are sometimes more generally referred to as *structured additive regression models*, or STARs.
 
 
 ### Data Prep
@@ -579,7 +606,7 @@ df_validate_gam = df_validate_mixed
 
 ### Model
 
-With data in place we are ready to conduct the model. We have numerous options for how we'd like to take this.  However, as an example, I tried various smooths, but didn't really see much difference, which is actually a good thing. For any further improvements we'd likely have to tweak the core model itself.  I also use <span class="func" style = "">bam</span> for a quicker result, but this isn't really necessary, as it didn't even take a minute to run.  As with the mixed model, we will use holiday as a random effect.
+With data in place we are ready to conduct the model. We have numerous options for how we'd like to take this.  However, as an example, I tried various smooths, but didn't really see much difference, which is actually a good thing. For any further improvements we'd likely have to tweak the core model itself.  I also use <span class="func" style = "">bam</span> for a quicker result, but this isn't really necessary, as it didn't even take a minute to run with standard gam.  As with the mixed model, we will use holiday as a random effect, but  we add the holiday by line interaction since we saw that need.  In addition, our year-day by line interaction should help some with the tailing off of more recent predictions.
 
 ```{r gam-model}
 library(mgcv)
@@ -597,6 +624,7 @@ model_gam =
   s(snow_scaled) +
   s(red_line_modernization, line, bs = 're') +
   s(holiday,  bs = 're') +
+  s(holiday, line,  bs = 're') +
   s(year_fac, bs = 're') +      
   s(day,  bs = 're') + 
   s(line, bs = 're') + 
@@ -618,20 +646,20 @@ fit_gam = bam(
   data     = df_train_gam,
   drop.unused.levels = FALSE, 
   method   = "fREML",
+  discrete = TRUE     # will fit the model in a second rather than a couple seconds
   # nthreads = 8,     # this option assumes a cluster is available. not necessary for this.
-  discrete = TRUE
 )
 ```
 
 ### Explore
 
-As with <span class="pack" style = "">glmmTMB</span>, I use a custom function to summarize the model, or extract different components from it. From the initial glance we can see things that we expect (e.g. day/weekend effects are large).
+As with <span class="pack" style = "">glmmTMB</span>, I use a custom function to summarize the model, or extract different components from it. From the initial glance we can see things that we expect (e.g. line and weekend effects are large).
 
 ```{r gam-explore, message=TRUE}
 mixedup::summarise_model(fit_gam)
 ```
 
-Now we can visualize test predictions broken about by line. The greater flexibility of the GAM allows it to follow the trends more easily than the standard linear mixed model approach.
+Now we can visualize test predictions broken about by line. The greater flexibility of the GAM for fixed and other effects allows it to follow the trends more easily than the standard linear mixed model approach.
 
 ```{r gam-vis, echo=FALSE}
 # visualize training
@@ -669,7 +697,7 @@ p_gam_red = df_validate_gam %>%
   labs(x = '', y = 'Rides (scaled)', subtitle = 'GAM')
 ```
 
-We can see improvement over our standard mixed model approach.
+We can also see improvement over our standard mixed model approach, and our best performance yet.
 
 ```{r gam-performance, echo=FALSE}
 # data.frame(
@@ -707,7 +735,7 @@ save(
 
 ### Data Prep
 
-The <span class="pack" style = "">prophet</span> package in R takes some getting used to.  We have to have specific names for our variables, and unfortunately have to do extra work to incorporate categorical predictors. We can  use <span class="pack" style = "">recipes</span> (like <span class="pack" style = "">yardstick</span>, part of the <span class="pack" style = "">tidymodels</span> 'verse) to set up the data (e.g. one-hot encoding).
+The <span class="pack" style = "">prophet</span> package in R takes some getting used to.  We have to have specific names for our variables, and unfortunately have to do extra work to incorporate categorical features. We can  use <span class="pack" style = "">recipes</span> (like <span class="pack" style = "">yardstick</span>, part of the <span class="pack" style = "">tidymodels</span> 'verse) to set up the data (e.g. one-hot encoding).
 
 ```{r prophet-data-prep}
 library(prophet)
@@ -718,7 +746,6 @@ df_train_prophet = df_train %>%
   rename(y  = rides_scaled,
          ds = date)
 
-library(recipes)
 rec = recipes::recipe(~., df_train_prophet)
 
 df_train_prophet = rec %>% 
@@ -735,7 +762,7 @@ rec = recipe(~., df_validate_prophet)
 
 df_validate_prophet = rec %>% 
   step_dummy(line, one_hot = TRUE, keep_original_cols = TRUE) %>% 
-  prep(training = df_validate_prophet) %>% 
+  prep(training = df_train_prophet) %>% 
   bake(new_data = df_validate_prophet) %>% 
   rename_with(.cols = starts_with('line_'), str_remove, 'line_')
 ```
@@ -744,7 +771,7 @@ df_validate_prophet = rec %>%
 
 With data in place, we are ready to build the model.  Note that later we will compare results to <span class="pack" style = "">fable.prophet</span>, which will mask some of the functions here, or vice versa depending on which you load first.  I would suggest only doing the prophet model, or only doing the fable model, rather than trying to do both at the same time, to avoid any mix-up.  
 
-After setting up the model, you have to add additional predictors in separate steps.  Prophet has a nice way to incorporate holidays though. When you run this model, you may have to wait for a minute or so.
+After setting up the model, you have to add additional features in separate steps.  Prophet has a nice way to incorporate holidays though. When you run this model, you may have to wait for a minute or so.
 
 ```{r prophet-model}
 # use prophet::prophet in case you have fable.prophet loaded also
@@ -791,8 +818,8 @@ forecast = predict(fit_prophet, df_validate_prophet)
 
 ### Explore
 
-We now visualize predictions as we did with the [GAM][Structured Additive Regression Models]. But one of the nice things with <span class="pack" style = "">prophet</span> is that you can plot the various parts of the model results via the <span class="func" style = "">plot
-</span> method or <span class="func" style = "">prophet_plot_components</span> (not shown). Unfortunately, our baseline effort seems to undersmooth our more popular lines (blue, red), and overreacts to some of the others (purple, yellow).
+We now visualize predictions as we did with the [GAM][Generalized Additive Models]. But one of the nice things with <span class="pack" style = "">prophet</span> is that you can plot the various parts of the model results via the <span class="func" style = "">plot
+</span> method or <span class="func" style = "">prophet_plot_components</span> (not shown). Unfortunately, our baseline effort seems to undersmooth our more popular lines (blue, red), and overreacts to some of the others (purple, yellow). This is because it's not really changing the predictions according to line.
 
 
 ```{r prophet-vis, echo=FALSE}
@@ -800,8 +827,10 @@ We now visualize predictions as we did with the [GAM][Structured Additive Regres
 # plot(fit_prophet, forecast)
 
 p_prophet = forecast %>%
-  select(ds, yhat) %>%
-  bind_cols(df_validate_prophet %>% select(-ds)) %>% 
+  mutate(across(all_of(line_names), \(x) as.integer(x != 0))) %>% 
+  left_join(df_validate_prophet, by = c('ds', line_names)) %>%
+  # select(ds, yhat) %>%
+  # bind_cols(df_validate_prophet %>% select(-ds)) %>%
   ggplot(aes(x = ds)) +
   geom_line(aes(y = y, group = colors), alpha = .1) +
   geom_path(aes(y = yhat, color = I(colors)), alpha = .25) +
@@ -820,7 +849,7 @@ p_prophet_red = forecast %>%
   labs(x = '', y = 'Rides (scaled)', subtitle = 'Prophet')
 ```
 
-We can also assess performance as before, but note that <span class="pack" style = "">prophet</span> has it's own cross-validation capabilities which would be better to utilize if this was your primary tool. Recall that we created the `ms` function previously. Between the previous visualization and these metrics, our first stab doesn't appear to do as well as the GAM, so you might like to go back and tweak things.
+We can also assess performance as before, but note that <span class="pack" style = "">prophet</span> has it's own cross-validation capabilities which would be better to utilize if this was your primary tool. Between the previous visualization and these metrics, our first stab doesn't appear to do as well as the GAM, so you might like to go back and tweak things.
 
 ```{r prophet-performance, echo=FALSE}
 # prophet::performance_metrics() # if you do cross-validation
@@ -848,13 +877,15 @@ save(
 
 ### Intro
 
-I came across <span class="pack" style = "">fable.prophet</span> as a possibly easier way to engage prophet. It is an extension of <span class="pack" style = "">fable</span> and related packages, which are very useful for time series processing and analysis. Note that it is 0.1.0 version development, and hasn't had much done with it in the past year, so your mileage may vary with regard to utility by the time you read this.  But with it we can specify the model in more of an R fashion, and we now don't have as much data pre-processing. 
+I came across <span class="pack" style = "">fable.prophet</span> as a possibly easier way to engage prophet. It is an extension of <span class="pack" style = "">fable</span> and related packages, which are very useful for time series processing and analysis. Note that it is 0.1.0 version development, and hasn't had much done with it in the past year, so your mileage may vary with regard to utility by the time you read this[^fableversion].  But with it we can specify the model in more of an R fashion, and we now don't have as much data pre-processing. 
+
+[^fableversion]: A year plus later after that statement, it still hasn't gone beyond 0.1.0, so I don't think this will continue to be useful for very long.  Unfortunate, but honestly, it's not clear <span class="pack" style = "">prophet</span itself can do much better than many other tools.
 
 ### Data Prep
 
 One key difference using <span class="pack" style = "">fable.prophet</span> is that it works with `tsibble` objects, and thus must have unique date observations.  We can do this by setting `line` as the key[^holidaybug].
 
-[^holidaybug]: <span class="pack" style = "">fable.prohet</span> may have a bug enabling the holidays functionality with parallel, so you can just use the original holiday column if you do so (single core doesn't take too long). 
+[^holidaybug]: <span class="pack" style = "">fable.prophet</span> may have a bug enabling the holidays functionality with parallel, so you can just use the original holiday column if you do so (single core doesn't take too long). 
 
 
 ```{r fable-data-prep}
@@ -921,7 +952,7 @@ forecast_fable %>%
   autoplot(level = 95, color = '#ff5500')
 ```
 
-This model does well, but we can see its limitations, for example, with the yellow line, and more recent ridership in general.
+This model does well, and better than basic <span class="pack" style = "">prophet</span>, but we can see its limitations, for example, with the yellow line, and more recent ridership in general.
 
 ```{r fable-model-explore, echo = FALSE}
 p = forecast_fable %>% 
@@ -961,7 +992,7 @@ p_fable_prophet_red = df_validate_fable %>%
   labs(x = '', y = 'Rides (scaled)', subtitle = 'Fable Prophet')
 ```
 
-And we check performance as before. The <span class="pack" style = "">fable</span> model is doing as well as our [GAM][Genearlized Additive Models] approach did.
+And we check performance as before. The <span class="pack" style = "">fable</span> model is doing almost as well as our [GAM][Generalized Additive Models] approach did.
 
 ```{r fable-performance, echo=FALSE}
 # data.frame(
@@ -1006,7 +1037,7 @@ accuracy(forecast_fable, df_validate_fable) %>%
 ```
 
 
-The <span class="pack" style = "">fable</span> results suggests what we already knew from our [GAM][Structured Additive Regression Models] and [mixed model][Mixed Model with AR] approach, that interactions of the series with line are important.  We weren't easily able to do this with the default prophet (it would likely require adding time x line interaction regresssors)
+The <span class="pack" style = "">fable</span> results suggests what we already knew from our [GAM][Generalized Additive Models] and [mixed model][Mixed Model with AR Structure] approach, that interactions of the series with line are important.  We weren't easily able to do this with the default <span class="pack" style = "">prophet</span> (it would likely require adding time x line interaction regresssors), so it's nice that we have the option here.
 
 ```{r fable-model-save, echo=FALSE}
 save(
@@ -1018,14 +1049,181 @@ save(
 )
 ```
 
+## GBM
+
+### Intro
+
+This part is actually new from when I first wrote up this post over a year ago. I basically wanted to test if a boosting approach would work decently out of the box without doing anything special regarding the structure of the data.  I don't add it to the summary visualizations, but provide the standard results here.
+
+
+### Data Prep
+
+I'll use <span class="pack" style = "">lightgbm</span> which I've been increasingly using of late. It requires a matrix object for input, and so some additional processing as well.
+
+```{r gbm-load, echo=FALSE, eval=FALSE}
+# load('data/time-series/gbm.RData')
+```
+
+
+```{r gbm-data-prep, eval=TRUE}
+library(lightgbm)
+
+# lightgbm only accepts a matrix input
+df_train_lgb_init = df_train %>% 
+  select(
+    rides_scaled,
+    is_weekday,
+    is_holiday,
+    is_cubs_game,
+    is_sox_game,
+    tmax_scaled,
+    prcp_scaled,
+    line, 
+    red_line_modernization,
+    year,
+    month,
+    year_day
+  ) %>% 
+  mutate(
+    line = as.integer(line),
+    month = as.integer(month)
+  )
+
+X_train = as.matrix(df_train_lgb_init %>% select(-rides_scaled))
+
+X_test  = df_validate %>% 
+  select(
+    is_weekday,
+    is_holiday,
+    is_cubs_game,
+    is_sox_game,
+    tmax_scaled,
+    prcp_scaled,
+    line, 
+    red_line_modernization,
+    year,
+    month,
+    year_day
+  ) %>% 
+  mutate(
+    line = as.integer(line),
+    month = as.integer(month)
+  ) %>% 
+  as.matrix()
+
+
+df_train_lgb = lgb.Dataset(
+  X_train,
+  label = df_train_lgb_init$rides_scaled,
+  categorical_feature = c(
+    'is_weekday',
+    'is_holiday',
+    'is_cubs_game',
+    'is_sox_game',
+    'line',
+    'year',
+    'month'
+  )
+)
+
+df_test_lgb  = lgb.Dataset.create.valid(
+  df_train_lgb, 
+  X_test,
+  label = df_validate$rides_scaled
+)
+```
+
+
+
+### Model
+
+Typically we would perform some sort of search over the (many) parameters available to tweak with <span class="pack">lightgbm</span>, like the number of trees, learning rate, regularizer parameters and more.  I ignore that, but I did fiddle with the learning rate and bumped up the `nrounds` (trees), but that's it.  We internally perform cross-validation as well (5-fold).
+
+```{r gbm-model, results='hide', cache=FALSE}
+params <- list(
+  objective       = "regression"
+  , metric        = "l2"
+  , min_data      = 10L
+  , learning_rate = .01
+)
+
+fit_gbm <- lgb.cv(
+  params    = params
+  , data    = df_train_lgb
+  , nrounds = 2000L
+  , nfold   = 5L
+)
+```
+
+
+```{r gbm-model-note, echo=FALSE, eval=FALSE}
+# lgb has a bug of some kind in saving objects to rds, and it's suggestions don't work
+# saveRDS.lgb.Booster(object = fit_gbm$boosters[[1]]$booster$dump_model(),
+#                     file = 'data/time-series/gbm.rds')
+```
+
+
+### Explore
+
+Some may be surprised at how well this does, but regular users of boosting probably are not.  We didn't have to do much and it's already the best performing model.
+
+```{r gbm-vis, echo=FALSE, eval=TRUE}
+# fit_gbm = read_rds('data/time-series/gbm.rds')
+
+p_gbm = df_validate %>% 
+  droplevels() %>% 
+  mutate(pred = fit_gbm$boosters[[1]]$booster$predict(X_test)) %>%
+  mutate(date = as_date(date)) %>% 
+  ggplot(aes(date, rides_scaled)) +
+  geom_line(alpha = .1) +
+  geom_line(aes(y = pred, color = I(colors)), alpha = .25) +
+  facet_grid(rows = vars(line), scales = 'free_y') +
+  scale_x_date(date_breaks = '1 month', label = scales::label_date_short()) +
+  labs(x = '', y = 'Rides (scaled)', subtitle = 'GBM')
+
+p_gbm
+
+
+p_gbm_red = df_validate %>% 
+  droplevels() %>% 
+  filter(line == 'red', year == 2018) %>% 
+  mutate(pred = fit_gbm$boosters[[1]]$booster$predict(X_test[df_validate$year == 2018 & df_validate$line == 'red',])) %>%
+  mutate(date = as_date(date)) %>% 
+  ggplot(aes(date, rides_scaled)) +
+  geom_line(alpha = .1) +
+  geom_line(aes(y = pred, color = I(colors)), alpha = .25) +
+  scale_x_date(date_breaks = '1 month', label = scales::label_date_short()) +
+  labs(x = '', y = 'Rides (scaled)', subtitle = 'GBM')
+```
+
+
+```{r gbm-performance, echo=FALSE, eval=TRUE}
+data.frame(
+    pred = fit_gbm$boosters[[1]]$booster$predict(X_test),
+    observed = df_validate %>% mutate(date = as.numeric(date)) %>% pull(rides_scaled)
+) %>%
+    metric_score(truth = observed, estimate = pred) %>% 
+    kable_df()
+```
+
+```{r gbm-model-save, echo=FALSE, eval=FALSE}
+
+save(
+  # fit_gbm,
+  p_gbm,
+  p_gam_red,
+  file ='data/time-series/gbm.RData'
+)
+```
+
 
 ## Torch
 
 At this point we have a collection of models that are still relatively interpretable, and mostly within our standard regression model framework.  It's good to see them able to perform very well without too much complexity. However, we still have other methods available that would be more computationally demanding, are more opaque in operations, but which would potentially provide the most accurate forecasts.  For this we turn to using PyTorch, which is now available via the <span class="pack" style = "">torch</span> package in R[^torch].
 
-[^torch]: For the basics of using PyTorch via R, including installation, see [the RStudio](https://blogs.rstudio.com/ai/posts/2020-09-29-introducing-torch-for-r/).
+[^torch]: For the basics of using PyTorch via R, including installation, see [the RStudio](https://blogs.rstudio.com/ai/posts/2020-09-29-introducing-torch-for-r/) post.
 
-In using <span class="pack" style = "">torch</span>, we're going to follow the [demo series at the RStudio AI blog](https://blogs.rstudio.com/ai/posts/2021-03-19-forecasting-time-series-with-torch_4/) [^blog-v-repo].  It shows in four parts how to use a *recurrent neural network*.  In their example, they use a data set for a single series with (summarized) daily values, similar to our daily counts here.  We will use the final model demonstrated in the series a so-called *seq2seq* model that includes an *attention* mechanism.  More detail can be found [here](https://www.deeplearningbook.org/contents/rnn.html).  The conceptual gist of the model can be described as taking a set of time points to predict another set of future time points, and doing so for all points in the series.
+In using <span class="pack" style = "">torch</span>, we're going to follow the [demo series at the RStudio AI blog](https://blogs.rstudio.com/ai/posts/2021-03-19-forecasting-time-series-with-torch_4/) [^blog-v-repo].  It shows in four parts how to use a *recurrent neural network*.  In their example, they use a data set for a single series with (summarized) daily values, similar to our daily counts here.  We will use the final model demonstrated in the series, a soi disant *seq2seq* model that includes an *attention* mechanism.  More detail can be found [here](https://www.deeplearningbook.org/contents/rnn.html).  The conceptual gist of the model can be described as taking a set of time points to predict another set of future time points, and doing so for all points in the series.
 
 [^blog-v-repo]: The blog code actually has several issues, but the [github repo](https://github.com/mlverse/torchbook_materials/blob/master/scripts/rnn_attention.R) should work fine and is what is followed for this demo.
 
@@ -1065,7 +1263,7 @@ train_sd   = sd(df_train_torch)
 
 ### Torch data
 
-For our data, we will use a week behind lag to predict the following week.  This seems appropriate for this problem, but for any particular problem we'd want to probably think hard about this and/or test different settings.
+For our data, we will use a week behind lag to predict the following week.  This seems appropriate for this problem, but for any particular time series problem we'd want to probably think hard about this and/or test different settings.
 
 ```{r torch-data-timestep-forecast}
 n_timesteps = 7    # we use a week instead of 14 days in blog
@@ -1073,7 +1271,7 @@ n_forecast  = 7    # look ahead one week
 ```
 
 
-```{r torch-data-prep2}
+```{r torch-data-prep2, eval=FALSE}
 cta_dataset <- dataset(
   name = "cta_dataset",
 
@@ -1152,7 +1350,7 @@ net(b$x, b$y, teacher_forcing_ratio = 1)
 
 ### Training
 
-With data in place, we're ready to train the model. For the most part, not much is going on here that would be different from other deep learning situations, e.g. choosing an optimizer, number of epochs, etc.  We'll use mean squared error as our loss, and I create an object to store the validation loss over the epochs of training.  I played around with it a bit, and you're probably not going to see much after letting it go for 100 epochs.
+With data in place, we're ready to train the model. For the most part, not much is going on here that would be different from other deep learning situations, e.g. choosing an optimizer, number of epochs, etc.  We'll use mean squared error as our loss, and I create an object to store the validation loss over the epochs of training.  I played around with it a bit, and you're probably not going to see much improvement after letting it go for 100 epochs.
 
 
 ```{r torch-training, eval=FALSE}
@@ -1316,7 +1514,7 @@ p_dat_window %>%
 
 So for our red line plot, we'll just use the average prediction at each date to make it comparable to the other plots. In general it looks to be doing okay, even armed with no contextual information.  Certainly better than the base ARIMA plot.
 
-```{r torch-plot, echo = FALSE}
+```{r torch-plot, echo = FALSE, eval=TRUE}
 df_eval_torch_plot =
   bind_cols(df_eval_torch_plot0, value = rowMeans(bind_cols(test_preds_plot), na.rm = TRUE))
 
@@ -1355,14 +1553,14 @@ p_dat_window %>%
 
 ## All
 
-```{r echo=FALSE, eval=FALSE}
+```{r echo=FALSE, eval=TRUE, results='hide'}
 # load all the objects
 x = list.files('data/time-series/', pattern = 'RData', full.names = TRUE)
 purrr::map(x, load, envir = .GlobalEnv)
 ```
 
 
-```{r vis-all-lines, layout = 'l-page', echo=FALSE}
+```{r vis-all-lines, layout = 'l-page', echo=FALSE, out.height='125%'}
 library(patchwork)
 
 # (
@@ -1386,6 +1584,7 @@ library(patchwork)
 )*
   labs(y = '') *
   lims(y = c(-3, 3)) *
+  scale_x_date(date_breaks = '1 month', label = scales::label_date_short()) *
   theme(
     axis.text.x = element_text(size = 6),
     axis.text.y = element_blank(),
@@ -1460,15 +1659,17 @@ ggsave(
 )
 ```
 
+
+
 ## Summary
 
+- ARIMA: no real reason to still be doing such a simplified model
+- Mixed Model: may be just what you need, but may lack in other settings
 - GAM: great, more viable than some might suspect, easy implementation
-- Prophet: needs work out of the box
-- Fable: saves you that work, require unique dates, did great in this situation via by-group models
-- Torch: pretty good even with minimal information.
+- Prophet/Fable: Prophet needs notable work out of the box, though Fable saves you some of that work, and did great in this situation via by-group models
+- GBM: can it really be this easy?
+- Torch: pretty good even with minimal information
 
-Other possibilities:
-More deep learning e.g. tsai
 
-To get some information on what Torch would do at the next level, i.e. adding additional covariates and other considerations, see Cody's post.
+To get some information on what Torch would do at the next level, i.e. adding additional features and other considerations, see [Cody's post](https://www.strong.io/blog/forecasting-public-transport-utilization-in-chicago).
 
