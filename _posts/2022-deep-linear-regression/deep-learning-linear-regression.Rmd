@@ -1,0 +1,635 @@
+---
+title: "Title"
+description: |
+  blah blah
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: true
+tags: [tags, taggy]
+categories:
+  - ?
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE, 
+  eval      = TRUE, 
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = NA,
+  R.options = list(width = 120),
+  cache         = FALSE,
+  cache.rebuild = FALSE,
+  cache.lazy    = FALSE,
+  fig.align = 'center',
+  fig.asp   = .7,
+  dev       = 'png',
+  dev.args  = list(bg = 'transparent')
+)
+
+
+library(tidyverse)
+
+theme_clean <- function (
+  font_size = 12,
+  font_family = "",
+  center_axis_labels = FALSE
+) {
+  
+  if (center_axis_labels) {
+    haxis_just_x <- 0.5
+    vaxis_just_y <- 0.5
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  else {
+    haxis_just_x <- 0
+    vaxis_just_y <- 1
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  
+  ggplot2::theme(
+    text = ggplot2::element_text(
+      family = font_family,
+      face   = "plain",
+      color  = "gray30",
+      size   = font_size,
+      hjust  = 0.5,
+      vjust  = 0.5,
+      angle  = 0,
+      lineheight = 0.9,
+      margin = ggplot2::margin(),
+      debug  = FALSE
+    ),
+    axis.title.x = ggplot2::element_text(
+      hjust = haxis_just_x,
+      angle = v_rotation_x,
+      size  = 0.8 * font_size
+    ),
+    axis.title.y = ggplot2::element_text(
+      vjust = vaxis_just_y,
+      hjust = 0,
+      angle = v_rotation_y,
+      size  = 0.8 * font_size
+    ),
+    axis.ticks        = ggplot2::element_line(color = "gray30"),
+    title             = ggplot2::element_text(color = "gray30", size = font_size * 1.25),
+    plot.subtitle     = ggplot2::element_text(color = "gray30", size = font_size * .75, hjust = 0),
+    plot.caption      = ggplot2::element_text(color = "gray30", size = font_size * .5, hjust = 0),
+    legend.position   = 'bottom', 
+    legend.key        = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.title      = ggplot2::element_blank(), 
+    panel.background  = ggplot2::element_blank(),
+    panel.grid        = ggplot2::element_blank(),
+    strip.background  = ggplot2::element_blank(),
+    plot.background   = ggplot2::element_rect(fill = "transparent", color = NA),
+  )
+}
+
+# set the theme as default
+theme_set(theme_clean())
+
+# set other point/line default colors; in most cases, we can use the color from
+# default discrete scale for more consistency across plots.
+# paletteer::palettes_d$colorblindr$OkabeIto
+update_geom_defaults('vline',   list(color = 'gray25',  alpha = .25))  # vlines and hlines are typically not attention grabbers so set alpha
+update_geom_defaults('hline',   list(color = 'gray25',  alpha = .25))  # usually a zero marker
+update_geom_defaults('point',   list(color = '#E69F00', alpha = .5))   # alpha as usually there are many points
+update_geom_defaults('smooth',  list(color = '#56B4E9', alpha = .15))
+update_geom_defaults('line',    list(color = '#56B4E9', alpha = .5))
+update_geom_defaults('bar',     list(color = '#E69F00', fill = '#E69F00'))  
+update_geom_defaults('col',     list(color = '#E69F00', fill = '#E69F00'))
+update_geom_defaults('dotplot', list(color = '#E69F00', fill = '#E69F00'))
+
+# use colorblind safe colors for categories; if you supply a continuous value to
+# color you'll get an error, but you just have to use `myplot +
+# scale_color_continous()` or whatever to override this; likewise you can always
+# override this scale for categorical schemes if desired also. Note that this
+# will apply for both color and fill, which is usually what we want.
+
+okabe_ito = c(
+  '#E69F00',
+  '#56B4E9',
+  '#009E73',
+  '#F0E442',
+  '#0072B2',
+  '#D55E00',
+  '#CC79A7',
+  '#999999'
+)
+
+ggplot <- function(...) ggplot2::ggplot(...) + 
+  # okabe ito colorblind safe scheme
+  scale_color_manual(
+    values = okabe_ito,
+    drop = FALSE,
+    aesthetics = c('color', 'fill')
+  )
+
+gt <- function(..., decimals = 2, title = NULL, subtitle = NULL) {
+  gt::gt(...) %>% 
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = decimals
+    ) %>% 
+    gt::tab_header(title = title, subtitle = subtitle) %>% 
+    gtExtras::gt_theme_nytimes()
+}
+
+gt_theme <-   
+  list(
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({sd})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p})"
+  )
+
+rnd = tidyext::rnd
+```
+
+
+```{r pysetup, include=FALSE}
+library(reticulate)
+# use_python('/Users/micl/Library/r-miniconda-arm64/bin/python3.9')
+# use_python('/Users/micl/opt/anaconda3/envs/xgb_lgb/bin/python')
+# to use, set the project python to the above, it seems not to work with use_python
+```
+
+
+## Introduction
+
+This post gives a by-hand example of linear regression using pytorch.  Why would anyone do this? Well, for one thing, it serves as a stepping stone for those who know basic statistical methodology like regression, but want to get into deep learning in a conceptual manner.  Another is to just seem some pytorch basics in a simple setting.  And one last reason is that maybe you want to incorporate a standard statistical modeling approach into some other deep learning endeavor.
+
+We'll use [an example by fastai](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch), which is a great resource for [getting started with deep learning](https://course.fast.ai/).  Their example serves as a basis, though I will generalize the functionality so that you can play around with the settings and try other data examples.  In addition, this post will assume you know things like why you would dummy code features and linear regression basics, and will use some other naming conventions[^nobigdeal].  
+
+[^nobigdeal]: I'm also not going to go into broadcasting, submitting to Kaggle, and many other things that I don't think are necessary for our purposes here.
+[^nofastai]: I won't actually use fastai, since they aren't up to supporting M1/2 Macs very well.  I think it was only used for the train/test data split anyway.  I would rant a bit about this, but a lot of fastai is geared toward non-local computing, and the fault is really with Apple and NVidia.
+
+
+## Getting Started
+
+```{python, imports}
+import pandas as pd
+import numpy as np
+import torch
+```
+
+
+```{python, read-titanic}
+df_titanic_train = pd.read_csv('data/dl-linear-regression/titanic/train.csv')
+df_titanic_train
+```
+
+
+```{python, describe}
+df_titanic_train.describe()
+```
+
+
+## Initial Data Processing
+
+
+Check out the missing values and replace with modes.  Just as an aside, this sort of approach has largely been frowned upon in the statistical world for decades for numerous (and valid) reasons, but we just want something quick and dirty here.
+
+```{python show-na}
+df_titanic_train.isna().sum()
+```
+
+
+```{python replace-na}
+modes = df_titanic_train.mode().iloc[0]
+
+df_titanic_train.fillna(modes, inplace = True)
+
+df_titanic_train.describe(include = (np.number))
+```
+
+
+Sometimes it is worthwhile to log transform data to help deal with heteroscedasticity (it shouldn't be done to deal with outliers and/or a misunderstanding of 'normality').
+
+
+```{python hist-fare, fig.show='hide'}
+df_titanic_train['Fare'].hist()
+```
+
+![](../../img/dl-linreg/fare-hist.png){width=50%}
+
+```{python l1p-fare, fig.show='hide'}
+df_titanic_train['LogFare'] = np.log1p(df_titanic_train['Fare'])
+
+df_titanic_train['LogFare'].hist()
+```
+
+![](../../img/dl-linreg/fare-hist-log.png){width=50%}
+
+
+```{python inspect-cats}
+pclasses = sorted(df_titanic_train.Pclass.unique())
+pclasses
+```
+
+```{python inspect-more-cats}
+df_titanic_train.describe(include=[object])
+```
+
+```{python dummify}
+df_titanic_train = pd.get_dummies(df_titanic_train, columns=["Sex","Pclass","Embarked"])
+df_titanic_train.columns
+```
+
+
+
+```{python show-ready-data}
+df_titanic_train.head()
+```
+
+## Getting Started with Pytorch
+
+### Setup
+
+```{python target-tensor}
+from torch import tensor
+
+target = tensor(df_titanic_train.Survived)
+```
+
+
+```{python dummy-features}
+dummies = ['Sex_male', 'Sex_female', 'Pclass_1', 'Pclass_2', 'Pclass_3', 'Embarked_C', 'Embarked_Q', 'Embarked_S']
+all_features = ['Age', 'SibSp', 'Parch', 'LogFare'] + dummies 
+
+X = tensor(df_titanic_train[all_features].values, dtype = torch.float)
+X.shape
+```
+
+
+## Setting up a linear model
+
+
+```{python random-coeffs}
+torch.manual_seed(442)
+
+n_coeff = X.shape[1]
+coeffs = torch.rand(n_coeff) - 0.5
+coeffs
+```
+
+The original post did a form of min-max scaling, basically putting everything on a potentially [0, 1] scale. Here we'll use standardization, giving each feature a mean of zero and standard deviation of 1.
+
+```{python scale-X}
+# vals,indices = X.max(dim=0)
+# X = X / vals
+X_means = X.mean(dim = 0, keepdim = True)
+X_sds   = X.std(dim = 0)
+
+X_sc = (X - X_means) / X_sds
+
+# X_sc.mean(dim = 0)  # all means = 0 
+# X_sc.std(dim = 0)   # all sd = 1
+```
+
+```{python init-preds}
+preds = (X_sc * coeffs).sum(axis = 1)
+preds[:10]
+```
+
+```{python init-loss}
+loss = torch.square(preds - target).mean()
+loss
+```
+
+
+Now we create functions that do the previous, and give it a test run.  In the original fastai formulation, they do mean absolute error, which actually is just the `L1loss` that is available in torch. For a change of pace, we'll do mean squared error, which is sometimes called `L2` loss.
+
+```{python func-calc_predsloss-init}
+def calc_preds(X, weights):
+    return((X * weights).sum(axis = 1))
+
+def calc_loss(X, weights, target, which = 'l2'):
+    preds = calc_preds(X, weights)
+    
+    # torch.abs(calc_preds(X, coeffs)-target).mean()  # original
+
+    if which == 'l2':
+      loss = torch.nn.MSELoss()
+    else: 
+      loss = torch.nn.L1Loss()
+      
+    L = loss(preds, target.float())
+      
+    return(L)
+
+calc_loss(X_sc, coeffs, target)
+calc_loss(X_sc, coeffs, target, which = 'l1')
+```
+
+
+
+
+### Doing a Gradient Descent Step
+
+
+>In this section, we're going to do a single "epoch" of gradient descent manually. The only thing we're going to automate is calculating gradients, because let's face it that's pretty tedious and entirely pointless to do by hand! To get PyTorch to calculate gradients, we'll need to call requires_grad_() on our coeffs (if you're not sure why, review the previous notebook, How does a neural net really work?, before continuing):
+
+```{python require-grad}
+coeffs.requires_grad_()
+
+```
+
+```{python redo-loss}
+loss = calc_loss(X_sc, coeffs, target)
+loss
+```
+
+
+```{python backward-step}
+loss.backward()
+
+coeffs.grad
+```
+
+
+```{python another-round}
+loss = calc_loss(X_sc, coeffs, target)
+loss.backward()
+coeffs.grad
+```
+
+
+```{python zero-grad}
+with torch.no_grad():
+    coeffs.sub_(coeffs.grad * 0.1)
+    coeffs.grad.zero_()
+    print(calc_loss(X, coeffs, target))
+
+```
+
+
+### Training the Linear Model
+
+
+```{python train-test-split}
+from sklearn.model_selection import train_test_split
+
+train_x, valid_x, train_y, valid_y = train_test_split(X_sc, target.float(), test_size = 0.2) # in keeping with RandomSplitter default
+```
+
+
+```{python fun-linmod-training}
+def update_weights(weights, lr):
+    weights.sub_(weights.grad * lr)
+    weights.grad.zero_()
+
+def one_epoch(X, weights, target, lr, verbose = 1, i = 1):
+    loss = calc_loss(X, weights, target)
+    loss.backward()
+    
+    with torch.no_grad(): update_weights(weights, lr)
+    
+    if verbose != 0:
+        if i % verbose == 0:
+            print(f'{loss: 3f}', end = '\n ')
+
+def init_weights(n_wts): 
+    return (torch.rand(n_wts) - 0.5).requires_grad_()
+
+def train_model(X, target, epochs = 30, lr = 1e-3, verbose = 1):
+    torch.manual_seed(442)
+    coeffs = init_weights(X.shape[1])
+    
+    for i in range(epochs): 
+        one_epoch(X, coeffs, target, lr = lr, i = i, verbose = verbose)
+    return coeffs
+
+```
+
+```{python calc-loss-linmod}
+calc_loss(X_sc, init_weights(X_sc.shape[1]), target).backward()
+```
+
+```{python one-epoch-linmod}
+one_epoch(train_x, init_weights(train_x.shape[1]), train_y, .01)
+```
+
+
+```{python train-linmod}
+coeffs_est = train_model(train_x, train_y, epochs = 50, verbose = 5)
+```
+
+
+```{python fun-show_coeffs}
+def show_coeffs(estimates): 
+  coef_dict = dict(zip(all_features, estimates.requires_grad_(False).numpy()))
+  return pd.DataFrame(coef_dict, index = ['value']).T
+
+show_coeffs(coeffs_est)
+```
+
+
+### Measuring Accuracy
+
+It's one thing to get accuracy on the trained data, but a better estimate of model performance is to measure it on our test/validation data.
+
+```{python init-accuracy}
+def acc(X, weights, target): 
+    return (target.bool() == (calc_preds(X, weights) > 0.5)).float().mean()
+
+acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
+```
+
+
+
+#### Using sigmoid
+
+The sigmoid function (plogis in base R) allows us to transform our results to the 0-1 scales, i.e. probabilities in this context, and in particular, the probability of survival. 
+
+
+```{python use-sigmoid}
+def calc_preds(X, weights):
+    return torch.sigmoid((X*weights).sum(axis = 1))
+```
+
+```{python retrain-with-sigmoid}
+coeffs_est = train_model(
+  train_x,
+  train_y,
+  epochs = 500,
+  lr = 1,
+  verbose = 100
+)
+```
+  
+  
+```{python acc-with-sigmoid}
+acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
+```
+
+```{python coeffs-with-sigmoid}
+show_coeffs(coeffs_est)
+```
+
+In implementing the sigmoid, let's go ahead and optimize how we calculate the predictions using a matrix shorthand for getting the predictions (which is also much more efficient/faster).  To do this, the coefficients will need to be a column vector, so we change our <span class="func" style = "">init_coeffs</span> function slightly[^coltarget].   
+
+
+[^coltarget]: The fastai demo also changes the target to a column vector, but this isn't actually necessary.
+
+
+
+```{python mat-mult}
+def calc_preds(X, weights): 
+    return torch.sigmoid(X@weights)
+
+def init_coeffs(n_wts): 
+    return (torch.rand(n_wts, 1)*0.1).requires_grad_()
+
+```
+
+Now our functions are more like the mathematical notation we'd usually see for linear regression.
+
+$$\hat{y} = X\beta$$
+
+
+
+### Compare to Linear/Logistic Regression
+
+```{python lin-prob-model}
+from sklearn import linear_model
+from sklearn.metrics import accuracy_score
+
+
+reg = linear_model.LinearRegression()
+reg.fit(train_x, train_y)
+
+acc(valid_x, coeffs_est, valid_y), acc(valid_x, reg.coef_.T, valid_y)
+```
+
+
+```{python acc-torch-vs-logreg}
+reg = linear_model.LogisticRegression()
+reg.fit(train_x, train_y)
+
+accuracy_score(valid_y, reg.predict(valid_x)).round(4)
+```
+
+```{python logreg-coefs}
+show_coeffs(coeffs_est).assign(linreg = np.round(reg.coef_.T, 4))
+```
+
+
+
+## A Neural Network
+
+
+```{python fun-init_weights_nn}
+def init_weights(n_wts, n_hidden=20):
+    layer1 = (torch.rand(n_wts, n_hidden)-0.5)/n_hidden
+    layer2 = torch.rand(n_hidden, 1)-0.3
+    const = torch.rand(1)[0]
+    return layer1.requires_grad_(),layer2.requires_grad_(),const.requires_grad_()
+```
+
+
+```{python fun-calc_preds-nn}
+import torch.nn.functional as F
+
+def calc_preds(X, weights):
+    l1,l2,const = weights
+    res = F.mish(X@l1)
+    res = res@l2 + const
+    return torch.sigmoid(res).flatten()
+```
+
+```{python fun-update_weights-nn}
+def update_weights(weights, lr):
+    for layer in weights:
+        layer.sub_(layer.grad * lr)
+        layer.grad.zero_()
+```
+
+```{python coeffs-est-nn}
+coeffs_est = train_model(train_x, train_y, epochs = 500, lr = 1, verbose = 50)
+```
+
+
+```{python acc-compare-nn}
+acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y), accuracy_score(valid_y, reg.predict(valid_x)).round(4)
+
+```
+
+
+## Deep Learning
+
+
+```{python funs-dl}
+def init_weights(n_wts, hiddens):  
+    sizes = [n_wts] + hiddens + [1]
+    n = len(sizes)
+    layers = [(torch.rand(sizes[i], sizes[i + 1]) - 0.3)/sizes[i + 1] * 4 for i in range(n - 1)]
+    consts = [(torch.rand(1)[0] - 0.5)*0.1 for i in range(n - 1)]
+    for l in layers+consts: l.requires_grad_()
+    return layers,consts
+
+def calc_preds(X, weights):
+    layers,consts = weights
+    n = len(layers)
+    res = X
+    
+    for i,l in enumerate(layers):
+        res = res@l + consts[i]
+    
+    if i!=n-1: res = F.mish(res)
+    
+    return torch.sigmoid(res).flatten()
+
+def update_weights(weights, lr):
+    layers,consts = weights
+    for layer in layers + consts:
+        layer.sub_(layer.grad * lr)
+        layer.grad.zero_()
+
+def train_model(X, target, hiddens = [10, 10], epochs = 30, lr = 1e-3, verbose = 1):
+    torch.manual_seed(442)
+    coeffs = init_weights(X.shape[1], hiddens)
+    
+    for i in range(epochs): 
+        if verbose != 0:
+            one_epoch(X, coeffs, target, lr = lr, verbose = verbose, i = i)
+    
+    return coeffs
+```
+
+
+```{python estimate-dl}
+coeffs_est = train_model(
+  train_x,
+  train_y,
+  hiddens = [10, 10],
+  epochs  = 500,
+  lr      = 4,
+  verbose = 50
+)
+```
+
+
+```{python compare-dl}
+pd.DataFrame({
+    'acc_train': acc(train_x, coeffs_est, train_y).flatten(), 
+    'acc_test': acc(valid_x, , valid_y).flatten(), 
+    'acc_test_glm': accuracy_score(valid_y, (reg.predict(valid_x) > .5).astype(int)).round(6)
+}, index=['value'])
+```
+
+
+## Summary
+
+This was a lot of work to do slightly better than a logistic regression!  However, there is a lot going on with a typical DL model that would likely prove even better.  But it also serves as a reminder to have a suitable baseline.
+
