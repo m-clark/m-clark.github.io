@@ -177,16 +177,20 @@ We'll use [an example by fastai](https://www.kaggle.com/code/jhoward/linear-mode
 
 ## Getting Started
 
+Let's get the primary packages loaded first.
+
+
 ```{python, imports}
 import pandas as pd
 import numpy as np
 import torch
 ```
 
+Next, we'll use the well-known [titanic dataset](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch/data), and get a sense of what we're dealing with. The basic idea is that we'd like to predict survival based on key features like sex, age, ticket class and more.
 
 ```{python, read-titanic}
 df_titanic_train = pd.read_csv('data/dl-linear-regression/titanic/train.csv')
-df_titanic_train
+# df_titanic_train
 ```
 
 
@@ -197,8 +201,10 @@ df_titanic_train.describe()
 
 ## Initial Data Processing
 
+The data is not ready for modeling as is, so we'll do some additional processing to get it ready. We'll check out the missing values and replace them with modes[^missingmode].
 
-Check out the missing values and replace with modes.  Just as an aside, this sort of approach has largely been frowned upon in the statistical world for decades for numerous (and valid) reasons, but we just want something quick and dirty here.
+
+[^missingmode]: Just as an aside, this sort of approach to impute has largely been frowned upon in the statistical world for decades for numerous (and valid) reasons, but we just want something quick and dirty here.
 
 ```{python show-na}
 df_titanic_train.isna().sum()
@@ -214,7 +220,9 @@ df_titanic_train.describe(include = (np.number))
 ```
 
 
-Sometimes it is worthwhile to log transform data to help deal with heteroscedasticity (it shouldn't be done to deal with outliers and/or a misunderstanding of 'normality').
+Sometimes it is worthwhile to log transform data to help deal with heteroscedasticity[^heterosced], or simply to allow for potentially more efficient optimization search.  Since we have zeros, we add 1 before taking the log.
+
+[^heterosced]: It really shouldn't be done to deal with outliers and/or a misunderstanding of the normality assumption.  For the former, there are better ways (e.g. using a better model, different distribution, different loss function), and the latter is only a concern if we're actually interested in uncertainty of the coefficients, and even then, it is not a big issue, especially with large data.
 
 
 ```{python hist-fare, fig.show='hide'}
@@ -222,6 +230,9 @@ df_titanic_train['Fare'].hist()
 ```
 
 ![](../../img/dl-linreg/fare-hist.png){width=50%}
+
+
+Now the transformed data looks a little more manageable.
 
 ```{python l1p-fare, fig.show='hide'}
 df_titanic_train['LogFare'] = np.log1p(df_titanic_train['Fare'])
@@ -231,30 +242,44 @@ df_titanic_train['LogFare'].hist()
 
 ![](../../img/dl-linreg/fare-hist-log.png){width=50%}
 
+The Pclass (passenger class) feature is actually categorical.
 
 ```{python inspect-cats}
 pclasses = sorted(df_titanic_train.Pclass.unique())
 pclasses
 ```
 
+Here are the other categorical features.
+
 ```{python inspect-more-cats}
-df_titanic_train.describe(include=[object])
+df_titanic_train.describe(include = [object])
 ```
 
+In order to use categorical variables, they need to be changed to numbers[^caterrors], so we dummy code them here. There are other coding schemes, and for most deep learning approaches people will often use embeddings, particularly for things that have lots of unique categories.
+
+[^caterrors]: Even though every modeling tool requires this, strangely very few in the Python world offer automatic handling of such things.
+
 ```{python dummify}
-df_titanic_train = pd.get_dummies(df_titanic_train, columns=["Sex","Pclass","Embarked"])
+df_titanic_train = pd.get_dummies(df_titanic_train, columns = ["Sex", "Pclass", "Embarked"])
 df_titanic_train.columns
 ```
 
-
+Let's take a look at our data now.
 
 ```{python show-ready-data}
 df_titanic_train.head()
 ```
 
+
 ## Getting Started with Pytorch
 
 ### Setup
+
+Now we are ready to prep things for specific use with pytorch.  I will not use the same terminology as in Jeremy's original post, so for us, target = dependent variable and X is our feature matrix[^indep]. Both of these will be pytorch *tensors*, which for our purposes is just another word for an array of arbitrary size.
+
+
+[^indep]: I'll not perpetuate calling features/predicotr variables that are clearly not independent as independent. That really only works under randomized experiments, and that is definitely not the case here.
+
 
 ```{python target-tensor}
 from torch import tensor
@@ -274,16 +299,19 @@ X.shape
 
 ## Setting up a linear model
 
+We have our feature matrix and target fariable prepped.  Next step is to map the features to the target by means of predicted values.  In linear regression, we typically call the weights that produce the predictions *coefficients*, but in standard deep/machine learning terminology, they are usually called feature *weights*, or more generally, *parameters*.  Here, we generate some random values between -.5 and .5 to get started[^other_starts]:.  
+
+[^other_starts]: You could use <span class="func">torch.randn</span> to get standard normal values, and often times we'll even start with just zeros.
 
 ```{python random-coeffs}
 torch.manual_seed(442)
 
 n_coeff = X.shape[1]
-coeffs = torch.rand(n_coeff) - 0.5
+coeffs = torch.rand(n_coeff) - 0.5  # default would produce values from 0 to 1
 coeffs
 ```
 
-The original post did a form of min-max scaling, basically putting everything on a potentially [0, 1] scale. Here we'll use standardization, giving each feature a mean of zero and standard deviation of 1.
+The original post did a form of min-max scaling to the features, basically putting everything on a potentially [0, 1] scale. Here we'll use standardization as an alternative, giving each feature a mean of zero and standard deviation of 1.
 
 ```{python scale-X}
 # vals,indices = X.max(dim=0)
@@ -297,10 +325,14 @@ X_sc = (X - X_means) / X_sds
 # X_sc.std(dim = 0)   # all sd = 1
 ```
 
+As noted in the original post and worth iterating here for our statistical modeling crowd, we don't estimate an intercept for this model and keep all the dummy coded features.  The following takes our coefficients, multiplies them by their respective feature, and sums them.
+
 ```{python init-preds}
 preds = (X_sc * coeffs).sum(axis = 1)
 preds[:10]
 ```
+
+We can calculate our *loss*, the difference in our predictions versus the expected values, in many ways. Here we get the mean squared error.  Later on we'll use a specific function for this.
 
 ```{python init-loss}
 loss = torch.square(preds - target).mean()
@@ -308,7 +340,7 @@ loss
 ```
 
 
-Now we create functions that do the previous, and give it a test run.  In the original fastai formulation, they do mean absolute error, which actually is just the `L1loss` that is available in torch. For a change of pace, we'll do mean squared error, which is sometimes called `L2` loss.
+Now we'll create functions that do the previous steps, and finally, give it a test run!  In the original fastai formulation, they use mean absolute error for the loss, which actually is just the `L1loss` that is available in torch. For a change of pace, we'll keep our mean squared error, which is sometimes called `L2` loss (this will create different results from the original notebook). I create the option within the function for you to do either.  Also note that the functions we create here will take inputs generally, rather than being specific to the objects we create, so you can try this stuff out with other data.
 
 ```{python func-calc_predsloss-init}
 def calc_preds(X, weights):
@@ -328,8 +360,7 @@ def calc_loss(X, weights, target, which = 'l2'):
       
     return(L)
 
-calc_loss(X_sc, coeffs, target)
-calc_loss(X_sc, coeffs, target, which = 'l1')
+calc_loss(X_sc, coeffs, target), calc_loss(X_sc, coeffs, target, which = 'l1')
 ```
 
 
@@ -338,11 +369,16 @@ calc_loss(X_sc, coeffs, target, which = 'l1')
 ### Doing a Gradient Descent Step
 
 
->In this section, we're going to do a single "epoch" of gradient descent manually. The only thing we're going to automate is calculating gradients, because let's face it that's pretty tedious and entirely pointless to do by hand! To get PyTorch to calculate gradients, we'll need to call requires_grad_() on our coeffs (if you're not sure why, review the previous notebook, How does a neural net really work?, before continuing):
+We can continue our journey onward to actually estimating the weights rather than specifying them. This is an iterative process where we start with an initial guess, then, at each step, refine our guess in a way that lowers our loss. For neural networks we call these steps *epochs*, and getting our next guess requires calculating what's called a *gradient*.  Here are some resources:
+
+- [How Does a Neural Net Really Work?](https://www.kaggle.com/code/jhoward/how-does-a-neural-net-really-work): great intro by Jeremy Howard
+- [Some by-hand code using gradient descent for linear regression](https://m-clark.github.io/models-by-example/gradient-descent.html): By yours truly
+
+
+In any case, this is a basic part of pytorch, and it will keep track of each step taken.
 
 ```{python require-grad}
 coeffs.requires_grad_()
-
 ```
 
 ```{python redo-loss}
@@ -351,24 +387,35 @@ loss
 ```
 
 
+We use <span class="func">backward</span> to calculate the gradients and inspect them.
+
 ```{python backward-step}
 loss.backward()
 
 coeffs.grad
 ```
 
+Each time backward is called, the gradients are added to the previous values.  We can see here that they've now doubled.
 
 ```{python another-round}
 loss = calc_loss(X_sc, coeffs, target)
+
 loss.backward()
+
 coeffs.grad
 ```
 
+What we want instead is to set them back to zero after they are used for our estimation step.  The following does this.
+
 
 ```{python zero-grad}
+loss = calc_loss(X_sc, coeffs, target)
+
+loss.backward()
+
 with torch.no_grad():
-    coeffs.sub_(coeffs.grad * 0.1)
-    coeffs.grad.zero_()
+    coeffs.sub_(coeffs.grad * 0.1)     # sub subtracts in place
+    coeffs.grad.zero_()                # zeros out in place
     print(calc_loss(X, coeffs, target))
 
 ```
@@ -376,15 +423,31 @@ with torch.no_grad():
 
 ### Training the Linear Model
 
+We typically would typically split our data into training and test. We can do so here, or keep this data as training and import `test.csv` for the test set.  The latter is actually used for the Kaggle submission, but that's not a goal here.  We'll use <span class="pack">scikit-learn</span> for the splitting. 
+
 
 ```{python train-test-split}
 from sklearn.model_selection import train_test_split
 
 train_x, valid_x, train_y, valid_y = train_test_split(X_sc, target.float(), test_size = 0.2) # in keeping with RandomSplitter default
+
+len(train_x), len(valid_x) # might be one off of the original notebook
 ```
 
 
+As before, we'll create functions to help automate our steps:
+
+- one to initialize the weights
+- a function to update weights
+- one to do a full epoch (using weights to calculate loss, updating weights)
+- one to train the entire model (run multiple times/epochs)
+
+As mentioned, the approach here is to create functions are general enough to take any X or target, so they look a little different from the original notebook. I also add in a verbosity option so you can see the loss at each `verbose` value epoch (e.g. `verbose = 10` means you'll see the latest loss value every 10 epochs), so you can watch the iterations for as long as you like without it printing constantly (not to big a deal depending on your IDE). 
+
 ```{python fun-linmod-training}
+def init_weights(n_wts): 
+    return (torch.rand(n_wts) - 0.5).requires_grad_()
+
 def update_weights(weights, lr):
     weights.sub_(weights.grad * lr)
     weights.grad.zero_()
@@ -399,9 +462,6 @@ def one_epoch(X, weights, target, lr, verbose = 1, i = 1):
         if i % verbose == 0:
             print(f'{loss: 3f}', end = '\n ')
 
-def init_weights(n_wts): 
-    return (torch.rand(n_wts) - 0.5).requires_grad_()
-
 def train_model(X, target, epochs = 30, lr = 1e-3, verbose = 1):
     torch.manual_seed(442)
     coeffs = init_weights(X.shape[1])
@@ -412,19 +472,26 @@ def train_model(X, target, epochs = 30, lr = 1e-3, verbose = 1):
 
 ```
 
-```{python calc-loss-linmod}
+
+Try out the functions if you like (not shown).
+
+```{python calc-loss-linmod, eval=FALSE}
 calc_loss(X_sc, init_weights(X_sc.shape[1]), target).backward()
 ```
 
-```{python one-epoch-linmod}
+```{python one-epoch-linmod, eval=FALSE}
 one_epoch(train_x, init_weights(train_x.shape[1]), train_y, .01)
 ```
 
 
+Now train the model for multiple epochs.
+
 ```{python train-linmod}
-coeffs_est = train_model(train_x, train_y, epochs = 50, verbose = 5)
+coeffs_est = train_model(train_x, train_y, epochs = 50, verbose = 5, lr = .2)
 ```
 
+
+Let's create a function to show our estimated parameters/weights/coefficients in a pretty fashion.
 
 ```{python fun-show_coeffs}
 def show_coeffs(estimates): 
@@ -437,7 +504,7 @@ show_coeffs(coeffs_est)
 
 ### Measuring Accuracy
 
-It's one thing to get accuracy on the trained data, but a better estimate of model performance is to measure it on our test/validation data.
+It's one thing to get accuracy on the trained data, but a better estimate of model performance is to measure it on our test/validation data.  The following function will convert our estimates to a binary value like our target.  Depending on how you did your training setup, it might be pretty bad or at least better than guessing.
 
 ```{python init-accuracy}
 def acc(X, weights, target): 
@@ -450,13 +517,18 @@ acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
 
 #### Using sigmoid
 
-The sigmoid function (plogis in base R) allows us to transform our results to the 0-1 scales, i.e. probabilities in this context, and in particular, the probability of survival. 
+The sigmoid function[^plogis]  allows us to transform our predctions to values between 0 and 1, i.e. probabilities in this context, and in particular, the probability of survival. Otherwise you can inspect them and might see values are above 1 or below zero (`python np.min(calc_preds(train_x, coeffs_est).numpy())`), which we generally don't want[^linprob].
+
+[^plogis]: Always boggled me that R folks still write an explicit function for this rather than using <span class="func">plogis</span> from base R.
+[^linprob]: Unless you are an economist, in which case you call it a *linear probability model* and ignore the ridiculous predictions because you have very fine standard errors.
 
 
 ```{python use-sigmoid}
 def calc_preds(X, weights):
     return torch.sigmoid((X*weights).sum(axis = 1))
 ```
+
+We also will do more iterations, and fiddle with the learning rate (a.k.a. step size)
 
 ```{python retrain-with-sigmoid}
 coeffs_est = train_model(
@@ -467,8 +539,10 @@ coeffs_est = train_model(
   verbose = 100
 )
 ```
-  
-  
+
+
+Not too shabby!
+
 ```{python acc-with-sigmoid}
 acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
 ```
@@ -489,7 +563,7 @@ def calc_preds(X, weights):
     return torch.sigmoid(X@weights)
 
 def init_coeffs(n_wts): 
-    return (torch.rand(n_wts, 1)*0.1).requires_grad_()
+    return (torch.rand(n_wts, 1) * 0.1).requires_grad_()
 
 ```
 
@@ -500,6 +574,8 @@ $$\hat{y} = X\beta$$
 
 
 ### Compare to Linear/Logistic Regression
+
+Before getting too excited, let's compare our results to basic linear and logistic regression.  Depending on your settings, the logistic regression is probably doing better at this point.
 
 ```{python lin-prob-model}
 from sklearn import linear_model
@@ -521,7 +597,7 @@ accuracy_score(valid_y, reg.predict(valid_x)).round(4)
 ```
 
 ```{python logreg-coefs}
-show_coeffs(coeffs_est).assign(linreg = np.round(reg.coef_.T, 4))
+show_coeffs(coeffs_est).assign(logreg = np.round(reg.coef_.T, 4))
 ```
 
 
