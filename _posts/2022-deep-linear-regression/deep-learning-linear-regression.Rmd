@@ -1,7 +1,7 @@
 ---
-title: "Title"
+title: "Deep Linear Models"
 description: |
-  blah blah
+  A demo
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
@@ -13,9 +13,13 @@ output:
     toc: true
     css: ../../styles.css
 draft: true
-tags: [tags, taggy]
+tags: [deep learning, torch, <span class="pack">pytorch</span>, demo, embeddings, TabNet, XGBoost, lightgbm, gradient boosting, linear model]
 categories:
-  - ?
+  - deep learning
+  - boosting
+  - GLM
+  - regression
+  - machine learning
 ---
 
 ```{r setup, include=FALSE}
@@ -167,12 +171,13 @@ library(reticulate)
 
 ## Introduction
 
-This post gives a by-hand example of linear regression using pytorch.  Why would anyone do this? Well, for one thing, it serves as a stepping stone for those who know basic statistical methodology like regression, but want to get into deep learning in a conceptual manner.  Another is to just seem some pytorch basics in a simple setting.  And one last reason is that maybe you want to incorporate a standard statistical modeling approach into some other deep learning endeavor.
+This post gives a by-hand example of linear regression using <span class="pack">pytorch</span>.  A good question to ask right off the bat would be- why would anyone do this? We use deep learning typically because linear regression isn't up to the task! Well, for one thing, it serves as a stepping stone for those who know basic statistical methodology like regression, but want to get into deep learning in a conceptual manner.  Another is to just see some <span class="pack">pytorch</span> basics in a simple setting.  And one last reason is that maybe you want to incorporate a standard statistical modeling approach into some other deep learning endeavor.  Everyone can join the party!
 
-We'll use [an example by fastai](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch), which is a great resource for [getting started with deep learning](https://course.fast.ai/).  Their example serves as a basis, though I will generalize the functionality so that you can play around with the settings and try other data examples.  In addition, this post will assume you know things like why you would dummy code features and linear regression basics, and will use some other naming conventions[^nobigdeal].  
+For this demo we'll use [an example by <span class="pack">fastai</span>](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch), which is a great resource for [getting started with deep learning](https://course.fast.ai/).  Their example serves as a basis, though I will generalize the functionality so that you can play around with the settings and try other data examples.  In addition, this post will assume you know things like why you would dummy code features and linear regression basics, and will use some other naming conventions[^nobigdeal].  
 
 [^nobigdeal]: I'm also not going to go into broadcasting, submitting to Kaggle, and many other things that I don't think are necessary for our purposes here.
-[^nofastai]: I won't actually use fastai, since they aren't up to supporting M1/2 Macs very well.  I think it was only used for the train/test data split anyway.  I would rant a bit about this, but a lot of fastai is geared toward non-local computing, and the fault is really with Apple and NVidia.
+[^nofastai]: I won't actually use <span class="pack">fastai</span>, since they aren't up to supporting M1/2 Macs very well.  I think it was only used for the train/test data split anyway.  I would rant a bit about this, but a lot of <span class="pack">fastai</span> is geared toward non-local computing, and the fault is really with Apple and NVidia.
+
 
 
 ## Getting Started
@@ -186,9 +191,10 @@ import numpy as np
 import torch
 ```
 
-Next, we'll use the well-known [titanic dataset](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch/data), and get a sense of what we're dealing with. The basic idea is that we'd like to predict survival based on key features like sex, age, ticket class and more.
+Next, we'll use the well-known [titanic dataset](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch/data), and to start things off, we'll need to get a sense of what we're dealing with. The basic idea is that we'd like to predict survival based on key features like sex, age, ticket class and more.
 
 ```{python, read-titanic}
+# non-kaggle-requiring url here: https://raw.githubusercontent.com/m-clark/m-clark.github.io/master/data/dl-linear-regression/titanic/train.csv
 df_titanic_train = pd.read_csv('data/dl-linear-regression/titanic/train.csv')
 # df_titanic_train
 ```
@@ -204,7 +210,7 @@ df_titanic_train.describe()
 The data is not ready for modeling as is, so we'll do some additional processing to get it ready. We'll check out the missing values and replace them with modes[^missingmode].
 
 
-[^missingmode]: Just as an aside, this sort of approach to impute has largely been frowned upon in the statistical world for decades for numerous (and valid) reasons, but we just want something quick and dirty here.
+[^missingmode]: Just as an aside, this sort of approach to impute has largely been frowned upon in the statistical world for decades for numerous (and valid) reasons, but we just want something quick and dirty here, and sometimes that's enough.
 
 ```{python show-na}
 df_titanic_train.isna().sum()
@@ -220,9 +226,7 @@ df_titanic_train.describe(include = (np.number))
 ```
 
 
-Sometimes it is worthwhile to log transform data to help deal with heteroscedasticity[^heterosced], or simply to allow for potentially more efficient optimization search.  Since we have zeros, we add 1 before taking the log.
-
-[^heterosced]: It really shouldn't be done to deal with outliers and/or a misunderstanding of the normality assumption.  For the former, there are better ways (e.g. using a better model, different distribution, different loss function), and the latter is only a concern if we're actually interested in uncertainty of the coefficients, and even then, it is not a big issue, especially with large data.
+With features, sometimes it is worthwhile to log transform data for potentially more efficient optimization search.  Since we have zeros, we add 1 before taking the log.
 
 
 ```{python hist-fare, fig.show='hide'}
@@ -232,7 +236,7 @@ df_titanic_train['Fare'].hist()
 ![](../../img/dl-linreg/fare-hist.png){width=50%}
 
 
-Now the transformed data looks a little more manageable.
+Now the transformed data looks a little more manageable.  More to the point, we won't potentially have huge coefficients relative to other covariates because of the range of the data.
 
 ```{python l1p-fare, fig.show='hide'}
 df_titanic_train['LogFare'] = np.log1p(df_titanic_train['Fare'])
@@ -242,7 +246,7 @@ df_titanic_train['LogFare'].hist()
 
 ![](../../img/dl-linreg/fare-hist-log.png){width=50%}
 
-The Pclass (passenger class) feature is actually categorical.
+The `Pclass` (passenger class) feature is actually categorical.
 
 ```{python inspect-cats}
 pclasses = sorted(df_titanic_train.Pclass.unique())
@@ -255,30 +259,34 @@ Here are the other categorical features.
 df_titanic_train.describe(include = [object])
 ```
 
-In order to use categorical variables, they need to be changed to numbers[^caterrors], so we dummy code them here. There are other coding schemes, and for most deep learning approaches people will often use embeddings, particularly for things that have lots of unique categories.
+In order to use categorical variables, they need to be changed to numbers[^caterrors], so we dummy code them here. There are other coding schemes, and for most deep learning approaches people will often use *embeddings*, particularly for things that have lots of unique categories.
 
-[^caterrors]: Even though every modeling tool requires this, strangely very few in the Python world offer automatic handling of such things.
+[^caterrors]: Even though every modeling tool requires this, strangely very few in the Python world offer options for automatic handling of such things, but it's getting better.
 
 ```{python dummify}
 df_titanic_train = pd.get_dummies(df_titanic_train, columns = ["Sex", "Pclass", "Embarked"])
-df_titanic_train.columns
 ```
 
 Let's take a look at our data now.
+
+```{python show-data-with-dummies}
+df_titanic_train.columns
+```
+
 
 ```{python show-ready-data}
 df_titanic_train.head()
 ```
 
 
-## Getting Started with Pytorch
+## Getting Started with pytorch
 
 ### Setup
 
-Now we are ready to prep things for specific use with pytorch.  I will not use the same terminology as in Jeremy's original post, so for us, target = dependent variable and X is our feature matrix[^indep]. Both of these will be pytorch *tensors*, which for our purposes is just another word for an array of arbitrary size.
+Now we are ready to prep things for specific use with <span class="pack">pytorch</span>.  I will not use the same terminology as in Jeremy's original post, so for us, `target` = 'dependent variable' and `X` is our feature matrix[^indep]. Both of these will be <span class="pack">pytorch</span> *tensors*, which for our purposes is just another word for an array of arbitrary size.
 
 
-[^indep]: I'll not perpetuate calling features/predicotr variables that are clearly not independent as independent. That really only works under randomized experiments, and that is definitely not the case here.
+[^indep]: I'll not perpetuate calling features/predictor variables that are clearly not independent as independent. That  nomenclature really only works for randomized experiments, and that is definitely not the case here.  
 
 
 ```{python target-tensor}
@@ -299,9 +307,9 @@ X.shape
 
 ## Setting up a linear model
 
-We have our feature matrix and target fariable prepped.  Next step is to map the features to the target by means of predicted values.  In linear regression, we typically call the weights that produce the predictions *coefficients*, but in standard deep/machine learning terminology, they are usually called feature *weights*, or more generally, *parameters*.  Here, we generate some random values between -.5 and .5 to get started[^other_starts]:.  
+We have our feature matrix and target variable prepped.  The next step is to map the features to the target by means of predicted values.  In linear regression, we typically call the weights that produce the predictions *coefficients*, but in standard deep/machine learning terminology, they are usually called *weights*, or more generally, *parameters*.  Here, we generate some random values between -.5 and .5 to get started[^other_starts]:.  
 
-[^other_starts]: You could use <span class="func">torch.randn</span> to get standard normal values, and often times we'll even start with just zeros.
+[^other_starts]: You could use <span class="func">torch.randn</span> to get standard normal values, and often times we'll even start with just zeros if we really are just doing a standard linear model.
 
 ```{python random-coeffs}
 torch.manual_seed(442)
@@ -332,7 +340,7 @@ preds = (X_sc * coeffs).sum(axis = 1)
 preds[:10]
 ```
 
-We can calculate our *loss*, the difference in our predictions versus the expected values, in many ways. Here we get the mean squared error.  Later on we'll use a specific function for this.
+We can calculate our *loss*, the difference in our predictions versus the target values, in many ways. Here we get the mean squared error.
 
 ```{python init-loss}
 loss = torch.square(preds - target).mean()
@@ -340,7 +348,8 @@ loss
 ```
 
 
-Now we'll create functions that do the previous steps, and finally, give it a test run!  In the original fastai formulation, they use mean absolute error for the loss, which actually is just the `L1loss` that is available in torch. For a change of pace, we'll keep our mean squared error, which is sometimes called `L2` loss (this will create different results from the original notebook). I create the option within the function for you to do either.  Also note that the functions we create here will take inputs generally, rather than being specific to the objects we create, so you can try this stuff out with other data.
+Now we'll create functions that do the previous steps, and finally, give it a test run!  In the original <span class="pack">fastai</span> formulation, they use mean absolute error for the loss, which actually is just the `L1loss` that is available in torch. For a change of pace, we'll keep our mean squared error, which is sometimes called *L2* loss (this will create different results from the original notebook). I create the option within the function for you to do either.  Also note that the functions we create here will take inputs generally, rather than being specific to the objects we create, so you can try this stuff out with other data.
+
 
 ```{python func-calc_predsloss-init}
 def calc_preds(X, weights):
@@ -369,13 +378,13 @@ calc_loss(X_sc, coeffs, target), calc_loss(X_sc, coeffs, target, which = 'l1')
 ### Doing a Gradient Descent Step
 
 
-We can continue our journey onward to actually estimating the weights rather than specifying them. This is an iterative process where we start with an initial guess, then, at each step, refine our guess in a way that lowers our loss. For neural networks we call these steps *epochs*, and getting our next guess requires calculating what's called a *gradient*.  Here are some resources:
+We can continue our journey onward to actually estimating the weights rather than specifying them directly, since we definitely don't want to just keep guessing! This is an iterative process where we still start with an initial (random) guess, then, at each step, refine our guess in a way that lowers our loss. For neural networks we call these steps *epochs*, and getting our next guess requires calculating what's called a *gradient*.  Here are some resources for more detail:
 
 - [How Does a Neural Net Really Work?](https://www.kaggle.com/code/jhoward/how-does-a-neural-net-really-work): great intro by Jeremy Howard
-- [Some by-hand code using gradient descent for linear regression](https://m-clark.github.io/models-by-example/gradient-descent.html): By yours truly
+- [Some by-hand code using gradient descent for linear regression, R](https://m-clark.github.io/models-by-example/stochastic-gradient-descent.html), [Python](https://m-clark.github.io/models-by-example/supplemental.html#python-sgd): By yours truly
 
 
-In any case, this is a basic part of pytorch, and it will keep track of each step taken.
+In any case, this is basic functionality within <span class="pack">pytorch</span>, and it will keep track of each step taken.
 
 ```{python require-grad}
 coeffs.requires_grad_()
@@ -429,7 +438,14 @@ We typically would typically split our data into training and test. We can do so
 ```{python train-test-split}
 from sklearn.model_selection import train_test_split
 
-train_x, valid_x, train_y, valid_y = train_test_split(X_sc, target.float(), test_size = 0.2) # in keeping with RandomSplitter default
+# test size .2 in keeping with fastai RandomSplitter default
+train_x, valid_x, train_y, valid_y = train_test_split(
+  X_sc, 
+  target.float(), 
+  test_size = 0.2, 
+  random_state = 808
+)
+  
 
 len(train_x), len(valid_x) # might be one off of the original notebook
 ```
@@ -442,7 +458,7 @@ As before, we'll create functions to help automate our steps:
 - one to do a full epoch (using weights to calculate loss, updating weights)
 - one to train the entire model (run multiple times/epochs)
 
-As mentioned, the approach here is to create functions are general enough to take any X or target, so they look a little different from the original notebook. I also add in a verbosity option so you can see the loss at each `verbose` value epoch (e.g. `verbose = 10` means you'll see the latest loss value every 10 epochs), so you can watch the iterations for as long as you like without it printing constantly (not to big a deal depending on your IDE). 
+As mentioned, the approach here is to create functions that are general enough to take any X or target, so they look a little different from the original notebook. I also add in a verbosity option so you can see the loss at each `verbose` value epoch (e.g. `verbose = 10` means you'll see the latest loss value every 10 epochs), so you can watch the iterations for as long as you like without it printing constantly (possibly not too big a deal depending on your IDE). 
 
 ```{python fun-linmod-training}
 def init_weights(n_wts): 
@@ -484,7 +500,7 @@ one_epoch(train_x, init_weights(train_x.shape[1]), train_y, .01)
 ```
 
 
-Now train the model for multiple epochs.
+Now train the model for multiple epochs. The loss drops very quickly before becoming more steady.
 
 ```{python train-linmod}
 coeffs_est = train_model(train_x, train_y, epochs = 50, verbose = 5, lr = .2)
@@ -504,7 +520,7 @@ show_coeffs(coeffs_est)
 
 ### Measuring Accuracy
 
-It's one thing to get accuracy on the trained data, but a better estimate of model performance is to measure it on our test/validation data.  The following function will convert our estimates to a binary value like our target.  Depending on how you did your training setup, it might be pretty bad or at least better than guessing.
+It's one thing to get accuracy on the trained data, but a better estimate of model performance is to measure it on our test/validation data.  The following function will convert our estimates to a binary value like our target, and compares them to the target.   Depending on how you did your training setup, it might be pretty bad or at least better than guessing.
 
 ```{python init-accuracy}
 def acc(X, weights, target): 
@@ -515,11 +531,11 @@ acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
 
 
 
-#### Using sigmoid
+### Using sigmoid
 
-The sigmoid function[^plogis]  allows us to transform our predctions to values between 0 and 1, i.e. probabilities in this context, and in particular, the probability of survival. Otherwise you can inspect them and might see values are above 1 or below zero (`python np.min(calc_preds(train_x, coeffs_est).numpy())`), which we generally don't want[^linprob].
+Nothing about the previous setup actually produces a result on the probability scale, so basing a cutoff of .5 is meaningless.  you can inspect them and might see values are above 1 or below zero, which we generally don't want[^linprob].   However we do have a solution.  The *sigmoid function*[^plogis]  allows us to transform our predictions to values between 0 and 1, i.e. probabilities in this context, and in particular, the probability of survival.  Then our <span class="func">acc</span> function will be more appropriate, where any probability > .5 will be given a value of 1 (or `True` technically), while others will be 0/`False`.
 
-[^plogis]: Always boggled me that R folks still write an explicit function for this rather than using <span class="func">plogis</span> from base R.
+[^plogis]: A lot of R folks seem unaware that the base R <span class="func">plogis</span> function accomplishes this.
 [^linprob]: Unless you are an economist, in which case you call it a *linear probability model* and ignore the ridiculous predictions because you have very fine standard errors.
 
 
@@ -551,10 +567,10 @@ acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y)
 show_coeffs(coeffs_est)
 ```
 
-In implementing the sigmoid, let's go ahead and optimize how we calculate the predictions using a matrix shorthand for getting the predictions (which is also much more efficient/faster).  To do this, the coefficients will need to be a column vector, so we change our <span class="func" style = "">init_coeffs</span> function slightly[^coltarget].   
+In implementing the sigmoid, let's go ahead and optimize how we calculate the predictions using a matrix shorthand for getting the predictions (which is also much more efficient/faster)[^@op].  To do this, the coefficients will need to be a column vector, so we change our <span class="func">init_coeffs</span> function slightly[^coltarget].   
 
-
-[^coltarget]: The fastai demo also changes the target to a column vector, but this isn't actually necessary.
+[^@op]: The `@` operator is essentially the dot product, so `x@y` is `np.dot(x, y)`
+[^coltarget]: The <span class="pack">fastai</span> demo also changes the target to a column vector, but this doesn't seem necessary.
 
 
 
@@ -575,7 +591,7 @@ $$\hat{y} = X\beta$$
 
 ### Compare to Linear/Logistic Regression
 
-Before getting too excited, let's compare our results to basic linear and logistic regression.  Depending on your settings, the logistic regression is probably doing better at this point.
+Before getting too excited, let's compare our results to basic linear and logistic regression.  The linear regression is more like our model before using the sigmoid transformation, while the logistic is more like when we used it.  Depending on your settings, the logistic regression is probably doing better at this point.
 
 ```{python lin-prob-model}
 from sklearn import linear_model
@@ -596,6 +612,8 @@ reg.fit(train_x, train_y)
 accuracy_score(valid_y, reg.predict(valid_x)).round(4)
 ```
 
+It looks like our coefficient estimates are similar to the logistic regression ones.
+
 ```{python logreg-coefs}
 show_coeffs(coeffs_est).assign(logreg = np.round(reg.coef_.T, 4))
 ```
@@ -605,24 +623,35 @@ show_coeffs(coeffs_est).assign(logreg = np.round(reg.coef_.T, 4))
 ## A Neural Network
 
 
+<img src="../../img/nnet.png" style="display:block; margin: 0 auto; width:33%">
+
+
+At this point we've basically reproduced a general linear model. A *neural network*, on the other hand, has from one to many *hidden layers* of varying types in between input and output.  Let's say we have a single layer with two nodes. For a *fully connected* or *dense* network, we'd need weights to map our features to each node of the hidden layer (`n_wts` * `n_hidden` parameters total), and then another set of weights to map the hidden nodes to our next layer, which is our output, basically creating the predicted values.  You can think of it as a second hidden layer with a single output node.  With additional hidden nodes we add more complexity, but also flexibility, to the model. But this may come at a price, e.g. more difficulty with training due to the additional parameters that have to be estimated.
+
+So basically we need matrices of weights, and the following function allows us to create those.  We also add a *bias/intercept/constant* for the hidden-to-output processing.  In the first layer, we divide the weights by `n_hidden` to create sums at the next layer that are of similar magnitude as the inputs.  In general though, there are many ways to [initialize weights](https://machinelearningmastery.com/weight-initialization-for-deep-learning-neural-networks/).
+
 ```{python fun-init_weights_nn}
-def init_weights(n_wts, n_hidden=20):
-    layer1 = (torch.rand(n_wts, n_hidden)-0.5)/n_hidden
-    layer2 = torch.rand(n_hidden, 1)-0.3
-    const = torch.rand(1)[0]
-    return layer1.requires_grad_(),layer2.requires_grad_(),const.requires_grad_()
+def init_weights(n_wts, n_hidden = 20):
+    layer1 = (torch.rand(n_wts, n_hidden) - 0.5) / n_hidden # n_wts x n_hidden matrix of weights
+    layer2 = torch.rand(n_hidden, 1) - 0.3                  # n_hidden weights
+    const  = torch.rand(1)[0]                               # constant
+    return layer1.requires_grad_(), layer2.requires_grad_(), const.requires_grad_()
 ```
+
+Now we revise our <span class="func">calc_preds</span> function to incorporate all the weights. Initially, we extract the different sets of weights that are estimated by the model. For the original inputs, we multiply them by the layer 1 weights and sum.  Then we apply a transformation to them to induce nonlinearity. Typical approaches are the sigmoid function we used before, hyperbolic tangent, and, probably the most common, the [relu](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)).  The original notebook used relu, while I use a more recent one called *Mish*, which is a variant of relu.  The hidden layer nodes then get multiplied by their respective weights and summed with the constant added. We then use our sigmoid function to get the probability scale as before.
 
 
 ```{python fun-calc_preds-nn}
 import torch.nn.functional as F
 
 def calc_preds(X, weights):
-    l1,l2,const = weights
+    l1, l2, const = weights
     res = F.mish(X@l1)
     res = res@l2 + const
     return torch.sigmoid(res).flatten()
 ```
+
+With additional sets of weights, we use an update loop.
 
 ```{python fun-update_weights-nn}
 def update_weights(weights, lr):
@@ -631,18 +660,25 @@ def update_weights(weights, lr):
         layer.grad.zero_()
 ```
 
+
 ```{python coeffs-est-nn}
-coeffs_est = train_model(train_x, train_y, epochs = 500, lr = 1, verbose = 50)
+coeffs_est = train_model(train_x, train_y, epochs = 50, lr = 1, verbose = 10)
 ```
 
 
+At this point we're doing a little bit better in general, and even better than standard logistic regression on the test set!
+
 ```{python acc-compare-nn}
-acc(train_x, coeffs_est, train_y), acc(valid_x, coeffs_est, valid_y), accuracy_score(valid_y, reg.predict(valid_x)).round(4)
+acc(train_x, coeffs_est, train_y), \
+acc(valid_x, coeffs_est, valid_y), \
+accuracy_score(valid_y, reg.predict(valid_x)).round(4)
 
 ```
 
 
 ## Deep Learning
+
+We previously used a single hidden layer, but we want to go deeper!  That's the whole point of deep learning right? The following modifies our previous functions to allow for an arbitrary number of layers.  You'll note there are some hacks to get the weights in a good way for each layer, but note that you normally wouldn't have to do that on your own, since most tools will provide sensible modifications.
 
 
 ```{python funs-dl}
@@ -654,20 +690,22 @@ def init_weights(n_wts, hiddens):
     for l in layers+consts: l.requires_grad_()
     return layers,consts
 
+
 def calc_preds(X, weights):
-    layers,consts = weights
+    layers, consts = weights
     n = len(layers)
     res = X
     
     for i,l in enumerate(layers):
         res = res@l + consts[i]
     
-    if i!=n-1: res = F.mish(res)
+    if i != n-1: 
+      res = F.mish(res)
     
     return torch.sigmoid(res).flatten()
 
 def update_weights(weights, lr):
-    layers,consts = weights
+    layers, consts = weights
     for layer in layers + consts:
         layer.sub_(layer.grad * lr)
         layer.grad.zero_()
@@ -684,28 +722,94 @@ def train_model(X, target, hiddens = [10, 10], epochs = 30, lr = 1e-3, verbose =
 ```
 
 
+With everything set up, let's do some deep linear modeling!  You can play around with the number of hidden layers, number of nodes and other settings. As an example, adding more complexity likely won't help much with our current settings, but letting it run longer might.
+
 ```{python estimate-dl}
 coeffs_est = train_model(
   train_x,
   train_y,
   hiddens = [10, 10],
-  epochs  = 500,
+  epochs  = 100,
   lr      = 4,
-  verbose = 50
+  verbose = 10
 )
 ```
 
+Hooray! Our best model yet.
 
 ```{python compare-dl}
 pd.DataFrame({
     'acc_train': acc(train_x, coeffs_est, train_y).flatten(), 
-    'acc_test': acc(valid_x, , valid_y).flatten(), 
+    'acc_test': acc(valid_x, coeffs_est, valid_y).flatten(), 
     'acc_test_glm': accuracy_score(valid_y, (reg.predict(valid_x) > .5).astype(int)).round(6)
-}, index=['value'])
+}, index = ['value'])
 ```
+
+
+```{python sklearn, echo=FALSE, eval=FALSE}
+
+```
+
+
+
+## The elephant in the room
+
+As noted in my previous posts [[1](https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/), [2](https://m-clark.github.io/posts/2022-04-01-more-dl-for-tabular/)], probably your biggest challenge in implementing a deep learning model for tabular data, one with mixed data types and other complexities, is beating an off the shelf boosting model.  Here is a quick demo with <span class="pack">lightgbm</span>.
+
+```{python lgbm}
+from lightgbm import LGBMClassifier
+
+model = LGBMClassifier(
+  # n_estimators = 500,  # the sorts of parameters you can play with (many more!)
+  # max_depth    = 4,
+  # reg_alpha    = .1
+)
+
+model.fit(train_x, train_y)
+
+model.score(valid_x, valid_y)
+
+
+# sklearn example
+# from sklearn.ensemble import HistGradientBoostingClassifier
+# 
+# res = HistGradientBoostingClassifier().fit(train_x.numpy(), train_y.numpy())
+# 
+# res.score(valid_x.numpy(), valid_y.numpy())
+```
+
+No tuning at all, and we're already doing significantly better. Granted, if you use a packaged DL model for tabular data like the one in <span class="pack">fastai</span>, you should be doing better than our little demo.  Even then though, you may still find the boosting results tough to beat.
+
+```{python compare-lgbm}
+df_accs = pd.DataFrame({ 
+    'acc_test_dl':   acc(valid_x, coeffs_est, valid_y).flatten(), 
+    'acc_test_glm':  accuracy_score(valid_y, (reg.predict(valid_x) > .5).astype(int)).round(6),
+    'acc_test_lgbm': model.score(valid_x, valid_y).round(6)
+}, index = ['value'])
+
+df_accs
+```
+
+
+```{python compare-lgbm-perc}
+df_perc_improvement = 100 * (df_accs / df_accs.iloc[0,1] - 1)  # % improvement
+df_perc_improvement
+```
+
+
+
+```{python kaggle-sub, eval=FALSE, echo=FALSE}
+df_kaggle = pd.read_csv('data/dl-linear-regression/titanic/test.csv')
+df_kaggle = pd.get_dummies(df_kaggle, columns = ["Sex", "Pclass", "Embarked"])
+df_kaggle['LogFare'] = np.log1p(df_kaggle['Fare'])
+
+X_kag = (tensor(df_kaggle[all_features].values, dtype = torch.float) - X_means) / X_sds
+
+```
+
 
 
 ## Summary
 
-This was a lot of work to do slightly better than a logistic regression!  However, there is a lot going on with a typical DL model that would likely prove even better.  But it also serves as a reminder to have a suitable baseline.
+This was a lot of work to do slightly better than a logistic regression!  However, there is a lot going on with a typical DL model that would likely prove even better.  But it also serves as a reminder to have a suitable baseline, and as we saw with the lightgbm model, it can take little effort to do better.  Hopefully though, the peek behind the scenes to do some 'deep' linear modeling can make it more accessible for you.
 
