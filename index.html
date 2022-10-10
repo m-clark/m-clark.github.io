@@ -787,6 +787,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   d-article table.gt_table td,
   d-article table.gt_table th {
     border-bottom: none;
+    font-size: 100%;
   }
 
   .html-widget {
@@ -1859,15 +1860,21 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
       // hoverable references
       $('span.citation[data-cites]').each(function() {
-        if ($(this).children()[0].nodeName == "D-FOOTNOTE") {
-          var fn = $(this).children()[0]
+        const citeChild = $(this).children()[0]
+        // Do not process if @xyz has been used without escaping and without bibliography activated
+        // https://github.com/rstudio/distill/issues/466
+        if (citeChild === undefined) return true
+
+        if (citeChild.nodeName == "D-FOOTNOTE") {
+          var fn = citeChild
           $(this).html(fn.shadowRoot.querySelector("sup"))
           $(this).id = fn.id
           fn.remove()
         }
         var refs = $(this).attr('data-cites').split(" ");
         var refHtml = refs.map(function(ref) {
-          return "<p>" + $('#ref-' + ref).html() + "</p>";
+          // Could use CSS.escape too here, we insure backward compatibility in navigator
+          return "<p>" + $('div[id="ref-' + ref + '"]').html() + "</p>";
         }).join("\n");
         window.tippy(this, {
           allowHTML: true,
@@ -2066,7 +2073,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </script>
 
   <!--/radix_placeholder_distill-->
-  <script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+  <script src="site_libs/header-attrs-2.16/header-attrs.js"></script>
   <script src="site_libs/popper-2.6.0/popper.min.js"></script>
   <link href="site_libs/tippy-6.2.7/tippy.css" rel="stylesheet" />
   <link href="site_libs/tippy-6.2.7/tippy-light-border.css" rel="stylesheet" />
@@ -3060,6 +3067,29 @@ function init_posts_list() {
 <p>Using Radix/Distill for Scientific Publishing or a Website</p>
 </div>
 </a>
+<a href="posts/2022-09-deep-linear-models/" class="post-preview">
+<script class="post-metadata" type="text/json">{"categories":["deep learning","boosting","GLM","regression","machine learning"]}</script>
+<div class="metadata">
+<div class="publishedDate">Oct. 10, 2010</div>
+<div class="dt-authors">
+<div class="dt-author">Michael Clark</div>
+</div>
+</div>
+<div class="thumbnail">
+<img data-src="img/nnet.png"/>
+</div>
+<div class="description">
+<h2>Deep Linear Models</h2>
+<div class="dt-tags">
+<div class="dt-tag">deep learning</div>
+<div class="dt-tag">boosting</div>
+<div class="dt-tag">GLM</div>
+<div class="dt-tag">regression</div>
+<div class="dt-tag">machine learning</div>
+</div>
+<p>A demonstration using pytorch</p>
+</div>
+</a>
 </div>
 <div class="posts-sidebar">
 <div class="sidebar-section categories">
@@ -3067,7 +3097,7 @@ function init_posts_list() {
 <ul>
 <li>
 <a href="#category:Articles">Articles</a>
-<span class="category-count">(22)</span>
+<span class="category-count">(23)</span>
 </li>
 <li>
 <a href="#category:bayesian">bayesian</a>
@@ -3079,11 +3109,11 @@ function init_posts_list() {
 </li>
 <li>
 <a href="#category:boosting">boosting</a>
-<span class="category-count">(1)</span>
+<span class="category-count">(2)</span>
 </li>
 <li>
 <a href="#category:deep_learning">deep learning</a>
-<span class="category-count">(4)</span>
+<span class="category-count">(5)</span>
 </li>
 <li>
 <a href="#category:empirical_bayes">empirical bayes</a>
@@ -3107,11 +3137,11 @@ function init_posts_list() {
 </li>
 <li>
 <a href="#category:GLM">GLM</a>
-<span class="category-count">(2)</span>
+<span class="category-count">(3)</span>
 </li>
 <li>
 <a href="#category:machine_learning">machine learning</a>
-<span class="category-count">(4)</span>
+<span class="category-count">(5)</span>
 </li>
 <li>
 <a href="#category:mediation">mediation</a>
@@ -3127,7 +3157,7 @@ function init_posts_list() {
 </li>
 <li>
 <a href="#category:regression">regression</a>
-<span class="category-count">(7)</span>
+<span class="category-count">(8)</span>
 </li>
 <li>
 <a href="#category:reliability">reliability</a>
@@ -3172,8 +3202,7 @@ function init_posts_list() {
 <div class="layout-chunk" data-layout="l-page">
 
 </div>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
 <!--/radix_placeholder_article_footer-->
 </div>

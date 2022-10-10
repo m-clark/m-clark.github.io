@@ -786,6 +786,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   d-article table.gt_table td,
   d-article table.gt_table th {
     border-bottom: none;
+    font-size: 100%;
   }
 
   .html-widget {
@@ -1858,15 +1859,21 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 
       // hoverable references
       $('span.citation[data-cites]').each(function() {
-        if ($(this).children()[0].nodeName == "D-FOOTNOTE") {
-          var fn = $(this).children()[0]
+        const citeChild = $(this).children()[0]
+        // Do not process if @xyz has been used without escaping and without bibliography activated
+        // https://github.com/rstudio/distill/issues/466
+        if (citeChild === undefined) return true
+
+        if (citeChild.nodeName == "D-FOOTNOTE") {
+          var fn = citeChild
           $(this).html(fn.shadowRoot.querySelector("sup"))
           $(this).id = fn.id
           fn.remove()
         }
         var refs = $(this).attr('data-cites').split(" ");
         var refHtml = refs.map(function(ref) {
-          return "<p>" + $('#ref-' + ref).html() + "</p>";
+          // Could use CSS.escape too here, we insure backward compatibility in navigator
+          return "<p>" + $('div[id="ref-' + ref + '"]').html() + "</p>";
         }).join("\n");
         window.tippy(this, {
           allowHTML: true,
@@ -2065,7 +2072,7 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </script>
 
   <!--/radix_placeholder_distill-->
-  <script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+  <script src="site_libs/header-attrs-2.16/header-attrs.js"></script>
   <script src="site_libs/popper-2.6.0/popper.min.js"></script>
   <link href="site_libs/tippy-6.2.7/tippy.css" rel="stylesheet" />
   <link href="site_libs/tippy-6.2.7/tippy-light-border.css" rel="stylesheet" />
@@ -2498,10 +2505,8 @@ code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
 <li><a href="#r" id="toc-r">R</a></li>
 <li><a href="#stan" id="toc-stan">Stan</a></li>
 <li><a href="#python" id="toc-python">Python</a></li>
-<li><a href="#people-blogs-etc." id="toc-people-blogs-etc.">People,
-Blogs etc.</a></li>
-<li><a href="#miscellaneous"
-id="toc-miscellaneous">Miscellaneous</a></li>
+<li><a href="#people-blogs-etc." id="toc-people-blogs-etc.">People, Blogs etc.</a></li>
+<li><a href="#miscellaneous" id="toc-miscellaneous">Miscellaneous</a></li>
 <li><a href="#free-books" id="toc-free-books">Free Books</a>
 <ul>
 <li><a href="#stats-ml" id="toc-stats-ml">Stats &amp; ML</a></li>
@@ -2510,15 +2515,12 @@ id="toc-miscellaneous">Miscellaneous</a></li>
 </ul>
 </nav>
 </div>
-<p>This is a list of resources for myself primarily, essentially a
-reminder of things to check out from time to time, or links I’ve gone
-back to on more than one occasion.</p>
+<p>This is a list of resources for myself primarily, essentially a reminder of things to check out from time to time, or links I’ve gone back to on more than one occasion.</p>
 <h2 id="r">R</h2>
 <ul>
 <li><a href="http://www.springer.com/series/6991">Use R series</a>
 <!-- : for umich folks, this is electronically [available](https://link-springer-com.proxy.lib.umich.edu/bookseries/6991) --></li>
-<li><a href="https://ropensci.org/">Ropensci</a> Packages for Open
-Science.</li>
+<li><a href="https://ropensci.org/">Ropensci</a> Packages for Open Science.</li>
 <li><a href="https://github.com/trending/r">GitHub trending</a></li>
 <li><a href="https://rviews.rstudio.com/">R Views</a></li>
 <li><a href="https://www.rstudio.com/blog/">RStudio Blog</a></li>
@@ -2526,23 +2528,15 @@ Science.</li>
 <h2 id="stan">Stan</h2>
 <ul>
 <li><a href="http://discourse.mc-stan.org/">Discourse</a></li>
-<li><a href="https://github.com/stan-dev/example-models/">Example
-models</a></li>
+<li><a href="https://github.com/stan-dev/example-models/">Example models</a></li>
 </ul>
 <h2 id="python">Python</h2>
 <ul>
-<li><a href="fast.ai">Fast AI</a> Teaching and tools for deep
-learning</li>
-<li><a
-href="https://jakevdp.github.io/PythonDataScienceHandbook/">Python Data
-Science Handbook</a></li>
-<li><a
-href="http://www.statsmodels.org/stable/index.html">Statsmodels</a>
-Standard statistical models in Python</li>
-<li><a href="http://scikit-learn.org/stable/">Scikit-learn</a> Efficient
-tools for data mining and data analysis</li>
-<li><a href="http://pandas.pydata.org/">Pandas</a> Dealing with data in
-an R-like way, sort of
+<li><a href="fast.ai">Fast AI</a> Teaching and tools for deep learning</li>
+<li><a href="https://jakevdp.github.io/PythonDataScienceHandbook/">Python Data Science Handbook</a></li>
+<li><a href="http://www.statsmodels.org/stable/index.html">Statsmodels</a> Standard statistical models in Python</li>
+<li><a href="http://scikit-learn.org/stable/">Scikit-learn</a> Efficient tools for data mining and data analysis</li>
+<li><a href="http://pandas.pydata.org/">Pandas</a> Dealing with data in an R-like way, sort of
 <!-- - [Workshops](http://kshedden.github.io/) Kerby Shedden's workshop notes -->
 <!-- - [Workshops](http://marcio-mourao.github.io) Marcio's workshop notes -->
 <!-- - [NLTK](http://www.nltk.org/) -->
@@ -2557,9 +2551,7 @@ an R-like way, sort of
 <li><a href="https://rviews.rstudio.com/">R Views</a></li>
 <li><a href="https://colah.github.io/">Chris Colah</a></li>
 <li><a href="https://xianblog.wordpress.com/">Christian Robert</a></li>
-<li><a
-href="https://github.com/josephmisiti/awesome-machine-learning">Awesome
-List for Machine Learning</a></li>
+<li><a href="https://github.com/josephmisiti/awesome-machine-learning">Awesome List for Machine Learning</a></li>
 <li><a href="http://www.fharrell.com/">Frank Harrell</a></li>
 </ul>
 <!-- ## SEM -->
@@ -2570,52 +2562,33 @@ List for Machine Learning</a></li>
 <h2 id="miscellaneous">Miscellaneous</h2>
 <ul>
 <li><a href="http://distill.pub/">Distill</a></li>
-<li><a
-href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html">Mixed
-Model FAQ</a></li>
-<li><a
-href="http://stats.stackexchange.com/questions/1576/what-are-the-differences-between-factor-analysis-and-principal-component-analysi">Factor
-Analysis vs. Principal Component Analysis</a>
+<li><a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html">Mixed Model FAQ</a></li>
+<li><a href="http://stats.stackexchange.com/questions/1576/what-are-the-differences-between-factor-analysis-and-principal-component-analysi">Factor Analysis vs. Principal Component Analysis</a>
 <!-- - [dplyr vs. data.table](https://stackoverflow.com/questions/21435339/data-table-vs-dplyr-can-one-do-something-well-the-other-cant-or-does-poorly/27840349#27840349) --></li>
 </ul>
 <h2 id="free-books">Free Books</h2>
 <h3 id="stats-ml">Stats &amp; ML</h3>
 <ul>
-<li><a href="http://www.deeplearningbook.org/">Deep Learning Book</a>
-Goodfellow et al.</li>
+<li><a href="http://www.deeplearningbook.org/">Deep Learning Book</a> Goodfellow et al.</li>
 <li><a href="https://d2l.ai/">Dive into Deep Learning</a></li>
-<li><a href="http://statweb.stanford.edu/~tibs/ElemStatLearn/">Elements
-of Statistical Learning</a> Bible of ML by Hastie, Tibshirani, &amp;
-Friedman.</li>
-<li><a href="https://probml.github.io/pml-book/book1.html">Probabilistic
-Machine Learning</a> by Murphy</li>
-<li><a href="http://www-bcf.usc.edu/~gareth/ISL/">Introduction to
-Statistical Learning</a> Application of the above in R.</li>
-<li><a href="https://web.stanford.edu/~hastie/CASI/">Computer Age
-Statistical Inference</a> Efron &amp; Hastie.</li>
-<li><a href="http://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/">Advanced Data
-Analysis from an Elementary Point of View</a></li>
-<li><a href="http://www.gaussianprocess.org/gpml/">Gaussian Processes
-for Machine Learning</a> Carl Rasmussen</li>
-<li><a href="http://eml.berkeley.edu/books/choice2.html">Discrete Choice
-Methods with Simulation</a> Kenneth Train</li>
-<li><a href="http://www.personality-project.org/r/book/">An Introduction
-to Psychometric Theory with Applications in R</a></li>
+<li><a href="http://statweb.stanford.edu/~tibs/ElemStatLearn/">Elements of Statistical Learning</a> Bible of ML by Hastie, Tibshirani, &amp; Friedman.</li>
+<li><a href="https://probml.github.io/pml-book/book1.html">Probabilistic Machine Learning</a> by Murphy</li>
+<li><a href="http://www-bcf.usc.edu/~gareth/ISL/">Introduction to Statistical Learning</a> Application of the above in R.</li>
+<li><a href="https://web.stanford.edu/~hastie/CASI/">Computer Age Statistical Inference</a> Efron &amp; Hastie.</li>
+<li><a href="http://www.stat.cmu.edu/~cshalizi/ADAfaEPoV/">Advanced Data Analysis from an Elementary Point of View</a></li>
+<li><a href="http://www.gaussianprocess.org/gpml/">Gaussian Processes for Machine Learning</a> Carl Rasmussen</li>
+<li><a href="http://eml.berkeley.edu/books/choice2.html">Discrete Choice Methods with Simulation</a> Kenneth Train</li>
+<li><a href="http://www.personality-project.org/r/book/">An Introduction to Psychometric Theory with Applications in R</a></li>
 </ul>
 <h3 id="programming">Programming</h3>
 <ul>
 <li><a href="http://adv-r.had.co.nz/">Advanced R</a> Hadley Wickham</li>
-<li><a href="http://r4ds.had.co.nz/">R for Data Science</a> Hadley
-Wickham</li>
-<li><a href="http://r-pkgs.had.co.nz/">R Packages</a> Hadley
-Wickham</li>
-<li><a href="https://bookdown.org/">Bookdown website</a> All R
-related</li>
-<li><a href="http://happygitwithr.com/">Happy Git and GitHub for the
-useR</a></li>
+<li><a href="http://r4ds.had.co.nz/">R for Data Science</a> Hadley Wickham</li>
+<li><a href="http://r-pkgs.had.co.nz/">R Packages</a> Hadley Wickham</li>
+<li><a href="https://bookdown.org/">Bookdown website</a> All R related</li>
+<li><a href="http://happygitwithr.com/">Happy Git and GitHub for the useR</a></li>
 </ul>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
 <!--/radix_placeholder_article_footer-->
 </div>
