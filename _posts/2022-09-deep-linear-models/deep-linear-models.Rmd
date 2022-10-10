@@ -1,25 +1,28 @@
 ---
 title: "Deep Linear Models"
 description: |
-  A demo
+  A demonstration using pytorch
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
-preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+date: '2010-10-10'
+preview: ../../img/nnet.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
 output:
   distill::distill_article:
     self_contained: false
     toc: true
     css: ../../styles.css
-draft: true
-tags: [deep learning, torch, <span class="pack">pytorch</span>, demo, embeddings, TabNet, XGBoost, lightgbm, gradient boosting, linear model]
+bibliography: ../../bibs/dl-reg.bib
+draft: false
+tags: [deep learning, torch, pytorch, fastai, demo, embeddings, TabNet, XGBoost, lightgbm, gradient boosting, linear model]
 categories:
   - deep learning
   - boosting
   - GLM
   - regression
   - machine learning
+nocite: | 
+  @howard2022linreg, @howard2022neuralnet, @raschka2022chrono, @clark2022dl4tab1, @clark2022dl4tab2,  @howard2022neuralnet2
 ---
 
 ```{r setup, include=FALSE}
@@ -30,7 +33,7 @@ knitr::opts_chunk$set(
   warning   = FALSE,
   comment   = NA,
   R.options = list(width = 120),
-  cache         = FALSE,
+  cache         = TRUE,
   cache.rebuild = FALSE,
   cache.lazy    = FALSE,
   fig.align = 'center',
@@ -171,12 +174,13 @@ library(reticulate)
 
 ## Introduction
 
-This post gives a by-hand example of linear regression using <span class="pack">pytorch</span>.  A good question to ask right off the bat would be- why would anyone do this? We use deep learning typically because linear regression isn't up to the task! Well, for one thing, it serves as a stepping stone for those who know basic statistical methodology like regression, but want to get into deep learning in a conceptual manner.  Another is to just see some <span class="pack">pytorch</span> basics in a simple setting.  And one last reason is that maybe you want to incorporate a standard statistical modeling approach into some other deep learning endeavor.  Everyone can join the party!
+This post gives a by-hand example of a linear model using <span class="pack">pytorch</span>.  A good question to ask right off the bat would be- why would anyone do this? We use deep learning typically because linear regression isn't up to the task! Well, for one thing, it serves as a stepping stone for those who know basic statistical methodology like linear regression, but want to get into deep learning in a conceptual manner.  Another is to just see some <span class="pack">pytorch</span> basics in a simple setting.  And one last reason is that maybe you want to incorporate a more standard statistical modeling approach into some other deep learning endeavor.  Everyone can join the party!
 
-For this demo we'll use [an example by <span class="pack">fastai</span>](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch), which is a great resource for [getting started with deep learning](https://course.fast.ai/).  Their example serves as a basis, though I will generalize the functionality so that you can play around with the settings and try other data examples.  In addition, this post will assume you know things like why you would dummy code features and linear regression basics, and will use some other naming conventions[^nobigdeal].  
+For this demo we'll use [an example by <span class="pack">fastai</span>](https://www.kaggle.com/code/jhoward/linear-model-and-neural-net-from-scratch), which is a great resource for [getting started with deep learning](https://course.fast.ai/).  While their example serves as a basis, I will generalize the functionality so that you can play around with the settings and try other data examples[^nofastai].  In addition, this post will assume you know things like why you would dummy code features and linear regression basics, and will use some other naming conventions[^nobigdeal].  
 
-[^nobigdeal]: I'm also not going to go into broadcasting, submitting to Kaggle, and many other things that I don't think are necessary for our purposes here.
-[^nofastai]: I won't actually use <span class="pack">fastai</span>, since they aren't up to supporting M1/2 Macs very well.  I think it was only used for the train/test data split anyway.  I would rant a bit about this, but a lot of <span class="pack">fastai</span> is geared toward non-local computing, and the fault is really with Apple and NVidia.
+[^nobigdeal]: I'm also not going to go into broadcasting, submitting to Kaggle, and  other things that I don't think are necessary for our purposes here.
+
+[^nofastai]: I won't actually use <span class="pack">fastai</span>, since they aren't up to supporting M1/2 Macs very well.  I think it was only used for the train/test data split anyway.  I would rant a bit about this, but a lot of <span class="pack">fastai</span> is geared toward non-local computing, and the fault is really with Apple and NVidia as near as I can tell.
 
 
 
@@ -259,9 +263,11 @@ Here are the other categorical features.
 df_titanic_train.describe(include = [object])
 ```
 
-In order to use categorical variables, they need to be changed to numbers[^caterrors], so we dummy code them here. There are other coding schemes, and for most deep learning approaches people will often use *embeddings*, particularly for things that have lots of unique categories.
+In order to use categorical variables, they need to be changed to numbers[^caterrors], so we dummy code them here. There are other coding schemes, and for most deep learning approaches people will often use *embeddings*[^embed], particularly for things that have lots of unique categories.
 
 [^caterrors]: Even though every modeling tool requires this, strangely very few in the Python world offer options for automatic handling of such things, but it's getting better.
+
+[^embed]: We actually aren't too far removed from this in our model coming up, the main difference is that we don't treat the categorical feature part of the model separately.
 
 ```{python dummify}
 df_titanic_train = pd.get_dummies(df_titanic_train, columns = ["Sex", "Pclass", "Embarked"])
@@ -678,17 +684,40 @@ accuracy_score(valid_y, reg.predict(valid_x)).round(4)
 
 ## Deep Learning
 
-We previously used a single hidden layer, but we want to go deeper!  That's the whole point of deep learning right? The following modifies our previous functions to allow for an arbitrary number of layers.  You'll note there are some hacks to get the weights in a good way for each layer, but note that you normally wouldn't have to do that on your own, since most tools will provide sensible modifications.
+We previously used a single hidden layer, but we want to go deeper!  That's the whole point of deep learning right? The following modifies our previous functions to allow for an arbitrary number of layers.  You'll note there are some hacks to get the weights in a good way for each layer[^hackweights], but you normally wouldn't have to do that on your own, since most tools will provide sensible modifications.
+
+[^hackweights]: And they probably aren't as good for the changes I've made.
 
 
 ```{python funs-dl}
+def one_epoch(X, weights, target, lr, verbose = 1, i = 1):
+    loss = calc_loss(X, weights, target)
+    loss.backward()
+    
+    with torch.no_grad(): update_weights(weights, lr)
+    
+    if verbose != 0:
+        if i % verbose == 0:
+            print(f'{loss: 3f}', end = '\n ')
+
+# change loss to binary
+def calc_loss(X, weights, target, which = 'l2'):
+    preds = calc_preds(X, weights)
+
+    loss = torch.nn.BCELoss()
+
+    L = loss(preds, target.float())
+
+    return(L)
+
+
 def init_weights(n_wts, hiddens):  
     sizes = [n_wts] + hiddens + [1]
     n = len(sizes)
     layers = [(torch.rand(sizes[i], sizes[i + 1]) - 0.3)/sizes[i + 1] * 4 for i in range(n - 1)]
     consts = [(torch.rand(1)[0] - 0.5)*0.1 for i in range(n - 1)]
     for l in layers+consts: l.requires_grad_()
-    return layers,consts
+    return layers, consts
 
 
 def calc_preds(X, weights):
@@ -696,11 +725,12 @@ def calc_preds(X, weights):
     n = len(layers)
     res = X
     
-    for i,l in enumerate(layers):
+    for i, l in enumerate(layers):
         res = res@l + consts[i]
     
     if i != n-1: 
       res = F.mish(res)
+      
     
     return torch.sigmoid(res).flatten()
 
@@ -719,23 +749,24 @@ def train_model(X, target, hiddens = [10, 10], epochs = 30, lr = 1e-3, verbose =
             one_epoch(X, coeffs, target, lr = lr, verbose = verbose, i = i)
     
     return coeffs
+
 ```
 
 
-With everything set up, let's do some deep linear modeling!  You can play around with the number of hidden layers, number of nodes and other settings. As an example, adding more complexity likely won't help much with our current settings, but letting it run longer might.
+With everything set up, let's do some deep linear modeling!  You can play around with the number of hidden layers, number of nodes and other settings. Feel free to explore!
 
 ```{python estimate-dl}
 coeffs_est = train_model(
   train_x,
   train_y,
-  hiddens = [10, 10],
-  epochs  = 100,
-  lr      = 4,
+  hiddens = [500, 250, 100],
+  epochs  = 500,
+  lr      = 1e-4,
   verbose = 10
 )
 ```
 
-Hooray! Our best model yet.
+Hooray! Our best model yet (at least tied).
 
 ```{python compare-dl}
 pd.DataFrame({
@@ -746,13 +777,9 @@ pd.DataFrame({
 ```
 
 
-```{python sklearn, echo=FALSE, eval=FALSE}
-
-```
 
 
-
-## The elephant in the room
+## The Elephant in the Room
 
 As noted in my previous posts [[1](https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/), [2](https://m-clark.github.io/posts/2022-04-01-more-dl-for-tabular/)], probably your biggest challenge in implementing a deep learning model for tabular data, one with mixed data types and other complexities, is beating an off the shelf boosting model.  Here is a quick demo with <span class="pack">lightgbm</span>.
 
@@ -811,5 +838,84 @@ X_kag = (tensor(df_kaggle[all_features].values, dtype = torch.float) - X_means) 
 
 ## Summary
 
-This was a lot of work to do slightly better than a logistic regression!  However, there is a lot going on with a typical DL model that would likely prove even better.  But it also serves as a reminder to have a suitable baseline, and as we saw with the lightgbm model, it can take little effort to do better.  Hopefully though, the peek behind the scenes to do some 'deep' linear modeling can make it more accessible for you.
+This was a lot of work to do slightly better than a logistic regression!  However, there is a lot going on with a typical DL model that would likely prove even better.  But it also serves as a reminder to have a suitable baseline, and as we saw with the lightgbm model, it can take little effort to do very well without deep learning.  Hopefully though, the peek behind the scenes to do some 'deep' linear modeling can make it more accessible for you.
+
+
+
+```{python, playing-around, eval=FALSE, echo=FALSE}
+def one_epoch(X, weights, target, lr, verbose = 1, i = 1):
+    loss = calc_loss(X, weights, target)
+    loss.backward()
+    
+    with torch.no_grad(): update_weights(weights, lr)
+    
+    if verbose != 0:
+        if i % verbose == 0:
+            print(f'{loss: 3f}', end = '\n ')
+
+# change loss to binary
+def calc_loss(X, weights, target, which = 'l2'):
+    preds = calc_preds(X, weights)
+
+    loss = torch.nn.BCELoss()
+
+    L = loss(preds, target.float())
+
+    return(L)
+
+
+def init_weights(n_wts, hiddens):  
+    sizes = [n_wts] + hiddens + [1]
+    n = len(sizes)
+    # layers = [(torch.rand(sizes[i], sizes[i + 1]) - 0.3)/sizes[i + 1] * 4 for i in range(n - 1)]
+    layers = [torch.nn.init.xavier_normal_(torch.zeros(sizes[i], sizes[i + 1])) for i in range(n - 1)]
+    consts = [(torch.rand(1)[0] - 0.5)*0.1 for i in range(n - 1)]
+    for l in layers+consts: l.requires_grad_()
+    return layers, consts
+
+
+def calc_preds(X, weights):
+    layers, consts = weights
+    n = len(layers)
+    res = X
+    
+    for i, l in enumerate(layers):
+        res = res@l + consts[i]
+    
+    if i != n-1: 
+      res = F.gelu(res)
+      res = F.dropout(res, p=.2)
+    
+    return torch.sigmoid(res).flatten()
+
+
+def update_weights(weights, lr):
+    layers, consts = weights
+    for layer in layers + consts:
+        layer.sub_(layer.grad * lr)
+        layer.grad.zero_()
+
+
+def train_model(X, target, hiddens = [10, 10], epochs = 30, lr = 1e-3, verbose = 1):
+    torch.manual_seed(442)
+    coeffs = init_weights(X.shape[1], hiddens)
+    
+    for i in range(epochs): 
+        if verbose != 0:
+            one_epoch(X, coeffs, target, lr = lr, verbose = verbose, i = i)
+    
+    return coeffs
+  
+
+coeffs_est = train_model(
+  train_x,
+  train_y,
+  hiddens = [50, 25, 10],
+  epochs  = 500,
+  lr      = 1e-3,
+  verbose = 100
+)
+
+acc(valid_x, coeffs_est, valid_y).flatten()
+```
 
