@@ -1,0 +1,198 @@
+---
+title: "Stuff Going On"
+description: |
+  Penalty kicks, class imbalance, tabular deep learning, industry and acadmia
+author:
+  - name: Michael Clark
+    url: https://m-clark.github.io
+date: 2023-03-10
+preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+output:
+  distill::distill_article:
+    self_contained: false
+    toc: true
+    css: ../../styles.css
+draft: false
+tags: [penalty kicks, class imbalance, academia vs industry]
+categories:
+  - miscellaneous
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = TRUE, 
+  eval      = TRUE, 
+  message   = FALSE,
+  warning   = FALSE,
+  comment   = NA,
+  R.options = list(width = 120),
+  cache         = TRUE,
+  cache.rebuild = FALSE,
+  cache.lazy    = FALSE,
+  fig.align = 'center',
+  fig.asp   = .7,
+  dev       = 'svglite',
+  dev.args  = list(bg = 'transparent')
+)
+
+
+library(tidyverse)
+
+theme_clean <- function (
+  font_size = 12,
+  font_family = "",
+  center_axis_labels = FALSE
+) {
+  
+  if (center_axis_labels) {
+    haxis_just_x <- 0.5
+    vaxis_just_y <- 0.5
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  else {
+    haxis_just_x <- 0
+    vaxis_just_y <- 1
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  
+  ggplot2::theme(
+    text = ggplot2::element_text(
+      family = font_family,
+      face   = "plain",
+      color  = "gray30",
+      size   = font_size,
+      hjust  = 0.5,
+      vjust  = 0.5,
+      angle  = 0,
+      lineheight = 0.9,
+      margin = ggplot2::margin(),
+      debug  = FALSE
+    ),
+    axis.title.x = ggplot2::element_text(
+      hjust = haxis_just_x,
+      angle = v_rotation_x,
+      size  = 0.8 * font_size
+    ),
+    axis.title.y = ggplot2::element_text(
+      vjust = vaxis_just_y,
+      hjust = 0,
+      angle = v_rotation_y,
+      size  = 0.8 * font_size
+    ),
+    axis.ticks        = ggplot2::element_line(color = "gray30"),
+    title             = ggplot2::element_text(color = "gray30", size = font_size * 1.25),
+    plot.subtitle     = ggplot2::element_text(color = "gray30", size = font_size * .75, hjust = 0),
+    plot.caption      = ggplot2::element_text(color = "gray30", size = font_size * .5, hjust = 0),
+    legend.position   = 'bottom', 
+    legend.key        = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.title      = ggplot2::element_blank(), 
+    panel.background  = ggplot2::element_blank(),
+    panel.grid        = ggplot2::element_blank(),
+    strip.background  = ggplot2::element_blank(),
+    plot.background   = ggplot2::element_rect(fill = "transparent", color = NA),
+  )
+}
+
+# set the theme as default
+theme_set(theme_clean())
+
+# set other point/line default colors; in most cases, we can use the color from
+# default discrete scale for more consistency across plots.
+# paletteer::palettes_d$colorblindr$OkabeIto
+update_geom_defaults('vline',   list(color = 'gray25',  alpha = .25))  # vlines and hlines are typically not attention grabbers so set alpha
+update_geom_defaults('hline',   list(color = 'gray25',  alpha = .25))  # usually a zero marker
+update_geom_defaults('point',   list(color = '#E69F00', alpha = .5))   # alpha as usually there are many points
+update_geom_defaults('smooth',  list(color = '#56B4E9', alpha = .15))
+update_geom_defaults('line',    list(color = '#56B4E9', alpha = .5))
+update_geom_defaults('bar',     list(color = '#E69F00', fill = '#E69F00'))  
+update_geom_defaults('col',     list(color = '#E69F00', fill = '#E69F00'))
+update_geom_defaults('dotplot', list(color = '#E69F00', fill = '#E69F00'))
+
+# use colorblind safe colors for categories; if you supply a continuous value to
+# color you'll get an error, but you just have to use `myplot +
+# scale_color_continous()` or whatever to override this; likewise you can always
+# override this scale for categorical schemes if desired also. Note that this
+# will apply for both color and fill, which is usually what we want.
+
+okabe_ito = c(
+  '#E69F00',
+  '#56B4E9',
+  '#009E73',
+  '#F0E442',
+  '#0072B2',
+  '#D55E00',
+  '#CC79A7',
+  '#999999'
+)
+
+ggplot <- function(...) ggplot2::ggplot(...) + 
+  # okabe ito colorblind safe scheme
+  scale_color_manual(
+    values = okabe_ito,
+    drop = FALSE,
+    aesthetics = c('color', 'fill')
+  )
+
+gt <- function(..., decimals = 2, title = NULL, subtitle = NULL) {
+  gt::gt(...) %>% 
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = decimals
+    ) %>% 
+    gt::tab_header(title = title, subtitle = subtitle) %>% 
+    gtExtras::gt_theme_nytimes()
+}
+
+gt_theme <-   
+  list(
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({sd})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p})"
+  )
+
+rnd = tidyext::rnd
+```
+
+It's been a bit so thought I'd force myself to post a couple things I've played around with, or that aren't ready yet for a full post, or won't be one.
+
+
+## Football players still don't know penalty kick basics.
+
+
+Did a quick and dirty Bayesian analysis to get posterior probabilities for location, controlling for various factors.  As a side note, I won the office world cup challenge with a fancy model of which I will never reveal the details, but may or may not have included lots of guessing and luck.
+
+![](../../img/world_cup_penalty_bayes.jpg)
+
+
+## Tabular data post
+
+I finally did my first post at the [Strong blog](https://www.strong.io/blog/)! It's a [high-level overview of tabular data and deep learning](https://www.strong.io/blog/deep-learning-for-tabular-data-an-overview) that summarizes some of my previous posts [here](https://m-clark.github.io/posts/2022-04-01-more-dl-for-tabular/) and [here](https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/). 
+
+
+## Class Imbalance
+
+For my next post at the Strong blog, Elizabeth Monroe and I are working on a similarly high-level overview of issues with class imbalance we've been coming across.  I will probably provide even more details and simulation results in a post on this site eventually, but here is a preview plot showing (mis)calibration plots at varying degrees of imbalance and different sample sizes.
+
+![](../../img/calibration_plot_default_avg.png)
+
+
+## Two years at Strong
+
+Hard to believe for me anyway, but I've been out of academia for two years now, after previously spending my professional lifetime there. Aside from some of the obvious differences, one of the more satisfying changes for me has been that the skills I've acquired are utilized on a daily basis, and something I need to continuously develop for the job.  At Strong our clients want good results in a timely fashion, and though the results might be notably complex, they still need to be sufficiently interpretable as well as reproducible/production-ready.  I also have come across more desire for causal explanations from clients, which might be surprising to what is typically assumed for academia vs. industry.  Clients obviously require buy-in for what we do, but they ultimately defer to us for the expertise we provide. 
+
+[Strong Analytics](https://www.strong.io/) was a great move for me, because they clearly value the strong academic background of its employees, but are practically minded, and focus on skills that allow one to be nimble enough to get the clients what they need. Just like I was in academia, I am surrounded by a diverse group of smart folks I respect a lot, and am happy to solve some tough problems with. I feel I've learned how to get things done in a more efficient manner, and do a better job of explaining what I've done to wider audience.
+
+Among some things I miss with academia, one was working with faculty and grad students who were just starting with an idea, and continuing a relationship with them until ultimately getting to publication or a successful dissertation defense after a very long journey. Another was giving workshops regularly where you could help people with their initial baby steps into the large world of data science. In general, it was easy to feel personally invested in the individuals you were working with, and their successes felt like your own.
+
+However, in academia it was often a struggle to get buy-in for more complicated methods or new techniques, because the stakes were typically lower and people knew the minimum required to get them published, defended or whatever, and mostly just wanted help getting to that point. There's nothing wrong with that necessarily, that's just the practical reality, and a reflection of what's valued in academia. Despite that, I can say I definitely had some good partnerships with people involved in challenging research that was very rewarding, and those projects made it generally very satisfying to work in academia.
+
+Ultimately though, I'm happy to have made the jump.  It's a bit weird to me how much drama there is on this topic on twitter and elsewhere. It's really not that big of a deal which route you go, and in the grand scheme of things, almost no one will care if you work in academia or industry but you. There are pros and cons to both, and people should just pick what will make them happier.
+
+
+## Coming up
+
+Whenever I can get around to it, I'll try and post on those class imbalance simulations mentioned above, conformal prediction, and some other fun stuff. Stay tuned!
+
