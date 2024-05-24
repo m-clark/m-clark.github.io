@@ -5,17 +5,9 @@ description: |
 author:
   - name: Michael Clark
     url: https://m-clark.github.io
-date: '`r format(Sys.Date(), "%B %d, %Y")`'
-preview: ../../img/198R.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
-output:
-  distill::distill_article:
-    self_contained: false
-    toc: true
-    css: ../../styles.css
 draft: true
-tags: [tags, taggy]
-categories:
-  - ?
+format: html
+
 ---
 
 ```{r setup, include=FALSE}
@@ -156,14 +148,26 @@ gt_theme <-
 rnd = tidyext::rnd
 ```
 
+https://arxiv.org/pdf/2107.07511.pdf A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification
+Anastasios N. Angelopoulos and Stephen Bates
 
-From Statistical Learning from a Regreession Perspective 3e, fig 1.9
+MC Note: lots of issues with this paper and code vs. notebook stuff. Explanations handwave generic code that isn't in the notebook, they can't even bring themselves to do a simple linear regression example, and they are still using terms like softmax when discussing the regression problem.
+
+- Create prediction intervals for regression problems
+- Distribution free, model-mispecified okay (assumes iid)
+- Under assumptions and sufficient data, can guarantee coverage (like every other technique one might use)
+
+> Let’s give some intuition to supplement the mathematical understanding from the proof in Appendix D. Roughly, if the scores si correctly rank the inputs from lowest to highest magnitude of model error, then the resulting sets will be smaller for easy inputs and bigger for hard ones. If the scores are bad, in the sense that they do not approximate this ranking, then the sets will be useless. For example, if the scores are random noise, then the sets will contain a random sample of the label space, where that random sample is large
+enough to provide valid marginal coverage. This illustrates an important underlying fact about conformal prediction: although the guarantee always holds, the usefulness of the prediction sets is primarily determined by the score function. 
+
+
+Simple function code From Statistical Learning from a Regreession Perspective 3e, fig 1.9
 
 ## Data Setup
 
 ```{r}
 library(mgcv)
-df_ca_housing = read_csv('data/ca_housing.csv')
+df_ca_housing = read_csv('../data/ca_housing.csv')
 ```
 
 ```{r}
@@ -190,18 +194,21 @@ calc_cp_error <- function(
     interval = .95  # interval width
 ) {
   
-  test_resid = abs(predict(fit, newdata = test) - y)
-  
-  k = ceiling((nrow(test) + 1) * interval)
+  test_resid = abs(y - predict(fit, newdata = test))
+  N = nrow(test)
+  k = ceiling((N + 1) * interval)
+  q = quantile(test_resid, probs = interval * (N / (N + 1)))
   
   residuals_sorted = sort(test_resid)
   
   cp_error = residuals_sorted[k]
   
-  cp_error
+  list(cp_error = cp_error, q = q, k = k)
 }
 
-cp_error = calc_cp_error(fit, test, y = test$ln_house_value)
+res = calc_cp_error(fit, test, y = test$ln_house_value)
+res
+cp_error = res$cp_error
 
 new_data = tibble(MedInc = median(df_ca_housing$MedInc))
 prediction = predict(fit, new_data, se.fit = TRUE)
@@ -312,6 +319,7 @@ result = conformal.pred(
   alpha = .05, 
   num.grid.pts = 100
 )
+
 
 
 (result$up-result$lo)[1]/2
