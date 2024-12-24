@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2020-03-16">
+<meta name="keywords" content="mixed models, convergence, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer, regression, glm">
+<meta name="description" content="Lack of convergence got ya down? A plan of attack.">
+
+<title>Convergence Problems – website-2025</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-72c3889b8f64d4e1ac0c3a8dd4c5b1c9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/htmlwidgets-1.6.1/htmlwidgets.js"></script>
+<script src="../../site_libs/plotly-binding-4.10.1/plotly.js"></script>
+<script src="../../site_libs/typedarray-0.1/typedarray.min.js"></script>
+<script src="../../site_libs/jquery-3.5.1/jquery.min.js"></script>
+<link href="../../site_libs/crosstalk-1.2.0/css/crosstalk.min.css" rel="stylesheet">
+<script src="../../site_libs/crosstalk-1.2.0/js/crosstalk.min.js"></script>
+<link href="../../site_libs/plotly-htmlwidgets-css-2.11.1/plotly-htmlwidgets.css" rel="stylesheet">
+<script src="../../site_libs/plotly-main-2.11.1/plotly-latest.min.js"></script>
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">website-2025</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Convergence Problems</h1>
+                  <div>
+        <div class="description">
+          <p>Lack of convergence got ya down? A plan of attack.</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">regression</div>
+                <div class="quarto-category">mixed models</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author"><a href="https://m-clark.github.io">Michael Clark</a> </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              <a href="https://strong.io">
+              Strong Analytics
+              </a>
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 16, 2020</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>mixed models, convergence, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer, regression, glm</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro">Intro</a></li>
+  <li><a href="#data-setup" id="toc-data-setup" class="nav-link" data-scroll-target="#data-setup">Data Setup</a></li>
+  <li><a href="#initial-model" id="toc-initial-model" class="nav-link" data-scroll-target="#initial-model">Initial model</a></li>
+  <li><a href="#step-back" id="toc-step-back" class="nav-link" data-scroll-target="#step-back">Step back</a></li>
+  <li><a href="#start-simply" id="toc-start-simply" class="nav-link" data-scroll-target="#start-simply">Start simply</a></li>
+  <li><a href="#rescale-variables" id="toc-rescale-variables" class="nav-link" data-scroll-target="#rescale-variables">Rescale variables</a></li>
+  <li><a href="#remove-zero-random-effects" id="toc-remove-zero-random-effects" class="nav-link" data-scroll-target="#remove-zero-random-effects">Remove zero random effects</a></li>
+  <li><a href="#technical-options" id="toc-technical-options" class="nav-link" data-scroll-target="#technical-options">Technical options</a>
+  <ul class="collapse">
+  <li><a href="#check-singularity" id="toc-check-singularity" class="nav-link" data-scroll-target="#check-singularity">Check singularity</a></li>
+  <li><a href="#double-checking-gradient-calculations" id="toc-double-checking-gradient-calculations" class="nav-link" data-scroll-target="#double-checking-gradient-calculations">Double-checking gradient calculations</a></li>
+  <li><a href="#restart-the-fit" id="toc-restart-the-fit" class="nav-link" data-scroll-target="#restart-the-fit">Restart the fit</a></li>
+  <li><a href="#change-the-optimizer" id="toc-change-the-optimizer" class="nav-link" data-scroll-target="#change-the-optimizer">Change the optimizer</a></li>
+  </ul></li>
+  <li><a href="#final-step" id="toc-final-step" class="nav-link" data-scroll-target="#final-step">Final Step</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Prerequisite: Knowledge of regression modeling. Helpful would be to know something about mixed models and optimization.</p>
+<p>Primary packages used:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyext)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(visibly)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mixedup)  <span class="co"># http://m-clark.github.io/mixedup</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="intro" class="level2">
+<h2 class="anchored" data-anchor-id="intro">Intro</h2>
+<p>It is not uncommon that complex models lead to difficulties with convergence. Though the following example is a demo with the R package <span class="pack" style="">lme4</span>, most of it would potentially apply to any complex modeling situation where convergence problems arise. The goal is provide some steps one can take to get their models back on track. The running example is taken from the data posted at this <a href="https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r">stackoverflow question</a>. Ben Bolker’s<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> response there can be seen as the basis for this post, along with some extensions, updates and other organization.</p>
+</section>
+<section id="data-setup" class="level2">
+<h2 class="anchored" data-anchor-id="data-setup">Data Setup</h2>
+<p>You can download the data from <a href="https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS">here</a> (RDS file), or go to the <a href="https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r">stackoverflow discussion</a> and paste the code there. There isn’t any real explanation of the variables unfortunately, though you can get a sense of some of them (e.g.&nbsp;Day, replicate, temperature, etc.).</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/init-data_53770796e5b51202f4b3dad09a6af239">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = readRDS(</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   gzcon(</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     url('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">readRDS</span>(<span class="st">'data/convergence.RDS'</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">SUR.ID =</span> <span class="fu">factor</span>(SUR.ID),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">replicate =</span> <span class="fu">factor</span>(replicate),</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">Unit =</span> <span class="fu">factor</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">n</span>())</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="initial-model" class="level2">
+<h2 class="anchored" data-anchor-id="initial-model">Initial model</h2>
+<p>The following is the model that led to the stackoverflow post. It’s fairly complicated with multiple interactions and random effects, modeling the proportion of valid detections via a binomial model. The <code>Unit</code> effect is used to account for overdispersion, a common issue in count modeling.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/init-fit_fe7d135c981dadbf81ba5aaf0b800623">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_mixed_0 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    tm<span class="sc">:</span>Area <span class="sc">+</span> tm<span class="sc">:</span>c.distance <span class="sc">+</span> c.distance<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth<span class="sc">:</span>Area <span class="sc">+</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth<span class="sc">:</span>Area <span class="sc">+</span> c.temp<span class="sc">:</span>Area <span class="sc">+</span> c.wind<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth <span class="sc">+</span> </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth <span class="sc">+</span> c.temp <span class="sc">+</span> c.wind <span class="sc">+</span> tm <span class="sc">+</span> c.distance <span class="sc">+</span> Area <span class="sc">+</span> replicate <span class="sc">+</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span><span class="sc">|</span>SUR.ID) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>Day) <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>Unit), </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df, </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+NA Model failed to converge with max|grad| = 0.252244 (tol = 0.002, component 1)</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, : Model is nearly unidentifiable: very large eigenvalue
+NA  - Rescale variables?;Model is nearly unidentifiable: large eigenvalue ratio
+NA  - Rescale variables?</code></pre>
+</div>
+</div>
+<p>This gives several warnings, the more egregious of which is that the model has not converged, meaning the estimates may not be trustworthy. So what do we do?</p>
+</section>
+<section id="step-back" class="level2">
+<h2 class="anchored" data-anchor-id="step-back">Step back</h2>
+<p>The first step is to step back and look at the data. Are there issues that can be spotted? Are some essentially collinear with others? In the following, we can see that some variables are only a few levels, and some, like <code>Day</code>, <code>c.tm.depth</code> and <code>c.receiver.depth</code>, are both notably correlated with each other and with other predictor variables.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/init-data-show_1ec673c986822817710310df62e2eb4a">
+<div class="cell-output cell-output-stdout">
+<pre><code>NA $`Numeric Variables`
+NA # A tibble: 9 × 10
+NA   Variable            N  Mean     SD     Min      Q1 Median    Q3    Max % Mis…¹
+NA   &lt;chr&gt;           &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
+NA 1 ValidDetections   220  6.49  10.1     0       0      1     7     45          0
+NA 2 CountDetections   220  6.85  10.1     0       0      2     7     45          0
+NA 3 FalseDetections   220  0.36   0.73    0       0      0     0      4          0
+NA 4 R.det             220  0.52   0.47    0       0      0.68  1      1          0
+NA 5 c.receiver.dep…   220 -0.06   0.31   -0.4    -0.34  -0.18  0.21   0.54       0
+NA 6 c.tm.depth        220 -0.01   0.48   -0.62   -0.55   0.03  0.4    0.78       0
+NA 7 c.temp            220 -0.46   2.38   -4.22   -3.62   0.54  1.55   2.84       0
+NA 8 c.wind            220 -0.26   3.29   -2.97   -2.97  -2.94  1.28   5.88       0
+NA 9 c.distance        220 -6.36 129.   -160    -110    -10    90    190          0
+NA # … with abbreviated variable name ¹​`% Missing`
+NA 
+NA $`Categorical Variables`
+NA # A tibble: 14 × 4
+NA    Variable  Group        Frequency   `%`
+NA    &lt;chr&gt;     &lt;fct&gt;            &lt;int&gt; &lt;dbl&gt;
+NA  1 SUR.ID    10185               74    34
+NA  2 SUR.ID    10186               74    34
+NA  3 SUR.ID    10250               72    33
+NA  4 tm        CT                 110    50
+NA  5 tm        PT-04              110    50
+NA  6 replicate 1                  120    55
+NA  7 replicate 2                  100    45
+NA  8 Area      Drug Channel       120    55
+NA  9 Area      Finger             100    45
+NA 10 Day       03/06/13            60    27
+NA 11 Day       2/22/13             60    27
+NA 12 Day       2/27/13             60    27
+NA 13 Day       3/14/13             28    13
+NA 14 Day       2/26/13             12     5</code></pre>
+</div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/correlation_9e32e664a63508e109da2215dae7794e">
+<div class="cell-output-display">
+<div class="plotly html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-93bd5513df10d6af9a30" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-93bd5513df10d6af9a30">{"x":{"visdat":{"15db11cfe5fe9":["function () ","plotlyVisDat"]},"cur_data":"15db11cfe5fe9","attrs":{"15db11cfe5fe9":{"z":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"heatmap","colors":["#601200","#611300","#621401","#621501","#631600","#631700","#641801","#641901","#651A00","#661B00","#671C00","#671D00","#681E00","#681F00","#692000","#692100","#6A2200","#6A2200","#6B2300","#6B2400","#6C2500","#6D2600","#6E2700","#6E2800","#6F2900","#6F2900","#702A01","#702B00","#712C00","#712D00","#722E01","#722F00","#733000","#743000","#753101","#753200","#763300","#763400","#773501","#773600","#783700","#783700","#793801","#793900","#7A3A00","#7A3B00","#7C3D00","#7D3E00","#7D3E00","#7E3F00","#7E4000","#7F4100","#7F4200","#804300","#804400","#814500","#814600","#824700","#834701","#844800","#844900","#854A01","#854B01","#864C00","#864D00","#874E01","#874F01","#885002","#895002","#8A5101","#8A5201","#8B5302","#8B5402","#8C5503","#8C5603","#8D5704","#8D5804","#8E5905","#8F5A05","#905B06","#905C06","#915D07","#915E07","#925F08","#936009","#94610A","#94620B","#95630C","#95640D","#96650E","#97660F","#986810","#996912","#996A13","#9A6B15","#9B6C16","#9C6D17","#9C6E17","#9D6F19","#9E701A","#9F711C","#9F721D","#A0731E","#A0741F","#A17521","#A27622","#A37723","#A37824","#A47926","#A47A28","#A57B29","#A67C2A","#A77D2B","#A77E2D","#A87F2E","#A88030","#A98131","#AA8232","#AB8333","#AB8435","#AC8536","#AC8638","#AD873A","#AD873B","#AE883C","#AF893D","#B08A3F","#B08B40","#B18C42","#B18D43","#B28E44","#B28E45","#B38F47","#B39048","#B4914A","#B5924B","#B6944D","#B7954F","#B79550","#B89651","#B89652","#B99854","#B99955","#BA9A57","#BA9A58","#BB9B5A","#BC9C5B","#BD9D5C","#BD9E5D","#BE9F5F","#BE9F60","#BFA062","#BFA164","#C0A265","#C0A366","#C1A467","#C1A469","#C2A56A","#C2A66C","#C3A76D","#C4A86F","#C5A970","#C5AA71","#C6AB72","#C6AB74","#C7AC75","#C7AD77","#C8AE78","#C8AF7A","#C9B07C","#C9B07D","#CAB17E","#CBB27F","#CCB381","#CCB482","#CDB584","#CDB585","#CEB687","#CEB788","#CFB98A","#CFB98B","#D0BA8C","#D1BB8E","#D1BB8F","#D2BD91","#D3BE92","#D4BF94","#D4C095","#D5C197","#D5C198","#D6C29A","#D6C39B","#D7C49D","#D7C59E","#D8C6A0","#D8C6A1","#D9C7A2","#DAC8A3","#DBC9A5","#DBCAA7","#DCCBA8","#DCCCAA","#DDCDAB","#DDCDAD","#DECEAE","#DECFB0","#DFD0B1","#E0D1B3","#E1D2B4","#E1D3B6","#E2D4B7","#E2D4B9","#E3D5BB","#E3D6BC","#E4D7BD","#E4D8BE","#E5D9C0","#E5D9C1","#E6DAC3","#E6DBC4","#E7DCC6","#E7DDC7","#E8DEC9","#E8DECA","#E9DFCC","#E9E0CD","#EAE2CF","#EBE3D1","#EBE3D2","#ECE4D3","#ECE5D4","#EDE6D6","#ECE6D7","#EDE7D9","#EDE7DA","#EEE8DB","#EEE8DC","#EDE9DE","#EDE9DF","#EDEAE0","#EDEAE1","#EEEBE2","#EEEBE3","#EDECE4","#EDECE5","#ECEDE6","#ECEDE7","#EBECE8","#EBECE8","#EAEDE9","#EAEDE9","#E9ECEA","#E9ECEA","#E8EDEB","#E7EDEB","#E6ECEC","#E6ECEC","#E5EBED","#E4EBED","#E2EAEC","#E1EBEC","#E0EAED","#DFEAED","#DEE9EC","#DDE9EC","#DBE8ED","#DAE7ED","#D8E6EC","#D7E6EC","#D6E5EB","#D5E4EB","#D3E3EB","#D2E3EB","#D0E1EA","#CEE0E9","#CDE0E9","#CBDFE8","#CADEE8","#C8DDE7","#C7DCE7","#C5DBE6","#C3DAE6","#C1D9E5","#C0D8E4","#BED7E3","#BDD6E3","#BBD5E2","#BAD5E2","#B8D4E1","#B6D3E1","#B5D2E0","#B3D1DF","#B2D0DE","#B0CFDE","#AFCEDD","#ACCDDD","#ABCCDC","#A9CBDC","#A8CADB","#A6C9DA","#A5C8D9","#A3C7D9","#A1C6D8","#A0C5D8","#9FC4D7","#9DC3D6","#9BC2D5","#99C1D5","#97C0D4","#96BFD4","#94BED3","#93BED2","#91BDD1","#90BCD1","#8EBBD0","#8DBAD0","#8BB9CF","#89B8CE","#87B6CD","#85B5CC","#84B4CC","#82B3CB","#81B2CA","#7FB1C9","#7EB0C9","#7CAFC8","#7AAEC8","#78ADC7","#77ACC6","#75ABC5","#74AAC5","#72A9C4","#70A8C3","#6FA7C2","#6EA6C2","#6CA5C1","#6AA4C1","#68A3C0","#66A2BF","#65A1BE","#63A0BE","#629FBD","#609EBD","#5F9DBC","#5D9CBB","#5B9BBA","#599ABA","#5799B9","#5698B8","#5496B7","#5395B7","#5194B6","#5093B6","#4E92B5","#4D91B4","#4B90B3","#4A8FB3","#488EB2","#478DB1","#458CB0","#448BB0","#428AAF","#4089AF","#3E87AD","#3C86AC","#3B85AC","#3984AB","#3883AA","#3782A9","#3681A9","#3480A8","#337FA8","#317EA7","#307DA6","#2E7CA5","#2D7BA5","#2B7AA4","#2979A4","#2878A3","#2777A2","#2676A1","#2475A1","#2374A0","#2273A0","#21729F","#1F719E","#1E709D","#1D6F9D","#1C6E9C","#1A6D9C","#196C9B","#186B9A","#176A99","#166999","#156898","#146898","#136797","#126697","#116596","#106496","#0F6395","#0E6294","#0D6193","#0C6093","#0B5F92","#0B5F92","#0A5E91","#095D91","#085C90","#075A8F","#07598F","#06588E","#06588D","#05578C","#05568C","#04558B","#05548B","#04538A","#04538A","#035289","#045189","#035088","#034F88","#024E87","#024E87","#034D86","#034C86","#024B85","#024A85","#034984","#034984","#024883","#024783","#014682","#014682","#024581","#024481","#014380","#014280","#01417F","#01417F","#02407E","#023F7E","#013E7D","#013E7D","#023D7C","#023C7C","#013B7B","#013B7B","#023A7A","#01397A","#023779","#013779","#013678","#013577","#023477","#013376","#013376","#023275","#023175","#013074","#013074","#022F73","#022E73","#012D72","#012D72","#022C71","#022B71","#012A70","#012A70","#02296F","#02286F","#01276E","#01276E","#02266D","#02256D","#01246C","#01246C","#02236B","#02226B","#01216A","#01206A","#021F69","#021F69","#011E68","#011D68","#021C67","#021C67","#011B66","#011A66","#001965","#001865","#011764","#011764","#001663","#001563","#011362","#001362","#001261","#001260"],"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"zaxis":{"title":"cormat"}},"xaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","zeroline":false,"showgrid":false},"yaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","autorange":"reversed","zeroline":false,"showgrid":false},"hovermode":"closest","showlegend":false,"legend":{"yanchor":"top","y":0.5},"plot_bgcolor":"transparent","paper_bgcolor":"transparent"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"colorbar":{"title":"cormat","ticklen":2,"len":0.5,"lenmode":"fraction","y":1,"yanchor":"top"},"colorscale":[["0","rgba(96,18,0,1)"],["0.0416666666666667","rgba(109,38,0,1)"],["0.0833333333333333","rgba(121,56,1,1)"],["0.125","rgba(133,75,1,1)"],["0.166666666666667","rgba(146,95,8,1)"],["0.208333333333333","rgba(161,117,33,1)"],["0.25","rgba(175,137,61,1)"],["0.291666666666667","rgba(188,156,91,1)"],["0.333333333333333","rgba(199,173,119,1)"],["0.375","rgba(212,192,149,1)"],["0.416666666666667","rgba(225,210,180,1)"],["0.458333333333333","rgba(236,228,211,1)"],["0.5","rgba(234,237,233,1)"],["0.541666666666667","rgba(212,228,235,1)"],["0.583333333333333","rgba(179,209,223,1)"],["0.625","rgba(145,189,209,1)"],["0.666666666666667","rgba(111,167,194,1)"],["0.708333333333333","rgba(78,146,181,1)"],["0.75","rgba(46,124,165,1)"],["0.791666666666667","rgba(20,104,152,1)"],["0.833333333333333","rgba(5,84,139,1)"],["0.875","rgba(1,67,128,1)"],["0.916666666666667","rgba(1,51,118,1)"],["0.958333333333333","rgba(2,35,107,1)"],["1","rgba(0,18,96,1)"]],"showscale":true,"z":[[1,0.547774150912715,-0.586092479695614,0.611269154334398,-0.43870998845022,-0.102446472268654,-0.14111515615372,-0.410604014056097,0.0118191150229274,-0.138301711474222,0.282551198172892,-0.0386441150388182],[0.547774150912715,1,-0.589289111820494,0.372315094846742,-0.0542163454834099,0,0.15955303305206,-0.171097706736777,-0.0170763540093293,0.191789363492377,0.371525745109052,-0.0999999999999996],[-0.586092479695614,-0.589289111820494,1,-0.490419077564185,0.224759681592676,0,0.619594895590975,0.782682870980344,0.0567732621399129,-0.029964602946145,0.0609726355667544,0.00428179955187785],[0.611269154334398,0.372315094846742,-0.490419077564185,1,-0.534314006793575,-0.146050797242485,-0.104493220707463,-0.281651803737025,0.0255834684768406,-0.0214340873082293,0.176279615818128,0.00649720015902382],[-0.43870998845022,-0.0542163454834099,0.224759681592676,-0.534314006793575,1,0,0.000805936244988457,0.0462606526416996,-0.0771514590472353,-0.0722420530868069,-0.0449746864891288,-0.05421634548341],[-0.102446472268654,0,0,-0.146050797242485,0,1,0,0,0.0872956400479666,0,0,0],[-0.14111515615372,0.15955303305206,0.619594895590975,-0.104493220707463,0.000805936244988457,0,1,0.848095619335052,0.0793683187257253,0.156015301685176,0.520952743806058,-0.0693708839356781],[-0.410604014056097,-0.171097706736777,0.782682870980344,-0.281651803737025,0.0462606526416996,0,0.848095619335052,1,0.12008348983148,0.388866502930339,0.0177696319824049,-0.0461539863427397],[0.0118191150229274,-0.0170763540093293,0.0567732621399129,0.0255834684768406,-0.0771514590472353,0.0872956400479666,0.0793683187257253,0.12008348983148,1,0.0277043340668402,-0.0433628716327529,0.0204916248111955],[-0.138301711474222,0.191789363492377,-0.029964602946145,-0.0214340873082293,-0.0722420530868069,0,0.156015301685176,0.388866502930339,0.0277043340668402,1,-0.480345814111,-0.151389616725829],[0.282551198172892,0.371525745109052,0.0609726355667544,0.176279615818128,-0.0449746864891288,0,0.520952743806058,0.0177696319824049,-0.0433628716327529,-0.480345814111,1,0.0656602344480018],[-0.0386441150388182,-0.0999999999999996,0.00428179955187785,0.00649720015902382,-0.05421634548341,0,-0.0693708839356781,-0.0461539863427397,0.0204916248111955,-0.151389616725829,0.0656602344480018,1]],"type":"heatmap","xaxis":"x","yaxis":"y","frame":null,"zmin":-1,"zmax":1}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>We can obtain a rough metric of total correlation of a variable with the others by looking at the <a href="https://en.wikipedia.org/wiki/Variance_inflation_factor">variance inflation factor</a> (VIF)<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. For this, we’ll treat any binary or ordered data as numeric, and we can use the <span class="pack" style="">car</span> package to get the VIF. This requires running an arbitrary regression model that includes the covariates of interest, but the value is derived only from the predictor variables. If we just try it with a dummy model, we get an error, since the linear model has perfect collinearity. We find out that <code>Day</code> is probably causing issues, and we’ll see why later.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/inspect-vif_ba3dff40df32c0a917f784edd70816f1">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the model used to acquire the vif doesn't matter- anything could be used for</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the target variable</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># this produces errors about aliased coefficients</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># car::vif(lm(CountDetections ~ . - Unit - FalseDetections - ValidDetections, dat = df))</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">attributes</span>(<span class="fu">alias</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    CountDetections <span class="sc">~</span> . <span class="sc">-</span> Unit <span class="sc">-</span> FalseDetections <span class="sc">-</span> ValidDetections,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">dat =</span> df</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>)<span class="sc">$</span>Complete)<span class="sc">$</span>dimnames[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] "Day3/14/13" "c.wind"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>car<span class="sc">::</span><span class="fu">vif</span>(<span class="fu">lm</span>(CountDetections <span class="sc">~</span> . <span class="sc">-</span>Unit <span class="sc">-</span>Day <span class="sc">-</span>FalseDetections, <span class="at">dat =</span> df))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                       GVIF Df GVIF^(1/(2*Df))
+NA SUR.ID            1.200902  2        1.046832
+NA tm                1.066227  1        1.032583
+NA ValidDetections   2.708644  1        1.645796
+NA replicate         1.057540  1        1.028368
+NA Area              5.795510  1        2.407387
+NA R.det             2.393891  1        1.547220
+NA c.receiver.depth  8.674740  1        2.945291
+NA c.tm.depth       13.438407  1        3.665843
+NA c.temp            2.956315  1        1.719394
+NA c.wind            3.041363  1        1.743950
+NA c.distance        2.065335  1        1.437127</code></pre>
+</div>
+</div>
+<p>It looks like, along with <code>Day</code>, <code>tm.depth</code> is probably going to cause a problem, as more than 90% of its variance is accounted for by the other covariates. So at this point we can consider both it and <code>Day</code> as potential predictors to remove. Wind is less an issue once <code>Day</code> is removed.</p>
+<p>An alternative approach I tried (not shown) was just running a PCA on the predictor variables. Only six components were needed to account for nearly almost 90% of the total variance, so I think it’s safe to say there is a notable amount of redundancy in this data.</p>
+<p>One final note is that the target variable is a potential problem as well. More than half of the data is a 1.0 proportion of <code>Valid Detections</code>, and it also turns out this doesn’t appear to be proportional data per se, as sometimes both Valid and False Detections can be zero, meaning such observations don’t contribute meaningfully to the model. This isn’t necessarily a problem as these observations are basically dropped dropped from the model, and you will note in the GLM results that follow that the residual degrees of freedom will be notably lower than the total number of observations (220). This is due to the dropout of those observations, which is about 37% of the data. Even so, the lack of variability may be an underlying issue in general. Especially in the case of interactions, it is likely that some cells have no variability in the outcome.</p>
+</section>
+<section id="start-simply" class="level2">
+<h2 class="anchored" data-anchor-id="start-simply">Start simply</h2>
+<p>So we know there are some data issues, so let’s start with a model that’s relatively simple but still plausible. If we just look at a GLM without any random effects, can we spot any issues?</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_glm-glm_eba664fcb971827bddd8568bed795f1e">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model_glm_1 <span class="ot">=</span> <span class="fu">glm</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    tm<span class="sc">:</span>Area <span class="sc">+</span> tm<span class="sc">:</span>c.distance <span class="sc">+</span> c.distance<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth<span class="sc">:</span>Area <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth<span class="sc">:</span>Area <span class="sc">+</span> c.temp<span class="sc">:</span>Area <span class="sc">+</span> c.wind<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth <span class="sc">+</span> c.temp <span class="sc">+</span> c.wind <span class="sc">+</span> tm <span class="sc">+</span> c.distance <span class="sc">+</span> Area <span class="sc">+</span> replicate <span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    SUR.ID <span class="sc">+</span> Day,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Call:
+NA glm(formula = cbind(ValidDetections, FalseDetections) ~ tm:Area + 
+NA     tm:c.distance + c.distance:Area + c.tm.depth:Area + c.receiver.depth:Area + 
+NA     c.temp:Area + c.wind:Area + c.tm.depth + c.receiver.depth + 
+NA     c.temp + c.wind + tm + c.distance + Area + replicate + SUR.ID + 
+NA     Day, family = binomial(link = "logit"), data = df)
+NA 
+NA Deviance Residuals: 
+NA    Min      1Q  Median      3Q     Max  
+NA -2.739   0.000   0.000   0.539   2.161  
+NA 
+NA Coefficients: (3 not defined because of singularities)
+NA                               Estimate Std. Error z value Pr(&gt;|z|)    
+NA (Intercept)                 -1.125e+01  6.504e+00  -1.730  0.08372 .  
+NA c.tm.depth                  -8.406e-01  1.228e+00  -0.684  0.49376    
+NA c.receiver.depth             7.026e+00  7.852e+00   0.895  0.37095    
+NA c.temp                      -5.514e+00  2.538e+00  -2.172  0.02983 *  
+NA c.wind                      -6.256e+00  3.349e+00  -1.868  0.06179 .  
+NA tmPT-04                     -2.053e+00  4.961e-01  -4.139  3.5e-05 ***
+NA c.distance                  -3.685e-03  2.614e-03  -1.410  0.15864    
+NA AreaFinger                   5.901e+01  2.775e+01   2.127  0.03346 *  
+NA replicate2                   2.700e+00  1.161e+00   2.326  0.02000 *  
+NA SUR.ID10186                 -2.227e-01  4.456e-01  -0.500  0.61721    
+NA SUR.ID10250                 -2.995e-01  4.469e-01  -0.670  0.50281    
+NA Day2/22/13                  -7.114e+01  3.463e+01  -2.054  0.03996 *  
+NA Day2/26/13                   3.306e+00  1.134e+03   0.003  0.99767    
+NA Day2/27/13                          NA         NA      NA       NA    
+NA Day3/14/13                          NA         NA      NA       NA    
+NA tmPT-04:AreaFinger           4.308e-01  6.066e-01   0.710  0.47759    
+NA tmPT-04:c.distance          -5.332e-03  3.186e-03  -1.674  0.09419 .  
+NA AreaFinger:c.distance        1.192e-02  3.855e-03   3.091  0.00199 ** 
+NA AreaFinger:c.tm.depth       -2.815e+00  4.731e+00  -0.595  0.55189    
+NA AreaFinger:c.receiver.depth -3.211e+01  2.545e+01  -1.262  0.20708    
+NA AreaFinger:c.temp            2.377e+00  1.902e+00   1.250  0.21141    
+NA AreaFinger:c.wind                   NA         NA      NA       NA    
+NA ---
+NA Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+NA 
+NA (Dispersion parameter for binomial family taken to be 1)
+NA 
+NA     Null deviance: 334.57  on 137  degrees of freedom
+NA Residual deviance: 135.23  on 119  degrees of freedom
+NA AIC: 253.65
+NA 
+NA Number of Fisher Scoring iterations: 17</code></pre>
+</div>
+</div>
+<p>Sure enough, there are problems. What’s going on with <code>Day</code> and <code>Area</code>? One issue is that <code>Area</code> only couples with certain days, so having one already tells you a lot about what the other could tell you.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/day-area-table_bceeb5b088bece803a8734263393de73">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(df, <span class="fu">table</span>(Day, Area))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA           Area
+NA Day        Drug Channel Finger
+NA   03/06/13           60      0
+NA   2/22/13             0     60
+NA   2/26/13             0     12
+NA   2/27/13            60      0
+NA   3/14/13             0     28</code></pre>
+</div>
+</div>
+<p>You could potentially create a combined type of variable to deal with this for example, but otherwise the problem will persist with both in the model. There are likely remaining collinearities besides, but let’s take Day out for example.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/glm-no-day_307999ee77d08deb6fb914d4a26dc539">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>model_glm_2 <span class="ot">=</span> <span class="fu">update</span>(model_glm_1, . <span class="sc">~</span> . <span class="sc">-</span>Day)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Call:
+NA glm(formula = cbind(ValidDetections, FalseDetections) ~ c.tm.depth + 
+NA     c.receiver.depth + c.temp + c.wind + tm + c.distance + Area + 
+NA     replicate + SUR.ID + tm:Area + tm:c.distance + Area:c.distance + 
+NA     Area:c.tm.depth + Area:c.receiver.depth + Area:c.temp + Area:c.wind, 
+NA     family = binomial(link = "logit"), data = df)
+NA 
+NA Deviance Residuals: 
+NA     Min       1Q   Median       3Q      Max  
+NA -2.7693   0.0000   0.0000   0.5335   2.1586  
+NA 
+NA Coefficients:
+NA                               Estimate Std. Error z value Pr(&gt;|z|)    
+NA (Intercept)                 -10.980797   6.323591  -1.736  0.08248 .  
+NA c.tm.depth                   -0.842695   1.227579  -0.686  0.49242    
+NA c.receiver.depth              7.003401   7.846631   0.893  0.37211    
+NA c.temp                       -5.407822   2.465579  -2.193  0.02828 *  
+NA c.wind                       -6.125119   3.266203  -1.875  0.06075 .  
+NA tmPT-04                      -2.049088   0.495012  -4.139 3.48e-05 ***
+NA c.distance                   -0.003755   0.002586  -1.452  0.14644    
+NA AreaFinger                   11.163412   6.537806   1.708  0.08773 .  
+NA replicate2                    2.646675   1.120176   2.363  0.01814 *  
+NA SUR.ID10186                  -0.223527   0.445491  -0.502  0.61584    
+NA SUR.ID10250                  -0.300337   0.446936  -0.672  0.50159    
+NA tmPT-04:AreaFinger            0.425446   0.605567   0.703  0.48233    
+NA tmPT-04:c.distance           -0.005304   0.003175  -1.670  0.09483 .  
+NA c.distance:AreaFinger         0.011937   0.003849   3.101  0.00193 ** 
+NA c.tm.depth:AreaFinger        -3.137815   4.366782  -0.719  0.47241    
+NA c.receiver.depth:AreaFinger -35.342161  17.332674  -2.039  0.04145 *  
+NA c.temp:AreaFinger             2.222685   1.682491   1.321  0.18648    
+NA c.wind:AreaFinger             8.259864   3.700848   2.232  0.02562 *  
+NA ---
+NA Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+NA 
+NA (Dispersion parameter for binomial family taken to be 1)
+NA 
+NA     Null deviance: 334.57  on 137  degrees of freedom
+NA Residual deviance: 135.27  on 120  degrees of freedom
+NA AIC: 251.69
+NA 
+NA Number of Fisher Scoring iterations: 10</code></pre>
+</div>
+</div>
+<p>Well, at least we got rid of the complete collinearity- no <code>NA</code> remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn’t really be surprised there would still be issues with the more complicated mixed models. With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know from our previous exploration that something similar is going on in this proportional binomial model. Here is a table of the more egregious offenders and a plot of all coefficients, their standard errors, and the VIF (size).</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/glm-issues_0ab46c37276960072f5cd56239b7c22d">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">vif</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">c.receiver.depth</td>
+<td style="text-align: right;">7.003</td>
+<td style="text-align: right;">7.847</td>
+<td style="text-align: right;">0.893</td>
+<td style="text-align: right;">0.372</td>
+<td style="text-align: right;">21.202</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">c.wind</td>
+<td style="text-align: right;">-6.125</td>
+<td style="text-align: right;">3.266</td>
+<td style="text-align: right;">-1.875</td>
+<td style="text-align: right;">0.061</td>
+<td style="text-align: right;">88.124</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">AreaFinger</td>
+<td style="text-align: right;">11.163</td>
+<td style="text-align: right;">6.538</td>
+<td style="text-align: right;">1.708</td>
+<td style="text-align: right;">0.088</td>
+<td style="text-align: right;">24.372</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">c.receiver.depth:AreaFinger</td>
+<td style="text-align: right;">-35.342</td>
+<td style="text-align: right;">17.333</td>
+<td style="text-align: right;">-2.039</td>
+<td style="text-align: right;">0.041</td>
+<td style="text-align: right;">43.537</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">c.wind:AreaFinger</td>
+<td style="text-align: right;">8.260</td>
+<td style="text-align: right;">3.701</td>
+<td style="text-align: right;">2.232</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: right;">89.504</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="convergence_files/figure-html/glm-issues-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>At this point I would not assume anything about the mixed model itself being a problem, and be leaning toward this being primarily a data issue. Or, at the very least, data issues will need to be sorted out. So let’s begin the restart of our mixed model effort by pulling out some of those variables we thought had some collinearity issues. You might have noticed from the GLM that <code>SUR.ID</code> was only 3 levels, so let’s move that to a fixed effect also. In keeping things simple, I’m not including any interactions.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_mixed_1_fc191309f53c9ad6f1aa9356f860114b">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model_mixed_1 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance + c.distance:Area + #c.tm.depth:Area + </span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># c.receiver.depth:Area + c.temp:Area + c.wind:Area + #c.tm.depth + </span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth <span class="sc">+</span> c.temp <span class="sc">+</span> c.wind <span class="sc">+</span> tm <span class="sc">+</span> c.distance <span class="sc">+</span> Area <span class="sc">+</span> replicate <span class="sc">+</span> </span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    SUR.ID <span class="sc">+</span> </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span><span class="sc">|</span>Unit), <span class="co">#  + (1|Day)</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+NA Model failed to converge with max|grad| = 0.117672 (tol = 0.002, component 1)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_1, <span class="at">ci =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     0.90 0.95     1.00</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA              Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA         Intercept  2.39 0.73  3.26    0.00      0.95       3.82
+NA  c.receiver.depth -3.80 1.08 -3.53    0.00     -5.91      -1.69
+NA            c.temp  0.25 0.19  1.28    0.20     -0.13       0.63
+NA            c.wind  0.13 0.15  0.88    0.38     -0.16       0.43
+NA           tmPT-04 -1.36 0.36 -3.77    0.00     -2.07      -0.65
+NA        c.distance -0.01 0.00 -5.09    0.00     -0.01      -0.01
+NA        AreaFinger  1.22 0.62  1.99    0.05      0.02       2.43
+NA        replicate2 -0.39 0.37 -1.05    0.29     -1.11       0.33
+NA       SUR.ID10186 -0.13 0.55 -0.23    0.82     -1.20       0.95
+NA       SUR.ID10250 -0.20 0.54 -0.36    0.72     -1.26       0.87</code></pre>
+</div>
+</div>
+<p>Well, we still have issues, so what else can we try?</p>
+</section>
+<section id="rescale-variables" class="level2">
+<h2 class="anchored" data-anchor-id="rescale-variables">Rescale variables</h2>
+<p>Let’s go ahead with the easy part and rescale our variables, which might as well be done with any model. I will standardize the numeric variables.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_mixed_2-rescale_c23f52ab06f5724a9186efc75095a290">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>sc <span class="ot">=</span> <span class="cf">function</span>(x) <span class="fu">scale</span>(x)[, <span class="dv">1</span>]</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">c.receiver.depth_sc =</span> <span class="fu">sc</span>(c.receiver.depth),</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">c.tm.depth_sc =</span> <span class="fu">sc</span>(c.tm.depth),</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">c.temp_sc     =</span> <span class="fu">sc</span>(c.temp),</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">c.wind_sc     =</span> <span class="fu">sc</span>(c.wind),</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">c.distance_sc =</span> <span class="fu">sc</span>(c.distance),</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>model_mixed_2 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area + </span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span> c.temp_sc <span class="sc">+</span> c.wind_sc <span class="sc">+</span> tm <span class="sc">+</span> c.distance_sc <span class="sc">+</span> Area <span class="sc">+</span> replicate <span class="sc">+</span> </span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    SUR.ID <span class="sc">+</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span><span class="sc">|</span>Unit), </span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+NA Model failed to converge with max|grad| = 0.13583 (tol = 0.002, component 1)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_2, <span class="at">ci =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     0.87 0.93     1.00</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                 Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA            Intercept  2.48 0.69  3.59    0.00      1.13       3.84
+NA  c.receiver.depth_sc -1.18 0.33 -3.56    0.00     -1.83      -0.53
+NA            c.temp_sc  0.58 0.45  1.27    0.20     -0.31       1.47
+NA            c.wind_sc  0.42 0.49  0.86    0.39     -0.54       1.38
+NA              tmPT-04 -1.36 0.36 -3.78    0.00     -2.07      -0.66
+NA        c.distance_sc -1.19 0.23 -5.15    0.00     -1.64      -0.73
+NA           AreaFinger  1.23 0.61  2.01    0.04      0.03       2.43
+NA           replicate2 -0.39 0.37 -1.07    0.28     -1.11       0.33
+NA          SUR.ID10186 -0.11 0.54 -0.20    0.84     -1.17       0.95
+NA          SUR.ID10250 -0.19 0.54 -0.35    0.73     -1.25       0.87</code></pre>
+</div>
+</div>
+<p>So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem. What can we check for next? I looked to see if there was any further imbalance of categorical variables, didn’t spot much issue, but then discovered something else. A couple covariates - <code>c.wind</code> and <code>c.distance</code> - have only five unique values, and for the former, some of those values only occur a few times. In addition, <code>c.wind</code> was unique per day, so was essentially confounded with it. So we can feel fine with having previously removed Day.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/inspect-wind_4fe86ad146304c084c904c1b5facb6dd">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> </span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">ends_with</span>(<span class="st">'sc'</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_int</span>(n_distinct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA           SUR.ID               tm  ValidDetections  CountDetections 
+NA                3                2               35               35 
+NA  FalseDetections        replicate             Area              Day 
+NA                5                2                2                5 
+NA            R.det c.receiver.depth       c.tm.depth           c.temp 
+NA               21               30               31               37 
+NA           c.wind       c.distance             Unit 
+NA                5                5              220</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>c.wind, df<span class="sc">$</span>Day)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA               
+NA                03/06/13 2/22/13 2/26/13 2/27/13 3/14/13
+NA   -2.96855001         0      60       0       0       0
+NA   -2.939182972        0       0       0      60       0
+NA   1.27535159         60       0       0       0       0
+NA   4.71144999          0       0      12       0       0
+NA   5.88092439          0       0       0       0      28</code></pre>
+</div>
+</div>
+<p><br></p>
+<p>If we treat these as categorical what happens? I’ll do it just for the GLM again.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_glm_3_c1974b4dfe91816aa2b1969fb2d98ccd">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>model_glm_3 <span class="ot">=</span> <span class="fu">glm</span>(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area +</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span> c.temp_sc <span class="sc">+</span> <span class="fu">factor</span>(c.wind) <span class="sc">+</span> tm <span class="sc">+</span> <span class="fu">factor</span>(c.distance) <span class="sc">+</span> Area <span class="sc">+</span> replicate <span class="sc">+</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    SUR.ID ,</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Call:
+NA glm(formula = cbind(ValidDetections, FalseDetections) ~ c.receiver.depth_sc + 
+NA     c.temp_sc + factor(c.wind) + tm + factor(c.distance) + Area + 
+NA     replicate + SUR.ID, family = binomial(link = "logit"), data = df)
+NA 
+NA Deviance Residuals: 
+NA     Min       1Q   Median       3Q      Max  
+NA -3.4641   0.0000   0.0000   0.5706   2.1259  
+NA 
+NA Coefficients: (1 not defined because of singularities)
+NA                             Estimate Std. Error z value Pr(&gt;|z|)    
+NA (Intercept)                   7.8190     2.2057   3.545 0.000393 ***
+NA c.receiver.depth_sc           1.3883     2.1912   0.634 0.526349    
+NA c.temp_sc                    -2.3820     1.4315  -1.664 0.096116 .  
+NA factor(c.wind)-2.939182972   -5.0028     4.0691  -1.229 0.218901    
+NA factor(c.wind)1.27535159     -7.8429     2.9788  -2.633 0.008466 ** 
+NA factor(c.wind)4.71144999     17.9094  1180.6959   0.015 0.987898    
+NA factor(c.wind)5.88092439     -9.1668     6.3781  -1.437 0.150654    
+NA tmPT-04                      -1.2459     0.2823  -4.413 1.02e-05 ***
+NA factor(c.distance)-110       -0.3953     0.3908  -1.011 0.311786    
+NA factor(c.distance)-10        -0.9887     0.4110  -2.405 0.016162 *  
+NA factor(c.distance)90         -0.8547     0.5253  -1.627 0.103694    
+NA factor(c.distance)190        -3.2681     0.7664  -4.264 2.01e-05 ***
+NA AreaFinger                        NA         NA      NA       NA    
+NA replicate2                    0.7647     0.5249   1.457 0.145120    
+NA SUR.ID10186                  -0.1224     0.4384  -0.279 0.780057    
+NA SUR.ID10250                  -0.2700     0.4363  -0.619 0.536010    
+NA ---
+NA Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+NA 
+NA (Dispersion parameter for binomial family taken to be 1)
+NA 
+NA     Null deviance: 334.57  on 137  degrees of freedom
+NA Residual deviance: 146.17  on 123  degrees of freedom
+NA AIC: 256.59
+NA 
+NA Number of Fisher Scoring iterations: 17</code></pre>
+</div>
+</div>
+<p>Ah! So now we see that <code>Area</code> is also accounted for by other factors. In addition, wind is still problematic. Let’s take out <code>Area</code>, while still treating wind and distance as categorical for our diagnostic adventure.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_glm_4_b37b1e38c9a86249b010e5d3ae0ea2be">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>model_glm_4 <span class="ot">=</span>  <span class="fu">update</span>(model_glm_3, . <span class="sc">~</span> . <span class="sc">-</span> Area)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Call:
+NA glm(formula = cbind(ValidDetections, FalseDetections) ~ c.receiver.depth_sc + 
+NA     c.temp_sc + factor(c.wind) + tm + factor(c.distance) + replicate + 
+NA     SUR.ID, family = binomial(link = "logit"), data = df)
+NA 
+NA Deviance Residuals: 
+NA     Min       1Q   Median       3Q      Max  
+NA -3.4641   0.0000   0.0000   0.5706   2.1259  
+NA 
+NA Coefficients:
+NA                             Estimate Std. Error z value Pr(&gt;|z|)    
+NA (Intercept)                   7.8190     2.2057   3.545 0.000393 ***
+NA c.receiver.depth_sc           1.3883     2.1912   0.634 0.526349    
+NA c.temp_sc                    -2.3820     1.4315  -1.664 0.096116 .  
+NA factor(c.wind)-2.939182972   -5.0028     4.0691  -1.229 0.218901    
+NA factor(c.wind)1.27535159     -7.8429     2.9788  -2.633 0.008466 ** 
+NA factor(c.wind)4.71144999     17.9094  1180.6959   0.015 0.987898    
+NA factor(c.wind)5.88092439     -9.1668     6.3781  -1.437 0.150654    
+NA tmPT-04                      -1.2459     0.2823  -4.413 1.02e-05 ***
+NA factor(c.distance)-110       -0.3953     0.3908  -1.011 0.311786    
+NA factor(c.distance)-10        -0.9887     0.4110  -2.405 0.016162 *  
+NA factor(c.distance)90         -0.8547     0.5253  -1.627 0.103694    
+NA factor(c.distance)190        -3.2681     0.7664  -4.264 2.01e-05 ***
+NA replicate2                    0.7647     0.5249   1.457 0.145120    
+NA SUR.ID10186                  -0.1224     0.4384  -0.279 0.780057    
+NA SUR.ID10250                  -0.2700     0.4363  -0.619 0.536010    
+NA ---
+NA Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+NA 
+NA (Dispersion parameter for binomial family taken to be 1)
+NA 
+NA     Null deviance: 334.57  on 137  degrees of freedom
+NA Residual deviance: 146.17  on 123  degrees of freedom
+NA AIC: 256.59
+NA 
+NA Number of Fisher Scoring iterations: 17</code></pre>
+</div>
+</div>
+<p>The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down. Let’s try collapsing wind values and officially making it categorical.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_mixed_3_cc488f55a5392107cfdac6fd15fd47dd">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> df <span class="sc">%&gt;%</span> </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wind =</span> <span class="fu">fct_lump</span>(<span class="fu">factor</span>(c.wind), <span class="dv">3</span>, <span class="at">other_level =</span> <span class="st">'Higher'</span>))</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(df<span class="sc">$</span>wind)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA  -2.96855001 -2.939182972   1.27535159       Higher 
+NA           60           60           60           40</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>model_mixed_3 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area + </span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span> c.temp_sc <span class="sc">+</span> wind <span class="sc">+</span> tm <span class="sc">+</span> <span class="fu">factor</span>(c.distance) <span class="sc">+</span> <span class="co">#Area + </span></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    replicate <span class="sc">+</span> SUR.ID <span class="sc">+</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span><span class="sc">|</span>Unit), </span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df, </span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_3, <span class="at">ci =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     0.78 0.88     1.00
+NA                  Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA             Intercept  3.67 1.16  3.16    0.00      1.40       5.94
+NA   c.receiver.depth_sc -3.02 1.40 -2.16    0.03     -5.76      -0.28
+NA             c.temp_sc -1.72 1.70 -1.02    0.31     -5.05       1.60
+NA      wind-2.939182972  2.73 2.87  0.95    0.34     -2.89       8.35
+NA        wind1.27535159 -4.20 2.88 -1.46    0.14     -9.85       1.44
+NA            windHigher  4.41 2.81  1.57    0.12     -1.11       9.92
+NA               tmPT-04 -1.31 0.36 -3.65    0.00     -2.01      -0.60
+NA  factorc.distance-110 -0.62 0.48 -1.31    0.19     -1.56       0.31
+NA   factorc.distance-10 -1.44 0.50 -2.87    0.00     -2.42      -0.45
+NA    factorc.distance90 -1.23 0.62 -1.97    0.05     -2.44      -0.01
+NA   factorc.distance190 -4.21 0.96 -4.39    0.00     -6.09      -2.33
+NA            replicate2  0.20 0.58  0.34    0.73     -0.93       1.33
+NA           SUR.ID10186 -0.06 0.54 -0.12    0.90     -1.12       0.99
+NA           SUR.ID10250 -0.16 0.54 -0.30    0.76     -1.21       0.89</code></pre>
+</div>
+</div>
+<p>Checking VIF adjusted for the degrees of freedom associated with the covariate (which is greater for categorical variables), we still have some issues. Below I show VIF both with and without wind as an example.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/wind-vif_dd46f8d0116e98d5a708786942838266">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">covariate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">VIF_adj_orig</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">VIF_adj</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">c.receiver.depth_sc</td>
+<td style="text-align: right;">10.017</td>
+<td style="text-align: right;">1.277</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">c.temp_sc</td>
+<td style="text-align: right;">9.437</td>
+<td style="text-align: right;">1.065</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">wind</td>
+<td style="text-align: right;">3.914</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">tm</td>
+<td style="text-align: right;">1.059</td>
+<td style="text-align: right;">1.047</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">factor(c.distance)</td>
+<td style="text-align: right;">1.080</td>
+<td style="text-align: right;">1.062</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">replicate</td>
+<td style="text-align: right;">1.769</td>
+<td style="text-align: right;">1.101</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">SUR.ID</td>
+<td style="text-align: right;">1.075</td>
+<td style="text-align: right;">1.029</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Let’s see what happens if we remove wind from the model.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/model_mixed_4_b94b51121ae027dbf79b4e2ae461e23c">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>model_mixed_4 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area + </span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># c.receiver.depth_sc:Area + c.temp_sc:Area + c.wind_sc:Area +</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span>  c.temp_sc  <span class="sc">+</span> tm <span class="sc">+</span> <span class="fu">factor</span>(c.distance) <span class="sc">+</span> <span class="co">#Area + </span></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    replicate <span class="sc">+</span> SUR.ID <span class="sc">+</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    (<span class="dv">1</span><span class="sc">|</span>Unit), </span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> df,</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">'logit'</span>)</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+NA Model failed to converge with max|grad| = 0.0547909 (tol = 0.002, component 1)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_4, <span class="at">ci =</span> <span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     1.45 1.20     1.00
+NA                  Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA             Intercept  5.62 0.74  7.63    0.00      4.18       7.06
+NA   c.receiver.depth_sc -1.08 0.19 -5.57    0.00     -1.46      -0.70
+NA             c.temp_sc  0.50 0.21  2.34    0.02      0.08       0.92
+NA               tmPT-04 -1.28 0.40 -3.19    0.00     -2.08      -0.49
+NA  factorc.distance-110 -0.99 0.53 -1.86    0.06     -2.04       0.05
+NA   factorc.distance-10 -1.87 0.55 -3.41    0.00     -2.95      -0.80
+NA    factorc.distance90 -1.87 0.66 -2.83    0.00     -3.17      -0.58
+NA   factorc.distance190 -5.60 1.04 -5.38    0.00     -7.65      -3.56
+NA            replicate2 -0.37 0.40 -0.94    0.35     -1.15       0.40
+NA           SUR.ID10186 -0.90 0.56 -1.60    0.11     -1.99       0.20
+NA           SUR.ID10250 -0.98 0.56 -1.74    0.08     -2.07       0.12</code></pre>
+</div>
+</div>
+<p>We’re doing better, as our <code>max|grad|</code> value is closer to the tolerance value, but we’re still not where we want to be. What else can we do?</p>
+</section>
+<section id="remove-zero-random-effects" class="level2">
+<h2 class="anchored" data-anchor-id="remove-zero-random-effects">Remove zero random effects</h2>
+<p>If any variance components estimates are zero we could remove them. However, at this point we already have. <code>Day</code> was zero because it was already accounted for by other covariates. <code>SUR.ID</code> moved to a fixed effect, where it still appears to be a small effect, but at least won’t cause computational problems. The remaining <code>Unit</code> effect does appear to capture some overdispersion, so we can leave it for now.</p>
+</section>
+<section id="technical-options" class="level2">
+<h2 class="anchored" data-anchor-id="technical-options">Technical options</h2>
+<p>At this point, we have explored some of the more problematic aspects of the data. Some might feel that they are missing out on some of their theoretical priorities by removing some covariates, but if they are confounded with other covariates, their story can’t be easily disentangled anyway. As noted, we could still play around with creation of different categorical effects through further collapsing or combining, but a lot of that would be arbitrary, so must be done with caution.</p>
+<p>In general, the problems with the model appear to actually be entirely with the data, but we can move on for demonstration. At some point in your own modeling adventure, you may exhaust what you can do data-wise, and still have convergence issues. This leaves exploration of the more technical side of things to see what tweaks can be made to help further. In order to best check these more technical aspects, it helps to know something about the underlying optimization algorithms, or at least optimization in general. And in general, I suggest refraining from this unless the previous steps have failed. It is very common that once the data has been sorted, convergence gets solved as well, so the data must be ruled out. In any case, let’s see what else we can do!</p>
+<section id="check-singularity" class="level3">
+<h3 class="anchored" data-anchor-id="check-singularity">Check singularity</h3>
+<p>This is a mixed model-specific check<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, and in general, checking singularity<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> goes along with removing zero random effects. These days, you’ll usually get a singularity warning when it is likely the case. In the past, Bolker suggested checking this problem as follows, but for this example concluded the result wasn’t close enough to zero to be a real concern. The <code>theta</code> below are just our random effect standard deviations, and I would say that the ones besides <code>Unit</code> probably weren’t meaningfully different from zero.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/check-singularity_273d6dd9f06c1c339cc37d8c6097ed1f">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>thetas <span class="ot">=</span> <span class="fu">getME</span>(model_mixed_0, <span class="st">"theta"</span>)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>thetas</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA   Unit.(Intercept)    Day.(Intercept) SUR.ID.(Intercept) 
+NA        0.679983360        0.010866937        0.007239297</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>ll <span class="ot">=</span> <span class="fu">getME</span>(model_mixed_0, <span class="st">"lower"</span>) <span class="co"># lower bounds on model parameters (random effects parameters only)</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="fu">min</span>(thetas[ll <span class="sc">==</span> <span class="dv">0</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.007239297</code></pre>
+</div>
+</div>
+<p>Nowadays <span class="pack" style="">lme4</span> provides the function <span class="func" style="">isSingular</span> which uses the steps above to check the minimum value against some specified tolerance.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/check-singularity2_d9c198ee4e7378633f7725b0d9021061">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">isSingular</span>(model_mixed_0, <span class="at">tol =</span> <span class="fl">1e-5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] FALSE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rePCA(model_mixed_0)  # via PCA of the random-effects variance-covariance estimates</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="double-checking-gradient-calculations" class="level3">
+<h3 class="anchored" data-anchor-id="double-checking-gradient-calculations">Double-checking gradient calculations</h3>
+<p>For the mixed model setting, Bolker notes the following:</p>
+<blockquote class="blockquote">
+<p>One general problem is that large scaled gradients are often associated with small absolute gradients: we might decide that we’re more interested in testing the (parallel) minimum of these two quantities.</p>
+</blockquote>
+<p>We can do this as follows for the initial mixed model.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/check-gradients_fffa66da81cc82ff6071c33242441734">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>derivs_init  <span class="ot">=</span> model_mixed_0<span class="sc">@</span>optinfo<span class="sc">$</span>derivs</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>sc_grad_init <span class="ot">=</span> <span class="fu">with</span>(derivs_init, <span class="fu">solve</span>(Hessian, gradient))</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(sc_grad_init))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 1.435384</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">pmin</span>(<span class="fu">abs</span>(sc_grad_init), <span class="fu">abs</span>(derivs_init<span class="sc">$</span>gradient)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.2522444</code></pre>
+</div>
+</div>
+<p>We see that the unscaled gradient results in a lower maximum value, but is still large relative to the tolerance. That value is what is reported in the warning message.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/init-warning-message_ea9b63513c472ffe8bd39450c632211a">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>model_mixed_0<span class="sc">@</span>optinfo<span class="sc">$</span>conv<span class="sc">$</span>lme4<span class="sc">$</span>messages[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] "Model failed to converge with max|grad| = 0.252244 (tol = 0.002, component 1)"</code></pre>
+</div>
+</div>
+<p>It may be instructive to compare the result to the model where we scaled the inputs. In this case the scaled gradient results in the lower max value.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/check_gradients2_6c0050511e172f0613aea22fbd7d8ed7">
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>derivs_model_mixed_2 <span class="ot">=</span> model_mixed_2<span class="sc">@</span>optinfo<span class="sc">$</span>derivs</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>sc_grad_model_mixed_2 <span class="ot">=</span> <span class="fu">with</span>(derivs_model_mixed_2, <span class="fu">solve</span>(Hessian, gradient))</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">abs</span>(sc_grad_model_mixed_2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.01645049</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">pmin</span>(<span class="fu">abs</span>(sc_grad_model_mixed_2), <span class="fu">abs</span>(derivs_model_mixed_2<span class="sc">$</span>gradient)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.01645049</code></pre>
+</div>
+</div>
+<p>Bolker also suggests checking if the result varies from using a different calculation, but it’s not clear what we’d do if this was the case. In any event, the results would be similar.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/check-gradients-num-deriv_134d82ccb77e91c3f8c2458ab9c30117">
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>devfun_init  <span class="ot">=</span> <span class="fu">update</span>(model_mixed_0, <span class="at">devFunOnly =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>pars_init    <span class="ot">=</span> <span class="fu">unlist</span>(<span class="fu">getME</span>(model_mixed_0, <span class="fu">c</span>(<span class="st">"theta"</span>, <span class="st">"fixef"</span>)))</span>
+<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>grad_init    <span class="ot">=</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(devfun_init, pars_init)</span>
+<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a>hess_init    <span class="ot">=</span> numDeriv<span class="sc">::</span><span class="fu">hessian</span>(devfun_init, pars_init)</span>
+<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>sc_grad_init <span class="ot">=</span> <span class="fu">solve</span>(hess_init, grad_init)</span>
+<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">pmin</span>(<span class="fu">abs</span>(sc_grad_init), <span class="fu">abs</span>(grad_init)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.2522437</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(<span class="fu">pmin</span>(<span class="fu">abs</span>(sc_grad_init), <span class="fu">abs</span>(derivs_init<span class="sc">$</span>gradient)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.2522444</code></pre>
+</div>
+</div>
+</section>
+<section id="restart-the-fit" class="level3">
+<h3 class="anchored" data-anchor-id="restart-the-fit">Restart the fit</h3>
+<p>As another step along our technical travails, we can just let the optimizer keep going until it does converge. Many R modeling packages allow for you to access the optimizer and change various settings. Most optimizers have a <code>maxit</code> type of argument to let you set the number of iterations, and we can use <span class="func" style="">update</span> to continue where we left off. Unfortunately there is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at. So instead, we can just call <span class="func" style="">update</span> iteratively until there is no convergence warning. I check this by seeing if there is any output to <code>@optinfo$conv$lme4</code>, as it will only be there if it doesn’t converge<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/restart_3a73461f54ec953fa8ef78bd7d0ca7c6">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>model_mixed_5 <span class="ot">=</span> model_mixed_4</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (<span class="fu">length</span>(model_mixed_5<span class="sc">@</span>optinfo<span class="sc">$</span>conv<span class="sc">$</span>lme4) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  pars <span class="ot">=</span> <span class="fu">getME</span>(model_mixed_5,<span class="fu">c</span>(<span class="st">"theta"</span>,<span class="st">"fixef"</span>))</span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>  model_mixed_5 <span class="ot">&lt;-</span></span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">update</span>(model_mixed_5,</span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">start =</span> pars,</span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">control =</span> <span class="fu">glmerControl</span>(<span class="at">optCtrl =</span> <span class="fu">list</span>(<span class="at">maxfun =</span> <span class="fl">2e5</span>)))</span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb68-10"><a href="#cb68-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-11"><a href="#cb68-11" aria-hidden="true" tabindex="-1"></a><span class="fu">max</span>(</span>
+<span id="cb68-12"><a href="#cb68-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">abs</span>(</span>
+<span id="cb68-13"><a href="#cb68-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">with</span>(</span>
+<span id="cb68-14"><a href="#cb68-14" aria-hidden="true" tabindex="-1"></a>      model_mixed_5<span class="sc">@</span>optinfo<span class="sc">$</span>derivs, <span class="fu">solve</span>(Hessian, gradient)</span>
+<span id="cb68-15"><a href="#cb68-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb68-16"><a href="#cb68-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb68-17"><a href="#cb68-17" aria-hidden="true" tabindex="-1"></a>)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA [1] 0.0007657699</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># we win!</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>So at this point we have converged with no warnings. Hooray for us! However, the following shows us that we were pretty close anyway. The estimates from the last model with warnings and the converged model are nearly identical.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/compare-converged_d195f249a9ab8102be9f66b5bb090ef6">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_4, <span class="at">ci =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     1.45 1.20     1.00</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                  Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA             Intercept  5.62 0.74  7.63    0.00      4.18       7.06
+NA   c.receiver.depth_sc -1.08 0.19 -5.57    0.00     -1.46      -0.70
+NA             c.temp_sc  0.50 0.21  2.34    0.02      0.08       0.92
+NA               tmPT-04 -1.28 0.40 -3.19    0.00     -2.08      -0.49
+NA  factorc.distance-110 -0.99 0.53 -1.86    0.06     -2.04       0.05
+NA   factorc.distance-10 -1.87 0.55 -3.41    0.00     -2.95      -0.80
+NA    factorc.distance90 -1.87 0.66 -2.83    0.00     -3.17      -0.58
+NA   factorc.distance190 -5.60 1.04 -5.38    0.00     -7.65      -3.56
+NA            replicate2 -0.37 0.40 -0.94    0.35     -1.15       0.40
+NA           SUR.ID10186 -0.90 0.56 -1.60    0.11     -1.99       0.20
+NA           SUR.ID10250 -0.98 0.56 -1.74    0.08     -2.07       0.12</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_5, <span class="at">ci =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     1.46 1.21     1.00</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                  Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA             Intercept  5.63 0.74  7.62    0.00      4.18       7.08
+NA   c.receiver.depth_sc -1.07 0.19 -5.54    0.00     -1.45      -0.69
+NA             c.temp_sc  0.50 0.22  2.34    0.02      0.08       0.92
+NA               tmPT-04 -1.28 0.40 -3.18    0.00     -2.08      -0.49
+NA  factorc.distance-110 -0.99 0.53 -1.85    0.06     -2.03       0.06
+NA   factorc.distance-10 -1.87 0.55 -3.39    0.00     -2.95      -0.79
+NA    factorc.distance90 -1.87 0.66 -2.82    0.00     -3.16      -0.57
+NA   factorc.distance190 -5.59 1.04 -5.37    0.00     -7.63      -3.55
+NA            replicate2 -0.38 0.40 -0.96    0.34     -1.15       0.40
+NA           SUR.ID10186 -0.91 0.56 -1.61    0.11     -2.01       0.20
+NA           SUR.ID10250 -0.99 0.56 -1.76    0.08     -2.09       0.11</code></pre>
+</div>
+</div>
+<p>As an additional point, one may provide starting estimates from the outset. For example you could run a a simpler model, e.g.&nbsp;standard GLM, and feed the estimates there for the fixed effects coefficients of the mixed model, or even run a model to obtain starting values for the random effects (see this <a href="https://gist.githubusercontent.com/bbolker/ea8ed558d9fe0a4a1a6909039242eb87/raw/a493a6c5dc8231577b22de9fc29808ac02da29c7/lme4_GH858.R">example</a>).</p>
+</section>
+<section id="change-the-optimizer" class="level3">
+<h3 class="anchored" data-anchor-id="change-the-optimizer">Change the optimizer</h3>
+<p>As a last effort among the more technical knobs to turn, we can start fiddling with the optimizer options. The <span class="pack" style="">lme4</span> package has a nice function <span class="func" style="">allFit</span> that will search across several different optimizers (some may require additional packages to be installed). However, in any particular modeling setting you could potentially do this, though often you may not be able to without quite a bit of effort relative to what <span class="pack" style="">lme4</span> allows. I’ll do this with our last non-converged model.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/allfit_a6b51261250670941d7cac5be9d2caf9">
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(optimx)  <span class="co"># required for some optimizers</span></span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>glmm_all <span class="ot">=</span> <span class="fu">allFit</span>(model_mixed_4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA bobyqa : [OK]
+NA Nelder_Mead : [OK]
+NA nlminbwrap : [OK]
+NA optimx.L-BFGS-B : [OK]
+NA nloptwrap.NLOPT_LN_NELDERMEAD : [OK]
+NA nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>glmm_all_summary <span class="ot">=</span> <span class="fu">summary</span>(glmm_all)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The ‘[OK]’ just means there wasn’t an error, however we can see that several have convergence problems, but even a couple of those are almost to the tolerance level. In the end though, the estimates and log likelihoods are not meaningfully different across the optimizers.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/allfit-result_7a0198fd3156d36c62647a00c8a9bc52">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">opt</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">OK</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Message</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Nelder_Mead</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: left;">Model failed to converge with max|grad| = 0.00620032 (tol = 0.002, component 1)</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<div style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:768px; ">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">optimizer</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">(Intercept)</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">c.receiver.depth_sc</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">c.temp_sc</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">tmPT-04</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">factor(c.distance)-110</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">factor(c.distance)-10</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">factor(c.distance)90</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">factor(c.distance)190</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">replicate2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SUR.ID10186</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SUR.ID10250</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">ll</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">bobyqa</td>
+<td style="text-align: right;">5.633</td>
+<td style="text-align: right;">-1.072</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.987</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.591</td>
+<td style="text-align: right;">-0.379</td>
+<td style="text-align: right;">-0.905</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nelder_Mead</td>
+<td style="text-align: right;">5.632</td>
+<td style="text-align: right;">-1.073</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.986</td>
+<td style="text-align: right;">-1.866</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.590</td>
+<td style="text-align: right;">-0.378</td>
+<td style="text-align: right;">-0.906</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">nlminbwrap</td>
+<td style="text-align: right;">5.633</td>
+<td style="text-align: right;">-1.072</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.987</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.591</td>
+<td style="text-align: right;">-0.379</td>
+<td style="text-align: right;">-0.905</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">optimx.L-BFGS-B</td>
+<td style="text-align: right;">5.632</td>
+<td style="text-align: right;">-1.072</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.987</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.591</td>
+<td style="text-align: right;">-0.379</td>
+<td style="text-align: right;">-0.905</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">nloptwrap.NLOPT_LN_NELDERMEAD</td>
+<td style="text-align: right;">5.633</td>
+<td style="text-align: right;">-1.072</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.987</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.591</td>
+<td style="text-align: right;">-0.379</td>
+<td style="text-align: right;">-0.905</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">nloptwrap.NLOPT_LN_BOBYQA</td>
+<td style="text-align: right;">5.633</td>
+<td style="text-align: right;">-1.072</td>
+<td style="text-align: right;">0.503</td>
+<td style="text-align: right;">-1.284</td>
+<td style="text-align: right;">-0.987</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-1.867</td>
+<td style="text-align: right;">-5.591</td>
+<td style="text-align: right;">-0.379</td>
+<td style="text-align: right;">-0.905</td>
+<td style="text-align: right;">-0.989</td>
+<td style="text-align: right;">-121.842</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+</div>
+</div>
+<p>The conclusion would be that our estimates are probably okay regardless of chosen optimizer, but the data likely has issues that still need to be overcome.</p>
+<p>Along with different optimizers comes trying different packages. Some packages, in this case like <span class="pack" style="">glmmTMB</span> or <span class="pack" style="">brms</span>, would be viable options. In my playing around with those, <span class="pack" style="">glmmTMB</span> converged, but obviously doesn’t magically overcome the collinearity problems. Likewise, <span class="pack" style="">brms</span> appeared to converge, but had other estimation issues specific to it. Unlike the others, <span class="pack" style="">brms</span> also noted that the zero count observations could not be used.</p>
+</section>
+</section>
+<section id="final-step" class="level2">
+<h2 class="anchored" data-anchor-id="final-step">Final Step</h2>
+<p>The final step would be to make some hard decisions about the model. Which predictors are most meaningful? Is this the best target variable available? Is this the right way to think about the distribution of the target? Is the research question clear enough? Is it strongly related to the available data, enough to be answerable?<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>However, these are more theoretical problems, not so much statistical ones, and there may be no right answer in the end. That is perfectly fine, and just what you’d report to others. The following model has no issues, but may leave more questions than answers.</p>
+<div class="cell" data-layout-align="center" data-hash="convergence_cache/html/final-model_6f268f2cd328042c51c10d2b06679c78">
+<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>model_mixed_final <span class="ot">=</span> <span class="fu">glmer</span>(</span>
+<span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>  ValidDetections <span class="sc">~</span> </span>
+<span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span> c.temp_sc <span class="sc">+</span> tm <span class="sc">+</span> </span>
+<span id="cb84-4"><a href="#cb84-4" aria-hidden="true" tabindex="-1"></a>    replicate <span class="sc">+</span> SUR.ID <span class="sc">+</span> (<span class="dv">1</span><span class="sc">|</span>Unit),</span>
+<span id="cb84-5"><a href="#cb84-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> df,</span>
+<span id="cb84-6"><a href="#cb84-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> poisson</span>
+<span id="cb84-7"><a href="#cb84-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb84-8"><a href="#cb84-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb84-9"><a href="#cb84-9" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_final, <span class="at">ci =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Group    Effect Variance   SD Var_prop
+NA   Unit Intercept     2.96 1.72     1.00</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>NA 
+NA Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                 Term Value   SE     Z P_value Lower_2.5 Upper_97.5
+NA            Intercept -0.01 0.33 -0.02    0.98     -0.66       0.64
+NA  c.receiver.depth_sc -0.86 0.14 -6.16    0.00     -1.13      -0.58
+NA            c.temp_sc  0.60 0.14  4.27    0.00      0.33       0.88
+NA              tmPT-04 -0.62 0.27 -2.27    0.02     -1.16      -0.08
+NA           replicate2 -0.11 0.27 -0.41    0.68     -0.65       0.42
+NA          SUR.ID10186  0.92 0.35  2.67    0.01      0.25       1.60
+NA          SUR.ID10250  1.10 0.35  3.18    0.00      0.42       1.78</code></pre>
+</div>
+</div>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We can summarize our approach to convergence problems as follows:</p>
+<ol start="0" type="1">
+<li><p>Step back and look at your data. Are there issues? Are some variables essentially collinear with others or otherwise can be practically reduced?</p></li>
+<li><p>Start with the simplest but still plausible model. Do you spot any additional issues? If there are, these probably need to be remedied before moving to more complex models.</p></li>
+<li><p>Scale your continuous variables. You should be doing this anyway. If some categorical levels have very relatively few observations, consider collapsing.</p></li>
+<li><p>For mixed models, if some of your random effects only have a few levels, treat them as fixed or see if they are even needed in the model.</p></li>
+<li><p>For mixed models, are any random effect variance estimates zero or nearly zero? Remove.</p></li>
+<li><p>After some initial technical checks, if possible, restart the model using previous starting values, and run until convergence. Many packages provide some functionality in this regard, but what exactly is provided may be limited.</p></li>
+<li><p>Change the optimizer (if a small mixed model using <span class="pack" style="">lme4</span>, compare several with <span class="func" style="">allFit</span> function).</p>
+<ul>
+<li>If log-likelihood and parameter estimates are pretty much the same across optimizers (and they are rarely notably different in my experience), pick one and go with it.</li>
+</ul></li>
+<li><p>Use a different package. The different estimation approach may simply work better for the current problem or provide other opportunities for tweaks. For example, with mixed models one could use <span class="pack" style="">glmmTMB</span> or <span class="pack" style="">brms</span> (Bayesian) in lieu of <span class="pack" style="">lme4</span>.</p></li>
+</ol>
+<p>In my experience with many clients with many types of data coming across many fields of study, the usual problem with convergence and <span class="pack" style="">lme4</span> (and others) is typically a fixable data problem, or a problematically specified model. In this case, the <span class="pack" style="">lme4</span> developers have worked hard over a number of years to build this awesome tool, and it works very well, so if it is having problems, you should be inspecting your data closely and thinking hard about your model. If it is an <span class="pack" style="">lme4</span> problem, switching optimizers will likely get you to convergence, but going through technical solutions should be a last resort.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Bates et al.<span class="citation" data-cites="bates2015parsimonious">(<a href="#ref-bates2015parsimonious" role="doc-biblioref">Bates et al. 2015</a>)</span></p>
+<p><br></p>
+<p>Stackoverflow question<span class="citation" data-cites="stackoverflow2014">(<a href="#ref-stackoverflow2014" role="doc-biblioref">StackOverflow 2014</a>)</span></p>
+<p><br></p>
+<p>Bolker’s answer given a little more cleanly<span class="citation" data-cites="bolker2014">(<a href="#ref-bolker2014" role="doc-biblioref">Bolker 2014?</a>)</span></p>
+<p><br></p>
+<p>Help file for convergence<span class="citation" data-cites="lme4convergence2020">(<a href="#ref-lme4convergence2020" role="doc-biblioref">Bolker 2020</a>)</span></p>
+
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-bates2015parsimonious" class="csl-entry" role="listitem">
+Bates, Douglas, Reinhold Kliegl, Shravan Vasishth, and Harald Baayen. 2015. <span>“Parsimonious Mixed Models.”</span> <em>arXiv Preprint arXiv:1506.04967</em>. <a href="https://arxiv.org/abs/1506.04967">https://arxiv.org/abs/1506.04967</a>.
+</div>
+<div id="ref-bolker2014" class="csl-entry" role="listitem">
+Bolker, Ben. 2014? <span>“Lme4 Convergence Warnings: Troubleshooting.”</span> <a href="https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html">https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html</a>.
+</div>
+<div id="ref-lme4convergence2020" class="csl-entry" role="listitem">
+———. 2020. <span>“Lme4 Help File for Convergence.”</span> <a href="https://rdrr.io/cran/lme4/man/convergence.html">https://rdrr.io/cran/lme4/man/convergence.html</a>.
+</div>
+<div id="ref-stackoverflow2014" class="csl-entry" role="listitem">
+StackOverflow. 2014. <span>“Warning Messages When Trying to Run Glmer in r.”</span> <a href="https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r">https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Ben Bolker is one of the primary developers of the <span class="pack" style="">lme4</span> package.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>For a basic linear model situation, <span class="math inline">\(1-1/VIF = R^2\)</span>, where <span class="math inline">\(R^2\)</span> is a regression model where a covariate is predicted by all the other covariates. We wouldn’t typically use a standard linear regression for binary outcomes or other scenarios, but this provides a quick and rough metric. The car package actually also provides a ‘generalized’ VIF though. In terms of interpretation, it tells us how much the standard error increases relative to the covariate if it was independent of the others. We would be concerned with redundancy of anything of VIF &gt; 10 / <span class="math inline">\(R^2\)</span> &gt; .90, but maybe even less. As a final note, collinearity is basically a sample size issue, as larger data would reduce the standard errors, and we’d likely get a fuller sense of true variability in the covariates.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>This outline mostly follows the documentation in the help file for <code>?convergence</code> for lme4.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>Think of doing a principal components analysis on the variance-covariance matrix for the random effects. If one of those components is essentially accounting for zero variance, it may suggest at least one of the estimated random effects is not needed.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>Unfortunately there doesn’t appear to be much documentation on what should be listed in <code>optinfo</code>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>To paraphrase Barthelme slightly: “What is wonderful? Are these results wonderful? Are they significant? Are they what I need?”<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

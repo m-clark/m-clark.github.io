@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2019-03-12">
+<meta name="description" content="Various package options for conducting mediation analysis">
+
+<title>Mediation Models – website-2025</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-72c3889b8f64d4e1ac0c3a8dd4c5b1c9.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/htmlwidgets-1.6.1/htmlwidgets.js"></script>
+<script src="../../site_libs/viz-1.8.2/viz.js"></script>
+<link href="../../site_libs/DiagrammeR-styles-0.2/styles.css" rel="stylesheet">
+<script src="../../site_libs/grViz-binding-1.0.9/grViz.js"></script>
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">website-2025</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Mediation Models</h1>
+                  <div>
+        <div class="description">
+          <p>Various package options for conducting mediation analysis</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">SEM</div>
+                <div class="quarto-category">mediation</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://m-clark.github.io">Michael Clark</a> </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 12, 2019</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#model" id="toc-model" class="nav-link" data-scroll-target="#model">Model</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a>
+  <ul class="collapse">
+  <li><a href="#mediation" id="toc-mediation" class="nav-link" data-scroll-target="#mediation">mediation</a></li>
+  <li><a href="#lavaan" id="toc-lavaan" class="nav-link" data-scroll-target="#lavaan">lavaan</a></li>
+  <li><a href="#piecewisesem" id="toc-piecewisesem" class="nav-link" data-scroll-target="#piecewisesem">piecewiseSEM</a></li>
+  <li><a href="#psych" id="toc-psych" class="nav-link" data-scroll-target="#psych">psych</a></li>
+  <li><a href="#brms" id="toc-brms" class="nav-link" data-scroll-target="#brms">brms</a></li>
+  </ul></li>
+  <li><a href="#more-complexity" id="toc-more-complexity" class="nav-link" data-scroll-target="#more-complexity">More complexity</a>
+  <ul class="collapse">
+  <li><a href="#interactions" id="toc-interactions" class="nav-link" data-scroll-target="#interactions">Interactions</a></li>
+  <li><a href="#generalized-linear-models" id="toc-generalized-linear-models" class="nav-link" data-scroll-target="#generalized-linear-models">Generalized Linear Models</a></li>
+  <li><a href="#missing-data" id="toc-missing-data" class="nav-link" data-scroll-target="#missing-data">Missing data</a></li>
+  </ul></li>
+  <li><a href="#alternatives" id="toc-alternatives" class="nav-link" data-scroll-target="#alternatives">Alternatives</a>
+  <ul class="collapse">
+  <li><a href="#bnlearn" id="toc-bnlearn" class="nav-link" data-scroll-target="#bnlearn">bnlearn</a></li>
+  <li><a href="#python" id="toc-python" class="nav-link" data-scroll-target="#python">Python</a></li>
+  <li><a href="#stata" id="toc-stata" class="nav-link" data-scroll-target="#stata">Stata</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<p>Updated July 10, 2023. Code can be downloaded <a href="https://raw.githubusercontent.com/m-clark/m-clark.github.io/master/_posts/2019-03-12-mediation-models/mediation-models-code.R">here</a>.</p>
+<p><br></p>
+<section id="introduction" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In some situations we may consider the <span class="emph">indirect effect</span> of some variable on an outcome or result. As an example, poor living conditions at home in childhood may decrease learning outcomes in school, which subsequently have a negative effect on later quality of life, for example, lifetime income earnings. In another case we might consider a single variable collected at multiple time points, such that there exists an effect of the variable at time 1 on time 2, and time 2 on time 3. The basic idea is something like:</p>
+<p><span class="math display">\[\mathcal{A} \rightarrow \mathcal{B} \rightarrow \mathcal{C}\]</span></p>
+<p>In other words, <span class="math inline">\(\mathcal{A}\)</span> leads to <span class="math inline">\(\mathcal{B}\)</span>, and then <span class="math inline">\(\mathcal{B}\)</span> leads to <span class="math inline">\(\mathcal{C}\)</span>. With <span class="emph">mediation</span> models, we posit an intervening variable between the normal covariate <span class="math inline">\(\rightarrow\)</span> outcome path that we might have in the standard regression setting, and these models allow us to investigate such behaviors. In the above, the intervening variable, or <em>mediator</em>, is <span class="math inline">\(\mathcal{B}\)</span>. It is often the case that we still might have a <span class="emph">direct effect</span> of <span class="math inline">\(\mathcal{A}\)</span> on <span class="math inline">\(\mathcal{C}\)</span>, but as with the model in general, this would be theoretically motivated.</p>
+<p>Mediation analysis is very popular in social science disciplines, though by no means restricted to those, and usually conducted under the guise of structural equation modeling (SEM), which itself is a specific orientation of graphical models more generally<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. The graphical model of a mediation model might look like the following.</p>
+<aside>
+Confounding and mediation are not distinguishable statistically in the standard linear model setting, only conceptually. One way to think about it is that confounding doesn’t require a causal relationship, and/or could be a common cause between the variable of interest and the outcome. See <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2819361/">MacKinnon et al.</a>
+</aside>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="grViz html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-59be4feed5ef30264699" style="width:100%;height:162px;"></div>
+<script type="application/json" data-for="htmlwidget-59be4feed5ef30264699">{"x":{"diagram":"digraph mediation {\ngraph [rankdir = BT  bgcolor=transparent]\n\nnode [shape = rectangle style=filled fillcolor=\"#d9edf7\" color=gray80 width=.5 height=.25]\n\nnode [fontcolor=\"#404040\" fontname=Roboto fixedsize=true fontsize=\"5%\"]\n subgraph {\n    rank = same;\n    X;  Outcome;\n }\n \n Mediator;\n\nedge [color=gray50 fontsize=6 style=filled arrowsize=.5]\n\nX -> Mediator[label=\"a\"]; Mediator -> Outcome[label=\"b\"]; X -> Outcome [label = \" c′ \" minlen=5];\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>In this case, <code>a</code> and <code>b</code> reflect the indirect path of the effect of <span class="math inline">\(\mathrm{X}\)</span> on the outcome through the mediator, while <code>c'</code> is the direct effect of <span class="math inline">\(\mathrm{X}\)</span> on the outcome after the indirect path has been removed (<code>c</code> would be the effect before positing the indirect effect, and <code>c</code> - <code>c'</code> equals the indirect effect). The <span class="emph" style="">total effect</span> of <span class="math inline">\(\mathrm{X}\)</span> is the combined indirect and direct effects.</p>
+<p>I should note a few things based on what I see in consulting across dozens of disciplines. To begin, it seems very few people who think they need a mediation model actually do. For example, if you cannot think of your model in temporal or physical terms, such that <span class="math inline">\(\mathrm{X}\)</span> <em>necessarily</em> leads to the mediator, which then <em>necessarily</em> leads to the outcome, you likely do not need a mediation model. If you could see the arrows going either direction, again, you probably don’t need such a model. Also, if when describing your model, everyone thinks you’re talking about an interaction (a.k.a. <span class="emph">moderation</span>), you might not need this. And finally, as one might suspect, if there is no <strong>strong</strong> correlation between key variables (<span class="math inline">\(\mathrm{X}\)</span>) and mediator (path <code>a</code>), and if there is no <strong>strong</strong> correlation between mediator and the outcome(s) (path <code>b</code>), you probably don’t need this. While nothing will stop you from doing mediation analysis, without such prerequisites, you will almost certainly have a weak and probably more confusing model than you otherwise would have.</p>
+<p>In short, mediation works best when there are strongly implied causal connections among the variables. Even then, such a model should be compared to simpler model of no mediation<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. In any case, there are a few very easy ways to investigate such models in R, and that is the goal here, just to demonstrate how you can get started.</p>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>For demonstration of mediation models with the different packages, we will use the <span class="objclass">jobs</span> data set that comes with the <span class="pack">mediation</span> package. Here is the description.</p>
+<p><span style="font-size: 75%;">Job Search Intervention Study (JOBS II). JOBS II is a randomized field experiment that investigates the efficacy of a job training intervention on unemployed workers. The program is designed to not only increase reemployment among the unemployed but also enhance the mental health of the job seekers. In the JOBS II field experiment, 1,801 unemployed workers received a pre-screening questionnaire and were then randomly assigned to treatment and control groups. Those in the treatment group participated in job-skills workshops. In the workshops, respondents learned job-search skills and coping strategies for dealing with setbacks in the job-search process. Those in the control condition received a booklet describing job-search tips. In follow-up interviews, the two key outcome variables were a continuous measure of depressive symptoms based on the Hopkins Symptom Checklist, and a binary variable, representing whether the respondent had become employed.</span></p>
+<p>Here is a description of the variables in this demonstration. There are others available you might also want to play around with.</p>
+<ul>
+<li><span class="objclass">econ_hard</span>: Level of economic hardship pre-treatment with values from 1 to 5.</li>
+<li><span class="objclass">sex</span>: Indicator variable for sex. 1 = female</li>
+<li><span class="objclass">age</span>: Age in years.</li>
+<li><span class="objclass">educ</span>: Factor with five categories for educational attainment.</li>
+<li><span class="objclass">job_seek</span>: A continuous scale measuring the level of job-search self-efficacy with values from 1 to 5. The mediator variable.</li>
+<li><span class="objclass">depress2</span>: Measure of depressive symptoms post-treatment. The outcome variable.</li>
+<li><span class="objclass">treat</span>: Indicator variable for whether participant was randomly selected for the JOBS II training program. 1 = assignment to participation.</li>
+</ul>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/load-data_ed59a060fb410fdb6d8f46a2a76dc8ec">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(jobs, <span class="at">package =</span> <span class="st">'mediation'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="model" class="level2">
+<h2 class="anchored" data-anchor-id="model">Model</h2>
+<p>Given this data the models for the mediator and outcome are as follows:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathrm{\color{#00b294}{job\_seek}} &amp;\sim \mathrm{\color{#b2001d}{treatment} + econ\_hard + sex + age} \\
+\mathrm{depression} &amp;\sim \mathrm{\color{#b2001d}{treatment} + econ\_hard + sex + age + \color{#00b294}{job\_seek}}
+\end{aligned}
+\]</span></p>
+<p>Thus we expect the job skills training to have a negative effect on depression (i.e.&nbsp;an increase in well-being), but at least part of this would be due to a positive effect on job search.</p>
+<p>As a graphical model, we might depict it succinctly as follows.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="grViz html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-a19b798dbac2e4e898b2" style="width:100%;height:162px;"></div>
+<script type="application/json" data-for="htmlwidget-a19b798dbac2e4e898b2">{"x":{"diagram":"digraph mediation {\ngraph [rankdir = TB  bgcolor=transparent]\n\n    \nnode [shape = rectangle style=filled color=gray80 width=.5 height=.25 fontname=Roboto fixedsize=true fontsize=\"5%\"]\n\nnode [fillcolor=\"gray90\" ]\n    other; \nnode [fillcolor=\"#d9edf7\" ]\n    treatment;  depress2; job_seek;\n \n subgraph {\n    rank = same;\n    treatment;  depress2;\n }\n subgraph {\n    rank = same;\n    other; job_seek;\n }\n\n\n\nedge [color=gray95 fontsize=6 style=filled arrowsize=.5]\nother -> depress2 [];\nother -> job_seek [];\n\nedge [color=gray50 fontsize=6 style=filled arrowsize=.5]\ntreatment -> job_seek[label=\" a\" ]; \njob_seek -> depress2[label=\" b\" ]; \ntreatment -> depress2 [label = \" c′ \" ];\n\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="packages" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="packages">Packages</h2>
+<p>We will look at the following packages to demonstrate how one can conduct mediation analysis in R:</p>
+<ul>
+<li><span class="pack">mediation</span></li>
+<li><span class="pack">lavaan</span></li>
+<li><span class="pack">psych</span></li>
+<li><span class="pack">brms</span></li>
+</ul>
+<p>While these will be the focus, I’ll also note some other alternatives, including Python and Stata.</p>
+<section id="mediation" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="mediation">mediation</h3>
+<p>We will start with the <span class="pack">mediation</span> package, as it basically requires no more programming ability to conduct than one possesses already from running standard regression models in R. The package provides the <span class="emph">average causal mediation effect</span>, defined as follows from the help file and Imai’s articles<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>:</p>
+<blockquote class="blockquote">
+<p>The average causal mediation effect (ACME) represents the expected difference in the potential outcome when the mediator took the value that would realize under the treatment condition as opposed to the control condition, while the treatment status itself is held constant.</p>
+</blockquote>
+<p>Note how this definition is focused on expected or predicted values conditional on the treatment value. This notion of <span class="emph">counterfactuals</span>, or what would the observation look like under the opposite setting, has a long history in modeling at this point. Think of it this way, if one is in the treatment group, they would have a specific value for the mediator, and, given that, they would then have a specific expected value for the outcome. However, we could posit the same observation as being in the control group as well, and assess the effect on the outcome through the mediator just the same. We can assess the <span class="emph" style="">potential outcomes</span> while holding the treatment constant. Thinking of outcome changes given the value of the mediator makes no assumption about the model type. This is how the <span class="pack">mediation</span> package is able to incorporate different models for the mediator vs.&nbsp;the outcome. For example, the mediator could be binary, requiring a logistic regression model, while the outcome model might be a survival model.</p>
+<aside>
+As this document is a tools-based demo and not for depth, see the works of <a href="http://bayes.cs.ucla.edu/jp_home.html">Judea Pearl</a> for more details.
+</aside>
+<p>In our example, we will stick with standard (normal) linear models. Note also, that while our treatment is a binary variable, this generalizes to the continuous case, where we consider the result of a one unit movement on the ‘treatment’. For the <span class="pack">mediation</span> package to work, we simply run our respective models for the mediator and outcome, then use the <span class="func">mediate</span> function to get the final result.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/mediation_pack_06db80dff915a5f2e8773e645fd117d8">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mediation)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>model_mediator <span class="ot">&lt;-</span> <span class="fu">lm</span>(job_seek <span class="sc">~</span> treat <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age, <span class="at">data =</span> jobs)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>model_outcome  <span class="ot">&lt;-</span> <span class="fu">lm</span>(depress2 <span class="sc">~</span> treat <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age <span class="sc">+</span> job_seek, <span class="at">data =</span> jobs)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimation via quasi-Bayesian approximation</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># ?mediate</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>mediation_result <span class="ot">&lt;-</span> <span class="fu">mediate</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  model_mediator, </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  model_outcome, </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">sims =</span> <span class="dv">500</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">treat =</span> <span class="st">"treat"</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">mediator =</span> <span class="st">"job_seek"</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(package<span class="sc">:</span>mediation)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(package<span class="sc">:</span>MASS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<aside>
+<p>The result is based on simulations of a multivariate normal draw of the coefficients given their estimated covariance matrix. The algorithm is summarized as follows (from Imai et al.&nbsp;2010)</p>
+<ol type="1">
+<li>Fit models for the observed outcome and mediator variables.</li>
+<li>Simulate model parameters from their sampling distribution.</li>
+<li>Repeat the following three steps:
+<ol type="a">
+<li>simulate the potential values of the mediator,</li>
+<li>simulate the potential outcomes given the simulated values of the mediator,</li>
+<li>compute the causal mediation effects.</li>
+</ol></li>
+<li>Compute summary statistics such as point estimates and confidence intervals.</li>
+</ol>
+With this approach we can obtain the average difference and corresponding quantiles based on the simulated draws.
+</aside>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/mediation_summary_e1c94bc36fbcab4416506cdb081fe8ff">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mediation_result)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mediation_result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/mediation_result_pretty_dc5b4170caff02bf1356c272c231c797">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">95% CI Lower</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">95% CI Upper</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">ACME</td>
+<td style="text-align: right;">-0.014</td>
+<td style="text-align: right;">-0.039</td>
+<td style="text-align: right;">0.007</td>
+<td style="text-align: right;">0.224</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ADE</td>
+<td style="text-align: right;">-0.042</td>
+<td style="text-align: right;">-0.131</td>
+<td style="text-align: right;">0.044</td>
+<td style="text-align: right;">0.324</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Total Effect</td>
+<td style="text-align: right;">-0.056</td>
+<td style="text-align: right;">-0.143</td>
+<td style="text-align: right;">0.033</td>
+<td style="text-align: right;">0.216</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Prop. Mediated</td>
+<td style="text-align: right;">0.207</td>
+<td style="text-align: right;">-1.351</td>
+<td style="text-align: right;">2.200</td>
+<td style="text-align: right;">0.352</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/mediation_result_pretty-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The results above demonstrate that the ACME is not statistically distinct from zero, or no mediation. The average direct effect is negative but likewise not statistically notable, neither is the total effect (indirect + direct effect). Also provided is the soi disant ‘proportion mediated’, which is the ratio of the indirect effect to the total. However this is not a proportion, and can even be negative, and so is mostly a meaningless number.</p>
+<section id="pros" class="level4">
+<h4 class="anchored" data-anchor-id="pros">Pros</h4>
+<ul>
+<li>Standard R models and syntax</li>
+<li>Multiple types of models for both mediator and outcome</li>
+<li>Provides multiple results simultaneously</li>
+<li>Good documentation and associated articles are freely available</li>
+<li>Can do ‘moderated’ mediation</li>
+</ul>
+</section>
+<section id="limitations" class="level4">
+<h4 class="anchored" data-anchor-id="limitations">Limitations</h4>
+<ul>
+<li>Use of MASS<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></li>
+<li>Simple random effects models</li>
+<li>Functionality maybe limited with some model complexities</li>
+<li>No latent variable capabilities</li>
+</ul>
+</section>
+</section>
+<section id="lavaan" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="lavaan">lavaan</h3>
+<p>In the specific case where both mediation and outcome models are standard linear models with a normal distribution for the target variable, the indirect effect is equivalent to the product of the <code>a</code> and <code>b</code> paths in the previous diagram. The direct effect is the <code>c'</code> path. A comparison of standalone direct effect, which we might call <code>c</code>, vs this estimated direct effect in the mediation model <code>c'</code>, is such that <code>c - c' = a*b</code>. What was mentioned earlier might now be more clear, if either <code>a</code> or <code>b</code> are nearly zero, then the indirect effect can only be nearly zero, so it is prudent to investigate such relationships beforehand.</p>
+<aside>
+<img src="../../img/mediation_basic.png" style="display:block; margin:0 0; width:150%">
+</aside>
+<p>This product-of-paths (or difference in coefficients) approach is the one we will take with the <span class="pack">lavaan</span> package, and in fact, as of this writing, that is our only way of going about it. <span class="pack">lavaan</span> is specifically geared toward structural equation modeling, such as factor analysis, growth models, and mediation models like we’re conducting here, and is highly recommended for such models. While it is limited to the standard linear model case to assess mediation, it is the only one of our tools that can incorporate latent variables readily<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>. For example, we could have our depression outcome as a latent variable underlying the individual questionnaire items. In addition, we could also incorporate multiple mediators and multiple outcomes.</p>
+<aside>
+<span class="pack">lavaan</span> can still estimate the model with binary or ordinal variables, there just is no way to produce the proper indirect effect, at least not without a lot more effort.
+</aside>
+<p>To keep things as we have been discussing, I will label the <code>a</code>, <code>b</code> and <code>c'</code> paths in <span class="pack">lavaan</span> according to how they have been depicted previously. Otherwise <span class="pack">lavaan</span> is very easy to use, and in the case of observed variables, uses standard R formula notation for the models. Beyond that we define the effects of interest that we want to calculate with the <code>:=</code> operator. We specify the model in its entirety as a simple character string, then use the <span class="func">sem</span> function to do the analysis.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/lavaan_a68d8bef52b281ca18545906d0c178fd">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lavaan)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>sem_model <span class="ot">=</span> <span class="st">'</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">  job_seek ~ a*treat + econ_hard + sex + age</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">  depress2 ~ c*treat + econ_hard + sex + age + b*job_seek</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st"> </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">  # direct effect</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">  direct := c</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st"> </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="st">  # indirect effect</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">  indirect := a*b</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st"> </span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">  # total effect</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">  total := c + (a*b)</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>model_sem <span class="ot">=</span> <span class="fu">sem</span>(sem_model, <span class="at">data=</span>jobs, <span class="at">se=</span><span class="st">'boot'</span>, <span class="at">bootstrap=</span><span class="dv">500</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_sem, <span class="at">rsq=</span>T)  <span class="co"># compare with ACME in mediation</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA lavaan 0.6.13 ended normally after 1 iteration
+NA 
+NA   Estimator                                         ML
+NA   Optimization method                           NLMINB
+NA   Number of model parameters                        11
+NA 
+NA   Number of observations                           899
+NA 
+NA Model Test User Model:
+NA                                                       
+NA   Test statistic                                 0.000
+NA   Degrees of freedom                                 0
+NA 
+NA Parameter Estimates:
+NA 
+NA   Standard errors                            Bootstrap
+NA   Number of requested bootstrap draws              500
+NA   Number of successful bootstrap draws             500
+NA 
+NA Regressions:
+NA                    Estimate  Std.Err  z-value  P(&gt;|z|)
+NA   job_seek ~                                          
+NA     treat      (a)    0.066    0.049    1.346    0.178
+NA     econ_hard         0.053    0.025    2.110    0.035
+NA     sex              -0.008    0.050   -0.152    0.880
+NA     age               0.005    0.002    1.938    0.053
+NA   depress2 ~                                          
+NA     treat      (c)   -0.040    0.042   -0.966    0.334
+NA     econ_hard         0.149    0.022    6.907    0.000
+NA     sex               0.107    0.043    2.475    0.013
+NA     age               0.001    0.002    0.337    0.736
+NA     job_seek   (b)   -0.240    0.030   -8.114    0.000
+NA 
+NA Variances:
+NA                    Estimate  Std.Err  z-value  P(&gt;|z|)
+NA    .job_seek          0.524    0.029   17.762    0.000
+NA    .depress2          0.373    0.022   16.850    0.000
+NA 
+NA R-Square:
+NA                    Estimate
+NA     job_seek          0.011
+NA     depress2          0.120
+NA 
+NA Defined Parameters:
+NA                    Estimate  Std.Err  z-value  P(&gt;|z|)
+NA     direct           -0.040    0.042   -0.965    0.334
+NA     indirect         -0.016    0.012   -1.284    0.199
+NA     total            -0.056    0.044   -1.264    0.206</code></pre>
+</div>
+</div>
+<p>We see the same output before and can compare our <code>indirect</code> parameter to the ACME we had before, the <code>direct</code> effect is compared to the ADE, and the <code>total</code> compares to the previous total effect. The values are essentially the same.</p>
+<p>Note also that the output shows the <span class="math inline">\(R^2\)</span> value for both models. In the case of <code>job_seek</code>, we can see that the reason we’re not finding much in the way of mediation is because the covariates involved do not explain any variation in the mediator to begin with. Preliminary investigation would have saved us the trouble in this case.</p>
+<section id="pros-1" class="level4">
+<h4 class="anchored" data-anchor-id="pros-1">Pros</h4>
+<ul>
+<li>Can handle multiple mediators</li>
+<li>Can handle multiple ‘treatments’</li>
+<li>Can handle multiple outcomes</li>
+<li>Can use latent variables</li>
+<li>Some multilevel support</li>
+<li>Can do moderated mediation and mediated moderation (though not for latent variables)</li>
+</ul>
+</section>
+<section id="limitations-1" class="level4">
+<h4 class="anchored" data-anchor-id="limitations-1">Limitations</h4>
+<ul>
+<li>Requires additional coding to estimate the indirect effect</li>
+<li>Single random effects</li>
+<li>While the models could incorporate binary or ordinal variables for the mediator/outcomes, there is no straightforward way to calculate the indirect effect in the manner of the <span class="pack">mediation</span> package in those settings.</li>
+</ul>
+</section>
+</section>
+<section id="piecewisesem" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="piecewisesem">piecewiseSEM</h3>
+<p>The <span class="pack" style="">piecewiseSEM</span> package works very similar to the <span class="pack" style="">mediation</span> package. The nice thing about this relative to the <span class="pack" style="">mediation</span> package is that <span class="pack" style="">piecewiseSEM</span> can handle additional types of models, as well as provide additional output (e.g.&nbsp;standardized results), additional options (e.g.&nbsp;multigroup, correlated residuals), and visualization of the model.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/pw-mediate_e53c7a035b12b23e7bdfd9fed649c0fb">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(piecewiseSEM)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>model_mediator <span class="ot">&lt;-</span> <span class="fu">lm</span>(job_seek <span class="sc">~</span> treat <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age, <span class="at">data =</span> jobs)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>model_outcome  <span class="ot">&lt;-</span> <span class="fu">lm</span>(depress2 <span class="sc">~</span> treat <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age <span class="sc">+</span> job_seek, <span class="at">data =</span> jobs)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>mediation_result <span class="ot">&lt;-</span>  <span class="fu">psem</span>(model_mediator, model_outcome, <span class="at">data =</span> jobs)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mediation_result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Structural Equation Model of mediation_result 
+NA 
+NA Call:
+NA   job_seek ~ treat + econ_hard + sex + age
+NA   depress2 ~ treat + econ_hard + sex + age + job_seek
+NA 
+NA     AIC
+NA  3661.375
+NA 
+NA ---
+NA Tests of directed separation:
+NA 
+NA  No independence claims present. Tests of directed separation not possible.
+NA 
+NA --
+NA Global goodness-of-fit:
+NA 
+NA Chi-Squared = 0 with P-value = 1 and on 0 degrees of freedom
+NA Fisher's C = NA with P-value = NA and on 0 degrees of freedom
+NA 
+NA ---
+NA Coefficients:
+NA 
+NA   Response Predictor Estimate Std.Error  DF Crit.Value P.Value Std.Estimate    
+NA   job_seek     treat   0.0656    0.0515 894     1.2748  0.2027       0.0425    
+NA   job_seek econ_hard   0.0532    0.0246 894     2.1612  0.0309       0.0720   *
+NA   job_seek       sex  -0.0076    0.0487 894    -0.1567  0.8755      -0.0052    
+NA   job_seek       age   0.0046    0.0023 894     1.9779  0.0482       0.0658   *
+NA   depress2     treat  -0.0403    0.0435 893    -0.9255  0.3550      -0.0291    
+NA   depress2 econ_hard   0.1485    0.0208 893     7.1323  0.0000       0.2248 ***
+NA   depress2       sex   0.1068    0.0411 893     2.5957  0.0096       0.0818  **
+NA   depress2       age   0.0006    0.0020 893     0.3306  0.7410       0.0104    
+NA   depress2  job_seek  -0.2400    0.0282 893    -8.4960  0.0000      -0.2682 ***
+NA 
+NA   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05
+NA 
+NA ---
+NA Individual R-squared:
+NA 
+NA   Response method R.squared
+NA   job_seek   none      0.01
+NA   depress2   none      0.12</code></pre>
+</div>
+</div>
+<p>We can use it’s plotting capabilities to create a quick visualization of the model.</p>
+<aside>
+The plot is using <span class="pack" style="">Diagrammer</span> and <span class="pack" style="">graphviz</span> under the hood, which is appealing to me as I use those anyway, so could use the generated code as a starting point.
+</aside>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/pw-plot_3830e6b17265ecb445da5cfaaaabc6ae">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mediation_result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="grViz html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-42aa1e28210d751df133" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-42aa1e28210d751df133">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"job_seek\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n  \"2\" [label = \"depress2\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n  \"3\" [label = \"treat\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n  \"4\" [label = \"econ_hard\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n  \"5\" [label = \"sex\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n  \"6\" [label = \"age\", shape = \"rectangle\", color = \"black\", fillcolor = \"#FFFFFF\", fontcolor = \"#000000\"] \n\"3\"->\"1\" [style = \"dashed\", color = \"black\", label = \" 0.043 \"] \n\"4\"->\"1\" [style = \"solid\", color = \"black\", label = \" 0.072 \"] \n\"5\"->\"1\" [style = \"dashed\", color = \"black\", label = \" -0.005 \"] \n\"6\"->\"1\" [style = \"solid\", color = \"black\", label = \" 0.066 \"] \n\"3\"->\"2\" [style = \"dashed\", color = \"black\", label = \" -0.029 \"] \n\"4\"->\"2\" [style = \"solid\", color = \"black\", label = \" 0.225 \"] \n\"5\"->\"2\" [style = \"solid\", color = \"black\", label = \" 0.082 \"] \n\"6\"->\"2\" [style = \"dashed\", color = \"black\", label = \" 0.01 \"] \n\"1\"->\"2\" [style = \"solid\", color = \"black\", label = \" -0.268 \"] \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+<p>Unfortunately, there is no automatic way to calculate the indirect effects at present, so one would have to bootstrap the results by hand.</p>
+<aside>
+There used to be a package to calculate indirect effects of a <span class="pack" style="">psem</span> object, semEff, but it currently <a href="https://github.com/murphymv/semEff/issues/5">doesn’t work</a>.
+</aside>
+<section id="pros-2" class="level4">
+<h4 class="anchored" data-anchor-id="pros-2">Pros</h4>
+<ul>
+<li>Standard R models and syntax</li>
+<li>Multiple types of models for both mediator and outcome</li>
+<li>Some SEM-style results (e.g.&nbsp;fit, standardized coefficients, AIC)</li>
+<li>Quick plot of results</li>
+<li>Can handle multiple mediators, ‘treatments’, and outcomes</li>
+</ul>
+</section>
+<section id="limitations-2" class="level4">
+<h4 class="anchored" data-anchor-id="limitations-2">Limitations</h4>
+<ul>
+<li>Doesn’t automatically calculate indirect effects</li>
+<li>No latent variable capabilities</li>
+</ul>
+</section>
+</section>
+<section id="psych" class="level3">
+<h3 class="anchored" data-anchor-id="psych">psych</h3>
+<p>The <span class="pack">psych</span> package takes advantage of the fact that in the standard linear model case, one can obtain the results via the appropriate regression models based on the covariance matrices alone. It’s very similar to <span class="pack">lavaan</span>, although using an ordinary least squares approach as opposed to maximum likelihood. The nice thing here is a syntax that allows you to focus only on the effect of interest, or include everything, which is nice if you were interested in the indirect effects for economic hardship, age, and sex as well.</p>
+<p>For this demo we’ll use the cleaned up version using the <code>-</code>, instead of <code>+</code>, for the non-treatment effects. This just means they are included with the models, but results are not shown concerning them. The mediator is identified with <code>()</code>. Another bonus is a quick plot of the results, showing the difference between the unadjusted and adjusted direct effects, and the appropriate bootstrapped interval.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/psych_mediate_594ec6171d242800d26d8f878dce730a">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(psych)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>mediation_psych <span class="ot">=</span> <span class="fu">mediate</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  depress2 <span class="sc">~</span> treat <span class="sc">+</span> (job_seek) <span class="sc">-</span> econ_hard <span class="sc">-</span> sex <span class="sc">-</span> age, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> jobs,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n.iter =</span> <span class="dv">500</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/psych_mediate-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mediation_psych</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA Mediation/Moderation Analysis 
+NA Call: mediate(y = depress2 ~ treat + (job_seek) - econ_hard - sex - 
+NA     age, data = jobs, n.iter = 500)
+NA 
+NA The DV (Y) was  depress2* . The IV (X) was  Intercept* treat* . The mediating variable(s) =  job_seek* . Variable(s)  partialled out were econ_hard sex age
+NA 
+NA Total effect(c) of  Intercept*  on  depress2*  =  -0.06   S.E. =  0.05  t  =  -1.24  df=  894   with p =  0.22
+NA Direct effect (c') of  Intercept*  on  depress2*  removing  job_seek*  =  -0.04   S.E. =  0.04  t  =  -0.93  df=  893   with p =  0.35
+NA Indirect effect (ab) of  Intercept*  on  depress2*  through  job_seek*   =  -0.02 
+NA Mean bootstrapped indirect effect =  -0.02  with standard error =  0.01  Lower CI =  -0.04    Upper CI =  0.01</code></pre>
+</div>
+<div class="cell-output cell-output-error">
+<pre><code>NA Error in x$direct[i + 1, j]: subscript out of bounds</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mediation_psych)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA Call: mediate(y = depress2 ~ treat + (job_seek) - econ_hard - sex - 
+NA     age, data = jobs, n.iter = 500)
+NA 
+NA Direct effect estimates (traditional regression)    (c') X + M on Y 
+NA           depress2*   se     t  df     Prob
+NA Intercept      2.21 0.15 14.91 893 4.60e-45
+NA treat         -0.04 0.04 -0.93 893 3.55e-01
+NA job_seek      -0.24 0.03 -8.50 893 8.14e-17
+NA 
+NA R = 1.07 R2 = 1.15   F = -3510.4 on 2 and 893 DF   p-value:  1 
+NA 
+NA  Total effect estimates (c) (X on Y) 
+NA           depress2*   se     t  df     Prob
+NA Intercept      1.33 0.11 12.08 894 3.10e-31
+NA treat         -0.06 0.05 -1.24 894 2.15e-01
+NA 
+NA  'a'  effect estimates (X on M) 
+NA           job_seek   se     t  df      Prob
+NA Intercept     3.67 0.13 29.33 894 5.65e-133
+NA treat         0.07 0.05  1.27 894  2.03e-01
+NA 
+NA  'b'  effect estimates (M on Y controlling for X) 
+NA          depress2*   se    t  df     Prob
+NA job_seek     -0.24 0.03 -8.5 893 8.14e-17
+NA 
+NA  'ab'  effect estimates (through all  mediators)
+NA       depress2*  boot   sd lower upper
+NA treat     -0.02 -0.02 0.01 -0.04  0.01</code></pre>
+</div>
+</div>
+<p>Same results, different packaging, but possibly the easiest route yet as it only required one function call. The <span class="pack">psych</span> package also handles multiple mediators and outcomes as a bonus.</p>
+<section id="pros-3" class="level4">
+<h4 class="anchored" data-anchor-id="pros-3">Pros</h4>
+<ul>
+<li>Easiest syntax, basically a one line model</li>
+<li>Quick plot of results</li>
+<li>Can handle multiple mediators, ‘treatments’, and outcomes</li>
+<li>Can do ‘moderated’ mediation</li>
+</ul>
+</section>
+<section id="limitations-3" class="level4">
+<h4 class="anchored" data-anchor-id="limitations-3">Limitations</h4>
+<ul>
+<li>Limited to standard linear model (<code>lm</code>)</li>
+<li>Use of MASS</li>
+</ul>
+</section>
+</section>
+<section id="brms" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="brms">brms</h3>
+<p>For our next demo we come to what I feel is the most powerful package, <span class="pack">brms</span>. The name stands for Bayesian Regression Modeling with Stan, and Stan is a powerful probabilistic programming language for Bayesian analysis. I won’t go into details about Bayesian analysis, but feel free to see <a href="https://m-clark.github.io/bayesian-basics/">my document</a> that does.</p>
+<p>We generally do as we have before, specifying the mediator model and the outcome model. <span class="pack">brms</span> doesn’t do anything special for mediation analysis, but its <span class="func">hypothesis</span> function can allow us to test the product-of-paths approach. Furthermore, the <span class="pack">sjstats</span> package will essentially provide the results in the same way the <span class="pack">mediation</span> package does for us, and for that matter, the <span class="pack">mediation</span> package is basically an attempt at a Bayesian solution using frequentist methods anyway. If we did have different distributions for the outcome and mediator, we’d have an relatively easy time getting these average prediction values and their differences, as Bayesian approaches are always thinking about posterior predictive distributions. In any case, here is the code.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/brms-model_af18cb22eec41f5df5586e9f92706fe0">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(brms)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>model_mediator <span class="ot">&lt;-</span> <span class="fu">bf</span>(job_seek <span class="sc">~</span> treat <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>model_outcome  <span class="ot">&lt;-</span> <span class="fu">bf</span>(depress2 <span class="sc">~</span> treat <span class="sc">+</span> job_seek <span class="sc">+</span> econ_hard <span class="sc">+</span> sex <span class="sc">+</span> age)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>med_result <span class="ot">=</span> <span class="fu">brm</span>(</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  model_mediator <span class="sc">+</span> model_outcome <span class="sc">+</span> <span class="fu">set_rescor</span>(<span class="cn">FALSE</span>), </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> jobs</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(med_result, <span class="at">file =</span> <span class="st">'data/mediation_brms.RData'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/brms-result_24e25a902c944e9ff16db32fb8cea1a8">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="st">'data/mediation_brms.RData'</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(med_result)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  Family: MV(gaussian, gaussian) 
+NA   Links: mu = identity; sigma = identity
+NA          mu = identity; sigma = identity 
+NA Formula: job_seek ~ treat + econ_hard + sex + age 
+NA          depress2 ~ treat + job_seek + econ_hard + sex + age 
+NA    Data: jobs (Number of observations: 899) 
+NA   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+NA          total post-warmup draws = 4000
+NA 
+NA Population-Level Effects: 
+NA                    Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+NA jobseek_Intercept      3.67      0.12     3.43     3.91 1.00     6703     3749
+NA depress2_Intercept     2.21      0.15     1.92     2.50 1.00     6173     3091
+NA jobseek_treat          0.07      0.05    -0.03     0.17 1.00     6321     2709
+NA jobseek_econ_hard      0.05      0.02     0.00     0.10 1.00     6266     2656
+NA jobseek_sex           -0.01      0.05    -0.10     0.09 1.00     5741     2655
+NA jobseek_age            0.00      0.00     0.00     0.01 1.00     6538     2846
+NA depress2_treat        -0.04      0.04    -0.12     0.04 1.00     5458     3102
+NA depress2_job_seek     -0.24      0.03    -0.30    -0.18 1.00     5950     2938
+NA depress2_econ_hard     0.15      0.02     0.11     0.19 1.00     7545     3102
+NA depress2_sex           0.11      0.04     0.03     0.19 1.00     5600     2699
+NA depress2_age           0.00      0.00    -0.00     0.00 1.00     4558     2887
+NA 
+NA Family Specific Parameters: 
+NA                Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+NA sigma_jobseek      0.73      0.02     0.69     0.76 1.00     6640     3276
+NA sigma_depress2     0.61      0.01     0.59     0.64 1.00     6145     2987
+NA 
+NA Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+NA and Tail_ESS are effective sample size measures, and Rhat is the potential
+NA scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># using brms we can calculate the indirect effect as follows</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># hypothesis(med_result, 'jobseek_treat*depress2_job_seek = 0')</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># bayestestR provides similar printing as the mediation package</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># print(bayestestR::mediation(med_result), digits=4)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/baytestr_28843be23743f7bfa70c2511f6d8f3d8">
+<div class="cell-output-display">
+<div id="epkayyrprq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#epkayyrprq table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#epkayyrprq thead, #epkayyrprq tbody, #epkayyrprq tfoot, #epkayyrprq tr, #epkayyrprq td, #epkayyrprq th {
+  border-style: none;
+}
+
+#epkayyrprq p {
+  margin: 0;
+  padding: 0;
+}
+
+#epkayyrprq .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#epkayyrprq .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#epkayyrprq .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#epkayyrprq .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#epkayyrprq .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#epkayyrprq .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#epkayyrprq .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#epkayyrprq .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#epkayyrprq .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#epkayyrprq .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#epkayyrprq .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#epkayyrprq .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#epkayyrprq .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#epkayyrprq .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#epkayyrprq .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#epkayyrprq .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#epkayyrprq .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#epkayyrprq .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#epkayyrprq .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#epkayyrprq .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#epkayyrprq .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#epkayyrprq .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#epkayyrprq .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#epkayyrprq .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#epkayyrprq .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#epkayyrprq .gt_left {
+  text-align: left;
+}
+
+#epkayyrprq .gt_center {
+  text-align: center;
+}
+
+#epkayyrprq .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#epkayyrprq .gt_font_normal {
+  font-weight: normal;
+}
+
+#epkayyrprq .gt_font_bold {
+  font-weight: bold;
+}
+
+#epkayyrprq .gt_font_italic {
+  font-style: italic;
+}
+
+#epkayyrprq .gt_super {
+  font-size: 65%;
+}
+
+#epkayyrprq .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#epkayyrprq .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#epkayyrprq .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#epkayyrprq .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#epkayyrprq .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#epkayyrprq .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#epkayyrprq .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Effect" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Effect</th>
+<th id="Estimate" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Estimate</th>
+<th id="CI_low" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">CI_low</th>
+<th id="CI_high" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">CI_high</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Effect">Direct Effect (ADE)</td>
+<td class="gt_row gt_right" headers="Estimate">−0.04</td>
+<td class="gt_row gt_right" headers="CI_low">−0.12</td>
+<td class="gt_row gt_right" headers="CI_high">0.04</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Effect">Indirect Effect (ACME)</td>
+<td class="gt_row gt_right" headers="Estimate">−0.02</td>
+<td class="gt_row gt_right" headers="CI_low">−0.04</td>
+<td class="gt_row gt_right" headers="CI_high">0.01</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Effect">Mediator Effect</td>
+<td class="gt_row gt_right" headers="Estimate">−0.24</td>
+<td class="gt_row gt_right" headers="CI_low">−0.30</td>
+<td class="gt_row gt_right" headers="CI_high">−0.18</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Effect">Total Effect</td>
+<td class="gt_row gt_right" headers="Estimate">−0.06</td>
+<td class="gt_row gt_right" headers="CI_low">−0.14</td>
+<td class="gt_row gt_right" headers="CI_high">0.03</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Effect">Proportion Mediated</td>
+<td class="gt_row gt_right" headers="Estimate">0.28</td>
+<td class="gt_row gt_right" headers="CI_low">−1.98</td>
+<td class="gt_row gt_right" headers="CI_high">2.54</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>In the output, anything with <code>jobseek_*</code> is a result for the mediator model, while <code>depress2_*</code> is for the outcome. We have the same old story at this point, but with the Bayesian approach we have more fun things to look at. For example, we can see that we aren’t actually capturing the skewness of depression outcome well. Our predicted values vs.&nbsp;the observed don’t quite match up. We’re a little better for the mediator, but perhaps still a little high with some of our model-based predictions.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/mediation_bayes_ppcheck_751f9674f575741fcd8121c327daecbc">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(med_result, <span class="at">resp =</span> <span class="st">'depress2'</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">'Depression Outcome'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/mediation_bayes_ppcheck-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pp_check</span>(med_result, <span class="at">resp =</span> <span class="st">'jobseek'</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">'Mediator'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/mediation_bayes_ppcheck-2.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<aside>
+The faint lines (<code>yrep</code>) are posterior predictive draws.
+</aside>
+<section id="pros-4" class="level4">
+<h4 class="anchored" data-anchor-id="pros-4">Pros</h4>
+<ul>
+<li>Straightforward syntax</li>
+<li>Extremely powerful- Models are mostly limited to one’s imagination</li>
+<li>Basically does what the <span class="pack">mediation</span> package approximates</li>
+<li>All the perks of Bayesian inference: diagnostics, posterior predictive checks, model comparison, etc.</li>
+</ul>
+</section>
+<section id="limitations-4" class="level4">
+<h4 class="anchored" data-anchor-id="limitations-4">Limitations</h4>
+<ul>
+<li>Slower to estimate</li>
+<li>‘By-hand’ calculations needed for going beyond the standard linear model, but this is already a common approach from the Bayesian perspective</li>
+<li>Some comfort with the Bayesian approach required</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="more-complexity" class="level2">
+<h2 class="anchored" data-anchor-id="more-complexity">More complexity</h2>
+<p>Some of the packages mentioned can handle more complex models or provide additional approaches to investigate indirect effects.</p>
+<section id="interactions" class="level3">
+<h3 class="anchored" data-anchor-id="interactions">Interactions</h3>
+<p>Some models involve interactions either for the mediation model or outcome, and unfortunately this is often referred to as mediated moderation or moderated mediation. I personally don’t see the advantage to giving ambiguous names to what otherwise might be a straightforward concept (if still not-so-straightforward model), but that ship sailed long ago. I’m not going to go into the details, but the idea is that you might have an interaction term somewhere in the model, and the interaction might involve the treatment variable, the mediator, or both.</p>
+<p>Suffice it to say, since we’re using standard modeling tools like <code>lm</code> and extensions of it, incorporating interactions is trivial for all of the above packages, but the product-of-paths type of approach doesn’t hold (<code>a*b != c'</code>).</p>
+</section>
+<section id="generalized-linear-models" class="level3">
+<h3 class="anchored" data-anchor-id="generalized-linear-models">Generalized Linear Models</h3>
+<p>In some cases our mediator or outcome may be binary, count, or something where assuming a normal distribution might not be the best idea. Or we might want to investigate nonlinear relationships among the treatment/mediator/outcome. Or we might have data that has correlated observations like repeated measurements or similar. The <span class="pack">mediation</span> package prides itself on this in particular, but <span class="pack">brms</span> can do anything it can do and more, though you might have to do a little more work to actually calculate the result. <span class="pack">lavaan</span> can actually do a limited set of models for binary and ordinal variables, but getting the appropriate indirect estimate would require a very tedious by-hand approach.</p>
+</section>
+<section id="missing-data" class="level3">
+<h3 class="anchored" data-anchor-id="missing-data">Missing data</h3>
+<p>Often when dealing with such data, especially in the social sciences, data is often missing on any of the covariates. Sometimes we can drop these if there isn’t too many, but in other cases we will want to do something about it. The packages <span class="pack">lavaan</span>, <span class="pack">psych</span>, and <span class="pack">brms</span> provide one or more ways to deal with the situation (e.g.&nbsp;multiple imputation).</p>
+</section>
+</section>
+<section id="alternatives" class="level2">
+<h2 class="anchored" data-anchor-id="alternatives">Alternatives</h2>
+<p>We have been depicting the models as networks of nodes, with arcs/edges/paths connecting them. Our discussion revolves around what are called <span class="emph">Directed Acyclic Graphs</span> (DAG) where the arrows can only go one direction with no feedback loops. The result of any outcome variable is a function of the arrows preceding it, and conditionally independent of others. Some theoretical models may relax this, and others may have no arrows at all, i.e.&nbsp;are <span class="emph">undirected</span>, such that we are interested in just the connections (e.g.&nbsp;with some social networks).</p>
+<section id="bnlearn" class="level3">
+<h3 class="anchored" data-anchor-id="bnlearn">bnlearn</h3>
+<p>The <span class="pack">bnlearn</span> package allows investigation of directed, partially directed, and undirected graphs. In terms of DAGs, we can use it to essentially duplicate the mediation models we’ve been discussing. The nice thing though is that this package will efficiently test paths for inclusion rather than assume them, but we can still impose theoretical constraints as needed. Not only can we then search for the paths of interest in a principled way with <span class="emph">bayesian networks</span> and Pearl’s causal graph theory as a basis, we also will have tools to further avoid overfitting via cross-validation.</p>
+<p>For the initial model, we’ll make sure that paths exist between treatment - mediator, treatment - outcome, and mediator - outcome (the <span class="emph">whitelist</span>). We will disallow nonsensical paths like having arrows to the treatment (which was randomly assigned), sex, economic hardship, and age (the <span class="emph">blacklist</span>). Otherwise, we’ll see what the data suggests.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>whitelist <span class="ot">=</span> <span class="fu">data.frame</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">from =</span> <span class="fu">c</span>(<span class="st">'treat'</span>, <span class="st">'treat'</span>, <span class="st">'job_seek'</span>),</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">to   =</span> <span class="fu">c</span>(<span class="st">'job_seek'</span>, <span class="st">'depress2'</span>, <span class="st">'depress2'</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>blacklist <span class="ot">=</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">from =</span> <span class="fu">colnames</span>(mediation_result<span class="sc">$</span>model.y<span class="sc">$</span>model),</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">to   =</span> <span class="fu">c</span>(<span class="st">'treat'</span>, <span class="st">'sex'</span>, <span class="st">'age'</span>, <span class="st">'econ_hard'</span>)</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="co"># For simpler output we'll use treatment and sex as numeric (explained later)</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>jobs_trim <span class="ot">=</span> jobs <span class="sc">%&gt;%</span> </span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(depress2, treat, econ_hard, sex, age, job_seek) <span class="sc">%&gt;%</span> </span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">treat =</span> <span class="fu">as.numeric</span>(jobs<span class="sc">$</span>treat),</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex =</span> <span class="fu">as.numeric</span>(jobs<span class="sc">$</span>sex)</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="co"># extract path coefficients if desired</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a><span class="co"># parameters = bn.fit(model, jobs_trim)</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a><span class="co"># parameters$job_seek</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="co"># parameters$econ_hard</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a><span class="co"># parameters$depress2</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/bnlearn-model_8d892dcb8bda0cafe77736e446f7c647">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bnlearn)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">gs</span>(jobs_trim, <span class="at">whitelist =</span> whitelist, <span class="at">blacklist =</span> blacklist)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/bnlearn-model-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We see in the plot that things have changed a bit. For example, age now only relates to job seeking self-efficacy, and sex only has an effect on depression.</p>
+<p>If we restrict the paths to only be what they are in our previous examples, we’d get the same results.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/bnlearn_reproduction_19f03ce025fca03f7ba46247fa10d8c5">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(bnlearn)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>whitelist <span class="ot">=</span> <span class="fu">data.frame</span>(</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">from =</span> <span class="fu">c</span>(<span class="st">'treat'</span>, <span class="st">'age'</span>, <span class="st">'sex'</span>, <span class="st">'econ_hard'</span>, <span class="st">'treat'</span>, <span class="st">'job_seek'</span>, <span class="st">'age'</span>, <span class="st">'sex'</span>, <span class="st">'econ_hard'</span>),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">to   =</span> <span class="fu">c</span>(<span class="st">'job_seek'</span>, <span class="st">'job_seek'</span>,<span class="st">'job_seek'</span>,<span class="st">'job_seek'</span>, <span class="st">'depress2'</span>, <span class="st">'depress2'</span>, <span class="st">'depress2'</span>, <span class="st">'depress2'</span>, <span class="st">'depress2'</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>blacklist <span class="ot">=</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">from =</span> <span class="fu">colnames</span>(mediation_result<span class="sc">$</span>model.y<span class="sc">$</span>model),</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">to   =</span> <span class="fu">c</span>(<span class="st">'treat'</span>, <span class="st">'sex'</span>, <span class="st">'age'</span>, <span class="st">'econ_hard'</span>)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>) </span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">gs</span>(jobs_trim, <span class="at">whitelist =</span> whitelist, <span class="at">blacklist =</span> blacklist)</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="mediation-models_files/figure-html/bnlearn_reproduction-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>parameters <span class="ot">=</span> <span class="fu">bn.fit</span>(model, jobs_trim)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>parameters<span class="sc">$</span>depress2<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA   (Intercept)         treat     econ_hard           sex           age 
+NA  2.2076414333 -0.0402647000  0.1485433818  0.1068048699  0.0006488642 
+NA      job_seek 
+NA -0.2399549527</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>parameters<span class="sc">$</span>job_seek<span class="sc">$</span>coefficients</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA  (Intercept)        treat    econ_hard          sex          age 
+NA  3.670584908  0.065615003  0.053162413 -0.007637336  0.004586492</code></pre>
+</div>
+</div>
+<p>The main thing to note is that the estimated parameters equal the same thing we got with previous packages. It’s essentially equivalent to using <span class="pack">lavaan</span> with the default maximum likelihood estimator.</p>
+<p>If we use treatment and sex as factors, <span class="pack">bnlearn</span> will produce conditional models that are different depending on the factor value taken. In other words, one would have a separate model for when <code>treatment == 'treatment'</code> and one for when <code>treatment == control</code>. In our case, this would be identical to allowing everything to interact with treatment, e.g.&nbsp;<code>lm( job_seek ~ treat * (econ_hard + sex + age))</code>, and likewise for the depression model. This would extend to potentially any binary variable (e.g.&nbsp;including sex). If the mediator is a binary variable, this is likely what we’d want to do.</p>
+</section>
+<section id="python" class="level3">
+<h3 class="anchored" data-anchor-id="python">Python</h3>
+<p>CSCAR director Kerby Shedden has given a <a href="nbviewer.jupyter.org/urls/umich.box.com/shared/static/jpmd9y99259u6dv0rj6p46993981m7zm.ipynb">Python workshop</a> on mediation models, so I show the <span class="pack">statsmodels</span> implementation here. It follows the Imai approach and so can be seen as the Python version of the <span class="pack">mediation</span> package. The output is essentially the same as what you would have using treatment as a factor variable, where you get separate results for each treatment category. This is unnecessary for our demo, so you can just compare the ‘average’ results to the previous <span class="pack">mediation</span> package results.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/pymediate_22c561883189bb44edbd9bd6e60232bf">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.stats.mediation <span class="im">import</span> Mediation</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>outcome_model <span class="op">=</span> sm.OLS.from_formula(<span class="st">"depress2 ~ treat + econ_hard + sex + age + job_seek"</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>                                    data <span class="op">=</span> jobs)</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>mediator_model <span class="op">=</span> sm.OLS.from_formula(<span class="st">"job_seek ~ treat + econ_hard + sex + age"</span>,</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>                                     data <span class="op">=</span> jobs)</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>med <span class="op">=</span> Mediation(outcome_model, mediator_model, <span class="st">"treat"</span>, <span class="st">"job_seek"</span>)</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>med_result <span class="op">=</span> med.fit(n_rep <span class="op">=</span> <span class="dv">500</span>)</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(np.<span class="bu">round</span>(med_result.summary(), decimals <span class="op">=</span> <span class="dv">3</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NA                           Estimate  Lower CI bound  Upper CI bound  P-value
+NA ACME (control)              -0.016          -0.047           0.014    0.324
+NA ACME (treated)              -0.016          -0.047           0.014    0.324
+NA ADE (control)               -0.041          -0.117           0.039    0.356
+NA ADE (treated)               -0.041          -0.117           0.039    0.356
+NA Total effect                -0.057          -0.141           0.032    0.240
+NA Prop. mediated (control)     0.236          -1.755           2.116    0.388
+NA Prop. mediated (treated)     0.236          -1.755           2.116    0.388
+NA ACME (average)              -0.016          -0.047           0.014    0.324
+NA ADE (average)               -0.041          -0.117           0.039    0.356
+NA Prop. mediated (average)     0.236          -1.755           2.116    0.388</code></pre>
+</div>
+</div>
+</section>
+<section id="stata" class="level3">
+<h3 class="anchored" data-anchor-id="stata">Stata</h3>
+<p>Finally, I provide an option in Stata using its <code>sem</code> command. Stata makes it easy to get the indirect effects in this example, but it does so for every covariate, so the output is a bit verbose to say the least<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a>. For those working with Stata, they do not need a separate SEM package to get these sorts of results.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/unnamed-chunk-1_f8cc642fad10c71496db8a69bc06846d">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="kw">use</span> <span class="st">"data\jobs.dta"</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>sem (job_seek &lt;- treat econ_hard sex age) (depress2 &lt;- treat econ_hard sex age job_seek), cformat(%9.3f) pformat(%5.2f)</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="kw">estat</span> teffects, compact cformat(%9.3f) pformat(%5.2f)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/output_nostata_01cdca02b6ba1207b4516d6a71866298">
+<div class="cell-output cell-output-stdout">
+<pre><code>NA 
+NA . use 'data\jobs.dta'
+NA 
+NA . 
+NA . sem (job_seek &lt;- treat econ_hard sex age) (depress2 &lt;- treat econ_hard sex age job_seek), 
+NA cformat(%9.3f) pformat(%5.2f)
+NA 
+NA Endogenous variables
+NA 
+NA Observed:  job_seek depress2
+NA 
+NA Exogenous variables
+NA 
+NA Observed:  treat econ_hard sex age
+NA 
+NA Fitting target model:
+NA 
+NA Iteration 0:   log likelihood = -7711.0956  
+NA Iteration 1:   log likelihood = -7711.0956  
+NA 
+NA Structural equation model                       Number of obs     =        899
+NA Estimation method  = ml
+NA Log likelihood     = -7711.0956
+NA 
+NA ------------------------------------------------------------------------------
+NA              |                 OIM
+NA              |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+NA -------------+----------------------------------------------------------------
+NA Structural   |
+NA   job_seek   |
+NA        treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+NA    econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+NA          sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+NA          age |      0.005      0.002     1.98    0.05        0.000       0.009
+NA        _cons |      3.671      0.125    29.41    0.00        3.426       3.915
+NA   -----------+----------------------------------------------------------------
+NA   depress2   |
+NA     job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+NA        treat |     -0.040      0.043    -0.93    0.35       -0.125       0.045
+NA    econ_hard |      0.149      0.021     7.16    0.00        0.108       0.189
+NA          sex |      0.107      0.041     2.60    0.01        0.026       0.187
+NA          age |      0.001      0.002     0.33    0.74       -0.003       0.004
+NA        _cons |      2.208      0.148    14.96    0.00        1.918       2.497
+NA -------------+----------------------------------------------------------------
+NA var(e.job_~k)|      0.524      0.025                         0.478       0.575
+NA var(e.depr~2)|      0.373      0.018                         0.340       0.409
+NA ------------------------------------------------------------------------------
+NA LR test of model vs. saturated: chi2(0)   =      0.00, Prob &gt; chi2 =      .
+NA 
+NA . 
+NA . estat teffects, compact cformat(%9.3f) pformat(%5.2f)
+NA 
+NA 
+NA Direct effects
+NA ------------------------------------------------------------------------------
+NA              |                 OIM
+NA              |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+NA -------------+----------------------------------------------------------------
+NA Structural   |
+NA   job_seek   |
+NA        treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+NA    econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+NA          sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+NA          age |      0.005      0.002     1.98    0.05        0.000       0.009
+NA   -----------+----------------------------------------------------------------
+NA   depress2   |
+NA     job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+NA        treat |     -0.040      0.043    -0.93    0.35       -0.125       0.045
+NA    econ_hard |      0.149      0.021     7.16    0.00        0.108       0.189
+NA          sex |      0.107      0.041     2.60    0.01        0.026       0.187
+NA          age |      0.001      0.002     0.33    0.74       -0.003       0.004
+NA ------------------------------------------------------------------------------
+NA 
+NA 
+NA Indirect effects
+NA ------------------------------------------------------------------------------
+NA              |                 OIM
+NA              |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+NA -------------+----------------------------------------------------------------
+NA Structural   |
+NA   job_seek   |
+NA   -----------+----------------------------------------------------------------
+NA   depress2   |
+NA        treat |     -0.016      0.012    -1.26    0.21       -0.040       0.009
+NA    econ_hard |     -0.013      0.006    -2.10    0.04       -0.025      -0.001
+NA          sex |      0.002      0.012     0.16    0.88       -0.021       0.025
+NA          age |     -0.001      0.001    -1.93    0.05       -0.002       0.000
+NA ------------------------------------------------------------------------------
+NA 
+NA 
+NA Total effects
+NA ------------------------------------------------------------------------------
+NA              |                 OIM
+NA              |      Coef.   Std. Err.      z    P&gt;|z|     [95% Conf. Interval]
+NA -------------+----------------------------------------------------------------
+NA Structural   |
+NA   job_seek   |
+NA        treat |      0.066      0.051     1.28    0.20       -0.035       0.166
+NA    econ_hard |      0.053      0.025     2.17    0.03        0.005       0.101
+NA          sex |     -0.008      0.049    -0.16    0.88       -0.103       0.088
+NA          age |      0.005      0.002     1.98    0.05        0.000       0.009
+NA   -----------+----------------------------------------------------------------
+NA   depress2   |
+NA     job_seek |     -0.240      0.028    -8.52    0.00       -0.295      -0.185
+NA        treat |     -0.056      0.045    -1.24    0.21       -0.144       0.032
+NA    econ_hard |      0.136      0.022     6.31    0.00        0.094       0.178
+NA          sex |      0.109      0.043     2.55    0.01        0.025       0.192
+NA          age |     -0.000      0.002    -0.22    0.82       -0.004       0.004
+NA ------------------------------------------------------------------------------
+NA </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Models with indirect effects require careful theoretical consideration to employ for data analysis. However, if the model is appropriate for your data situation, it is quite easy to get results from a variety of packages in R. Furthermore, one does not need to use a structural equation modeling package to conduct an analysis with indirect effects, and in fact, one can get far using standard R syntax. For strictly observed, i.e.&nbsp;no latent, variables, no SEM tool is necessary, or even recommended.</p>
+<p><span class="math display">\[\mathcal{Enjoy\ your\ model\ exploration!}\]</span></p>
+<section id="package-comparison-summarized" class="level5">
+<h5 class="anchored" data-anchor-id="package-comparison-summarized">Package comparison summarized</h5>
+<p>The following table may help one decide which package to use for their needs given their theoretical considerations.</p>
+<div class="cell" data-layout-align="center" data-hash="mediation-models_cache/html/package_comparison_table_d32e88f2d779151f4968f2ff0a527e10">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">mediation</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">lavaan</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">piecewiseSEM</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">psych</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">brms</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Automatic</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•<sup>*</sup></td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Multiple Treatments<sup>☺</sup></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Multiple Mediators</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Multiple Outcomes</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Beyond SLM<sup>†</sup></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Random Effects</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Missing Values</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•*</td>
+<td style="text-align: left;">•</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Latent Variables</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">•*</td>
+</tr>
+</tbody><tfoot>
+<tr class="odd">
+<td style="text-align: left; padding: 0;"><sup>*</sup> approximately, with some caveats</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding: 0;"><sup><sup>☺</sup></sup> May require rerunning aspects of the model</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left; padding: 0;"><sup><sup>†</sup></sup> Standard linear model, as estimated by `lm`</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tfoot>
+
+</table>
+
+
+</div>
+</div>
+<!-- footnotes -->
+
+
+</section>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>I have a much more <a href="https://m-clark.github.io/sem/">detailed document on SEM</a>, including mediation analysis.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>For some reason you don’t see this in practice much, and one wonders what was done to make the data amenable to such a model if it wasn’t warranted.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Imai makes his articles available at his <a href="https://imai.fas.harvard.edu/projects/mechanisms.html">website</a>.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p><span class="pack">MASS</span> has been superseded by others for over a decade at this point, and it mostly just tends to muck up your <span class="pack" style="">tidyverse</span> and other packages when it’s loaded. It’s a fine package (and was great back in the day), but if you want to use it in a package, it would be good to not load it (or other packages) in the environment just to use a function or two. I mostly just see it used for <span class="func">mvrnorm</span> (multivariate normal distribution) and <span class="func">glm.nb</span>, but there are other packages with that functionality that would provide additional benefits, and not mask <span class="pack">dplyr</span> functions, which are among the most commonly used in the R community.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p><a href="https://github.com/paul-buerkner/brms/issues/304"><span class="pack">brms</span> is working on it</a>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p>The options in the code are there to suppress/minimize what can be.<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
