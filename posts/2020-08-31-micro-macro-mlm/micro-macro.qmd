@@ -1,0 +1,614 @@
+---
+title: "Micro-macro models"
+description: |
+  An analysis in the wrong direction? Predicting group level targets with lower level covariates.
+date: 2020-08-31
+image: ../../img/micromacro/multilevel.png   # apparently no way to change the size displayed via css (ignored) or file (stretched)
+bibliography: ../../bibs/mixed.bib
+draft: false
+keywords: [mixed models, multilevel models micro-macro, macro-micro, measurement error, bias, group-level outcomes, structural model]
+categories:
+  - mixed models
+  - SEM
+  - regression
+  - factor analysis
+knitr: 
+  opts_chunk: 
+    echo: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo      = FALSE, 
+  eval      = FALSE, 
+  message   = FALSE, 
+  warning   = FALSE, 
+  comment   = NA,
+  R.options = list(width = 120),
+  cache.rebuild = FALSE,
+  cache = TRUE,
+  fig.align = 'center',
+  fig.asp = .7,
+  dev = 'svg',
+  dev.args = list(bg = 'transparent')
+)
+
+library(tidyverse)
+library(broom)
+library(kableExtra)
+library(visibly)
+
+kable_df <- function(..., digits=3) {
+  kable(..., digits=digits) %>% 
+    kable_styling(full_width = F)
+}
+
+rnd = tidyext::rnd
+```
+
+```{r}
+DiagrammeR::grViz('scripts/multilevel.gv')
+```
+
+## Introduction
+
+Every once in a while, it comes up that someone has clustered data, with covariates that vary at different levels, and where mixed models or similar would normally be implemented, but in which the target variable only varies at the cluster level (or 'group' level- I will use the terms interchangeably). Though the outcome is at the cluster level, the individual may still want to use information from lower-level/within-cluster variables. Such situations are generically referred to as *micro-macro* models, to distinguish between the standard setting where the target varies at the lower level (which does not require a special name). An example might be using team member traits to predict team level scores. While conceptually one wants to use all available information in a model, normally we just run a model at the cluster (team) level using summaries of variables that would otherwise vary within the cluster, for example, using mean scores or proportions. Not only is it natural, it makes conceptual sense, and as such it is the default approach. Alternatives include using the within cluster variables as predictors, but this wouldn't be applicable except in balanced settings where they would represent the same thing for each group, and even in the balanced settings collinearity might be a notable issue. So how would we deal with this?
+
+#### Prequsites
+
+For the following you should have familiarity with mixed/multilevel models, and it would help to have an understanding of factor analysis and structural equation modeling.
+
+## Predicting Group-Level Outcomes
+
+Croon and van Veldhoven @croon2007predicting (CV) present a group-level regression model (e.g. a basic linear model) as follows.
+
+$$y_g = \beta_0 + \xi_g\beta_1 + Z_g\beta_2 + \epsilon_g$$
+
+In this depiction, $y_g$ is the group level target variable, the $Z_g$ represent the typical observed group-level covariates and corresponding coefficients ($\beta_2$). If this were the entirety of the model, there would be no 'levels' to consider and we could use a standard model, say OLS regression. In the case we are interested in, some variables vary within these clusters, while others do not. Again, normally we might do a mixed model, but remember, $y_g$ only varies at the group level, so that won't really work.
+
+In this setting then, $\xi_g$ represents an aggregated effect of the lower level variables. In standard practice it would just be the calculated mean, proportion, or some other metric with values for each cluster. In the CV depiction however, it is a *latent* (or perhaps several) latent variables and their corresponding effects $\beta_1$.
+
+If we assume a single $\xi_g$ variable, the model for the underlying within-cluster variables is the standard latent variable model, a.k.a factor analysis. With an observed multivariate $x$, e.g. repeated observations of some measure for an individual or, as before, team member scores, we have the [latent linear model](https://m-clark.github.io/docs/FA_notes.html) as follows:
+
+$$\textbf{x}_{ig} = \xi_g\lambda + v_{ig}$$
+
+where $x_{ig}$ are the (possibly repeated) observations $i$ for a group/individual $g$, $\lambda$ are the factor loadings and variances are constant. We can now see the full model as a structural equation model as follows for a situation with five observations per group.
+
+```{r sem-plot, fig.cap='The structural equation model', echo=FALSE, eval=TRUE}
+DiagrammeR::grViz('scripts/simple_sem.gv')
+```
+
+## Issues with Aggregate Approaches
+
+CV suggest that simple aggregation, e.g. using a group mean, will result in problems, specifically biased estimates. They simulate data that varies the number of groups/clusters, the number of observations within groups, the intraclass correlation of observations within a group. In most of the cases they explore, the bias for the aggregate mean effect is notable, and there is sometimes small bias for the group level covariates, if they are collinear with the aggregate covariate. We will duplicate this approach later.
+
+An approach to adjusting the group mean is offered by CV, with the structural model implied. These adjusted group means, or in their parlance, best linear unbiased predictors (BLUPs), result in a bias-free result. The notion of a BLUP will be familiar to those who use mixed models, as that is what the random effects are for a standard linear mixed model. As such, later on we'll take a look at using a mixed model as a possible solution. In any case, once the adjusted means are calculated, you can then run your standard regression with the bias mostly eliminated.
+
+## Issues with Adjustment
+
+It turns out the the weighting calculation proffered by CV is somewhat complicated, not easily implemented, and rarely used. Foster-Johnson & Kromrey @foster2018predicting (FJK) looked further into its utility, as well as other possible solutions that might be easier to implement. As far as type I error rate goes, FJK demonstrated that using the CV adjusted group means offers no advantage over unadjusted, and even showed less statistical power. They suggested that a standard correction for heteroscedasticity (White's) might be enough. In applying corrected standard errors for both unadjusted and adjusted group means, FJK found there to be additional power for both approaches, but if anything still favored the standard group mean. What's more, while the bias remained, there was actually notable variability in the adjusted mean results. FJK's final recommendation was to use the usual group means with robust standard errors, easily implemented in any statistical package.
+
+I will add that the adjustment still uses an underlying factor model of equal loadings and variances across the observations. For notably reliable scales this might be reasonable, but it isn't a necessity. In repeated measures settings for example, we might see decreased variability across time, or practice effects, which might make the assumption more tenuous.
+
+## My Perspective
+
+My first glance at the issue raised by CV immediately called to mind the standard measurement model typically employed for factor analysis, i.e. a latent linear model. So my interpretation was that we are simply talking about a well known fact in measurement: that reliability of the measure is key in using a mean or sum score, and decreased reliability attenuates the correlation among the variables in question. I even did [a simulation demonstrating the problem](https://m-clark.github.io/docs/lv_sim.html) a while back. So in this case, I'm interested in the issue from a reliability perspective.
+
+It turns out that factor models and mixed models share a lot in common. Those familiar with *growth curve models* know that they are equivalent to mixed models, but the comparison is a more general one of random effects methods. To demonstrate the equivalence, I'll use a cleaned up version of the [Big 5](https://en.wikipedia.org/wiki/Big_Five_personality_traits) data in the [psych]{.pack style=""} package. Specifically, we'll use the five items that belong to the Agreeableness measure.
+
+First we make the data in both wide and long. The former makes it amenable to factor analysis, while the latter is what we need for a mixed model.
+
+```{r b5-demo-mixed-cfa-data, echo=TRUE, eval=TRUE}
+# data prep for long and wide format
+
+agree_df = noiris::big_five %>% 
+  select(A1:A5) %>% 
+  drop_na()
+
+agree_long = agree_df %>% 
+  mutate(id = factor(row_number())) %>% 
+  pivot_longer(-id, names_to = 'variable', values_to = 'value')
+```
+
+The standard factor model will have to be constrained to have equal loadings and item variances. In addition, we'll estimate the intercepts, but otherwise this is your basic factor analysis.
+
+```{r b5-demo-mixed-cfa-agree, echo=TRUE, eval=TRUE}
+ # or use growth() to save some of the model tedium
+cfa_model_agree = "
+  agree =~ a*A1 + a*A2 + a*A3 + a*A4 + a*A5
+  
+  A1 ~~ var*A1
+  A2 ~~ var*A2
+  A3 ~~ var*A3
+  A4 ~~ var*A4
+  A5 ~~ var*A5
+"
+
+library(lavaan)
+
+cfa_fit_agree = cfa(cfa_model_agree, data = agree_df, meanstructure = T) 
+
+summary(cfa_fit_agree)
+```
+
+When we run the mixed model, we get the same variance and intercept estimates.
+
+```{r b5-demo-mixed-cfa-mixed, echo=TRUE, eval=TRUE, message = TRUE}
+library(lme4)
+library(mixedup) # for post-processing
+
+mixed_fit = lmer(value ~ -1 + variable + (1 |id), data = agree_long,  REML = FALSE)
+summarise_model(mixed_fit, digits = 3)
+```
+
+We can also see that the estimated factor scores agree with the estimated random effects.
+
+```{r b5-demo-mixed-cfa-re-lv, eval=TRUE}
+data.frame(
+  `Estimated Factor Scores`  = lavPredict(cfa_fit_agree)[,1],
+  `Estimated Random Effects` = extract_random_effects(mixed_fit, digits = 7)$value
+) %>% 
+  tidyext::head_tail() %>% 
+  kable_df()
+```
+
+Usually when the term BLUP comes up it is in reference to the random effects estimated from a linear mixed model. As such, I thought it might be interesting to see how a mixed or factor model might be used to deal with the bias. I also thought it was a bit odd that neither CV nor FJK actually conduct the implied SEM (but see the paper co-authored by the [lavaan]{.pack style=""} package author @devlieger2016hypothesis), so I wanted to look at that too.
+
+## Model Setup
+
+For our demonstration, I will create some data as CV did and run a variety of models to see what we get. My focus is on bias, not coverage or power, as I think FJK covered those aspects plenty. The models in particular are:
+
+-   **Standard linear model**: a basic group level analysis using unadjusted means.
+-   **Random effects**: a group level model using estimated factor scores using [lavaan]{.pack style=""}, or the BLUPs from [lme4]{.pack style=""}, or those with heterogeneous variance via [glmmTMB]{.pack style=""}[^1]. These involved a two-step approach, with the factor/mixed model followed by the standard linear model.
+-   **Structural equation model**: A full, single-step SEM via [lavaan]{.pack style=""}. This model has the ability to account for the correlation of the Z and latent variable. It is exactly as CV depict in their Figure 1 and Figure \@ref(fig:sem-plot) above.
+-   **Adjusted means**: Use CV's approach
+
+[^1]: I wasn't sure in the mixed model whether to include the item and or group level Z as fixed effects. Results did not change much, so I went with a mixed model with no fixed effects to make them closer to the scale of the mean scores.
+
+## Data Setup
+
+I made a function[^2] to create data with the values shown in CV (p. 52) for a single aggregate $X$ and single group-level covariate $Z$. Using their notation, the model that generates the data is the following:
+
+[^2]: All code is contained within the [R markdown file](https://github.com/m-clark/m-clark.github.io/blob/master/_posts/2020-08-31-micro-macro-mlm/micro-macro.Rmd) that produced this post.
+
+$$y_g = .3 + .3Z_g + .3\xi_g + \epsilon_g$$ $$x_{ig} = \xi + \nu_g$$
+
+As there, $\sigma^2_\epsilon$ is .35. While they look at a variety of situations, I'll just consider a single scenario for our purposes, where the correlation of the $Z$ and $\xi$ was .3, the intraclass correlation of the observed $x_{ig}$ was .1 (i.e. $\sigma^2_\nu$ = 9), the number of groups was 100 and the number of observations per group was balanced at 10 (row 16 of their table 1). I simulated 1000 such data sets so that we could examine the mean value of the estimated coefficients. I first started by analyzing the result with a factor analysis, and if there are any problems such as negative variances or lack of convergence, the data is regenerated, as that will also help with any issues the mixed model would have. So the final 1000 data sets don't have convergence issues or other problems that might make the results a little wonky.
+
+```{r sim-data-functions, echo=FALSE}
+calc_adj = function(data, x_long, ng = 100, npg = 10) {
+  # in this demo there is only a single aggregate x and cluster level z; I keep
+  # to the notation in C & V
+  Z = data %>% 
+    select(z) %>% 
+    as.matrix()
+  
+  mu_z = mean(Z)
+  Sigma_zz = as.matrix(var(Z))
+  
+  X =  data %>% 
+    select(x) %>% 
+    as.matrix()
+  
+  mu_xi = mean(X)
+  
+  # note that this is only the covariances of X with Z (not var) ?
+  Sigma_z_xi = cov(data)[1, 2, drop = F]
+  Sigma_xi_z = t(Sigma_z_xi)
+  
+  G   = ng
+  N   = ng*npg
+  
+  SSA = N * crossprod(X - mu_xi)  # N because group sizes are equal
+  
+  MSA = SSA/(N - G)
+  
+  SSE = suppressMessages({
+    x_long %>% 
+    group_by(group) %>% 
+    summarise(sq_diffs = (x-mean(x))^2)
+  })
+  
+  SSE = as.matrix(sum(SSE$sq_diffs))
+  
+  MSE = Sigma_vv = SSE/(G - 1)
+  
+  Sigma_xixi = (N*(G - 1)) / (N^2 - (npg^2)*G) * (MSA - MSE)
+  
+  Wg1 = solve(Sigma_xixi + Sigma_vv/N - Sigma_xi_z %*% solve(Sigma_zz) %*% Sigma_z_xi) %*%
+    (Sigma_xixi - Sigma_xi_z %*% solve(Sigma_zz) %*% Sigma_z_xi)
+  
+  Wg2 = solve(Sigma_zz) %*% Sigma_z_xi %*% (diag(1) - Wg1)
+  
+  x_adj = tcrossprod(mu_xi, diag(1) - Wg1)[, 1] + 
+    (X %*% Wg1) + 
+    ((Z - mu_z) %*% Wg2)
+}
+
+# y_g = 0.3 + 0.3z_g + 0.3psi_g + eps_g,
+# z_g + psi_g = standard with correlation 0 or .3
+# x_ig = psi_g + nu_ig
+# eps_var =.35
+# nu_var = 4 or 9
+# ng = 50 or 100
+# n = 10 or 40
+
+create_data <- function(
+  npg  = 10,
+  ng = 100,
+  eps_var = .35,
+  nu_var  = 9,
+  gid = rep(1:ng, e = n),
+  zx_cor = .3,
+  beta = c(.3, .3, .3)
+){
+  
+  # create data and get factor scores; these seem the most problematic so we
+  # will create data that doesn't cause issues, which will make the lmer good
+  # too
+  cfa_converged = F
+  
+  while(!cfa_converged) {
+
+    X_g = cbind(1, mvtnorm::rmvnorm(ng, sigma = matrix(c(1, zx_cor, zx_cor, 1), 2, 2)))
+    
+    eps = rnorm(ng, sd = sqrt(eps_var))
+    
+    y = X_g %*% beta + eps
+    
+    df_g = data.frame(X_g[,-1]) %>% 
+      rename(z = X1, x = X2)
+    
+    x_long = purrr::map_dfr(df_g$x, function(mu)
+      data.frame(x = rnorm(n = npg, mean = mu, sd = sqrt(nu_var))), 
+      .id = 'group'
+    ) %>% 
+      mutate(
+        item = rep(paste0('item_', 1:npg), times = ng)#,   
+        # z = rep(df_g$z, each = npg)  # here in case you want to include z as fixed effect
+      )
+    
+    
+    x_wide = pivot_wider(x_long, names_from = item, values_from = x)
+    
+    cfa_model = 
+      paste0(
+        paste0("lv =~ ", paste0("item_", 1:npg, collapse = ' + '))#,
+        # '\n lv ~ z' # here in case you want to include z as covariate
+      )
+    
+    cfa_fit = suppressWarnings({
+      lavaan::cfa(
+        cfa_model,
+        data = data.frame(x_wide, z = df_g$z),
+        meanstructure = FALSE,
+        estimator = 'MLR',
+        control = list(control = list(
+          eval.max = 1000, iter.max = 1000
+        ))
+      )
+    })
+    
+    cfa_converged = cfa_fit@optim$converged & lavaan::lavInspect(cfa_fit, 'post') == TRUE
+    
+  }
+
+  fa_scores = lavaan::lavPredict(cfa_fit)[,1]
+  
+  ### get mixed model blups
+  
+  init_mod = mixedup::converge_it(lme4::lmer(x ~  (1|group), x_long))
+  
+  blups = mixedup::extract_random_effects(init_mod) %>% 
+    arrange(as.numeric(as.character(group)))
+  
+  suppressWarnings({suppressMessages({
+    init_mod <- glmmTMB::glmmTMB(x ~  (1|group) + diag(0 + item |group), x_long)
+    
+    blups_hv <- mixedup::extract_random_effects(init_mod) %>% 
+      filter(effect == 'Intercept') %>% 
+      arrange(as.numeric(as.character(group)))
+    
+    })})
+  
+  
+  ### get adjusted predictors
+  
+  adj_res = calc_adj(
+    data = df_g,
+    x_long = x_long
+  )
+  
+  # create data frame
+  df_g = data.frame(
+    gid, 
+    df_g, 
+    x_wide, 
+    y, 
+    x_adj = adj_res[,1],
+    blups = blups$value,
+    blups_hv = blups_hv$value,
+    fa_scores = fa_scores
+    ) %>% 
+    rowwise() %>% 
+    mutate(x_unadj = mean(c_across(item_1:item_10)))
+  
+  df_g
+}
+
+# debugonce(create_data)
+# df_g = create_data()
+# glimpse(df_g)
+# cor(df_g %>% select_if(is.numeric)) %>% visibly::corr_heat()
+```
+
+```{r sim-results, echo=FALSE, eval=FALSE}
+# parallelization is completely borked with Rmarkdown, just save the results out
+library(future)
+
+plan(multiprocess)
+
+sim_data = furrr::future_map(1:1000, ~create_data())
+
+results_lm = map_df(sim_data, ~as.data.frame(t(coef(lm(y ~ z + x_unadj, data =. )))))
+# 100*(colMeans(results_lm)/.3 - 1) # confirms c & v
+
+results_blup = map_df(sim_data, ~as.data.frame(t(coef(lm(y ~ z + blups, data = .)))))
+# 100*(colMeans(results_blup)/.3 - 1)
+
+results_blup_hv = map_df(sim_data, ~as.data.frame(t(coef(lm(y ~ z + blups_hv, data = .)))))
+# 100*(colMeans(results_blup_hv)/.3 - 1)
+
+results_fa = map_df(sim_data, ~ as.data.frame(t(coef(lm(y ~ z + fa_scores, data = .)))))
+# 100 * (colMeans(results_fa) / .3 - 1)
+
+results_true = map_df(sim_data, ~ as.data.frame(t(coef(lm(y ~ z + x, data = .)))))
+# 100 * (colMeans(results_true) / .3 - 1)
+
+results_adj2 = map_df(sim_data, function(data) {
+  as.data.frame(t(coef(lm(y ~ z + x_adj, data = data))))
+})
+# 100 * (colMeans(results_adj2) / .3 - 1)
+
+
+grab_pars = function(data) {
+  sem_model = "
+  # fix loadings to be equal as per model assumption
+  lv =~ a*item_1 + a*item_2 + a*item_3 + a*item_4 + a*item_5 + 
+        a*item_6 + a*item_7 + a*item_8 + a*item_9 + a*item_10
+  # lv ~~ 1*lv  # known but wouldn't normally
+  lv ~~ z      # implied
+  y ~ b0*1 + b1*z + b2*lv
+"
+  
+  
+  fit = lavaan::sem(
+    sem_model, 
+    data,
+    estimator = 'mlr',
+    control = list(
+      control = list(eval.max = 1000, iter.max = 1000)
+    )
+  )
+  
+  if(fit@optim$converged & lavaan::lavInspect(fit, 'post') == TRUE) {
+    broom::tidy(fit) %>%
+      filter(grepl(label, pattern = '^b')) %>%
+      pull(estimate)    
+  } else {
+    warning('FIT PROBLEM. Refitting with ML')
+    fit = lavaan::sem(
+      sem_model, 
+      data,
+      estimator = 'ml',
+      control = list(
+        control = list(eval.max = 1000, iter.max = 1000)
+      )
+    )
+    broom::tidy(fit) %>%
+      filter(grepl(label, pattern = '^b')) %>%
+      pull(estimate)  
+  }
+}
+
+results_sem = furrr::future_map_dfr(sim_data, ~as.data.frame(t(grab_pars(.))))
+
+# 100 * (colMeans(results_sem) / .3 - 1)
+
+
+sim_data_df = sim_data %>% 
+  bind_rows(.id = 'sim')
+
+sim_summaries = sim_data_df %>% 
+  select(contains(c('x', 'blup', 'fa'))) %>% 
+  tidyext::describe_all_num()
+
+sim_summaries2 = sim_data_df %>% 
+  select(contains(c('sim','x', 'blup', 'fa'))) %>% 
+  split(.$sim) %>% 
+  furrr::future_map_dfr(tidyext::describe_all_num, .id = 'sim') #%>% 
+
+sim_summaries2 = sim_summaries2 %>%   
+  select(Variable, Mean:Max) %>% 
+  split(.$Variable) %>% 
+  furrr::future_map_dfr(tidyext::describe_all_num, .id = 'sim')
+
+sim_cors = sim_data_df %>% 
+  select(contains(c('x', 'blup', 'fa'))) %>% 
+  cor()
+
+
+results_all = list(
+  results_lm = results_lm,
+  results_blup = results_blup,
+  results_blup_hv = results_blup_hv,
+  results_fa = results_fa,
+  results_adj2 = results_adj2,
+  results_sem = results_sem,
+  results_true = results_true
+)
+
+
+plan(sequential)
+
+
+save(
+  sim_summaries,
+  # sim_summaries2,
+  sim_cors,
+  results_all, 
+  file = 'data/micromacro/results.RData'
+)
+```
+
+## Results
+
+Here are the results. We can first take a peek at the estimated scores from the two-step approaches. The CV adjustment appears closely matched to the true score at first, but we see it's range is very wild, which is what FJK found also. Interestingly, the BLUPs from the mixed models have less variance than the true scores. The factor score is in keeping with the BLUPs, but appears also to have notable extremes, but far less than the CV adjustment. We'll talk about why these extremes may arise later.
+
+```{r results-summary-load, echo=FALSE, eval=TRUE, cache=FALSE}
+load('data/micromacro/results.RData')
+
+sim_summaries %>% 
+  mutate(
+    Variable = c(
+      'True',
+      'CV Adj',
+      'Unadjusted',
+      'BLUP_mixed',
+      'BLUP_mixed_hetvar',
+      'Factor Score'
+    )
+  ) %>% 
+  kable_df(digits = 2, caption = 'Estimated scores')
+
+# not sure this helps illuminate the issues
+# sim_cors %>% 
+#   kable_df(digits=2, caption='Correlation of Scores')
+```
+
+Now let's look at the bias in the estimates.
+
+```{r results-summary, echo=FALSE, eval=TRUE, cache=FALSE}
+results_all_summary = map(
+  results_all, 
+  ~ rename_with(., function(x) x = c('Intercept', 'Z', 'X'))
+)
+
+map_df(results_all_summary, ~ 100 * (colMeans(.) / .3 - 1), .id = 'Model') %>% 
+  mutate(Model = c('Unadjusted', 'BLUP_mixed', 'BLUP_mixed_hetvar', 'Factor Score', 'CV Adj', 'SEM', 'True')) %>% 
+  kable_df(caption = 'Percent bias')
+```
+
+The results suggest a couple things. First, the results of CV were duplicated for the unadjusted setting, where the group level covariate has a slight bias upward, but the aggregate is severely downwardly biased[^3]. We can also see that a two-step approach using BLUPs from a mixed model (with or without heterogeneous variances), or factor scores, either eliminate or notably reduce the bias for the aggregate score, but still have issue with the group level covariate. This is because of the correlation between the group level and lower level covariates, which if zero, would result in no bias, and has long been a known issue with mixed models. The factor scores had some very wild results at times, even after overcoming basic inadmissible results. In the end, we see that the calculated adjustment and SEM both essentially eliminate the bias by practical standards. It is worth noting that the bias for either the factor analysis or SEM would be completely eliminated if the model adds a regression of the latent variable onto the group level covariate $Z$.
+
+[^3]: For those who may not have access to the article, the values for percentage bias in CV were as follows: for the unadjusted model, the bias for the coefficients under these conditions was 0.6, 15.3, -50.4, and for the adjusted model, -1.1, -1.3, 5.0.
+
+Note that in practice, a two-step approach, such as using the mixed model BLUPs or factor scores, comes with the same issue of using an estimate rather than observed score that we have using the mean. Even if there is no bias, the estimated uncertainty would be optimistic as it doesn't take into account the estimation process. This uncertainty decreases with the number of observations per group (or number of items from the factor analytic perspective), but would technically need to be dealt with, e.g. using 'factor score regression' @devlieger2016hypothesis or more simply, just doing the SEM.
+
+```{r brms-example, eval=FALSE}
+library(brms)
+
+system.time({
+  test_brms = furrr::future_map_dfr(
+    sim_data[1:16],
+    function(data) as.data.frame(t(summary(brm(
+      y ~ z + me(x_unadj, sdx = sd_x),
+      data %>% rowwise() %>% mutate(sd_x = sd(c_across(item_1:item_10))),
+      # cores = 4,
+      prior = prior(normal(0, 1), class = 'b'),
+      control = list(adapt_delta = .99, max_treedepth = 15),
+      iter = 4000
+    ))$fixed[,'Estimate']))
+  )
+})
+
+100 * (colMeans(brms_results) / .3 - 1) 
+```
+
+## Reliability
+
+```{r reliability-init, echo=FALSE, eval=FALSE}
+# run out of doc as this cats messages that isn't worth the trouble to work around
+alphas = map(sim_data, function(x) x %>% 
+               select(contains('item')) %>% 
+               psych::alpha())
+
+save(alphas, file = 'data/micromacro/alpha.RData')
+```
+
+```{r reliability-load-process, echo=FALSE, eval=TRUE, cache=FALSE}
+load('data/micromacro/alpha.RData')
+alphas = map_dbl(alphas, function(x) x$total$std.alpha)
+alphas_summary = tidyext::num_summary(alphas, digits = 2)
+```
+
+Interestingly, if we look at the reliability of the measure, we shouldn't be surprised at the results. Reliability may be thought of as the amount of variance in an observed score that is true score variance @revelle2019reliability. Since the underlying construct is assumed unidimensional, we can examine something like coefficient $\alpha$, which gives a sense of how reliable the mean or total score would be. Doing so reveals a fairly poor measure for 10 observations per group under the CV settings. The mean coefficient $\alpha$ is `r alphas_summary$Mean`, the max of which is `r alphas_summary$Max`, which, from a measurement model perspective, would be unacceptable[^4]. This is all to say that we have rediscovered attenuation in correlation due to (lack of) reliability, something [addressed by Spearman over a century ago](https://en.wikipedia.org/wiki/Correction_for_attenuation)[^5].
+
+[^4]: A typical cutoff for coefficient $\alpha$ for a good measure is .8. We can actually use a 'G-theory' approach and calculate this by hand $\frac{1}{1+9/10}$, where 1 is the variance CV fixed for the true score, and 9 is residual variance. $\frac{1}{1+9}$ is the $\rho_x$, i.e. intraclass correlation, that they have in Table 1. In the better scenario $\rho_x$ = $\frac{1}{1+4}$ = .2 and the reliability is $\frac{1}{1+4/10}$ = .71, which is notably better, though still substandard. Even then we can see from their table dramatic decreases in bias from that improvement in reliability.
+
+[^5]: The lack of reliability is likely the culprit behind the wider range in the estimated factor scores as well.
+
+In actual repeated measures, or with constructed scales, it's probably unlikely we would have this poor of a measure. Indeed, if we think a mean is appropriate in the first place, we are probably assuming that the scores are something that can be meaningfully combined in the first place, because if a latent construct doesn't actually explain the observations well, then what is the point of estimating it?
+
+```{r reliability-.9, echo=FALSE, eval=FALSE}
+library(future)
+plan(multiprocess)
+
+sim_data = furrr::future_map(1:1000, ~create_data(nu_var = 1))
+
+plan(sequential)
+
+alphas_reliable = map(sim_data, function(x) x %>% select(contains('item')) %>% psych::alpha())
+alphas_reliable = map_dbl(alphas_reliable, function(x) x$total$std.alpha)
+alphas_reliable_summary = tidyext::num_summary(alphas, digits = 2)
+
+reliable_lm = map_df(sim_data, ~as.data.frame(t(coef(lm(y ~ z + x_unadj, data =. )))))
+reliable_lm = t(colMeans(reliable_lm))
+
+save(
+  alphas_reliable_summary, 
+  reliable_lm, 
+  file = 'data/micromacro/alpha_reliable.RData'
+)
+# 100*(colMeans(reliable_lm)/.3 - 1) 
+```
+
+```{r reliability-.9-load, eval=TRUE}
+load('data/micromacro/alpha_reliable.RData')
+```
+
+In our current context, we can create a more reliable measure by decreasing the variance value for $\sigma^2_\nu$ which is the residual variance for the observed items at the lower level. Decreasing it from 9 to 1, puts the observed scores in a notably better place ($\alpha$ = `r alphas_reliable_summary$Mean`), and if we actually have a reliable measure (or even just increase the number of observations per group, as noted by CV), the results show hardly any bias for the group level effect and a near negligible one for the mean effect.
+
+```{r reliable-lm, echo=FALSE, eval=TRUE}
+as.tibble(
+  100*(t(colMeans(reliable_lm))/.3 - 1) 
+) %>% 
+  rename(
+    Intercept = `(Intercept)`,
+    Z = z,
+    X = x_unadj
+  ) %>% 
+  mutate(Model = 'Unadjusted') %>% 
+  select(Model, everything()) %>% 
+  kable_df(caption = 'Percent bias') 
+```
+
+```{r reliability-higher, echo=FALSE, eval=FALSE}
+library(future)
+plan(multiprocess)
+
+sim_data = furrr::future_map(1:1000, ~create_data(nu_var = .1, npg = 10))
+plan(sequential)
+
+alphas = map(sim_data, function(x) x %>% select(contains('item')) %>% psych::alpha())
+alphas = map_dbl(alphas, function(x) x$total$std.alpha)
+alphas_summary = tidyext::num_summary(alphas, digits = 2)
+
+reliable_lm = map_df(sim_data, ~as.data.frame(t(coef(lm(y ~ z + x_unadj, data =. )))))
+```
+
+## Summary
+
+In the end we relearn a valuable, but very old lesson. The take home story here, at least to me, is to have a reliable measure and/or get more observations per group if you can, which would be the same advice for any clustered data situation. If you do have a reliable measure, such as a proportion of simple counts, or a known scale with good properties, using the mean should not give you too much pause. As a precaution, you might go ahead and use White's correction as suggested by FJK. If you have enough data and the model isn't overly complicated, consider doing the SEM.
+
+last updated: `r Sys.Date()`
