@@ -22,12 +22,42 @@
 
 
 
+<section id="update" class="level2">
+<h2 class="anchored" data-anchor-id="update">Update</h2>
 <p>Among many things that have happened recently, I’ve had a daughter, and <a href="https://m-clark.github.io/book-of-models">written a book</a> to come out this year. Fun stuff!</p>
-<p>Not so fun - I’m also attempting to migrate my distill site to quarto and using VS Code, which has been, at best, a dumpster fire. After a lot of effort, it looks like I finally got quarto to know how to use the appropriate python environment (and I’ve given up on trying to get post-specific environments to work). Then came the publishing problems…</p>
-<p>In the end I will likely lose a lot of the code content since quarto doesn’t appear to respect the old web cached objects I had associated with prior posts (which included now defunct or notably modified packages), it also has to use a different directory output, which means I have update links along with rerunning old posts.</p>
-<p>So, while my website will ultimately look slightly better, the old content will be lacking for a while while I try to redo them. Stay tuned.</p>
+<p>Not so fun - I’m also attempting to migrate my distill site to quarto and using VS Code, which has been, at best, very difficult. After a lot of effort, it looks like I finally got quarto to use the appropriate python environment (and I’ve given up on trying to get ‘post-specific’ environments to work). Then came the general publishing problems…</p>
+<p>In the end I may lose a lot of the previous code content, since quarto doesn’t appear to respect the old web cached objects I had associated with prior posts (which included now defunct or notably modified packages). It also has to use a different directory output, which means I have update links along with rerunning old posts.</p>
+<p>I love using Quarto, and highly recommend it for most things (including if you never created a website before), but this particular aspect has been not at all straightforward. So, while my website will ultimately look slightly better, and hopefully be easier to maintain, the old content will be lacking for a while while I try to redo them. Stay tuned.</p>
+</section>
+<section id="migration-issues" class="level2">
+<h2 class="anchored" data-anchor-id="migration-issues">Migration Issues</h2>
+<p>Issues I came across in case it’s useful to others:</p>
+<ul>
+<li>https://github.com/quarto-dev/quarto-cli/issues/10276</li>
+<li>https://github.com/quarto-dev/quarto-cli/issues/5220</li>
+<li>Deployment error (had to ‘rerun all’ from github itself)</li>
+<li>Default radian pointing to wrong python environment which would then automatically load that environment and ignore any other env setting.</li>
+<li>https://github.com/quarto-dev/quarto-cli/issues/9929 (I think this was because I was in the gh-pages branch and not the main branch)</li>
+</ul>
+<p>What my ultimate solution was:</p>
+<p>For Python:</p>
+<ul>
+<li>The only env I could get things to recognize was a conda env in a default location for conda envs. My preference for uv created env, and secondarily, standard py env would not be recognized.
+<ul>
+<li>Would not recognize any env in project directories</li>
+</ul></li>
+<li>In .Rprofile (not <code>.Renviron</code>, not <code>_environment</code>, which were not resepected) put <code>Sys.setenv(RETICULATE_PYTHON = "~/anaconda3/envs/m-clark-github-io/bin/python")</code> followed by <code>library(reticulate)</code>.</li>
+</ul>
+<p>For publishing:</p>
+<ul>
+<li>The biggest issue was the inability to use the top-level directory as the output_dir as I had before.</li>
+<li>I also now have to change every post file from its previous name to ‘index.qmd’ within the date-named directory in order for previous links to work. I could add an <a href="https://quarto.org/docs/websites/website-navigation.html#redirects">alias</a> to every one of the files and let them redirect, but I prefer the cleaner address, and it’s easier to rename the files collectively than to add aliases to every post.</li>
+<li>I had to discover that you can’t be in the gh-pages branch (which I’m still fuzzy as to the need of). It’s mentioned in the doc, but not stressed or highlighted at all.</li>
+</ul>
+<p>Once I was able to get quarto to render the pages in the first place, it published pretty easily via <code>quarto publish gh-pages</code>.</p>
 
 
+</section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2025,
   author = {Clark, Michael},
@@ -3651,6 +3681,1616 @@ Clark, Michael. 2022. <span>“Deep Learning for Tabular Data.”</span> May
   <guid>https://m-clark.github.io/posts/2022-04-01-more-dl-for-tabular/</guid>
   <pubDate>Sun, 01 May 2022 04:00:00 GMT</pubDate>
   <media:content url="https://m-clark.github.io/img/nnet.png" medium="image" type="image/png" height="120" width="144"/>
+</item>
+<item>
+  <title>Double Descent</title>
+  <dc:creator>Michael Clark</dc:creator>
+  <link>https://m-clark.github.io/posts/2021-10-30-double-descent/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>A co-worker passed along a recent article <span class="citation" data-cites="dar2021farewell">(Dar, Muthukumar, and Baraniuk 2021)</span> on the topic of <em>double descent</em> in machine learning. I figured I’d summarize some key points I came across while perusing it and some referenced articles. In addition, I’ll provide an accessible example demonstrating the phenomenon.</p>
+<section id="what-is-double-descent" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-double-descent">What is double descent?</h2>
+<section id="bias-variance-trade-off" class="level3">
+<h3 class="anchored" data-anchor-id="bias-variance-trade-off">Bias-variance trade-off</h3>
+<p>To understand double descent you have to revisit the concept of the <em>bias-variance trade-off</em>. Without going into too much detail, the main idea with it is that having an overly complex model leads to <em>overfitting</em> the training data, which results in worse prediction on new data, at least relative to what simpler models would have done. The classic figure looks like the following, where blue is the <em>training error</em> and the red is the <em>test error</em>. Thin lines represent one path of complexity (e.g.&nbsp;across a random sample of the data), while the thicker lines are the average at a particular point of model complexity.</p>
+<p><img src="https://m-clark.github.io/img/double-descent/biasvar2.svg" class="img-fluid"></p>
+<p>If we don’t have a sufficiently complex model, both training and test error will be poor, the case of <em>underfitting</em>. Our model is a poor approximation of the true underlying function, and predicts poorly on data both seen and unseen. When we have too much model complexity relative to the size of our data (e.g.&nbsp;more covariates, nonlinear effects, interactions, etc.), we pass into the overfit situation. Essentially, while our model function would result in a decrease in error with the data it’s trained on (lower bias as it better approximates the true underlying function), with too much complexity, you’d also eventually have notable changes in prediction (high variance) with any slight deviation in the underlying training data. We can even get to the point where we fit the training data perfectly, but it will be overly susceptible to the noise in the data, and not do well with unseen observations.</p>
+<p>To combat this, we usually attempt to find a balance between overly simple and overly complex models. This would be the point where test error is among its lowest point for a desirable level of complexity (e.g.&nbsp;around 20-25 df in the figure above), before it begins to rise again. This may be accomplished more explicitly, for example, picking a model through cross-validation, or more implicitly, for example, through regularization (<span class="citation" data-cites="belkin2019reconciling">Belkin et al. (2019)</span>). For more detail on the bias-variance trade-off, you can look at the exposition in the main article noted above, <a href="https://m-clark.github.io/introduction-to-machine-learning/concepts.html#bias-variance-tradeoff">my document here</a>, or any number of places, as it is an extremely well-known idea in machine learning.</p>
+</section>
+<section id="double-descent" class="level3">
+<h3 class="anchored" data-anchor-id="double-descent">Double Descent</h3>
+<p>The funny thing is, it turns out that the above actually only applies to a specific scenario, one which we will call <em>underparameterized</em> models. We can simplify this notion by just thinking of the case where the number of our parameters to estimate is less than or equal to the number of observations we have to work with. Nowadays though, it’s not uncommon to have what we’d call <em>overparameterized</em> models, such as random forests and neural networks, sometimes with even billions of parameters, far exceeding the data size. In this scenario, when we revisit the trade-off, something unusual happens!</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/img/double-descent/double_descent_concept.png" class="img-fluid figure-img"></p>
+<figcaption>Figure from <span class="citation" data-cites="dar2021farewell">Dar, Muthukumar, and Baraniuk (2021)</span></figcaption>
+</figure>
+</div>
+<p>Such models may have near zero training error, yet do well on unseen data. As we increase complexity, we see something like a second bias-variance trade-off beyond the point where the data is perfectly fit (interpolated). This point is where model complexity (e.g.&nbsp;in terms of number of parameters) <em>p</em> equals the number of observations <em>N</em>, and this is where the realm of the overparameterized models begins. Now test error begins to drop again with increasing complexity.</p>
+</section>
+</section>
+<section id="an-example" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="an-example">An example</h2>
+<p>I thought it would be amusing to try this with the classic <code>mtcars</code> data set available in base R. With this data, our goal will be to predict fuel consumption in miles per gallon (<code>mpg</code>). First we will split the data into training and test components. We create a model where our number of parameters (<code>p</code>), in this case standard regression coefficients, will equal the number of observations (<code>N</code>). Some of the more technically savvy will know that if the number of features and/or parameters to estimate <code>p</code> equals the number of observations <code>N</code>, a standard linear regression model will fit the data perfectly<sup>1</sup>, demonstrated below.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>If not familiar, the <code>mtcars</code> object is a data frame that comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).</p>
+</div></div><div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1">nc <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ncol</span>(mtcars) </span>
+<span id="cb1-2">nr <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> nc</span>
+<span id="cb1-3">fit_perfect <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(mpg <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> ., mtcars[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>nr, ])</span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># summary(fit_perfect) # not shown, all inferential estimates are NaN</span></span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/posts/2021-10-30-double-descent/index_files/figure-html/vis-fit-perfect-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now let’s look at the test error, our prediction on the unseen data we didn’t use in fitting the model. When we do, we see the usual bias-variance trade-off. Our generalizability capabilities have plummeted, as we have overfit the training data and were unable to accommodate unseen observations. We are even predicting negative mpg in some cases!</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/posts/2021-10-30-double-descent/index_files/figure-html/vis-fit-perfect-test-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="p-n" class="level3">
+<h3 class="anchored" data-anchor-id="p-n">p ≤ N</h3>
+<p>Let’s extend the demonstration more fully. We now create models of increasing complexity, starting with an intercept only model (i.e.&nbsp;just using the mean for prediction), to one where all other columns (10) in the data are predictors. Here I repeatedly sampled <code>mtcars</code> of size <img src="https://latex.codecogs.com/png.latex?N%20=%2010"> for training, the remainder for test, and also shuffled the columns each time, doing so for a total of 250 times<sup>2</sup>. Here is the result- the classic bias variance trade-off curve. The larger dot shows the test error minimum, at about 3 covariates (plus intercept). The vertical line denotes our point of interpolation.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/img/double-descent/dd_mtcars_under.svg" class="img-fluid figure-img"></p>
+<figcaption>Double Descent in the underparameterized setting.</figcaption>
+</figure>
+</div>
+</section>
+<section id="p-n-1" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="p-n-1">p &gt; N</h3>
+<p>So with one of the simpler data sets around we were able to demonstrate the bias-variance trade-off clearly. But now let’s try overparameterized models! We don’t need anything fancy or complicated to do this, so for our purposes, I’m just going to add cubic spline basis expansions for the <code>wt</code>, <code>disp</code>, and <code>hp</code> features<sup>3</sup>. This will definitely be enough to put us in a situation where we have more parameters than data, i.e.&nbsp;p &gt; N, but doesn’t make things too abstract<sup>4</sup>.</p>
+<p>The basic linear model approach we might typically use fails to estimate the additional parameters in this situation, so we need a different estimator. Some are familiar with penalized regression techniques such as <em>lasso</em> and <em>ridge</em> regression, and we could use those here. However, I’ll use <em>ridgeless regression</em>, as depicted in <span class="citation" data-cites="hastie2019surprises">Hastie et al. (2019)</span>, and which, like ridge regression, is a straightforward variant of the usual least squares regression<sup>5</sup>. I estimate the coefficients/weights on the training data, and make predictions for the training and test set, calculating their respective errors. Here is an example of the primary function used.</p>
+<div class="cell" data-layout-align="center" data-code_folding="true">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">fit_ridgeless <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(X_train, y, X_test, y_test){</span>
+<span id="cb2-2">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># get the coefficient estimates</span></span>
+<span id="cb2-3">  b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pseudo_inv</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">crossprod</span>(X_train)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%*%</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">crossprod</span>(X_train, y)</span>
+<span id="cb2-4">  </span>
+<span id="cb2-5">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># get training/test predictions</span></span>
+<span id="cb2-6">  predictions_train <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> X_train <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%*%</span> b</span>
+<span id="cb2-7">  predictions_test  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> X_test <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%*%</span> b</span>
+<span id="cb2-8">  </span>
+<span id="cb2-9">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># get training/test error</span></span>
+<span id="cb2-10">  rmse_train <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>((y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> predictions_train[,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>])<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>))</span>
+<span id="cb2-11">  rmse_test  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>((y_test <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> predictions_test[,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>])<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>))</span>
+<span id="cb2-12">  </span>
+<span id="cb2-13">  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># return result</span></span>
+<span id="cb2-14">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(</span>
+<span id="cb2-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">b =</span> b,</span>
+<span id="cb2-16">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">predictions_train =</span> predictions_train,</span>
+<span id="cb2-17">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">predictions_test  =</span> predictions_test,</span>
+<span id="cb2-18">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rmse_train =</span> rmse_train,</span>
+<span id="cb2-19">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rmse_test  =</span> rmse_test</span>
+<span id="cb2-20">  )</span>
+<span id="cb2-21">}</span></code></pre></div>
+</div>
+<p>We can test the function as follows with as little as 10 observations, where p (all predictor coefficients plus intercept = 11 parameters) is greater than N (10). This demonstrates that the ridgeless approach can provide an estimate for all the parameters (unlike the standard <code>lm</code> function), and we also see very low training error, but relatively high test error (in terms of the root mean square error.)</p>
+<div class="cell" data-layout-align="center" data-code_folding="true">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span></span>
+<span id="cb3-2"></span>
+<span id="cb3-3">X <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cbind</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, mtcars[, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]))</span>
+<span id="cb3-4">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> mtcars<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>mpg <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># mpg is the first column</span></span>
+<span id="cb3-5"></span>
+<span id="cb3-6">X_train <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> X[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n, ]</span>
+<span id="cb3-7">y_train <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> mtcars<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>mpg[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n]</span>
+<span id="cb3-8">X_test  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> X[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n),]</span>
+<span id="cb3-9">y_test  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> y[<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>n)]</span>
+<span id="cb3-10"></span>
+<span id="cb3-11">result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fit_ridgeless</span>(X_train, y_train, X_test, y_test)</span></code></pre></div>
+</div>
+<div id="tbl-test-fit-ridgeless" class="cell anchored" data-layout-align="center">
+<div class="cell-output-display">
+<div id="ikdmqttnwq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#ikdmqttnwq table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#ikdmqttnwq thead, #ikdmqttnwq tbody, #ikdmqttnwq tfoot, #ikdmqttnwq tr, #ikdmqttnwq td, #ikdmqttnwq th {
+  border-style: none;
+}
+
+#ikdmqttnwq p {
+  margin: 0;
+  padding: 0;
+}
+
+#ikdmqttnwq .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#ikdmqttnwq .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ikdmqttnwq .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ikdmqttnwq .gt_heading {
+  background-color: #FFFFFF;
+  text-align: left;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_bottom_border {
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_col_headings {
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: none;
+  border-bottom-width: 1px;
+  border-bottom-color: #334422;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ikdmqttnwq .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ikdmqttnwq .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ikdmqttnwq .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ikdmqttnwq .gt_column_spanner {
+  border-bottom-style: none;
+  border-bottom-width: 1px;
+  border-bottom-color: #334422;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ikdmqttnwq .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#ikdmqttnwq .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#ikdmqttnwq .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ikdmqttnwq .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ikdmqttnwq .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ikdmqttnwq .gt_row {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ikdmqttnwq .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ikdmqttnwq .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#ikdmqttnwq .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#ikdmqttnwq .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#ikdmqttnwq .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ikdmqttnwq .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#ikdmqttnwq .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ikdmqttnwq .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ikdmqttnwq .gt_table_body {
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #FFFFFF;
+}
+
+#ikdmqttnwq .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ikdmqttnwq .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ikdmqttnwq .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ikdmqttnwq .gt_left {
+  text-align: left;
+}
+
+#ikdmqttnwq .gt_center {
+  text-align: center;
+}
+
+#ikdmqttnwq .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ikdmqttnwq .gt_font_normal {
+  font-weight: normal;
+}
+
+#ikdmqttnwq .gt_font_bold {
+  font-weight: bold;
+}
+
+#ikdmqttnwq .gt_font_italic {
+  font-style: italic;
+}
+
+#ikdmqttnwq .gt_super {
+  font-size: 65%;
+}
+
+#ikdmqttnwq .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#ikdmqttnwq .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#ikdmqttnwq .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#ikdmqttnwq .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#ikdmqttnwq .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#ikdmqttnwq .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#ikdmqttnwq .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="b" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" style="color: #A9A9A9; font-family: 'Source Sans Pro'; text-transform: uppercase" scope="col">b</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">0.84</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">−1.69</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">0.08</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">−0.08</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">2.76</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">−1.29</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">0.24</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">2.32</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">3.26</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">2.26</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_right" headers="b" style="font-family: 'Source Sans Pro'; font-weight: 400">0.66</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+<div class="cell-output-display">
+<div id="ltoophxgfc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+#ltoophxgfc table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#ltoophxgfc thead, #ltoophxgfc tbody, #ltoophxgfc tfoot, #ltoophxgfc tr, #ltoophxgfc td, #ltoophxgfc th {
+  border-style: none;
+}
+
+#ltoophxgfc p {
+  margin: 0;
+  padding: 0;
+}
+
+#ltoophxgfc .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#ltoophxgfc .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#ltoophxgfc .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#ltoophxgfc .gt_heading {
+  background-color: #FFFFFF;
+  text-align: left;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_bottom_border {
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_col_headings {
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: none;
+  border-bottom-width: 1px;
+  border-bottom-color: #334422;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#ltoophxgfc .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#ltoophxgfc .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#ltoophxgfc .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#ltoophxgfc .gt_column_spanner {
+  border-bottom-style: none;
+  border-bottom-width: 1px;
+  border-bottom-color: #334422;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#ltoophxgfc .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#ltoophxgfc .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#ltoophxgfc .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#ltoophxgfc .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#ltoophxgfc .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#ltoophxgfc .gt_row {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#ltoophxgfc .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ltoophxgfc .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#ltoophxgfc .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#ltoophxgfc .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#ltoophxgfc .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ltoophxgfc .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#ltoophxgfc .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ltoophxgfc .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#ltoophxgfc .gt_table_body {
+  border-top-style: none;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #FFFFFF;
+}
+
+#ltoophxgfc .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ltoophxgfc .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#ltoophxgfc .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#ltoophxgfc .gt_left {
+  text-align: left;
+}
+
+#ltoophxgfc .gt_center {
+  text-align: center;
+}
+
+#ltoophxgfc .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#ltoophxgfc .gt_font_normal {
+  font-weight: normal;
+}
+
+#ltoophxgfc .gt_font_bold {
+  font-weight: bold;
+}
+
+#ltoophxgfc .gt_font_italic {
+  font-style: italic;
+}
+
+#ltoophxgfc .gt_super {
+  font-size: 65%;
+}
+
+#ltoophxgfc .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#ltoophxgfc .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#ltoophxgfc .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#ltoophxgfc .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#ltoophxgfc .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#ltoophxgfc .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#ltoophxgfc .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="rmse_train" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" style="color: #A9A9A9; font-family: 'Source Sans Pro'; text-transform: uppercase" scope="col">rmse_train</th>
+<th id="rmse_test" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" style="color: #A9A9A9; font-family: 'Source Sans Pro'; text-transform: uppercase" scope="col">rmse_test</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right" headers="rmse_train" style="font-family: 'Source Sans Pro'; font-weight: 400">0.05</td>
+<td class="gt_row gt_right" headers="rmse_test" style="font-family: 'Source Sans Pro'; font-weight: 400">5.79</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>If we do this for more complex models (max linear features, plus each additional set of features associated with a cubic spline basis expansions), we obtain the following. Now we see the second descent in test error takes form!</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/img/double-descent/dd_mtcars_over.svg" class="img-fluid figure-img"></p>
+<figcaption>Double Descent in the overparameterized setting.</figcaption>
+</figure>
+</div>
+<p>Putting our results together gives us the double descent curve.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/img/double-descent/dd_mtcars.svg" class="img-fluid figure-img"></p>
+<figcaption>Double Descent in the overparameterized setting.</figcaption>
+</figure>
+</div>
+<aside>
+Note that this all holds for the most part with classification problems, including multiclass (or multivariate/class targets).
+</aside>
+<p>We not only see the double descent pattern, but we can also note that the global test error minimum occurs with the model with the most parameters. The gray dot is the lowest test error with the underparameterized settings, while the dark red is the global test error minimum.</p>
+</section>
+</section>
+<section id="why-does-this-happen" class="level2">
+<h2 class="anchored" data-anchor-id="why-does-this-happen">Why does this happen?</h2>
+<p>Understanding the double descent phenomenon is an area of active research, and there are some technical issues we won’t cover here. However, we can note a couple things more broadly. When we’re in the underparameterized situation, we ultimately begin to force features that have no association with the target to fit the data anyway. Once you move beyond the point of where these features are useful, test error begins to rise again, until the point of interpolation where test error is even worse than guessing (or just guessing in the classification case).</p>
+<p>Beyond the interpolation point, all models we potentially employ using this estimation technique will have the capacity to fit the training data perfectly, i.e.&nbsp;zero bias. This allows us to fit the remaining noise in the data with the additional features employed by the more complex models. There is no guarantee that among the models you fit that the lowest test error will be found relative to the underparameterized setting. However, the lowest test error to be found is ‘out there’ somewhere<sup>6</sup>. So adding complexity will potentially allow you to find improved test error.</p>
+<p>Another way to put it is that we have a single class of models to consider, and under and overparameterized are special cases of that more general class. Any one of these might result in the lowest test error. The overparameterized models, which may contain complex nonlinearities and interactions, are likely to be more compatible with the data than the simpler models<sup>7</sup>. So odds are good that at least one of them will have a smaller test error as well. In any case, restricting ourselves to the underparameterized setting is definitely no guarantee that we will find the most performant model.</p>
+<p>One caveat is that the model we used is an example of ‘implicit’ regularization, one in which there is no hyper-parameter to set (or discover through cross-validation), like with ridge and lasso. With other techniques (e.g.&nbsp;optimally chosen ridge regression estimator) we may still be able to achieve optimal test error without complete interpolation, and show a reduced peak.</p>
+<p><span class="citation" data-cites="dar2021farewell">Dar, Muthukumar, and Baraniuk (2021)</span> note that in the overparameterized setting, we can distinguish the signal part of the error term that reduces as a function of N/p, where the noise part of the error term is a function of p/N. In addition, there is a portion of test error related to model misspecification, which will always decrease with overparameterization. In addition, one must consider both feature correlations as well as correlations among observations. Having more complex covariance structure doesn’t negate the double descent phenomenon, but they suggest that, for example, cases where there is low effective dimension within these additional features will more readily display the double descent.</p>
+<p>Another issue is that in any given situation it is difficult to know where in the realm of available models we exist presently. So additional complexity, or even additional data, may in fact hurt performance <span class="citation" data-cites="nakkiran2019deep">(Nakkiran et al. 2019)</span>.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The double descent phenomenon is a quite surprising scenario, especially for those who have only heard of the classical bias-variance trade off. There is still much to learn regarding it, but such research is off and running. For practical purposes, it is worth keeping it in mind to aid us in model selection and thinking about our modeling strategies in general.</p>
+<!-- [^ridgeless]:  -->
+
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0">
+<div id="ref-belkin2019reconciling" class="csl-entry">
+Belkin, Mikhail, Daniel Hsu, Siyuan Ma, and Soumik Mandal. 2019. <span>“Reconciling Modern Machine-Learning Practice and the Classical Bias–Variance Trade-Off.”</span> <em>Proceedings of the National Academy of Sciences</em> 116 (32): 15849–54.
+</div>
+<div id="ref-dar2021farewell" class="csl-entry">
+Dar, Yehuda, Vidya Muthukumar, and Richard G Baraniuk. 2021. <span>“A Farewell to the Bias-Variance Tradeoff? An Overview of the Theory of Overparameterized Machine Learning.”</span> <em>arXiv Preprint arXiv:2109.02355</em>.
+</div>
+<div id="ref-hastie2019surprises" class="csl-entry">
+Hastie, Trevor, Andrea Montanari, Saharon Rosset, and Ryan J Tibshirani. 2019. <span>“Surprises in High-Dimensional Ridgeless Least Squares Interpolation.”</span> <em>arXiv Preprint arXiv:1903.08560</em>.
+</div>
+<div id="ref-nakkiran2019deep" class="csl-entry">
+Nakkiran, Preetum, Gal Kaplun, Yamini Bansal, Tristan Yang, Boaz Barak, and Ilya Sutskever. 2019. <span>“Deep Double Descent: Where Bigger Models and More Data Hurt.”</span> <em>arXiv Preprint arXiv:1912.02292</em>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>R<sup>2</sup> = 1 in the standard linear model setting.↩︎</p></li>
+<li id="fn2"><p>Note that the intercept term is added after data shuffling so when p = 1 it is the intercept only model, i.e.&nbsp;guessing the mean.↩︎</p></li>
+<li id="fn3"><p>I used <span class="pack" style="">mgcv</span> to so this, then added them in whole for each term to the previously shuffled model matrix. These columns are not shuffled. By default these will add 10 columns each to the model matrix.↩︎</p></li>
+<li id="fn4"><p>For more on generalized additive models, see <a href="https://m-clark.github.io/generalized-additive-models/">my document</a>.↩︎</p></li>
+<li id="fn5"><p>Ridgeless regression has the same form as the ‘normal’ equations for least squares, but instead of <img src="https://latex.codecogs.com/png.latex?%5Cbeta%20%5Csim%20(X%5ETX)%5E%7B-1%7D%20%5Ccdot%20X%5ETy">, we have <img src="https://latex.codecogs.com/png.latex?%5Cbeta%20%5Csim%20(X%5ETX)%5E%7B+%7D%20%5Ccdot%20X%5ETy"> where the first part is the pseudo-inverse of <img src="https://latex.codecogs.com/png.latex?X">. It is similar to equations for ridge regression (see my demo <a href="https://m-clark.github.io/models-by-example/penalized-maximum-likelihood.html#l2-ridge-regularization">here</a>) and can be seen as an approximation to it as the ridge penalty tends toward zero.↩︎</p></li>
+<li id="fn6"><p>Fox Mulder told me so.↩︎</p></li>
+<li id="fn7"><p>Because nature is just funny that way.↩︎</p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2021,
+  author = {Clark, Michael},
+  title = {Double {Descent}},
+  date = {2021-11-13},
+  url = {https://m-clark.github.io/posts/2021-10-30-double-descent/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2021" class="csl-entry quarto-appendix-citeas">
+Clark, Michael. 2021. <span>“Double Descent.”</span> November 13, 2021.
+<a href="https://m-clark.github.io/posts/2021-10-30-double-descent/">https://m-clark.github.io/posts/2021-10-30-double-descent/</a>.
+</div></div></section></div> ]]></description>
+  <category>deep learning</category>
+  <category>machine learning</category>
+  <guid>https://m-clark.github.io/posts/2021-10-30-double-descent/</guid>
+  <pubDate>Sat, 13 Nov 2021 05:00:00 GMT</pubDate>
+  <media:content url="https://m-clark.github.io/img/double-descent/dd_mtcars.png" medium="image" type="image/png" height="86" width="144"/>
+</item>
+<item>
+  <title>This is definitely not all you need</title>
+  <dc:creator>Michael Clark</dc:creator>
+  <link>https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="motivation" class="level2">
+<h2 class="anchored" data-anchor-id="motivation">Motivation</h2>
+<p>I’ve been a little perplexed at the lack of attention of deep learning (DL) toward what I consider to be ‘default’ data in my world, often referred to as <em>tabular data</em>, where typically we have a two dimensional input of observations (rows) and features (columns) and inputs are of varying type, scale and source. Despite the ubiquity of such data in data science generally, and despite momentous advances in areas like computer vision and natural language processing, at this time, it’s not very clear what the status of DL for tabular data is.</p>
+<p>There have been developments in the area recently though, with some modeling approaches, such as TabNet, gaining traction. In June of 2021, I actually came across three papers on <a href="arxiv.org">Arxiv</a> that were making related claims about the efficacy of DL for tabular data. As in many academic and practical (and life) pursuits, results of these studies are nuanced, so I thought I’d help myself and others by summarizing here.</p>
+</section>
+<section id="goal" class="level2">
+<h2 class="anchored" data-anchor-id="goal">Goal</h2>
+<p>I want to know if, e.g.&nbsp;time and/or resources are limited, whether it will be worth diving into a DL model if I have a satisfactory simpler/easier one ready to implement that does pretty well. Perhaps this answer is already, ‘if it ain’t broke, don’t fix it’, but given the advancements in other data domains, it would be good to assess what the current state of DL with tabular data is.</p>
+</section>
+<section id="caveats" class="level2">
+<h2 class="anchored" data-anchor-id="caveats">Caveats</h2>
+<ul>
+<li>I’m not going to do more than give a cursory summary of the articles, and provide no in-depth explanation of the models. For more detail, see the corresponding articles and references for the models therein. You are not going to learn how to use TabNet, NODE, transformers, etc., for tabular data.</li>
+<li>There are other decent articles on the topic not covered here. Some are referenced in these more recent offerings, so feel free to peruse.</li>
+</ul>
+</section>
+<section id="quick-take" class="level2">
+<h2 class="anchored" data-anchor-id="quick-take">Quick Take</h2>
+<p>In case you don’t want any detail, here’s a quick summary based on my impressions from these articles. Right now, if you want to use DL on tabular data, don’t make a fuss of it. A simple architecture, even a standard multi-layer perceptron, will likely do as well as more complicated ones. In general though, the amount of effort put into prep/tuning may not be worth it for many typical tabular data settings, for example, relative to a suitably flexible statistical model (e.g.&nbsp;GAMM) or a default fast boosting implementation like XGBoost. However, DL models are already thinking ‘big data’, so for very large data situations, a DL model might make a great choice, as others may not be computationally very viable. It also will not be surprising at all that in the near future some big hurdle may be overcome as we saw with DL applications in other fields, in which case some form of DL may be ‘all you need’.</p>
+<p>Now, on to the rest!</p>
+</section>
+<section id="tabular-data-deep-learning-is-not-all-you-need" class="level2">
+<h2 class="anchored" data-anchor-id="tabular-data-deep-learning-is-not-all-you-need">Tabular Data: Deep Learning is Not All You Need</h2>
+<section id="paper-info" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Shwartz-Ziv &amp; Armon</li>
+<li><em>Where</em>: Intel</li>
+<li><em>When</em>: 2021-06-21 V1</li>
+<li><a href="https://arxiv.org/pdf/2106.03253v1.pdf">Arxiv Link</a></li>
+</ul>
+</section>
+<section id="from-the-abstract" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>We analyze the deep models proposed in four recent papers across eleven datasets, nine of which were used in these papers, to answer these questions. We show that in most cases, each model performs best on the datasets used in its respective paper but significantly worse on other datasets. Moreover, our study shows that XGBoost (Chen and Guestrin, 2016) usually outperforms the deep models on these datasets. Furthermore, we demonstrate that the hyperparameter search process was much shorter for XGBoost.</p>
+</blockquote>
+</section>
+<section id="overview" class="level3">
+<h3 class="anchored" data-anchor-id="overview">Overview</h3>
+<p>For each model they used the data that was implemented in the original model papers by the authors (e.g.&nbsp;the dataset used in the TabNet article), and also used their suggested parameter settings. They tested all the models against their own data, plus the other papers’ data, plus two additional data sets that were not used in any of the original papers.</p>
+</section>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>They use eleven total datasets. Nine datasets are those used in the original papers on TabNet, DNF-Net, and NODE, drawing three datasets from each paper. Additionally, Shwartz-Ziv &amp; Armon use two Kaggle datasets not used in any of those papers. Sample sizes ranged from 7k to 1M, 10-2000 features, with two being numeric targets, while the other target variables ranged from 2-7 classes. Datasets are described in detail in the paper along with links to the source (all publicly available).</p>
+</section>
+<section id="models-explored" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored">Models Explored</h3>
+<p>Brief summaries of the DL models are found in the paper.</p>
+<ul>
+<li><em>XGBoost</em></li>
+<li><em>TabNet</em></li>
+<li><em>Neural Oblivious Decision Ensembles</em> (NODE)</li>
+<li><em>DNF-Net</em></li>
+<li><em>1D-CNN</em></li>
+</ul>
+</section>
+<section id="quick-summary" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary">Quick Summary</h3>
+<section id="not-counting-the-ensemble-methods" class="level5">
+<h5 class="anchored" data-anchor-id="not-counting-the-ensemble-methods">Not counting the ensemble methods…</h5>
+<ul>
+<li>TabNet did best on all of its own data sets, but was not the best model on any other.</li>
+<li>NODE each did best on 2 of its own 3 data sets, but not on any other.</li>
+<li>DNF-Net best on one of its own 3 data sets, but not on any other.</li>
+<li>XGBoost was best on the remaining 5 datasets.</li>
+</ul>
+</section>
+<section id="counting-the-ensemble-methods" class="level5">
+<h5 class="anchored" data-anchor-id="counting-the-ensemble-methods">Counting the ensemble methods…</h5>
+<ul>
+<li>TabNet did best on 2 of its own 3 data sets, but was not the best model on any other.</li>
+<li>DNF-Net and NODE each did best on one of its own 3 data sets, but not on any other.</li>
+<li>XGBoost was best on one dataset.</li>
+</ul>
+<p>Of those, XGB was notably better on ‘unseen’ data, and comparable to the best performing ensemble. A simple ensemble was also very performant. From the paper:</p>
+<blockquote class="blockquote">
+<p>The ensemble of all the models was the best model with 2.32% average relative increase, XGBoost was the second best with 3.4%, 1D-CNN had 7.5%, TabNet had 10.5%, DNF-Net had 11.8% and NODE had 14.2% (see Tables 2 and 3 in the appendix for full results).</p>
+</blockquote>
+<p>As a side note, XGBoost + DL was best, but that defeats the purpose in my opinion. Presumably any notably more complicated setting will be potentially better with enough complexity, but unless there is an obvious way on how to add such complexity, it’s mostly an academic exercise. However, as the authors note, if search is automated, maybe the complexity of combining the models is less of an issue.</p>
+</section>
+</section>
+<section id="other-stuff" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff">Other stuff</h3>
+<section id="kudos" class="level5">
+<h5 class="anchored" data-anchor-id="kudos">Kudos</h5>
+<p>The authors cite the <a href="https://en.wikipedia.org/wiki/No_free_lunch_theorem">No Free Lunch theorem</a> in the second paragraph, something that appears to be lost on many (most?) of these types of papers touting small increases in performance for some given modeling approach.</p>
+</section>
+<section id="issues" class="level5">
+<h5 class="anchored" data-anchor-id="issues">Issues</h5>
+<p>There are always things like training process/settings that are difficult to fully replicate. By the time authors publish any paper, unless exact records are kept, the iterations (including discussions that rule out various paths) are largely lost to time. This isn’t a knock on this paper, just something to keep in mind.</p>
+</section>
+<section id="opinion" class="level5">
+<h5 class="anchored" data-anchor-id="opinion">Opinion</h5>
+<p>I liked this one in general. They start by giving the competing models their best chance with their own settings and data, which was processed and trained in the same way. Even then, those models still either didn’t perform best, and/or performed relatively poorly on any other dataset.</p>
+</section>
+</section>
+</section>
+<section id="regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data" class="level2">
+<h2 class="anchored" data-anchor-id="regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data">Regularization is all you Need: Simple Neural Nets can Excel on Tabular Data</h2>
+<section id="paper-info-1" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info-1">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Kadra et al.</li>
+<li><em>Where</em>: U of Freiburg, Leibniz U (Germany)</li>
+<li><em>When</em>: 2021-06-06 V1</li>
+<li><a href="https://arxiv.org/pdf/2106.11189.pdf4">Arxiv Link</a></li>
+</ul>
+</section>
+<section id="from-the-abstract-1" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract-1">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>Tabular datasets are the last “unconquered castle” for deep learning… In this paper, we hypothesize that the key to boosting the performance of neural networks lies in rethinking the joint and simultaneous application of a large set of modern regularization techniques. As a result, we propose regularizing plain Multilayer Perceptron (MLP) networks by searching for the optimal combination/cocktail of 13 regularization techniques for each dataset using a joint optimization over the decision on which regularizers to apply and their subsidiary hyperparameters.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>We empirically assess the impact of these regularization cocktails for MLPs on a large-scale empirical study comprising 40 tabular datasets and demonstrate that (i) well-regularized plain MLPs significantly outperform recent state-of-the-art specialized neural network architectures, and (ii) they even outperform strong traditional ML methods, such as XGBoost.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>We emphasize that some of these publications claim to outperform Gradient Boosted Decision Trees (GDBT) [1, 37], and other papers explicitly stress that their neural networks do not outperform GBDT on tabular datasets [38, 22]. In contrast, we do not propose a new kind of neural architecture, but a novel paradigm for learning a combination of regularization methods.**</p>
+</blockquote>
+</section>
+<section id="overview-1" class="level3">
+<h3 class="anchored" data-anchor-id="overview-1">Overview</h3>
+<p>This data is more about exploring regularization techniques (e.g.&nbsp;data augmentation, model averaging via dropout) rather than suggesting any particular model is superior. Even in the second paragraph they state their results do not suggest a performance gain over boosting methods. Their focus is on potentially improving DL for tabular data through regularization with two hypotheses:</p>
+<ul>
+<li>Regularization cocktails outperform state-of-the-art deep learning architectures on tabular datasets.</li>
+<li>Regularization cocktails outperform Gradient-Boosted Decision Trees, as the most commonly used traditional ML method for tabular data.</li>
+</ul>
+</section>
+<section id="data-1" class="level3">
+<h3 class="anchored" data-anchor-id="data-1">Data</h3>
+<p>Forty total datasets ranging from as little as ~400 observations to over 400k, and between 4 and 2000 features. All were categorical targets, with about half binary. All available at openml.org with target ID provided.</p>
+</section>
+<section id="models-explored-1" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored-1">Models Explored</h3>
+<p>Comparison models:</p>
+<ul>
+<li><em>TabNet</em>: (with author’s proposed defaults)</li>
+<li><em>NODE</em>: (with author’s proposed defaults)</li>
+<li><em>Autogluon</em>: Tabular: can use other techniques but restricted to ensembles of neural nets for this demo</li>
+<li><em>ASK-GBDT</em>: GB via Auto-sklearn (Note this tool comes from one of the authors )</li>
+<li><em>XGBoost</em>: Original implementation</li>
+<li><em>MLP</em>: Multilayer Perceptron - 9 layers with 512 hidden units each.</li>
+<li><em>MLP+D</em>: MLP with Dropout</li>
+<li><em>MLP+C</em>: MLP with regularization cocktail</li>
+</ul>
+</section>
+<section id="quick-summary-1" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary-1">Quick Summary</h3>
+<ul>
+<li>To begin, their regularization cocktail approach is the clear winner on these datasets, having one outright on over 40% of them (based on table 2).</li>
+<li>Standard XGB performed best (or tied for best) 8 of the 40 data sets, while it or ASK-GBDT were best for 12 datasets combined.</li>
+<li>Simple MLP was best once, while MLP with dropout was best 5 times, while the cocktail method was best in general, across 19 datasets.</li>
+<li>The ‘fancy’ DL models were the worst performers across the board. TabNet never performed best, and NODE only did once, but the latter also repeatedly failed due to memory issues or run-time limitations (this memory issue was mentioned in the previous paper also).</li>
+<li>Head-to-head, the cocktail beat the standard XGB 26 out of 38 times with three ties. So it wins 65% of the time against XGB, 70% against ASK-GBDT, but 60% against either (i.e.&nbsp;some XGB approach).</li>
+</ul>
+</section>
+<section id="other-stuff-1" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff-1">Other Stuff</h3>
+<section id="kudos-1" class="level5">
+<h5 class="anchored" data-anchor-id="kudos-1">Kudos</h5>
+<ul>
+<li>Recognize that tabular data is understudied in mainstream DL literature</li>
+<li>They used a lot of datasets</li>
+<li>They look at the simplest DL models for comparison</li>
+</ul>
+</section>
+<section id="issues-1" class="level5">
+<h5 class="anchored" data-anchor-id="issues-1">Issues</h5>
+<ul>
+<li><p>I wonder why there was not a single numeric outcome among so many datasets. Furthermore, some of the data are image classification (e.g.&nbsp;Fashion-MNIST), so I’m not sure why they’re included. I wouldn’t use a ‘tabular’ technique when standard computer vision approaches already work so well.</p></li>
+<li><p>I’m not familiar with the augmentation techniques they mention, which were devised for image classification, but there have been some used for tabular data for a couple decades at this point that were not mentioned, including simple upsampling, or imputation methods (e.g.&nbsp;SMOTE). That’s not a beef with the article at all, I’ve long wondered why people haven’t been using data augmentation for tabular data given it’s success elsewhere (including for tabular data!).</p></li>
+<li><p>They use a standard t-tests of ranks, but if we’re going to use this sort of approach, we’d maybe want to adjust for all the tests done, and probably for all pairwise comparisons (they show such a table for the regularization methods). Depending on the approach and cutoff, the XGB vs.&nbsp;Cocktail difference may not be significant.</p></li>
+<li><p>Also, I couldn’t duplicate these p-values with R’s default settings for Wilcoxon signed rank tests, and there does in fact seem to be inconsistency between the detailed results and Wilcoxon summaries. For example, in the regularization tests of Table 9, <code>Cocktail</code> vs.&nbsp;<code>WD</code> and <code>DO</code> shows two ties in the first four data sets, yet only 1 tie is reported in the comparison chart for both (Figure 4). For the models, Table 2 show 3 ties of <code>XGB</code> &amp; the <code>Cocktail</code>, with 1 for <code>ASK-G</code> and <code>Cocktail</code>, but 2 and 0 are reported for their Wilcoxon tests. It’s not clear what they did for NODE with all the NAs. I do not believe these discrepancies, nor adjusting for multiple comparisons, will change the results (I re-did those myself).</p></li>
+</ul>
+</section>
+<section id="opinion-1" class="level5">
+<h5 class="anchored" data-anchor-id="opinion-1">Opinion</h5>
+<p>If we ignore the regularization focus and just look at the model comparisons, I’m not overly convinced we have a straightforward victory for cocktail vs.&nbsp;GB as implied in the conclusion. Results appear to be in favor of their proposed method, but not enough to be a near-guarantee in a particular setting, so we’re back to square one of just using the easier/faster/better tool. I’m also not sure who was questioning the use of regularization for neural networks or modeling in general, so the comparison to any model without some form of regularization isn’t as interesting to me. What is interesting to me is that we have another round of evidence that the fancier DL models like TabNet do not perform that well relative to GB or simpler DL architectures.</p>
+</section>
+</section>
+</section>
+<section id="revisiting-deep-learning-models-for-tabular-data" class="level2">
+<h2 class="anchored" data-anchor-id="revisiting-deep-learning-models-for-tabular-data">Revisiting Deep Learning Models for Tabular Data</h2>
+<section id="paper-info-2" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info-2">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko</li>
+<li><em>Where</em>: Yandex (Russia)</li>
+<li><em>When</em>: 2021-06-22</li>
+<li><a href="https://arxiv.org/abs/2106.11959">Arxiv Link</a></li>
+<li><a href="https://github.com/yandex-research/rtdl">Source code</a></li>
+</ul>
+</section>
+<section id="from-the-abstract-2" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract-2">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>The necessity of deep learning for tabular data is still an unanswered question addressed by a large number of research efforts. The recent literature on tabular DL proposes several deep architectures reported to be superior to traditional “shallow” models like Gradient Boosted Decision Trees. However, since existing works often use different benchmarks and tuning protocols, it is unclear if the proposed models universally outperform GBDT. Moreover, the models are often not compared to each other, therefore, it is challenging to identify the best deep model for practitioners.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>In this work, we start from a thorough review of the main families of DL models recently developed for tabular data. We carefully tune and evaluate them on a wide range of datasets and reveal two significant findings. First, we show that the choice between GBDT and DL models highly depends on data and there is still no universally superior solution. Second, we demonstrate that a simple ResNet-like architecture is a surprisingly effective baseline, which outperforms most of the sophisticated models from the DL literature. Finally, we design a simple adaptation of the Transformer architecture for tabular data that becomes a new strong DL baseline and reduces the gap between GBDT and DL models on datasets where GBDT dominates.</p>
+</blockquote>
+</section>
+<section id="overview-2" class="level3">
+<h3 class="anchored" data-anchor-id="overview-2">Overview</h3>
+<p>This paper compares different models on a variety of datasets. They are interested in the GB vs.&nbsp;DL debate, but like the previous paper, also interested in how well a simpler DL architecture might perform, and what steps might help the more complicated ones do better.</p>
+</section>
+<section id="data-2" class="level3">
+<h3 class="anchored" data-anchor-id="data-2">Data</h3>
+<p>They have 11 datasets with a mix of binary, multiclass and numeric targets. Sizes range from 20K to 1M+. There appears to be some overlap with the first paper (e.g.&nbsp;Higgs, Cover type).</p>
+</section>
+<section id="models-explored-2" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored-2">Models Explored</h3>
+<section id="baselines" class="level5">
+<h5 class="anchored" data-anchor-id="baselines">‘Baselines’</h5>
+<ul>
+<li><em>XGBoost</em></li>
+<li><em>CatBoost</em></li>
+<li><em>MLP</em></li>
+<li><em>ResNet</em></li>
+</ul>
+</section>
+<section id="dl-comparisons" class="level5">
+<h5 class="anchored" data-anchor-id="dl-comparisons">DL Comparisons</h5>
+<ul>
+<li><em>SNN</em></li>
+<li><em>NODE</em></li>
+<li><em>TabNet</em></li>
+<li><em>GrowNet</em></li>
+<li><em>DCN V2</em></li>
+<li><em>AutoInt</em></li>
+</ul>
+<p>In addition, they look at ensembles of these models, but this is not of interest to me for this post.</p>
+</section>
+</section>
+<section id="quick-summary-2" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary-2">Quick Summary</h3>
+<p>Note that these refer to the ‘single model’ results, not the results for ensembles.</p>
+<ul>
+<li><p>Some form of boosting performed best on 4 of the 11 datasets.</p></li>
+<li><p>ResNet was best on four classification tasks, but not once for numeric targets.</p></li>
+<li><p>At this point you won’t be surprised at what doesn’t perform as well- TabNet, NODE, and similar. TabNet, DCN, and GrowNet were never the best performer, and the other three were best one time a piece.</p></li>
+<li><p>MLP did not perform best on any data, however the authors note that it ‘is often on par or even better than some of the recently proposed DL models’.</p></li>
+<li><p>They also looked at models with a ‘simple’ transformer architecture. Their results suggest better performance than the other DL models, and similar performance to ResNet.</p></li>
+</ul>
+</section>
+<section id="other-stuff-2" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff-2">Other Stuff</h3>
+<section id="kudos-2" class="level5">
+<h5 class="anchored" data-anchor-id="kudos-2">Kudos</h5>
+<ul>
+<li><p>Sharing the source code!</p></li>
+<li><p>Recognizing that results at this point are complex at best given the lack of standard datasets</p></li>
+</ul>
+</section>
+<section id="issues-2" class="level5">
+<h5 class="anchored" data-anchor-id="issues-2">Issues</h5>
+<ul>
+<li>They note a distinction between <em>heterogeneous</em> vs.&nbsp;other types of data. They call data heterogeneous if the predictors are of mixed data types (e.g.&nbsp;categorical, numeric, count), while something like pixel data would be <em>homogeneous</em> because all the columns are essentially the same type. The latter isn’t as interesting to me for this sort enterprise, and I think the former is what most are thinking about for ‘tabular’ data, otherwise we’d just call it what it is (e.g.&nbsp;image or text data), and modeling/estimation is generally quite a bit easier when all the data is the same type. I do think it’s important that they point out that GB is better with heterogeneous data, and I think if you only look at such data, you’d likely see GB methods still outperforming or at worst on par with the best DL methods.</li>
+</ul>
+</section>
+<section id="opinion-2" class="level5">
+<h5 class="anchored" data-anchor-id="opinion-2">Opinion</h5>
+<p>These results seem consistent with others at this point. Complex DL isn’t helping, and simpler architectures, even standard MLP show good performance. In the end, we still don’t have any clear winner over GB methods.</p>
+</section>
+</section>
+</section>
+<section id="overall-assessment" class="level2">
+<h2 class="anchored" data-anchor-id="overall-assessment">Overall Assessment</h2>
+<p>These papers put together are helpful in painting a picture of where we are at present with deep learning for tabular data, especially with mixed data types. In this setting, it seems that more complicated DL models do not seem to have any obvious gain over simpler architectures, which themselves do not consistently beat boosting methods. It may also be the case that for data of mixed data types/sources, boosting is still the standard to beat.</p>
+<p>Even though these articles are geared toward comparisons to GB/XGBoost, in several settings I’ve applied them, I typically do not necessarily have appreciably greater success compared to a default setting random forest (e.g.&nbsp;from the <span class="pack" style="">ranger</span> package in R), or sufficiently flexible statistical model. Unfortunately this comparison is lacking from the papers, and would have been nice to have, especially for smaller data settings where such models are still very viable. I think a viable fast model, preferably one without any tuning required (or which simply is taken off the shelf) should be the baseline.</p>
+<p>In that light, for tabular data I think one should maybe start with a baseline of a penalized regression with appropriate interactions (e.g.&nbsp;ridge/lasso), or a more flexible penalized approach (GAMM) as a baseline, the latter especially, as it can at least automatically incorporate nonlinear relationships, and tools like <span class="pack" style="">mgcv</span> or <span class="pack" style="">gpboost</span> in R can do so with very large data (1 million +) in a matter of seconds. In settings of relatively higher dimensions, interactions and nonlinearities should be prevalent enough such that basis function, tree, and DL models should be superior. Whether they are practically so is the key concern even in those settings. With smaller, noisier data of less dimension, I suspect the tuning/time effort with present day DL models for tabular data will likely not be worth it. This may change very soon however, so such an assumption should be regularly checked.</p>
+<p><br> <br></p>
+<p>last updated: 2024-12-27</p>
+<p>Neural Net image source from <a href="https://uc-r.github.io/2018/04/09/feedforward-deep-models/">UC Business Analytics R Programming Guide</a></p>
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0">
+<div id="ref-gorishniy2021tabular" class="csl-entry">
+Gorishniy, Yuri, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. 2021. <span>“Revisiting Deep Learning Models for Tabular Data.”</span> <em>arXiv Preprint arXiv:2106.11959</em>.
+</div>
+<div id="ref-kadra2021tabular" class="csl-entry">
+Kadra, Arlind, Marius Lindauer, Frank Hutter, and Josif Grabocka. 2021. <span>“Regularization Is All You Need: Simple Neural Nets Can Excel on Tabular Data.”</span> <em>arXiv Preprint arXiv:2106.11189</em>.
+</div>
+<div id="ref-shwartz2021tabular" class="csl-entry">
+Shwartz-Ziv, Ravid, and Amitai Armon. 2021. <span>“Tabular Data: Deep Learning Is Not All You Need.”</span> <em>arXiv Preprint arXiv:2106.03253</em>.
+</div>
+</div></section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2021,
+  author = {Clark, Michael},
+  title = {This Is Definitely Not All You Need},
+  date = {2021-07-19},
+  url = {https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2021" class="csl-entry quarto-appendix-citeas">
+Clark, Michael. 2021. <span>“This Is Definitely Not All You
+Need.”</span> July 19, 2021. <a href="https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/">https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/</a>.
+</div></div></section></div> ]]></description>
+  <category>deep learning</category>
+  <category>machine learning</category>
+  <guid>https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/</guid>
+  <pubDate>Mon, 19 Jul 2021 04:00:00 GMT</pubDate>
+  <media:content url="https://m-clark.github.io/img/dl-for-tab/deep_nn.png" medium="image" type="image/png" height="104" width="144"/>
 </item>
 </channel>
 </rss>

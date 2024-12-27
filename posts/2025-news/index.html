@@ -178,7 +178,14 @@ ul.task-list li input[type="checkbox"] {
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
-    
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#update" id="toc-update" class="nav-link active" data-scroll-target="#update">Update</a></li>
+  <li><a href="#migration-issues" id="toc-migration-issues" class="nav-link" data-scroll-target="#migration-issues">Migration Issues</a></li>
+  </ul>
+</nav>
 </nav>
 <div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
@@ -191,12 +198,42 @@ ul.task-list li input[type="checkbox"] {
 
 
 
+<section id="update" class="level2">
+<h2 class="anchored" data-anchor-id="update">Update</h2>
 <p>Among many things that have happened recently, I’ve had a daughter, and <a href="https://m-clark.github.io/book-of-models">written a book</a> to come out this year. Fun stuff!</p>
-<p>Not so fun - I’m also attempting to migrate my distill site to quarto and using VS Code, which has been, at best, a dumpster fire. After a lot of effort, it looks like I finally got quarto to know how to use the appropriate python environment (and I’ve given up on trying to get post-specific environments to work). Then came the publishing problems…</p>
-<p>In the end I will likely lose a lot of the code content since quarto doesn’t appear to respect the old web cached objects I had associated with prior posts (which included now defunct or notably modified packages), it also has to use a different directory output, which means I have update links along with rerunning old posts.</p>
-<p>So, while my website will ultimately look slightly better, the old content will be lacking for a while while I try to redo them. Stay tuned.</p>
+<p>Not so fun - I’m also attempting to migrate my distill site to quarto and using VS Code, which has been, at best, very difficult. After a lot of effort, it looks like I finally got quarto to use the appropriate python environment (and I’ve given up on trying to get ‘post-specific’ environments to work). Then came the general publishing problems…</p>
+<p>In the end I may lose a lot of the previous code content, since quarto doesn’t appear to respect the old web cached objects I had associated with prior posts (which included now defunct or notably modified packages). It also has to use a different directory output, which means I have update links along with rerunning old posts.</p>
+<p>I love using Quarto, and highly recommend it for most things (including if you never created a website before), but this particular aspect has been not at all straightforward. So, while my website will ultimately look slightly better, and hopefully be easier to maintain, the old content will be lacking for a while while I try to redo them. Stay tuned.</p>
+</section>
+<section id="migration-issues" class="level2">
+<h2 class="anchored" data-anchor-id="migration-issues">Migration Issues</h2>
+<p>Issues I came across in case it’s useful to others:</p>
+<ul>
+<li>https://github.com/quarto-dev/quarto-cli/issues/10276</li>
+<li>https://github.com/quarto-dev/quarto-cli/issues/5220</li>
+<li>Deployment error (had to ‘rerun all’ from github itself)</li>
+<li>Default radian pointing to wrong python environment which would then automatically load that environment and ignore any other env setting.</li>
+<li>https://github.com/quarto-dev/quarto-cli/issues/9929 (I think this was because I was in the gh-pages branch and not the main branch)</li>
+</ul>
+<p>What my ultimate solution was:</p>
+<p>For Python:</p>
+<ul>
+<li>The only env I could get things to recognize was a conda env in a default location for conda envs. My preference for uv created env, and secondarily, standard py env would not be recognized.
+<ul>
+<li>Would not recognize any env in project directories</li>
+</ul></li>
+<li>In .Rprofile (not <code>.Renviron</code>, not <code>_environment</code>, which were not resepected) put <code>Sys.setenv(RETICULATE_PYTHON = "~/anaconda3/envs/m-clark-github-io/bin/python")</code> followed by <code>library(reticulate)</code>.</li>
+</ul>
+<p>For publishing:</p>
+<ul>
+<li>The biggest issue was the inability to use the top-level directory as the output_dir as I had before.</li>
+<li>I also now have to change every post file from its previous name to ‘index.qmd’ within the date-named directory in order for previous links to work. I could add an <a href="https://quarto.org/docs/websites/website-navigation.html#redirects">alias</a> to every one of the files and let them redirect, but I prefer the cleaner address, and it’s easier to rename the files collectively than to add aliases to every post.</li>
+<li>I had to discover that you can’t be in the gh-pages branch (which I’m still fuzzy as to the need of). It’s mentioned in the doc, but not stressed or highlighted at all.</li>
+</ul>
+<p>Once I was able to get quarto to render the pages in the first place, it published pretty easily via <code>quarto publish gh-pages</code>.</p>
 
 
+</section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2025,
   author = {Clark, Michael},

@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2021-07-19">
+<meta name="description" content="A summary of findings regarding deep learning for tabular data.">
+
+<title>This is definitely not all you need – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-63d2558a97022a24960399e45a6095a3.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text">BlueSky</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">This is definitely not all you need</h1>
+                  <div>
+        <div class="description">
+          <p>A summary of findings regarding deep learning for tabular data.</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">deep learning</div>
+                <div class="quarto-category">machine learning</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author"><a href="https://m-clark.github.io">Michael Clark</a> </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              <a href="https://strong.io">
+              Strong Analytics
+              </a>
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">July 19, 2021</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#motivation" id="toc-motivation" class="nav-link active" data-scroll-target="#motivation">Motivation</a></li>
+  <li><a href="#goal" id="toc-goal" class="nav-link" data-scroll-target="#goal">Goal</a></li>
+  <li><a href="#caveats" id="toc-caveats" class="nav-link" data-scroll-target="#caveats">Caveats</a></li>
+  <li><a href="#quick-take" id="toc-quick-take" class="nav-link" data-scroll-target="#quick-take">Quick Take</a></li>
+  <li><a href="#tabular-data-deep-learning-is-not-all-you-need" id="toc-tabular-data-deep-learning-is-not-all-you-need" class="nav-link" data-scroll-target="#tabular-data-deep-learning-is-not-all-you-need">Tabular Data: Deep Learning is Not All You Need</a>
+  <ul class="collapse">
+  <li><a href="#paper-info" id="toc-paper-info" class="nav-link" data-scroll-target="#paper-info">Paper Info</a></li>
+  <li><a href="#from-the-abstract" id="toc-from-the-abstract" class="nav-link" data-scroll-target="#from-the-abstract">From the Abstract</a></li>
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#models-explored" id="toc-models-explored" class="nav-link" data-scroll-target="#models-explored">Models Explored</a></li>
+  <li><a href="#quick-summary" id="toc-quick-summary" class="nav-link" data-scroll-target="#quick-summary">Quick Summary</a></li>
+  <li><a href="#other-stuff" id="toc-other-stuff" class="nav-link" data-scroll-target="#other-stuff">Other stuff</a></li>
+  </ul></li>
+  <li><a href="#regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data" id="toc-regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data" class="nav-link" data-scroll-target="#regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data">Regularization is all you Need: Simple Neural Nets can Excel on Tabular Data</a>
+  <ul class="collapse">
+  <li><a href="#paper-info-1" id="toc-paper-info-1" class="nav-link" data-scroll-target="#paper-info-1">Paper Info</a></li>
+  <li><a href="#from-the-abstract-1" id="toc-from-the-abstract-1" class="nav-link" data-scroll-target="#from-the-abstract-1">From the Abstract</a></li>
+  <li><a href="#overview-1" id="toc-overview-1" class="nav-link" data-scroll-target="#overview-1">Overview</a></li>
+  <li><a href="#data-1" id="toc-data-1" class="nav-link" data-scroll-target="#data-1">Data</a></li>
+  <li><a href="#models-explored-1" id="toc-models-explored-1" class="nav-link" data-scroll-target="#models-explored-1">Models Explored</a></li>
+  <li><a href="#quick-summary-1" id="toc-quick-summary-1" class="nav-link" data-scroll-target="#quick-summary-1">Quick Summary</a></li>
+  <li><a href="#other-stuff-1" id="toc-other-stuff-1" class="nav-link" data-scroll-target="#other-stuff-1">Other Stuff</a></li>
+  </ul></li>
+  <li><a href="#revisiting-deep-learning-models-for-tabular-data" id="toc-revisiting-deep-learning-models-for-tabular-data" class="nav-link" data-scroll-target="#revisiting-deep-learning-models-for-tabular-data">Revisiting Deep Learning Models for Tabular Data</a>
+  <ul class="collapse">
+  <li><a href="#paper-info-2" id="toc-paper-info-2" class="nav-link" data-scroll-target="#paper-info-2">Paper Info</a></li>
+  <li><a href="#from-the-abstract-2" id="toc-from-the-abstract-2" class="nav-link" data-scroll-target="#from-the-abstract-2">From the Abstract</a></li>
+  <li><a href="#overview-2" id="toc-overview-2" class="nav-link" data-scroll-target="#overview-2">Overview</a></li>
+  <li><a href="#data-2" id="toc-data-2" class="nav-link" data-scroll-target="#data-2">Data</a></li>
+  <li><a href="#models-explored-2" id="toc-models-explored-2" class="nav-link" data-scroll-target="#models-explored-2">Models Explored</a></li>
+  <li><a href="#quick-summary-2" id="toc-quick-summary-2" class="nav-link" data-scroll-target="#quick-summary-2">Quick Summary</a></li>
+  <li><a href="#other-stuff-2" id="toc-other-stuff-2" class="nav-link" data-scroll-target="#other-stuff-2">Other Stuff</a></li>
+  </ul></li>
+  <li><a href="#overall-assessment" id="toc-overall-assessment" class="nav-link" data-scroll-target="#overall-assessment">Overall Assessment</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="motivation" class="level2">
+<h2 class="anchored" data-anchor-id="motivation">Motivation</h2>
+<p>I’ve been a little perplexed at the lack of attention of deep learning (DL) toward what I consider to be ‘default’ data in my world, often referred to as <em>tabular data</em>, where typically we have a two dimensional input of observations (rows) and features (columns) and inputs are of varying type, scale and source. Despite the ubiquity of such data in data science generally, and despite momentous advances in areas like computer vision and natural language processing, at this time, it’s not very clear what the status of DL for tabular data is.</p>
+<p>There have been developments in the area recently though, with some modeling approaches, such as TabNet, gaining traction. In June of 2021, I actually came across three papers on <a href="arxiv.org">Arxiv</a> that were making related claims about the efficacy of DL for tabular data. As in many academic and practical (and life) pursuits, results of these studies are nuanced, so I thought I’d help myself and others by summarizing here.</p>
+</section>
+<section id="goal" class="level2">
+<h2 class="anchored" data-anchor-id="goal">Goal</h2>
+<p>I want to know if, e.g.&nbsp;time and/or resources are limited, whether it will be worth diving into a DL model if I have a satisfactory simpler/easier one ready to implement that does pretty well. Perhaps this answer is already, ‘if it ain’t broke, don’t fix it’, but given the advancements in other data domains, it would be good to assess what the current state of DL with tabular data is.</p>
+</section>
+<section id="caveats" class="level2">
+<h2 class="anchored" data-anchor-id="caveats">Caveats</h2>
+<ul>
+<li>I’m not going to do more than give a cursory summary of the articles, and provide no in-depth explanation of the models. For more detail, see the corresponding articles and references for the models therein. You are not going to learn how to use TabNet, NODE, transformers, etc., for tabular data.</li>
+<li>There are other decent articles on the topic not covered here. Some are referenced in these more recent offerings, so feel free to peruse.</li>
+</ul>
+</section>
+<section id="quick-take" class="level2">
+<h2 class="anchored" data-anchor-id="quick-take">Quick Take</h2>
+<p>In case you don’t want any detail, here’s a quick summary based on my impressions from these articles. Right now, if you want to use DL on tabular data, don’t make a fuss of it. A simple architecture, even a standard multi-layer perceptron, will likely do as well as more complicated ones. In general though, the amount of effort put into prep/tuning may not be worth it for many typical tabular data settings, for example, relative to a suitably flexible statistical model (e.g.&nbsp;GAMM) or a default fast boosting implementation like XGBoost. However, DL models are already thinking ‘big data’, so for very large data situations, a DL model might make a great choice, as others may not be computationally very viable. It also will not be surprising at all that in the near future some big hurdle may be overcome as we saw with DL applications in other fields, in which case some form of DL may be ‘all you need’.</p>
+<p>Now, on to the rest!</p>
+</section>
+<section id="tabular-data-deep-learning-is-not-all-you-need" class="level2">
+<h2 class="anchored" data-anchor-id="tabular-data-deep-learning-is-not-all-you-need">Tabular Data: Deep Learning is Not All You Need</h2>
+<section id="paper-info" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Shwartz-Ziv &amp; Armon</li>
+<li><em>Where</em>: Intel</li>
+<li><em>When</em>: 2021-06-21 V1</li>
+<li><a href="https://arxiv.org/pdf/2106.03253v1.pdf">Arxiv Link</a></li>
+</ul>
+</section>
+<section id="from-the-abstract" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>We analyze the deep models proposed in four recent papers across eleven datasets, nine of which were used in these papers, to answer these questions. We show that in most cases, each model performs best on the datasets used in its respective paper but significantly worse on other datasets. Moreover, our study shows that XGBoost (Chen and Guestrin, 2016) usually outperforms the deep models on these datasets. Furthermore, we demonstrate that the hyperparameter search process was much shorter for XGBoost.</p>
+</blockquote>
+</section>
+<section id="overview" class="level3">
+<h3 class="anchored" data-anchor-id="overview">Overview</h3>
+<p>For each model they used the data that was implemented in the original model papers by the authors (e.g.&nbsp;the dataset used in the TabNet article), and also used their suggested parameter settings. They tested all the models against their own data, plus the other papers’ data, plus two additional data sets that were not used in any of the original papers.</p>
+</section>
+<section id="data" class="level3">
+<h3 class="anchored" data-anchor-id="data">Data</h3>
+<p>They use eleven total datasets. Nine datasets are those used in the original papers on TabNet, DNF-Net, and NODE, drawing three datasets from each paper. Additionally, Shwartz-Ziv &amp; Armon use two Kaggle datasets not used in any of those papers. Sample sizes ranged from 7k to 1M, 10-2000 features, with two being numeric targets, while the other target variables ranged from 2-7 classes. Datasets are described in detail in the paper along with links to the source (all publicly available).</p>
+</section>
+<section id="models-explored" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored">Models Explored</h3>
+<p>Brief summaries of the DL models are found in the paper.</p>
+<ul>
+<li><em>XGBoost</em></li>
+<li><em>TabNet</em></li>
+<li><em>Neural Oblivious Decision Ensembles</em> (NODE)</li>
+<li><em>DNF-Net</em></li>
+<li><em>1D-CNN</em></li>
+</ul>
+</section>
+<section id="quick-summary" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary">Quick Summary</h3>
+<section id="not-counting-the-ensemble-methods" class="level5">
+<h5 class="anchored" data-anchor-id="not-counting-the-ensemble-methods">Not counting the ensemble methods…</h5>
+<ul>
+<li>TabNet did best on all of its own data sets, but was not the best model on any other.</li>
+<li>NODE each did best on 2 of its own 3 data sets, but not on any other.</li>
+<li>DNF-Net best on one of its own 3 data sets, but not on any other.</li>
+<li>XGBoost was best on the remaining 5 datasets.</li>
+</ul>
+</section>
+<section id="counting-the-ensemble-methods" class="level5">
+<h5 class="anchored" data-anchor-id="counting-the-ensemble-methods">Counting the ensemble methods…</h5>
+<ul>
+<li>TabNet did best on 2 of its own 3 data sets, but was not the best model on any other.</li>
+<li>DNF-Net and NODE each did best on one of its own 3 data sets, but not on any other.</li>
+<li>XGBoost was best on one dataset.</li>
+</ul>
+<p>Of those, XGB was notably better on ‘unseen’ data, and comparable to the best performing ensemble. A simple ensemble was also very performant. From the paper:</p>
+<blockquote class="blockquote">
+<p>The ensemble of all the models was the best model with 2.32% average relative increase, XGBoost was the second best with 3.4%, 1D-CNN had 7.5%, TabNet had 10.5%, DNF-Net had 11.8% and NODE had 14.2% (see Tables 2 and 3 in the appendix for full results).</p>
+</blockquote>
+<p>As a side note, XGBoost + DL was best, but that defeats the purpose in my opinion. Presumably any notably more complicated setting will be potentially better with enough complexity, but unless there is an obvious way on how to add such complexity, it’s mostly an academic exercise. However, as the authors note, if search is automated, maybe the complexity of combining the models is less of an issue.</p>
+</section>
+</section>
+<section id="other-stuff" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff">Other stuff</h3>
+<section id="kudos" class="level5">
+<h5 class="anchored" data-anchor-id="kudos">Kudos</h5>
+<p>The authors cite the <a href="https://en.wikipedia.org/wiki/No_free_lunch_theorem">No Free Lunch theorem</a> in the second paragraph, something that appears to be lost on many (most?) of these types of papers touting small increases in performance for some given modeling approach.</p>
+</section>
+<section id="issues" class="level5">
+<h5 class="anchored" data-anchor-id="issues">Issues</h5>
+<p>There are always things like training process/settings that are difficult to fully replicate. By the time authors publish any paper, unless exact records are kept, the iterations (including discussions that rule out various paths) are largely lost to time. This isn’t a knock on this paper, just something to keep in mind.</p>
+</section>
+<section id="opinion" class="level5">
+<h5 class="anchored" data-anchor-id="opinion">Opinion</h5>
+<p>I liked this one in general. They start by giving the competing models their best chance with their own settings and data, which was processed and trained in the same way. Even then, those models still either didn’t perform best, and/or performed relatively poorly on any other dataset.</p>
+</section>
+</section>
+</section>
+<section id="regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data" class="level2">
+<h2 class="anchored" data-anchor-id="regularization-is-all-you-need-simple-neural-nets-can-excel-on-tabular-data">Regularization is all you Need: Simple Neural Nets can Excel on Tabular Data</h2>
+<section id="paper-info-1" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info-1">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Kadra et al.</li>
+<li><em>Where</em>: U of Freiburg, Leibniz U (Germany)</li>
+<li><em>When</em>: 2021-06-06 V1</li>
+<li><a href="https://arxiv.org/pdf/2106.11189.pdf4">Arxiv Link</a></li>
+</ul>
+</section>
+<section id="from-the-abstract-1" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract-1">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>Tabular datasets are the last “unconquered castle” for deep learning… In this paper, we hypothesize that the key to boosting the performance of neural networks lies in rethinking the joint and simultaneous application of a large set of modern regularization techniques. As a result, we propose regularizing plain Multilayer Perceptron (MLP) networks by searching for the optimal combination/cocktail of 13 regularization techniques for each dataset using a joint optimization over the decision on which regularizers to apply and their subsidiary hyperparameters.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>We empirically assess the impact of these regularization cocktails for MLPs on a large-scale empirical study comprising 40 tabular datasets and demonstrate that (i) well-regularized plain MLPs significantly outperform recent state-of-the-art specialized neural network architectures, and (ii) they even outperform strong traditional ML methods, such as XGBoost.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>We emphasize that some of these publications claim to outperform Gradient Boosted Decision Trees (GDBT) [1, 37], and other papers explicitly stress that their neural networks do not outperform GBDT on tabular datasets [38, 22]. In contrast, we do not propose a new kind of neural architecture, but a novel paradigm for learning a combination of regularization methods.**</p>
+</blockquote>
+</section>
+<section id="overview-1" class="level3">
+<h3 class="anchored" data-anchor-id="overview-1">Overview</h3>
+<p>This data is more about exploring regularization techniques (e.g.&nbsp;data augmentation, model averaging via dropout) rather than suggesting any particular model is superior. Even in the second paragraph they state their results do not suggest a performance gain over boosting methods. Their focus is on potentially improving DL for tabular data through regularization with two hypotheses:</p>
+<ul>
+<li>Regularization cocktails outperform state-of-the-art deep learning architectures on tabular datasets.</li>
+<li>Regularization cocktails outperform Gradient-Boosted Decision Trees, as the most commonly used traditional ML method for tabular data.</li>
+</ul>
+</section>
+<section id="data-1" class="level3">
+<h3 class="anchored" data-anchor-id="data-1">Data</h3>
+<p>Forty total datasets ranging from as little as ~400 observations to over 400k, and between 4 and 2000 features. All were categorical targets, with about half binary. All available at openml.org with target ID provided.</p>
+</section>
+<section id="models-explored-1" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored-1">Models Explored</h3>
+<p>Comparison models:</p>
+<ul>
+<li><em>TabNet</em>: (with author’s proposed defaults)</li>
+<li><em>NODE</em>: (with author’s proposed defaults)</li>
+<li><em>Autogluon</em>: Tabular: can use other techniques but restricted to ensembles of neural nets for this demo</li>
+<li><em>ASK-GBDT</em>: GB via Auto-sklearn (Note this tool comes from one of the authors )</li>
+<li><em>XGBoost</em>: Original implementation</li>
+<li><em>MLP</em>: Multilayer Perceptron - 9 layers with 512 hidden units each.</li>
+<li><em>MLP+D</em>: MLP with Dropout</li>
+<li><em>MLP+C</em>: MLP with regularization cocktail</li>
+</ul>
+</section>
+<section id="quick-summary-1" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary-1">Quick Summary</h3>
+<ul>
+<li>To begin, their regularization cocktail approach is the clear winner on these datasets, having one outright on over 40% of them (based on table 2).</li>
+<li>Standard XGB performed best (or tied for best) 8 of the 40 data sets, while it or ASK-GBDT were best for 12 datasets combined.</li>
+<li>Simple MLP was best once, while MLP with dropout was best 5 times, while the cocktail method was best in general, across 19 datasets.</li>
+<li>The ‘fancy’ DL models were the worst performers across the board. TabNet never performed best, and NODE only did once, but the latter also repeatedly failed due to memory issues or run-time limitations (this memory issue was mentioned in the previous paper also).</li>
+<li>Head-to-head, the cocktail beat the standard XGB 26 out of 38 times with three ties. So it wins 65% of the time against XGB, 70% against ASK-GBDT, but 60% against either (i.e.&nbsp;some XGB approach).</li>
+</ul>
+</section>
+<section id="other-stuff-1" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff-1">Other Stuff</h3>
+<section id="kudos-1" class="level5">
+<h5 class="anchored" data-anchor-id="kudos-1">Kudos</h5>
+<ul>
+<li>Recognize that tabular data is understudied in mainstream DL literature</li>
+<li>They used a lot of datasets</li>
+<li>They look at the simplest DL models for comparison</li>
+</ul>
+</section>
+<section id="issues-1" class="level5">
+<h5 class="anchored" data-anchor-id="issues-1">Issues</h5>
+<ul>
+<li><p>I wonder why there was not a single numeric outcome among so many datasets. Furthermore, some of the data are image classification (e.g.&nbsp;Fashion-MNIST), so I’m not sure why they’re included. I wouldn’t use a ‘tabular’ technique when standard computer vision approaches already work so well.</p></li>
+<li><p>I’m not familiar with the augmentation techniques they mention, which were devised for image classification, but there have been some used for tabular data for a couple decades at this point that were not mentioned, including simple upsampling, or imputation methods (e.g.&nbsp;SMOTE). That’s not a beef with the article at all, I’ve long wondered why people haven’t been using data augmentation for tabular data given it’s success elsewhere (including for tabular data!).</p></li>
+<li><p>They use a standard t-tests of ranks, but if we’re going to use this sort of approach, we’d maybe want to adjust for all the tests done, and probably for all pairwise comparisons (they show such a table for the regularization methods). Depending on the approach and cutoff, the XGB vs.&nbsp;Cocktail difference may not be significant.</p></li>
+<li><p>Also, I couldn’t duplicate these p-values with R’s default settings for Wilcoxon signed rank tests, and there does in fact seem to be inconsistency between the detailed results and Wilcoxon summaries. For example, in the regularization tests of Table 9, <code>Cocktail</code> vs.&nbsp;<code>WD</code> and <code>DO</code> shows two ties in the first four data sets, yet only 1 tie is reported in the comparison chart for both (Figure 4). For the models, Table 2 show 3 ties of <code>XGB</code> &amp; the <code>Cocktail</code>, with 1 for <code>ASK-G</code> and <code>Cocktail</code>, but 2 and 0 are reported for their Wilcoxon tests. It’s not clear what they did for NODE with all the NAs. I do not believe these discrepancies, nor adjusting for multiple comparisons, will change the results (I re-did those myself).</p></li>
+</ul>
+</section>
+<section id="opinion-1" class="level5">
+<h5 class="anchored" data-anchor-id="opinion-1">Opinion</h5>
+<p>If we ignore the regularization focus and just look at the model comparisons, I’m not overly convinced we have a straightforward victory for cocktail vs.&nbsp;GB as implied in the conclusion. Results appear to be in favor of their proposed method, but not enough to be a near-guarantee in a particular setting, so we’re back to square one of just using the easier/faster/better tool. I’m also not sure who was questioning the use of regularization for neural networks or modeling in general, so the comparison to any model without some form of regularization isn’t as interesting to me. What is interesting to me is that we have another round of evidence that the fancier DL models like TabNet do not perform that well relative to GB or simpler DL architectures.</p>
+</section>
+</section>
+</section>
+<section id="revisiting-deep-learning-models-for-tabular-data" class="level2">
+<h2 class="anchored" data-anchor-id="revisiting-deep-learning-models-for-tabular-data">Revisiting Deep Learning Models for Tabular Data</h2>
+<section id="paper-info-2" class="level3">
+<h3 class="anchored" data-anchor-id="paper-info-2">Paper Info</h3>
+<ul>
+<li><em>Who</em>: Yury Gorishniy, Ivan Rubachev, Valentin Khrulkov, Artem Babenko</li>
+<li><em>Where</em>: Yandex (Russia)</li>
+<li><em>When</em>: 2021-06-22</li>
+<li><a href="https://arxiv.org/abs/2106.11959">Arxiv Link</a></li>
+<li><a href="https://github.com/yandex-research/rtdl">Source code</a></li>
+</ul>
+</section>
+<section id="from-the-abstract-2" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-abstract-2">From the Abstract</h3>
+<blockquote class="blockquote">
+<p>The necessity of deep learning for tabular data is still an unanswered question addressed by a large number of research efforts. The recent literature on tabular DL proposes several deep architectures reported to be superior to traditional “shallow” models like Gradient Boosted Decision Trees. However, since existing works often use different benchmarks and tuning protocols, it is unclear if the proposed models universally outperform GBDT. Moreover, the models are often not compared to each other, therefore, it is challenging to identify the best deep model for practitioners.</p>
+</blockquote>
+<blockquote class="blockquote">
+<p>In this work, we start from a thorough review of the main families of DL models recently developed for tabular data. We carefully tune and evaluate them on a wide range of datasets and reveal two significant findings. First, we show that the choice between GBDT and DL models highly depends on data and there is still no universally superior solution. Second, we demonstrate that a simple ResNet-like architecture is a surprisingly effective baseline, which outperforms most of the sophisticated models from the DL literature. Finally, we design a simple adaptation of the Transformer architecture for tabular data that becomes a new strong DL baseline and reduces the gap between GBDT and DL models on datasets where GBDT dominates.</p>
+</blockquote>
+</section>
+<section id="overview-2" class="level3">
+<h3 class="anchored" data-anchor-id="overview-2">Overview</h3>
+<p>This paper compares different models on a variety of datasets. They are interested in the GB vs.&nbsp;DL debate, but like the previous paper, also interested in how well a simpler DL architecture might perform, and what steps might help the more complicated ones do better.</p>
+</section>
+<section id="data-2" class="level3">
+<h3 class="anchored" data-anchor-id="data-2">Data</h3>
+<p>They have 11 datasets with a mix of binary, multiclass and numeric targets. Sizes range from 20K to 1M+. There appears to be some overlap with the first paper (e.g.&nbsp;Higgs, Cover type).</p>
+</section>
+<section id="models-explored-2" class="level3">
+<h3 class="anchored" data-anchor-id="models-explored-2">Models Explored</h3>
+<section id="baselines" class="level5">
+<h5 class="anchored" data-anchor-id="baselines">‘Baselines’</h5>
+<ul>
+<li><em>XGBoost</em></li>
+<li><em>CatBoost</em></li>
+<li><em>MLP</em></li>
+<li><em>ResNet</em></li>
+</ul>
+</section>
+<section id="dl-comparisons" class="level5">
+<h5 class="anchored" data-anchor-id="dl-comparisons">DL Comparisons</h5>
+<ul>
+<li><em>SNN</em></li>
+<li><em>NODE</em></li>
+<li><em>TabNet</em></li>
+<li><em>GrowNet</em></li>
+<li><em>DCN V2</em></li>
+<li><em>AutoInt</em></li>
+</ul>
+<p>In addition, they look at ensembles of these models, but this is not of interest to me for this post.</p>
+</section>
+</section>
+<section id="quick-summary-2" class="level3">
+<h3 class="anchored" data-anchor-id="quick-summary-2">Quick Summary</h3>
+<p>Note that these refer to the ‘single model’ results, not the results for ensembles.</p>
+<ul>
+<li><p>Some form of boosting performed best on 4 of the 11 datasets.</p></li>
+<li><p>ResNet was best on four classification tasks, but not once for numeric targets.</p></li>
+<li><p>At this point you won’t be surprised at what doesn’t perform as well- TabNet, NODE, and similar. TabNet, DCN, and GrowNet were never the best performer, and the other three were best one time a piece.</p></li>
+<li><p>MLP did not perform best on any data, however the authors note that it ‘is often on par or even better than some of the recently proposed DL models’.</p></li>
+<li><p>They also looked at models with a ‘simple’ transformer architecture. Their results suggest better performance than the other DL models, and similar performance to ResNet.</p></li>
+</ul>
+</section>
+<section id="other-stuff-2" class="level3">
+<h3 class="anchored" data-anchor-id="other-stuff-2">Other Stuff</h3>
+<section id="kudos-2" class="level5">
+<h5 class="anchored" data-anchor-id="kudos-2">Kudos</h5>
+<ul>
+<li><p>Sharing the source code!</p></li>
+<li><p>Recognizing that results at this point are complex at best given the lack of standard datasets</p></li>
+</ul>
+</section>
+<section id="issues-2" class="level5">
+<h5 class="anchored" data-anchor-id="issues-2">Issues</h5>
+<ul>
+<li>They note a distinction between <em>heterogeneous</em> vs.&nbsp;other types of data. They call data heterogeneous if the predictors are of mixed data types (e.g.&nbsp;categorical, numeric, count), while something like pixel data would be <em>homogeneous</em> because all the columns are essentially the same type. The latter isn’t as interesting to me for this sort enterprise, and I think the former is what most are thinking about for ‘tabular’ data, otherwise we’d just call it what it is (e.g.&nbsp;image or text data), and modeling/estimation is generally quite a bit easier when all the data is the same type. I do think it’s important that they point out that GB is better with heterogeneous data, and I think if you only look at such data, you’d likely see GB methods still outperforming or at worst on par with the best DL methods.</li>
+</ul>
+</section>
+<section id="opinion-2" class="level5">
+<h5 class="anchored" data-anchor-id="opinion-2">Opinion</h5>
+<p>These results seem consistent with others at this point. Complex DL isn’t helping, and simpler architectures, even standard MLP show good performance. In the end, we still don’t have any clear winner over GB methods.</p>
+</section>
+</section>
+</section>
+<section id="overall-assessment" class="level2">
+<h2 class="anchored" data-anchor-id="overall-assessment">Overall Assessment</h2>
+<p>These papers put together are helpful in painting a picture of where we are at present with deep learning for tabular data, especially with mixed data types. In this setting, it seems that more complicated DL models do not seem to have any obvious gain over simpler architectures, which themselves do not consistently beat boosting methods. It may also be the case that for data of mixed data types/sources, boosting is still the standard to beat.</p>
+<p>Even though these articles are geared toward comparisons to GB/XGBoost, in several settings I’ve applied them, I typically do not necessarily have appreciably greater success compared to a default setting random forest (e.g.&nbsp;from the <span class="pack" style="">ranger</span> package in R), or sufficiently flexible statistical model. Unfortunately this comparison is lacking from the papers, and would have been nice to have, especially for smaller data settings where such models are still very viable. I think a viable fast model, preferably one without any tuning required (or which simply is taken off the shelf) should be the baseline.</p>
+<p>In that light, for tabular data I think one should maybe start with a baseline of a penalized regression with appropriate interactions (e.g.&nbsp;ridge/lasso), or a more flexible penalized approach (GAMM) as a baseline, the latter especially, as it can at least automatically incorporate nonlinear relationships, and tools like <span class="pack" style="">mgcv</span> or <span class="pack" style="">gpboost</span> in R can do so with very large data (1 million +) in a matter of seconds. In settings of relatively higher dimensions, interactions and nonlinearities should be prevalent enough such that basis function, tree, and DL models should be superior. Whether they are practically so is the key concern even in those settings. With smaller, noisier data of less dimension, I suspect the tuning/time effort with present day DL models for tabular data will likely not be worth it. This may change very soon however, so such an assumption should be regularly checked.</p>
+<p><br> <br></p>
+<p>last updated: 2024-12-27</p>
+<p>Neural Net image source from <a href="https://uc-r.github.io/2018/04/09/feedforward-deep-models/">UC Business Analytics R Programming Guide</a></p>
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-gorishniy2021tabular" class="csl-entry" role="listitem">
+Gorishniy, Yuri, Ivan Rubachev, Valentin Khrulkov, and Artem Babenko. 2021. <span>“Revisiting Deep Learning Models for Tabular Data.”</span> <em>arXiv Preprint arXiv:2106.11959</em>.
+</div>
+<div id="ref-kadra2021tabular" class="csl-entry" role="listitem">
+Kadra, Arlind, Marius Lindauer, Frank Hutter, and Josif Grabocka. 2021. <span>“Regularization Is All You Need: Simple Neural Nets Can Excel on Tabular Data.”</span> <em>arXiv Preprint arXiv:2106.11189</em>.
+</div>
+<div id="ref-shwartz2021tabular" class="csl-entry" role="listitem">
+Shwartz-Ziv, Ravid, and Amitai Armon. 2021. <span>“Tabular Data: Deep Learning Is Not All You Need.”</span> <em>arXiv Preprint arXiv:2106.03253</em>.
+</div>
+</div></section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2021,
+  author = {Clark, Michael},
+  title = {This Is Definitely Not All You Need},
+  date = {2021-07-19},
+  url = {https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/dl-for-tabular.html},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2021" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael. 2021. <span>“This Is Definitely Not All You
+Need.”</span> July 19, 2021. <a href="https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/dl-for-tabular.html">https://m-clark.github.io/posts/2021-07-15-dl-for-tabular/dl-for-tabular.html</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
