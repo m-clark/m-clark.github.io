@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2019-08-05">
+<meta name="description" content="Examining group differences across latent variables">
+
+<title>Comparisons of the Unseen – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-59221807937dfc45595d64202c56ef30.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="floating nav-fixed slimcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text">BlueSky</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Comparisons of the Unseen</h1>
+                  <div>
+        <div class="description">
+          <p>Examining group differences across latent variables</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">SEM</div>
+                <div class="quarto-category">factor analysis</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author"><a href="https://m-clark.github.io">Michael Clark</a> </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              <a href="https://strong.io">
+              Strong Analytics
+              </a>
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">August 5, 2019</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#multiple-group-analysis" id="toc-multiple-group-analysis" class="nav-link" data-scroll-target="#multiple-group-analysis">Multiple group analysis</a></li>
+  <li><a href="#latent-variable-intercepts" id="toc-latent-variable-intercepts" class="nav-link" data-scroll-target="#latent-variable-intercepts">Latent variable intercepts</a></li>
+  <li><a href="#observed-variable-group-differences" id="toc-observed-variable-group-differences" class="nav-link" data-scroll-target="#observed-variable-group-differences">Observed variable group differences</a></li>
+  <li><a href="#structural-model" id="toc-structural-model" class="nav-link" data-scroll-target="#structural-model">Structural model</a>
+  <ul class="collapse">
+  <li><a href="#multigroup-as-the-structural-model" id="toc-multigroup-as-the-structural-model" class="nav-link" data-scroll-target="#multigroup-as-the-structural-model">Multigroup as the structural model</a></li>
+  <li><a href="#group-difference-as-an-indirect-effect" id="toc-group-difference-as-an-indirect-effect" class="nav-link" data-scroll-target="#group-difference-as-an-indirect-effect">Group difference as an indirect effect</a></li>
+  </ul></li>
+  <li><a href="#more-structural-models" id="toc-more-structural-models" class="nav-link" data-scroll-target="#more-structural-models">More structural models</a></li>
+  <li><a href="#sumfactor-score" id="toc-sumfactor-score" class="nav-link" data-scroll-target="#sumfactor-score">Sum/Factor score</a></li>
+  <li><a href="#summary-of-differences" id="toc-summary-of-differences" class="nav-link" data-scroll-target="#summary-of-differences">Summary of differences</a></li>
+  <li><a href="#supplemental-measurement-invariance" id="toc-supplemental-measurement-invariance" class="nav-link" data-scroll-target="#supplemental-measurement-invariance">Supplemental: Measurement invariance</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p>NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you’ve found an issue, please post it at <a href="http://github.com/m-clark/m-clark.github.io/issues">GitHub</a>.</p>
+</blockquote>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In some cases we are interested in looking at group differences with regard to <span class="emph"> latent variables</span>. For example, social scientists are interested in race and sex differences on psychological measures, or educational scientists might want to create exams in different languages. We cannot measure many constructs directly, but can get reliable measures of them indirectly, e.g.&nbsp;by asking a series of questions, or otherwise observing multiple instances of activity thought to be related to some construct. There are a variety of ways to assess group differences across latent structure, such as anxiety or verbal ability, and this post provides a demo using lavaan.</p>
+<p>My motivation for doing this is that it comes up from time to time in consulting, and I wanted a quick reminder for the syntax to refer back to. As a starting point though, you can find some demonstration on the <a href="https://lavaan.ugent.be">lavaan website</a>. For more on factor analysis, structural equation modeling, and more, see <a href="https://m-clark.github.io/sem/">my document</a>.</p>
+</section>
+<section id="multiple-group-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="multiple-group-analysis">Multiple group analysis</h2>
+<p>A common way to assess group differences is via multiple group analysis, which amounts to doing separate structural equation models of some kind across the groups of interest. We will use a classic data set to demonstrate the approach. From the help file:</p>
+<blockquote class="blockquote">
+<p>The Holzinger and Swineford (1939) dataset consists of mental ability test scores of seventh- and eighth-grade children from two different schools (Pasteur and Grant-White). In the original dataset, there are scores for 26 tests. However, a smaller subset with 9 variables is more widely used in the literature…</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lavaan)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(HolzingerSwineford1939)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The basic model is a factor analysis with three latent variables, with items for visual-spatial ability (<code>x1-x3</code>), verbal comprehension (<code>x4-x6</code>), and so-called ‘speed’ tests (<code>x7-x9</code>), e.g.&nbsp;for addition and counting, which might be thought of general cognitive processing.</p>
+<p>With lavaan, we specify the model for three factor (or latent variables). After that, a simple group argument will allow the multigroup analysis, providing the factor analysis for both school groups.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lavaan)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>hs_model_baseline <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>fit_baseline <span class="ot">&lt;-</span> <span class="fu">cfa</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  hs_model_baseline, </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> HolzingerSwineford1939, </span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">"school"</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_baseline)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.17 ended normally after 57 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        60
+
+  Number of observations per group:                   
+    Pasteur                                        156
+    Grant-White                                    145
+
+Model Test User Model:
+                                                      
+  Test statistic                               115.851
+  Degrees of freedom                                48
+  P-value (Chi-square)                           0.000
+  Test statistic for each group:
+    Pasteur                                     64.309
+    Grant-White                                 51.542
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.394    0.122    3.220    0.001
+    x3                0.570    0.140    4.076    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                1.183    0.102   11.613    0.000
+    x6                0.875    0.077   11.421    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.125    0.277    4.057    0.000
+    x9                0.922    0.225    4.104    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.479    0.106    4.531    0.000
+    speed             0.185    0.077    2.397    0.017
+  verbal ~~                                           
+    speed             0.182    0.069    2.628    0.009
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                4.941    0.095   52.249    0.000
+   .x2                5.984    0.098   60.949    0.000
+   .x3                2.487    0.093   26.778    0.000
+   .x4                2.823    0.092   30.689    0.000
+   .x5                3.995    0.105   38.183    0.000
+   .x6                1.922    0.079   24.321    0.000
+   .x7                4.432    0.087   51.181    0.000
+   .x8                5.563    0.078   71.214    0.000
+   .x9                5.418    0.079   68.440    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.298    0.232    1.286    0.198
+   .x2                1.334    0.158    8.464    0.000
+   .x3                0.989    0.136    7.271    0.000
+   .x4                0.425    0.069    6.138    0.000
+   .x5                0.456    0.086    5.292    0.000
+   .x6                0.290    0.050    5.780    0.000
+   .x7                0.820    0.125    6.580    0.000
+   .x8                0.510    0.116    4.406    0.000
+   .x9                0.680    0.104    6.516    0.000
+    visual            1.097    0.276    3.967    0.000
+    verbal            0.894    0.150    5.963    0.000
+    speed             0.350    0.126    2.778    0.005
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.736    0.155    4.760    0.000
+    x3                0.925    0.166    5.583    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                0.990    0.087   11.418    0.000
+    x6                0.963    0.085   11.377    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.226    0.187    6.569    0.000
+    x9                1.058    0.165    6.429    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.408    0.098    4.153    0.000
+    speed             0.276    0.076    3.639    0.000
+  verbal ~~                                           
+    speed             0.222    0.073    3.022    0.003
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                4.930    0.095   51.696    0.000
+   .x2                6.200    0.092   67.416    0.000
+   .x3                1.996    0.086   23.195    0.000
+   .x4                3.317    0.093   35.625    0.000
+   .x5                4.712    0.096   48.986    0.000
+   .x6                2.469    0.094   26.277    0.000
+   .x7                3.921    0.086   45.819    0.000
+   .x8                5.488    0.087   63.174    0.000
+   .x9                5.327    0.085   62.571    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.715    0.126    5.676    0.000
+   .x2                0.899    0.123    7.339    0.000
+   .x3                0.557    0.103    5.409    0.000
+   .x4                0.315    0.065    4.870    0.000
+   .x5                0.419    0.072    5.812    0.000
+   .x6                0.406    0.069    5.880    0.000
+   .x7                0.600    0.091    6.584    0.000
+   .x8                0.401    0.094    4.249    0.000
+   .x9                0.535    0.089    6.010    0.000
+    visual            0.604    0.160    3.762    0.000
+    verbal            0.942    0.152    6.177    0.000
+    speed             0.461    0.118    3.910    0.000</code></pre>
+</div>
+</div>
+<p>So we’re left with visual inspection to note whether there are general differences on latent variables among the groups. This is all well and good, but given that none of the parameters will be identical from one group to the next, perhaps we want a more principled approach. Say our question specifically concerns a mean difference between schools on the visual latent variable. How do we go about it?</p>
+<p>Note that at this point the intercepts for the latent variables are zero. They have to be for the model to be identified, much in the same way that at least one factor loading (the first by default) has to be fixed to one. We only have so much information to estimate the parameters in a latent variable setting. Now let’s see how we might go about changing things to get a better understanding of group differences on the latent variables.</p>
+</section>
+<section id="latent-variable-intercepts" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="latent-variable-intercepts">Latent variable intercepts</h2>
+<p>To get around this limitation, we could try and fix some parameters, thereby freeing the intercepts to be estimated. For example, if we fix the mean of one of the observed variables to be zero instead, we would be able to estimate the intercept for the latent variable. In the following we’ll do this for the visuo-spatial ability construct, which will be our point of focus for group differences going forward.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>Recall that for the standard latent linear model, the observed variable is the dependent variable . For example, given an observed variable <span class="math inline">\(X\)</span>, a latent variable <span class="math inline">\(F\)</span> and loading <span class="math inline">\(\lambda\)</span>: <span class="math display">\[X = b_0 + \lambda F \]</span></p>
+</div></div><p>In the model we we also identify a new parameter, which will be the differences in these latent variable intercepts, simply called <code>diff</code>. I have omitted some output for brevity of space.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>hs_model_1 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">  # intercepts: in order to have an identified model, you would have to fix the</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">  # intercepts of observed to 0, 1 represents the intercept, 0* fixes it to be 0</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st">  x1 ~ 0*1   </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">  # intercept for Pasteur and Grant-White schools</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~  c(int_p, int_gw)*1    </span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">   </span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">  # comparisons</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">  diff := int_p - int_gw</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>fit_1 <span class="ot">&lt;-</span> <span class="fu">cfa</span>(hs_model_1, </span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> HolzingerSwineford1939, </span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>             <span class="at">group =</span> <span class="st">"school"</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanstructure =</span> T)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_1, <span class="at">header=</span>F, <span class="at">nd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                 1.00                           
+    x2                 0.39     0.12     3.22     0.00
+    x3                 0.57     0.14     4.08     0.00
+  verbal =~                                           
+    x4                 1.00                           
+    x5                 1.18     0.10    11.61     0.00
+    x6                 0.87     0.08    11.42     0.00
+  speed =~                                            
+    x7                 1.00                           
+    x8                 1.12     0.28     4.06     0.00
+    x9                 0.92     0.22     4.10     0.00
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal             0.48     0.11     4.53     0.00
+    speed              0.19     0.08     2.40     0.02
+  verbal ~~                                           
+    speed              0.18     0.07     2.63     0.01
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.00                           
+    visual  (int_)     4.94     0.09    52.25     0.00
+   .x2                 4.04     0.61     6.61     0.00
+   .x3                -0.33     0.70    -0.47     0.64
+   .x4                 2.82     0.09    30.69     0.00
+   .x5                 4.00     0.10    38.18     0.00
+   .x6                 1.92     0.08    24.32     0.00
+   .x7                 4.43     0.09    51.18     0.00
+   .x8                 5.56     0.08    71.21     0.00
+   .x9                 5.42     0.08    68.44     0.00
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.30     0.23     1.29     0.20
+   .x2                 1.33     0.16     8.46     0.00
+   .x3                 0.99     0.14     7.27     0.00
+   .x4                 0.43     0.07     6.14     0.00
+   .x5                 0.46     0.09     5.29     0.00
+   .x6                 0.29     0.05     5.78     0.00
+   .x7                 0.82     0.12     6.58     0.00
+   .x8                 0.51     0.12     4.41     0.00
+   .x9                 0.68     0.10     6.52     0.00
+    visual             1.10     0.28     3.97     0.00
+    verbal             0.89     0.15     5.96     0.00
+    speed              0.35     0.13     2.78     0.01
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                 1.00                           
+    x2                 0.74     0.15     4.76     0.00
+    x3                 0.92     0.17     5.58     0.00
+  verbal =~                                           
+    x4                 1.00                           
+    x5                 0.99     0.09    11.42     0.00
+    x6                 0.96     0.08    11.38     0.00
+  speed =~                                            
+    x7                 1.00                           
+    x8                 1.23     0.19     6.57     0.00
+    x9                 1.06     0.16     6.43     0.00
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal             0.41     0.10     4.15     0.00
+    speed              0.28     0.08     3.64     0.00
+  verbal ~~                                           
+    speed              0.22     0.07     3.02     0.00
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.00                           
+    visual  (int_)     4.93     0.10    51.70     0.00
+   .x2                 2.57     0.77     3.35     0.00
+   .x3                -2.56     0.82    -3.12     0.00
+   .x4                 3.32     0.09    35.63     0.00
+   .x5                 4.71     0.10    48.99     0.00
+   .x6                 2.47     0.09    26.28     0.00
+   .x7                 3.92     0.09    45.82     0.00
+   .x8                 5.49     0.09    63.17     0.00
+   .x9                 5.33     0.09    62.57     0.00
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.71     0.13     5.68     0.00
+   .x2                 0.90     0.12     7.34     0.00
+   .x3                 0.56     0.10     5.41     0.00
+   .x4                 0.32     0.06     4.87     0.00
+   .x5                 0.42     0.07     5.81     0.00
+   .x6                 0.41     0.07     5.88     0.00
+   .x7                 0.60     0.09     6.58     0.00
+   .x8                 0.40     0.09     4.25     0.00
+   .x9                 0.53     0.09     6.01     0.00
+    visual             0.60     0.16     3.76     0.00
+    verbal             0.94     0.15     6.18     0.00
+    speed              0.46     0.12     3.91     0.00
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+    diff               0.01     0.13     0.08     0.93</code></pre>
+</div>
+</div>
+<p>For clearer presentation, we’ll look at a table of the specific parameter estimates.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">op</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">block</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">label</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.lv</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.all</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.nox</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">visual ~1</td>
+<td style="text-align: left;">~1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">int_p</td>
+<td style="text-align: right;">4.941</td>
+<td style="text-align: right;">0.095</td>
+<td style="text-align: right;">52.249</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">4.756</td>
+<td style="text-align: right;">5.127</td>
+<td style="text-align: right;">4.718</td>
+<td style="text-align: right;">4.718</td>
+<td style="text-align: right;">4.718</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">visual ~1</td>
+<td style="text-align: left;">~1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">int_gw</td>
+<td style="text-align: right;">4.930</td>
+<td style="text-align: right;">0.095</td>
+<td style="text-align: right;">51.696</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">4.743</td>
+<td style="text-align: right;">5.117</td>
+<td style="text-align: right;">6.345</td>
+<td style="text-align: right;">6.345</td>
+<td style="text-align: right;">6.345</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">diff := int_p-int_gw</td>
+<td style="text-align: left;">:=</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">diff</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">0.085</td>
+<td style="text-align: right;">0.933</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+<td style="text-align: right;">-1.627</td>
+<td style="text-align: right;">-1.627</td>
+<td style="text-align: right;">-1.627</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The above shows the schools to be not much different from one another on the visual-spatial ability latent variable. But compare this result to the intercepts for <code>x1</code> in our baseline model. This model would would be identical to comparing the intercepts on whichever observed variable you had fixed to zero. Much like we must scale the latent variable to that of one of the observed variables by fixing the loading to be 1, we essentially come to the same type of issue by fixing its mean to be on that of the observed variable.</p>
+<p>To make this more explicit, we’ll label the <code>x1</code> intercepts in our baseline model and look at their difference. I won’t show the model out put and simply focus on the parameter table instead.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>hs_model_2 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="st">  x1 ~ c(a, b)*1   </span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="st">   </span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="st">  # comparisons</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="st">   diff := a - b</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>fit_2 <span class="ot">&lt;-</span> <span class="fu">cfa</span>(hs_model_2, </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> HolzingerSwineford1939, </span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>           <span class="at">group =</span> <span class="st">"school"</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>           <span class="at">meanstructure =</span> T)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># summary(fit_2)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">op</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">block</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">label</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.lv</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.all</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.nox</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">x1 ~1</td>
+<td style="text-align: left;">~1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">a</td>
+<td style="text-align: right;">4.941</td>
+<td style="text-align: right;">0.095</td>
+<td style="text-align: right;">52.249</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">4.756</td>
+<td style="text-align: right;">5.127</td>
+<td style="text-align: right;">4.941</td>
+<td style="text-align: right;">4.183</td>
+<td style="text-align: right;">4.183</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">x1 ~1</td>
+<td style="text-align: left;">~1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">b</td>
+<td style="text-align: right;">4.930</td>
+<td style="text-align: right;">0.095</td>
+<td style="text-align: right;">51.696</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">4.743</td>
+<td style="text-align: right;">5.117</td>
+<td style="text-align: right;">4.930</td>
+<td style="text-align: right;">4.293</td>
+<td style="text-align: right;">4.293</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">diff := a-b</td>
+<td style="text-align: left;">:=</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">diff</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">0.085</td>
+<td style="text-align: right;">0.933</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">-0.110</td>
+<td style="text-align: right;">-0.110</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Same difference.</p>
+</section>
+<section id="observed-variable-group-differences" class="level2">
+<h2 class="anchored" data-anchor-id="observed-variable-group-differences">Observed variable group differences</h2>
+<p>The following approach is not the same model, but as we’ll see, would also provide the same result. In this case, each observed variable is affected by the school grouping, and the path coefficient for <code>x1</code> is the same difference in means as before.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>hs_model_3 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="st">  x1 ~ diff*school </span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="st">  x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>fit_3 <span class="ot">&lt;-</span> <span class="fu">cfa</span>(hs_model_3, </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> HolzingerSwineford1939,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanstructure =</span> T)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co"># summary(fit_3)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>A comparison of all three shows the same results, but that the third model has fewer parameters, as the loadings and latent variable variances are not changing across groups.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">fit_1</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">fit_2</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">fit_3</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<caption>Model N parameters</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">39</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<caption>Model AIC</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7474.493</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="structural-model" class="level2 page-columns page-full">
+<h2 class="anchored" data-anchor-id="structural-model">Structural model</h2>
+<p>In the models I see, people would more commonly address such a theoretical question without a multigroup approach, simply regressing the latent variable of interest on the group factor. For lack of a better name, I’ll just call this a structural model in the sense we have an explicit regression model. We can do that here.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># standard cfa with school predicting visual</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>hs_model_4a <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~ diff*school</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~~ speed + verbal  # lavaan will not estimate this by default</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>fit_4a <span class="ot">=</span> <span class="fu">sem</span>(hs_model_4a, <span class="at">data=</span>HolzingerSwineford1939, <span class="at">meanstructure=</span>T)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_4a)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.17 ended normally after 49 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        31
+
+  Number of observations                           301
+
+Model Test User Model:
+                                                      
+  Test statistic                               161.444
+  Degrees of freedom                                32
+  P-value (Chi-square)                           0.000
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.570    0.100    5.723    0.000
+    x3                0.797    0.111    7.212    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                1.113    0.065   17.021    0.000
+    x6                0.928    0.055   16.741    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.194    0.168    7.124    0.000
+    x9                1.060    0.148    7.152    0.000
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~                                            
+    school  (diff)    0.287    0.110    2.612    0.009
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+ .visual ~~                                           
+    speed             0.241    0.054    4.446    0.000
+    verbal            0.429    0.073    5.846    0.000
+  verbal ~~                                           
+    speed             0.172    0.049    3.483    0.000
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                4.500    0.180   24.997    0.000
+   .x2                5.840    0.122   47.989    0.000
+   .x3                1.903    0.151   12.631    0.000
+   .x4                3.061    0.067   45.694    0.000
+   .x5                4.341    0.074   58.452    0.000
+   .x6                2.186    0.063   34.667    0.000
+   .x7                4.186    0.063   66.766    0.000
+   .x8                5.527    0.058   94.854    0.000
+   .x9                5.374    0.058   92.546    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.604    0.105    5.739    0.000
+   .x2                1.137    0.102   11.172    0.000
+   .x3                0.795    0.090    8.879    0.000
+   .x4                0.372    0.048    7.821    0.000
+   .x5                0.448    0.058    7.698    0.000
+   .x6                0.354    0.043    8.254    0.000
+   .x7                0.796    0.081    9.775    0.000
+   .x8                0.470    0.076    6.209    0.000
+   .x9                0.580    0.071    8.195    0.000
+   .visual            0.754    0.135    5.597    0.000
+    verbal            0.978    0.112    8.735    0.000
+    speed             0.387    0.087    4.462    0.000</code></pre>
+</div>
+</div>
+<p>At first blush, it would seem we are not getting the same result, as the mean difference is now estimated to be 0.287. Our difference is notably larger and significant. We can also see that the fit is different based on AIC and the number of parameters estimated.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4a</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7474.493</td>
+<td style="text-align: right;">7531.852</td>
+<td style="text-align: right;">7484.395</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4a</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">60</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<section id="structural-model-as-multigroup" class="level4">
+<h4 class="anchored" data-anchor-id="structural-model-as-multigroup">Structural model as multigroup</h4>
+<p>However, we can recover the previous multigroup results by regressing the other observed variables on school as well. This leaves the only group effect remaining to be the effect on <code>x1</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>hs_model_4b <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~ diff*school</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="st">  x2 + x3 + x4 + x5 + x6 +  x7 + x8 + x9 ~ school</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>fit_4b <span class="ot">=</span> <span class="fu">sem</span>(hs_model_4b, <span class="at">data=</span>HolzingerSwineford1939, <span class="at">meanstructure=</span>T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4a</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4b</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7484.395</td>
+<td style="text-align: right;">7474.493</td>
+<td style="text-align: right;">7531.852</td>
+<td style="text-align: right;">7526.606</td>
+<td style="text-align: right;">7484.395</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_1</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_2</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_3</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4a</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_4b</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">fit_baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">37</td>
+<td style="text-align: right;">60</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4b</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="multigroup-as-the-structural-model" class="level3">
+<h3 class="anchored" data-anchor-id="multigroup-as-the-structural-model">Multigroup as the structural model</h3>
+<p>Let’s see if we can get the structural model result from our multigroup approach. In fact we can. The following produces the same coefficient by summing the differences on the observed items. As we will see later, the statistical result is essentially what we’d get by using a linear regression on a sum score of visual items.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>hs_model_baseline_2 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="st">  x1 ~ c(a1, a2)*1</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="st">  x2 ~ c(b1, b2)*1</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="st">  x3 ~ c(c1, c2)*1</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="st">  diff := (a1 - a2) + (b1 - b2) + (c1 - c2)</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>fit_baseline_2 <span class="ot">&lt;-</span> <span class="fu">cfa</span>(</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  hs_model_baseline_2, </span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> HolzingerSwineford1939, </span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">"school"</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_baseline_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.17 ended normally after 57 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        60
+
+  Number of observations per group:                   
+    Pasteur                                        156
+    Grant-White                                    145
+
+Model Test User Model:
+                                                      
+  Test statistic                               115.851
+  Degrees of freedom                                48
+  P-value (Chi-square)                           0.000
+  Test statistic for each group:
+    Pasteur                                     64.309
+    Grant-White                                 51.542
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.394    0.122    3.220    0.001
+    x3                0.570    0.140    4.076    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                1.183    0.102   11.613    0.000
+    x6                0.875    0.077   11.421    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.125    0.277    4.057    0.000
+    x9                0.922    0.225    4.104    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.479    0.106    4.531    0.000
+    speed             0.185    0.077    2.397    0.017
+  verbal ~~                                           
+    speed             0.182    0.069    2.628    0.009
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1        (a1)    4.941    0.095   52.249    0.000
+   .x2        (b1)    5.984    0.098   60.949    0.000
+   .x3        (c1)    2.487    0.093   26.778    0.000
+   .x4                2.823    0.092   30.689    0.000
+   .x5                3.995    0.105   38.183    0.000
+   .x6                1.922    0.079   24.321    0.000
+   .x7                4.432    0.087   51.181    0.000
+   .x8                5.563    0.078   71.214    0.000
+   .x9                5.418    0.079   68.440    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.298    0.232    1.286    0.198
+   .x2                1.334    0.158    8.464    0.000
+   .x3                0.989    0.136    7.271    0.000
+   .x4                0.425    0.069    6.138    0.000
+   .x5                0.456    0.086    5.292    0.000
+   .x6                0.290    0.050    5.780    0.000
+   .x7                0.820    0.125    6.580    0.000
+   .x8                0.510    0.116    4.406    0.000
+   .x9                0.680    0.104    6.516    0.000
+    visual            1.097    0.276    3.967    0.000
+    verbal            0.894    0.150    5.963    0.000
+    speed             0.350    0.126    2.778    0.005
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                1.000                           
+    x2                0.736    0.155    4.760    0.000
+    x3                0.925    0.166    5.583    0.000
+  verbal =~                                           
+    x4                1.000                           
+    x5                0.990    0.087   11.418    0.000
+    x6                0.963    0.085   11.377    0.000
+  speed =~                                            
+    x7                1.000                           
+    x8                1.226    0.187    6.569    0.000
+    x9                1.058    0.165    6.429    0.000
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal            0.408    0.098    4.153    0.000
+    speed             0.276    0.076    3.639    0.000
+  verbal ~~                                           
+    speed             0.222    0.073    3.022    0.003
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1        (a2)    4.930    0.095   51.696    0.000
+   .x2        (b2)    6.200    0.092   67.416    0.000
+   .x3        (c2)    1.996    0.086   23.195    0.000
+   .x4                3.317    0.093   35.625    0.000
+   .x5                4.712    0.096   48.986    0.000
+   .x6                2.469    0.094   26.277    0.000
+   .x7                3.921    0.086   45.819    0.000
+   .x8                5.488    0.087   63.174    0.000
+   .x9                5.327    0.085   62.571    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                0.715    0.126    5.676    0.000
+   .x2                0.899    0.123    7.339    0.000
+   .x3                0.557    0.103    5.409    0.000
+   .x4                0.315    0.065    4.870    0.000
+   .x5                0.419    0.072    5.812    0.000
+   .x6                0.406    0.069    5.880    0.000
+   .x7                0.600    0.091    6.584    0.000
+   .x8                0.401    0.094    4.249    0.000
+   .x9                0.535    0.089    6.010    0.000
+    visual            0.604    0.160    3.762    0.000
+    verbal            0.942    0.152    6.177    0.000
+    speed             0.461    0.118    3.910    0.000
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+    diff              0.287    0.297    0.965    0.335</code></pre>
+</div>
+</div>
+</section>
+<section id="group-difference-as-an-indirect-effect" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="group-difference-as-an-indirect-effect">Group difference as an indirect effect</h3>
+<p>Going back to the first structural model <code>hs_model_4a</code>, it might be interesting to some to see that the group difference <em>still</em> regards a difference on the observed <code>x1</code> observed variable. We can see this more clearly if we set the <code>x1</code> loading to be estimated rather than fixed at one, then use the product of coefficients approach (a la <a href="">mediation</a>) to estimate the group difference.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>hs_model_4c <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x2 + a*x1 + x3    # estimate x1 loading vs. scaling by it</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~ b*school</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~~ verbal + speed</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="st">  diff := a*b    # "indirect" effect of school on x1</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># same as fit_4a</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>fit_4c <span class="ot">=</span> <span class="fu">cfa</span>(hs_model_4c, <span class="at">data =</span> HolzingerSwineford1939, <span class="at">meanstructure=</span>T)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">label</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">statistic</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p.value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">4a</td>
+<td style="text-align: left;">diff</td>
+<td style="text-align: right;">0.287</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">2.612</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.072</td>
+<td style="text-align: right;">0.503</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">4c</td>
+<td style="text-align: left;">diff</td>
+<td style="text-align: right;">0.287</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">2.612</td>
+<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">0.072</td>
+<td style="text-align: right;">0.503</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>And what is this value of 0.287? We see it as the group difference on the latent construct rather than simply being a mean difference on <code>x1</code>. However, in <code>fit_4a</code> it is estimated on the metric of <code>x1</code>, which had it’s loading fixed to 1. We will see another interpretation later.</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<p>You might be thinking, why does my effect on the latent variable depend on a specific item? Well it <em>shouldn’t</em>. If the items are random observations measured in the same way of the same underlying construct, then the loadings will essentially be equal, and so it wouldn’t matter which one is chosen as a default.</p>
+</div></div></section>
+</section>
+<section id="more-structural-models" class="level2">
+<h2 class="anchored" data-anchor-id="more-structural-models">More structural models</h2>
+<p>The following is equivalent to the result one would get from <code>group.equal = c('loadings', 'intercepts')</code>, but to make things more clear, I show the explicit syntax (commented out are other options one could potentially play with). The first group would have latent variable means at zero, while the second group would be allowed to vary. This is more or less what is desired if we want to know a group difference on the latent structure. The first group mean is arbitrarily set to zero, so the estimated intercept for the second group tells us the relative difference, much like when we are dummy coding with standard regression models.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>hs_model_4d <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="st">  # make loadings equal across groups</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ c(1, 1)*x1 + c(v_x2, v_x2)*x2 + c(v_x3, v_x3)*x3</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ c(1, 1)*x4 + c(v_x5, v_x5)*x5 + c(v_x6, v_x6)*x6</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ c(1, 1)*x7 + c(v_x8, v_x8)*x8 + c(v_x9, v_x9)*x9 </span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="st">  # make intercepts equal across groups</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="st">  x1 ~ c(0, 0) * 1</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="st">  x2 ~ c(int_x2, int_x2) * 1</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="st">  x3 ~ c(int_x3, int_x3) * 1</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="st">  x4 ~ c(0, 0) * 1</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="st">  x5 ~ c(int_x5, int_x5) * 1</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="st">  x6 ~ c(int_x6, int_x6) * 1</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="st">  x7 ~ c(0, 0) * 1</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="st">  x8 ~ c(int_x8, int_x8) * 1</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="st">  x9 ~ c(int_x9, int_x9) * 1</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="st">  # make covariances equal across groups</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="st">  # visual ~~ c(cov_vv, cov_vv) * verbal + c(cov_visp, cov_visp) * speed</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="st">  # verbal ~~ c(cov_vesp, cov_vesp) * speed</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="st">  # make variances equal</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="st">  # visual ~~ c(vvar, vvar) * visual</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="st">  # verbal ~~ c(tvar, tvar) * verbal</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="st">  # speed  ~~ c(svar, svar) * speed</span></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a><span class="st">  # x1 ~~ c(x1var, x1var) * x1</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a><span class="st">  # x2 ~~ c(x2var, x2var) * x2</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="st">  # x3 ~~ c(x3var, x3var) * x3</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a><span class="st">  # x4 ~~ c(x4var, x4var) * x4</span></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a><span class="st">  # x5 ~~ c(x5var, x5var) * x5</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a><span class="st">  # x6 ~~ c(x6var, x6var) * x6</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a><span class="st">  # x7 ~~ c(x7var, x7var) * x7</span></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a><span class="st">  # x8 ~~ c(x8var, x8var) * x8</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a><span class="st">  # x9 ~~ c(x9var, x9var) * x9</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~ c(vis_int_p, vis_int_gw)*1</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal ~ c(verb_int_p, verb_int_gw)*1</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  ~ c(speed_int_p, speed_int_gw)*1</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a><span class="st">   </span></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a><span class="st">  # comparisons</span></span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a><span class="st">   diff := vis_int_p - vis_int_gw</span></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>fit_4d  <span class="ot">=</span> <span class="fu">sem</span>(hs_model_4d, </span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>                <span class="at">data=</span>HolzingerSwineford1939, </span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>                <span class="at">group =</span> <span class="st">'school'</span>,</span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>                <span class="at">meanstructure=</span>T)</span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit_4d, <span class="at">header=</span>F, <span class="at">nd=</span><span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Expected
+  Information saturated (h1) model          Structured
+
+
+Group 1 [Pasteur]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                 1.00                           
+    x2      (v_x2)     0.58     0.10     5.71     0.00
+    x3      (v_x3)     0.80     0.11     7.15     0.00
+  verbal =~                                           
+    x4                 1.00                           
+    x5      (v_x5)     1.12     0.07    16.97     0.00
+    x6      (v_x6)     0.93     0.06    16.61     0.00
+  speed =~                                            
+    x7                 1.00                           
+    x8      (v_x8)     1.13     0.15     7.79     0.00
+    x9      (v_x9)     1.01     0.13     7.67     0.00
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal             0.41     0.10     4.29     0.00
+    speed              0.18     0.07     2.69     0.01
+  verbal ~~                                           
+    speed              0.18     0.06     2.90     0.00
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.00                           
+   .x2      (in_2)     3.27     0.50     6.54     0.00
+   .x3      (in_3)    -1.72     0.55    -3.11     0.00
+   .x4                 0.00                           
+   .x5      (in_5)     0.92     0.21     4.36     0.00
+   .x6      (in_6)    -0.66     0.18    -3.75     0.00
+   .x7                 0.00                           
+   .x8      (in_8)     0.84     0.60     1.39     0.17
+   .x9      (in_9)     1.18     0.55     2.16     0.03
+    visual  (vs__)     5.00     0.09    55.76     0.00
+    verbal  (vr__)     2.78     0.09    31.95     0.00
+    speed   (sp__)     4.24     0.07    57.97     0.00
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.56     0.14     3.98     0.00
+   .x2                 1.30     0.16     8.19     0.00
+   .x3                 0.94     0.14     6.93     0.00
+   .x4                 0.45     0.07     6.43     0.00
+   .x5                 0.50     0.08     6.14     0.00
+   .x6                 0.26     0.05     5.26     0.00
+   .x7                 0.89     0.12     7.42     0.00
+   .x8                 0.54     0.09     5.71     0.00
+   .x9                 0.65     0.10     6.80     0.00
+    visual             0.80     0.17     4.64     0.00
+    verbal             0.88     0.13     6.69     0.00
+    speed              0.32     0.08     3.91     0.00
+
+
+Group 2 [Grant-White]:
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual =~                                           
+    x1                 1.00                           
+    x2      (v_x2)     0.58     0.10     5.71     0.00
+    x3      (v_x3)     0.80     0.11     7.15     0.00
+  verbal =~                                           
+    x4                 1.00                           
+    x5      (v_x5)     1.12     0.07    16.97     0.00
+    x6      (v_x6)     0.93     0.06    16.61     0.00
+  speed =~                                            
+    x7                 1.00                           
+    x8      (v_x8)     1.13     0.15     7.79     0.00
+    x9      (v_x9)     1.01     0.13     7.67     0.00
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  visual ~~                                           
+    verbal             0.43     0.10     4.42     0.00
+    speed              0.33     0.08     4.01     0.00
+  verbal ~~                                           
+    speed              0.24     0.07     3.22     0.00
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.00                           
+   .x2      (in_2)     3.27     0.50     6.54     0.00
+   .x3      (in_3)    -1.72     0.55    -3.11     0.00
+   .x4                 0.00                           
+   .x5      (in_5)     0.92     0.21     4.36     0.00
+   .x6      (in_6)    -0.66     0.18    -3.75     0.00
+   .x7                 0.00                           
+   .x8      (in_8)     0.84     0.60     1.39     0.17
+   .x9      (in_9)     1.18     0.55     2.16     0.03
+    visual  (vs__)     4.85     0.09    52.96     0.00
+    verbal  (vr__)     3.35     0.09    38.16     0.00
+    speed   (sp__)     4.06     0.08    50.75     0.00
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1                 0.65     0.13     5.09     0.00
+   .x2                 0.96     0.12     7.81     0.00
+   .x3                 0.64     0.10     6.32     0.00
+   .x4                 0.34     0.06     5.53     0.00
+   .x5                 0.38     0.07     5.13     0.00
+   .x6                 0.44     0.07     6.56     0.00
+   .x7                 0.63     0.10     6.57     0.00
+   .x8                 0.43     0.09     4.91     0.00
+   .x9                 0.52     0.09     6.10     0.00
+    visual             0.71     0.16     4.42     0.00
+    verbal             0.87     0.13     6.66     0.00
+    speed              0.51     0.12     4.38     0.00
+
+Defined Parameters:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+    diff               0.15     0.12     1.21     0.23</code></pre>
+</div>
+</div>
+<p>The fit is now estimated to be 0.148, as we are now taking into account the intercorrelations of the latent variables. However, there is a more simple and obvious way to do this model. We simply regress all latent variables on school.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>hs_model_4e <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3    # estimate x1 loading vs. scaling by it</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9 </span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="st">  visual ~ diff*school</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal + speed ~ school</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>fit_4e <span class="ot">=</span> <span class="fu">cfa</span>(hs_model_4e, <span class="at">data =</span> HolzingerSwineford1939, <span class="at">meanstructure=</span>T)</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co"># summary(fit_4e)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">std.error</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.low</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd" data-grouplength="4">
+<td colspan="5" style="border-bottom: 1px solid"><strong>Observed value differences</strong></td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">1</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">2</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">3</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">-0.252</td>
+<td style="text-align: right;">0.275</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">4b</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">0.134</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even" data-grouplength="4">
+<td colspan="5" style="border-bottom: 1px solid"><strong>Latent variable differences</strong></td>
+</tr>
+<tr class="odd">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">4a</td>
+<td style="text-align: right;">0.287</td>
+<td style="text-align: right;">0.110</td>
+<td style="text-align: right;">0.072</td>
+<td style="text-align: right;">0.503</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">4c</td>
+<td style="text-align: right;">0.287</td>
+<td style="text-align: right;">0.110</td>
+<td style="text-align: right;">0.072</td>
+<td style="text-align: right;">0.503</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">4d</td>
+<td style="text-align: right;">0.148</td>
+<td style="text-align: right;">0.122</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">4e</td>
+<td style="text-align: right;">0.147</td>
+<td style="text-align: right;">0.122</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">NA</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The primary differences we’ve seen thus far can be summarized as follows:</p>
+<ul>
+<li>1:3 and 4b: These models are focusing on observed variable differences, specifically on <code>x1</code>.</li>
+<li>4a and 4c: These models are latent variable differences on the visual factor, but do not control for indirect (or <em>backdoor</em>) effect school has on visual <em>through</em> speed and verbal. In that light, we might consider this the <em>total effect</em> of school on the visual factor. Had we regressed the verbal and speed factors on school also, thereby decomposing the total effect into those different paths, we’d get the same result for the school difference on the visual factor as we do in 4d and e</li>
+<li>4d and 4e: This is generally what we want. A simple group difference on a latent variable(s) with other parameters assumed (relatively) equal across groups.</li>
+</ul>
+</section>
+<section id="sumfactor-score" class="level2">
+<h2 class="anchored" data-anchor-id="sumfactor-score">Sum/Factor score</h2>
+<p>What would happen if we look at the structural/regression model with the estimated latent variable scores<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>? How about we go even simpler, by not even running an SEM and simply using sum scores? Let’s see what results.</p>
+<p>We’ll start with the estimated factor scores.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>hs_model_5 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + x2 + x3</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + x5 + x6</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + x8 + x9</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>fit_5 <span class="ot">=</span> <span class="fu">cfa</span>(hs_model_5, <span class="at">data =</span> HolzingerSwineford1939, <span class="at">meanstructure=</span>T)</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>HolzingerSwineford1939 <span class="ot">=</span> HolzingerSwineford1939 <span class="sc">%&gt;%</span> </span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">visual =</span> <span class="fu">lavPredict</span>(fit_5)[,<span class="st">'visual'</span>],</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">verbal =</span> <span class="fu">lavPredict</span>(fit_5)[,<span class="st">'verbal'</span>],</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed  =</span> <span class="fu">lavPredict</span>(fit_5)[,<span class="st">'speed'</span>]</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>lm_1 <span class="ot">=</span> <span class="fu">lm</span>(visual <span class="sc">~</span> school <span class="sc">+</span> verbal <span class="sc">+</span> speed, <span class="at">data =</span> HolzingerSwineford1939)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(lm_1)  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept) schoolPasteur        verbal         speed 
+  -0.07231513    0.13953111    0.34744541    0.63626370 </code></pre>
+</div>
+</div>
+<p>The estimated coefficient is pretty close to that estimated by the SEM when we regressed all the factors on school. Interestingly, if we fix the loadings to be constant, we recover the initial multigroup estimates.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>hs_model_5b <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual =~ x1 + l1*x2 + l1*x3</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal =~ x4 + l2*x5 + l2*x6</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed  =~ x7 + l3*x8 + l3*x9 </span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>fit_5b <span class="ot">=</span> <span class="fu">cfa</span>(hs_model_5b,</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> lavaan<span class="sc">::</span>HolzingerSwineford1939,</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">meanstructure =</span> T)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>HolzingerSwineford1939 <span class="ot">=</span> HolzingerSwineford1939 <span class="sc">%&gt;%</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">visual =</span> <span class="fu">lavPredict</span>(fit_5b)[, <span class="st">'visual'</span>],</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">verbal =</span> <span class="fu">lavPredict</span>(fit_5b)[, <span class="st">'verbal'</span>],</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed  =</span> <span class="fu">lavPredict</span>(fit_5b)[, <span class="st">'speed'</span>]</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>lm_2 <span class="ot">=</span> <span class="fu">lm</span>(visual <span class="sc">~</span> school, <span class="at">data =</span> HolzingerSwineford1939)</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(lm_2)  <span class="co"># same as x1 diffs</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept) schoolPasteur 
+ -0.005790171   0.011172061 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>lm_3 <span class="ot">=</span> <span class="fu">lm</span>(x1 <span class="sc">~</span> school, <span class="at">data =</span> HolzingerSwineford1939)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(lm_3)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept) schoolPasteur 
+   4.92988506    0.01135425 </code></pre>
+</div>
+</div>
+<p>Now lets do a sum score. It may not be obvious, but a sum score can be seen as assuming a latent variable model where there is only a single construct and loadings and variances are equal for each item. As such, it is a natural substitute for a latent variable if we don’t want to use SEM, especially if we’re dealing with a notably reliable measure.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>HolzingerSwineford1939 <span class="ot">=</span> HolzingerSwineford1939 <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rowwise</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">visual_sum =</span> <span class="fu">sum</span>(x1, x2, x3),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">verbal_sum =</span> <span class="fu">sum</span>(x4, x5, x6),</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed_sum  =</span> <span class="fu">sum</span>(x7, x8, x9)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>lm_sum <span class="ot">=</span> <span class="fu">lm</span>(visual_sum <span class="sc">~</span> school, HolzingerSwineford1939)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(lm_sum)  <span class="co"># same as structural diffs</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  (Intercept) schoolPasteur 
+   13.1255747     0.2868184 </code></pre>
+</div>
+</div>
+<p>That coefficient representing the group difference looks familiar- it’s the same value as we had for models <code>4a</code> and <code>4c</code>, where we looked at a group difference only for the visual factor. As with those, this can be seen as a total effect of school on the visual ‘factor’.</p>
+</section>
+<section id="summary-of-differences" class="level2">
+<h2 class="anchored" data-anchor-id="summary-of-differences">Summary of differences</h2>
+<p>We can summarize our results as follows. The @ref(multiple-group-analysis) multigroup approach can be seen as an interaction of everything with the grouping variable. In some measurement scenarios, for example, the development of a nationwide achievement exam, this might be desirable as a means to establish <span class="emph">measurement invariance</span> (see below). However, I think this is probably rarely a theoretical goal for most applied researchers using SEM. Furthermore, group sizes may be prohibitively small given the number of parameters that need to be estimated. And if we consider other modeling contexts outside of SEM, it is exceedingly rare to interact every covariate with a moderator.</p>
+<p>In general though, we may very well be interested in a specific group difference on some latent variable, possibly controlling for other effects in some fashion. It is far simpler to specify such a model as above by regressing the latent variable on the group indicator as in the demonstration above, and it is a notably simpler model as well.</p>
+</section>
+<section id="supplemental-measurement-invariance" class="level2">
+<h2 class="anchored" data-anchor-id="supplemental-measurement-invariance">Supplemental: Measurement invariance</h2>
+<p>As a final note, in some cases we are instead looking for similarities across groups among the latent constructs, rather than differences. This is especially the case in scale development, where one would like a measure to be consistent across groups of individuals (e.g.&nbsp;sex, age, race, etc.).</p>
+<p>Aside from general problems of ‘accepting the null hypothesis’, the basic idea is to test a restricted model (e.g.&nbsp;loadings, intercepts, etc. are equal) vs.&nbsp;the less restrictive one that assumes the differences across groups exist, and if the general fit of the models is not appreciably different, then one can claim equivalence across groups. As a starting point, we assume <span class="emph">configural</span> equivalence, or in other words, that the factor structure is the same. There is no point in testing measurement equivalence if there is not a similar factor structure. The first more restricted model is that the loadings are equivalent. The next is that observed variable intercepts are equivalent, followed by latent variable means, and finally residual variances/covariances.</p>
+<p>I find in consulting and in published reports that researchers think that because they are interested in group differences that they are required to take a measurement invariance approach. This is not the case at all, as our previous models have shown. However, below is a demonstration using <span class="pack">semTools</span>. The package used to have a simple function that did exactly what most users want in a way easier than any other SEM package I’ve come across. In an effort to add flexibility and accommodate other data scenarios, they’ve made it much more complicated to do the default scenario, and have unfortunately deprecated the simple approach. I demonstrate both below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>hs_model_4 <span class="ot">&lt;-</span> <span class="st">' </span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="st">  visual  =~ x1 + x2 + x3</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="st">  verbal  =~ x4 + x5 + x6</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="st">  speed   =~ x7 + x8 + x9 </span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>semTools<span class="sc">::</span><span class="fu">measurementInvariance</span>(</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model =</span> hs_model_4, </span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">data  =</span> HolzingerSwineford1939, </span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">"school"</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="st">Measurement invariance models:</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="st">Model 1 : fit.configural</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="st">Model 2 : fit.loadings</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="st">Model 3 : fit.intercepts</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="st">Model 4 : fit.means</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="st">Chi-Squared Difference Test</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="st">               Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    </span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="st">fit.configural 48 7484.4 7706.8 115.85                                  </span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="st">fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244    </span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="st">fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="st">fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***</span></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="st">---</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="st">Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a><span class="st">Fit measures:</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a><span class="st">                 cfi rmsea cfi.delta rmsea.delta</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a><span class="st">fit.configural 0.923 0.097        NA          NA</span></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a><span class="st">fit.loadings   0.921 0.093     0.002       0.004</span></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a><span class="st">fit.intercepts 0.882 0.107     0.038       0.015</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a><span class="st">fit.means      0.840 0.122     0.042       0.015</span></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a><span class="st">    "</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Measurement invariance models:
+
+Model 1 : fit.configural
+Model 2 : fit.loadings
+Model 3 : fit.intercepts
+Model 4 : fit.means
+
+Chi-Squared Difference Test
+
+               Df    AIC    BIC  Chisq Chisq diff Df diff Pr(&gt;Chisq)    
+fit.configural 48 7484.4 7706.8 115.85                                  
+fit.loadings   54 7480.6 7680.8 124.04      8.192       6     0.2244    
+fit.intercepts 60 7508.6 7686.6 164.10     40.059       6  4.435e-07 ***
+fit.means      63 7543.1 7710.0 204.61     40.502       3  8.338e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Fit measures:
+
+                 cfi rmsea cfi.delta rmsea.delta
+fit.configural 0.923 0.097        NA          NA
+fit.loadings   0.921 0.093     0.002       0.004
+fit.intercepts 0.882 0.107     0.038       0.015
+fit.means      0.840 0.122     0.042       0.015
+    </code></pre>
+</div>
+</div>
+<p>Now for the new approach. From a single line of code, we now have to do the following to produce the same result. Great if you need that additional functionality, not so much if you don’t. If you look at the visual latent variable intercepts model , their difference would equal that seen in models <code>4d/e</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>test.seq <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"loadings"</span>,<span class="st">"intercepts"</span>,<span class="st">"means"</span>,<span class="st">"residuals"</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>meq.list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="sc">:</span><span class="fu">length</span>(test.seq)) {</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">==</span> <span class="dv">0</span>L) {</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    meq.label <span class="ot">&lt;-</span> <span class="st">"configural"</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    group.equal <span class="ot">&lt;-</span> <span class="st">""</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    meq.label <span class="ot">&lt;-</span> test.seq[i]</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    group.equal <span class="ot">&lt;-</span> test.seq[<span class="dv">1</span><span class="sc">:</span>i]</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  meq.list[[meq.label]] <span class="ot">&lt;-</span> </span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>    semTools<span class="sc">::</span><span class="fu">measEq.syntax</span>(</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">configural.model =</span> hs_model_baseline,</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> lavaan<span class="sc">::</span>HolzingerSwineford1939,</span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">ID.fac =</span> <span class="st">"auto.fix.first"</span>,</span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">group =</span> <span class="st">"school"</span>,</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">group.equal =</span> group.equal,</span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">return.fit =</span> <span class="cn">TRUE</span></span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>semTools<span class="sc">::</span><span class="fu">compareFit</span>(meq.list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The following lavaan models were compared:
+    meq.list.configural
+    meq.list.loadings
+    meq.list.intercepts
+    meq.list.means
+    meq.list.residuals
+To view results, assign the compareFit() output to an object and  use the summary() method; see the class?FitDiff help page.</code></pre>
+</div>
+</div>
+<p>This last one just compares the means. We see that assuming no group difference results in a worse model all around.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># means_only</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>test.seq <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"means"</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>meq.list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">0</span><span class="sc">:</span><span class="fu">length</span>(test.seq)) {</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">==</span> <span class="dv">0</span>L) {</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    meq.label <span class="ot">&lt;-</span> <span class="st">"configural"</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    group.equal <span class="ot">&lt;-</span> <span class="st">""</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    meq.label <span class="ot">&lt;-</span> test.seq[i]</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    group.equal <span class="ot">&lt;-</span> test.seq[<span class="dv">1</span><span class="sc">:</span>i]</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>  meq.list[[meq.label]] <span class="ot">&lt;-</span> </span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    semTools<span class="sc">::</span><span class="fu">measEq.syntax</span>(</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">configural.model =</span> hs_model_baseline,</span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> lavaan<span class="sc">::</span>HolzingerSwineford1939,</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">ID.fac =</span> <span class="st">"auto.fix.first"</span>,</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">group =</span> <span class="st">"school"</span>,</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">group.equal =</span> group.equal,</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">return.fit =</span> <span class="cn">TRUE</span></span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>semTools<span class="sc">::</span><span class="fu">compareFit</span>(meq.list)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>The following lavaan models were compared:
+    meq.list.configural
+    meq.list.means
+To view results, assign the compareFit() output to an object and  use the summary() method; see the class?FitDiff help page.</code></pre>
+</div>
+</div>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Note that lavaan allows one to take this two step approach while estimating proper standard errors given the measurement error associated with the latent variable scores. The function is <span class="func">fsr</span>, but as of this writing, it is undergoing development, has been hidden from the user, and was not working.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2019,
+  author = {Clark, Michael},
+  title = {Comparisons of the {Unseen}},
+  date = {2019-08-05},
+  url = {https://m-clark.github.io/posts/2019-08-05-comparing-latent-variables/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2019" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael. 2019. <span>“Comparisons of the Unseen.”</span> August
+5, 2019. <a href="https://m-clark.github.io/posts/2019-08-05-comparing-latent-variables/">https://m-clark.github.io/posts/2019-08-05-comparing-latent-variables/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
