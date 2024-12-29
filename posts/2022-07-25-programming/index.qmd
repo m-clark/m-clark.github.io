@@ -1,0 +1,893 @@
+---
+title: "Programming Odds & Ends"
+description: |
+  Explorations in faster data processing and other problems.
+date: '2022-07-25'
+image: ../../img/198R_small.png  
+draft: false
+tags: [R, speed, memory, lag, lead, antijoin, group by, coalesce, filter, slice, missing values, conditional, dplyr, data.table, tidyr, vctrs, tidyfast]
+categories:
+  - programming
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+theme_clean <- function (
+  font_size = 12,
+  font_family = "",
+  center_axis_labels = FALSE
+) {
+  
+  if (center_axis_labels) {
+    haxis_just_x <- 0.5
+    vaxis_just_y <- 0.5
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  else {
+    haxis_just_x <- 0
+    vaxis_just_y <- 1
+    v_rotation_x <- 0
+    v_rotation_y <- 0
+  }
+  
+  ggplot2::theme(
+    text = ggplot2::element_text(
+      family = font_family,
+      face   = "plain",
+      color  = "gray30",
+      size   = font_size,
+      hjust  = 0.5,
+      vjust  = 0.5,
+      angle  = 0,
+      lineheight = 0.9,
+      margin = ggplot2::margin(),
+      debug  = FALSE
+    ),
+    axis.title.x = ggplot2::element_text(
+      hjust = haxis_just_x,
+      angle = v_rotation_x,
+      size  = 0.8 * font_size
+    ),
+    axis.title.y = ggplot2::element_text(
+      vjust = vaxis_just_y,
+      hjust = 0,
+      angle = v_rotation_y,
+      size  = 0.8 * font_size
+    ),
+    axis.ticks        = ggplot2::element_line(color = "gray30"),
+    title             = ggplot2::element_text(color = "gray30", size = font_size * 1.25),
+    plot.subtitle     = ggplot2::element_text(color = "gray30", size = font_size * .75, hjust = 0),
+    plot.caption      = ggplot2::element_text(color = "gray30", size = font_size * .5, hjust = 0),
+    legend.position   = 'bottom', 
+    legend.key        = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.background = ggplot2::element_rect(fill = "transparent", color = NA),
+    legend.title      = ggplot2::element_blank(), 
+    panel.background  = ggplot2::element_blank(),
+    panel.grid        = ggplot2::element_blank(),
+    strip.background  = ggplot2::element_blank(),
+    plot.background   = ggplot2::element_rect(fill = "transparent", color = NA),
+  )
+}
+
+# set the theme as default
+theme_set(theme_clean())
+
+# set other point/line default colors; in most cases, we can use the color from
+# default discrete scale for more consistency across plots.
+# paletteer::palettes_d$colorblindr$OkabeIto
+update_geom_defaults('vline',   list(color = 'gray25',  alpha = .25))  # vlines and hlines are typically not attention grabbers so set alpha
+update_geom_defaults('hline',   list(color = 'gray25',  alpha = .25))  # usually a zero marker
+update_geom_defaults('point',   list(color = '#E69F00', alpha = .5))   # alpha as usually there are many points
+update_geom_defaults('smooth',  list(color = '#56B4E9', alpha = .15))
+update_geom_defaults('line',    list(color = '#56B4E9', alpha = .5))
+update_geom_defaults('bar',     list(color = '#E69F00', fill = '#E69F00'))  
+update_geom_defaults('col',     list(color = '#E69F00', fill = '#E69F00'))
+update_geom_defaults('dotplot', list(color = '#E69F00', fill = '#E69F00'))
+
+# use colorblind safe colors for categories; if you supply a continuous value to
+# color you'll get an error, but you just have to use `myplot +
+# scale_color_continous()` or whatever to override this; likewise you can always
+# override this scale for categorical schemes if desired also. Note that this
+# will apply for both color and fill, which is usually what we want.
+
+okabe_ito = c(
+  '#E69F00',
+  '#56B4E9',
+  '#009E73',
+  '#F0E442',
+  '#0072B2',
+  '#D55E00',
+  '#CC79A7',
+  '#999999'
+)
+
+ggplot <- function(...) ggplot2::ggplot(...) + 
+  # okabe ito colorblind safe scheme
+  scale_color_manual(
+    values = okabe_ito,
+    drop = FALSE,
+    aesthetics = c('color', 'fill')
+  )
+
+gt <- function(..., decimals = 2, title = NULL, subtitle = NULL) {
+  gt::gt(...) %>% 
+    gt::fmt_number(
+      columns = where(is.numeric),
+      decimals = decimals
+    ) %>% 
+    gt::tab_header(title = title, subtitle = subtitle) %>% 
+    gtExtras::gt_theme_nytimes()
+}
+
+gt_theme <-   
+  list(
+    # report median (IQR) and n (percent) as default stats in `tbl_summary()`
+    "tbl_summary-str:continuous_stat" = "{mean} ({sd})",
+    "tbl_summary-str:categorical_stat" = "{n} ({p})"
+  )
+
+rnd = tidyext::rnd
+```
+
+> NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you've found an issue, please post it at [GitHub](http://github.com/m-clark/m-clark.github.io/issues).
+
+## Introduction
+
+Oftentimes I'm looking to gain speed/memory advantages, or maybe just exploring how to do the same thing differently in case it becomes useful later on. I thought I'd start posting them, but then I don't get around to it. Here are a few that have come up over the past year (or two 😞), and even as I wrote this, more examples kept coming up, so I may come back to add more in the future.
+
+## Quick summary
+
+Data processing efficiency really depends on context. Faster doesn't mean memory efficient, and what may be the best in a standard setting can be notably worse in others. Some approaches won't show their value until the data is very large, or there are many groups to deal with, while others will get notably worse. Also, you may not want an additional package dependency beyond what you're using, and may need a base R approach. The good news is you'll always have options!
+
+One caveat: I'm not saying that the following timed approaches are necessarily the best/fastest, I mostly stuck to ones I'd try first. You may find even better for your situation! A great resource to keep in mind is the [fastverse](https://github.com/fastverse), which is a collection of packages with speed and efficiency in mind, and includes a couple that are demonstrated here.
+
+## Setup and orientation
+
+Required packages.
+
+```{r req-packs, eval=TRUE}
+library(dplyr)
+library(tidyr)
+library(dtplyr)
+library(tidyfast)
+library(data.table)
+library(collapse)
+library(vctrs)
+library(bench)   # for timings
+```
+
+Also, in the following bench marks I turn off checking if the results are equivalent (i.e. `check = FALSE`) because even if the resulting data is the same, the objects may be different classes, or some objects may even be of the same class, but have different attributes. You are welcome to double check that you would get the same thing as I did. Also, you might want to look at the `autoplot` of the bench mark summaries, as many results have some variability that isn't captured by just looking at median/best times.
+
+```{r funs, echo = FALSE}
+summarize_bm <- function(bm, digits = 4) {
+  bm %>% 
+    select(expression:mem_alloc,-`itr/sec`) %>%
+    arrange(median) %>% 
+    mutate(
+      expression = names(expression),
+      min = rnd(min, digits),
+      median2 = rnd(median, digits),
+      mem_alloc2 = as.character(mem_alloc),
+      median_relative = as.character(round(as.numeric(median)/min(as.numeric(median)), 2)),
+      mem_relative = as.character(round(as.numeric(mem_alloc)/min(as.numeric(mem_alloc)), 2)),
+    ) %>%
+    select(-median, -mem_alloc) %>% 
+    rename(median = median2,
+           mem_alloc = mem_alloc2) %>% 
+    gt(decimals = digits)
+}
+```
+
+## Fill in missing values
+
+We'll start with the problem of filling in missing values by group. I've created a realistic example where the missingness is seen randomly across multiple columns, and differently across groups. I've chosen to compare [tidyr]{.pack}, [tidyfast]{.pack}, the underlying approach of [tidyr]{.pack} via [vctrs]{.pack}, and [data.table]{.pack}.
+
+Note that only [data.table]{.pack} is not last observation carried forward by default ('down' in [tidyr]{.pack} parlance), so that argument is made explicit. All of these objects will have different attributes or classes. [tidyfast]{.pack} for some reason renames the grouping variable to 'by'. If you wrap all of these in `data.frame`, that will remove the attributes and give them all the same class, so you can verify they return the same result.
+
+```{r fill-timings, eval=FALSE}
+set.seed(1234)
+
+N = 1e5
+Ng = 5000
+
+create_missing <- function(x) {
+  x[sample(1:length(x), 5)] = NA
+  x
+}
+
+
+df_missing = tibble(grp = rep(1:Ng, e = N / Ng)) %>%
+  arrange(grp) %>%
+  group_by(grp) %>%
+  mutate(
+    x = 1:n(),
+    y = rpois(n(), 5),
+    z = rnorm(n(), 5),
+    across(x:z, create_missing)
+  ) %>% 
+  ungroup()
+
+df_missing %>% head(5)
+
+dt_missing = as.data.table(df_missing) %>% setkey(grp)
+tf_missing = copy(dt_missing)
+
+bm_fill <-
+  bench::mark(
+    %!in%
+    tidyr    = fill(group_by(df_missing, grp), x:z),  
+    tidyfast = dt_fill(tf_missing, x, y, z, id = grp),
+    vctrs    = df_missing %>% group_by(grp) %>% mutate(across(x:z, vec_fill_missing)),
+    dt = dt_missing[
+      ,
+      .(x = nafill(x, type = 'locf'),
+        y = nafill(y, type = 'locf'),
+        z = nafill(z, type = 'locf')),
+      by = grp
+    ],
+    check = FALSE,
+    iterations = 10
+  )
+```
+
+```{r fill-timings-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_fill, '../../data/programming/bm_fill.rds')
+```
+
+This is a great example of where there is a notable speed/memory trade-off. Very surprising how much memory [data.table]{.pack} uses[^1], while not giving much speed advantage relative to the [tidyr]{.pack}. Perhaps there is something I'm missing (😏)? Also note that we can get an even 'tidier' advantage by using [vctrs]{.pack} directly, rather than wrapping it via [tidyr]{.pack}, and seeing how easy it is to use, it's probably the best option.
+
+[^1]: [data.table]{.pack} modifies in place, so it technically it doesn't have anything to fill after the first run. As a comparison, I created new columns as the filled in values, and this made almost no speed/memory difference. I also tried `copy(dt_missing)[...]`, which had a minor speed hit. I also tried using `setkey` first but that made no difference. Note also that [data.table]{.pack} has `setnafill`, but this apparently has no grouping argument, so is not demonstrated.
+
+```{r show-bm-fill, echo=FALSE}
+bm_fill = read_rds('../../data/programming/bm_fill.rds')
+summarize_bm(bm_fill)
+```
+
+## Antijoins
+
+Sometimes you just don't want that! In the following we have a situation where we want to filter values based on the negation of some condition. Think of a case where certain person IDs are not viable for consideration for analysis. Many times, a natural approach would be to use something like a filter where instead of using `vals %in% values_desired`, we just negate that with a bang (`!`) operator. However, another approach is to create a data frame of the undesired values and use an `anti_join`. When using joins in general, you get a relative advantage by explicitly noting the variables you're joining on, so I compare that as well for demonstration. Finally, in this particular example we could use [data.table's]{.pack} built-in character match, `chin`.
+
+```{r anti-join, eval=FALSE}
+set.seed(123)
+
+df1 = tibble(
+  id = sample(letters, 10000, replace = TRUE)
+)
+
+df2 = tibble(
+  id = sample(letters[1:10], 10000, replace = TRUE)
+)
+
+df1_lazy = lazy_dt(df1)
+df2_lazy = lazy_dt(df2)
+
+df1_dt = data.table(df1)
+df2_dt = data.table(df2)
+
+suppressMessages({
+  bm_antijoin = bench::mark(
+    in_     = filter(df1, !id %in% letters[1:10]),
+    in_dtp  = collect(filter(df1_lazy, !id %in% letters[1:10])),     # not usable until collected/as_tibbled
+    chin    = filter(df1, !id %chin% letters[1:10]),                 # chin for char vector only, from data.table
+    chin_dt = df1_dt[!df1_dt$id %chin% letters[1:10],],              
+    coll    = fsubset(df1, id %!in% letters[1:10]),                  # can work with dt or tidyverse
+    aj      = anti_join(df1, df2, by = 'id'),
+    aj_noby = anti_join(df1, df2),
+
+    iterations = 100,
+    check      = FALSE
+  )
+})
+```
+
+```{r anti-join-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_antijoin, '../../data/programming/bm_antijoin.rds')
+```
+
+In this case, the fully [data.table]{.pack} approach is best in speed and memory, but [collapse]{.pack} is not close behind[^2]. In addition, if you are in the tidyverse, the `anti_join` function is a very good option. Hopefully the lesson about explicitly setting the `by` argument is made clear.
+
+[^2]: As of this writing, I'm new to the [collapse]{.pack} package, and so might be missing other uses that might be more efficient.
+
+```{r anti-join-show, echo=FALSE}
+bm_antijoin = read_rds('../../data/programming/bm_antijoin.rds')
+
+summarize_bm(bm_antijoin, digits = 6)
+```
+
+## Lag/lead/differences
+
+Here we are interested in getting the difference in the current value of some feature from it's last (or next) value, typically called a lag (lead). Note that it doesn't have to be the last value, but that is most common. In the tidyverse we have `lag`/`lead` functions, or with [data.table]{.pack}, we have the generic `shift` function that can do both. In the following I look at using that function in the fully [data.table]{.pack} situation or within a tibble.
+
+```{r lag-lead, eval=FALSE}
+set.seed(1234)
+
+N = 1e5
+Ng = 5000
+
+df  = tibble(
+  x = rpois(N, 10),
+  grp = rep(1:Ng, e = N / Ng)
+)
+
+dt = as.data.table(df)
+
+bm_lag = bench::mark(
+  dplyr_lag  = mutate(df, x_diff = x - lag(x)),
+  dplyr_lead = mutate(df, x_diff = x - lead(x)),
+  dt_lag     = dt[, x_diff := x - shift(x)],
+  dt_lead    = dt[, x_diff := x - shift(x, n = -1)],
+  dt_dp_lag  = mutate(df, x_diff = x - shift(x)),
+  dt_dp_lead = mutate(df, x_diff = x - shift(x, n = -1)),
+  coll_lag   = ftransform(df, x_diff = x - flag(x)),
+  coll_lead  = ftransform(df, x_diff = x - flag(x, n = -1)),
+  iterations = 100,
+  check      = FALSE
+)
+```
+
+```{r lag-lead-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_lag, '../../data/programming/bm_lag.rds')
+```
+
+In this case, [collapse]{.pack} is best, with [data.table]{.pack} not far behind, but using the `shift` function within the tidy approach is a very solid gain. Oddly, `lag` and `lead` seem somewhat different in terms of speed and memory.
+
+```{r lag-lead-show, echo=FALSE}
+bm_lag = read_rds('../../data/programming/bm_lag.rds')
+
+summarize_bm(bm_lag, digits = 6)
+```
+
+What about a grouped scenario? To keep it simple we'll just look at using lagged values.
+
+```{r lag-grp, eval=FALSE}
+bm_lag_grp = bench::mark(
+  dt_lag    = dt[, x_diff := x - shift(x), by = grp],
+  dt_dp_lag = mutate(group_by(df, grp), x_diff = x - shift(x)),
+  dplyr_lag = mutate(group_by(df, grp), x_diff = x - lag(x)),
+  coll_lag  = fmutate(fgroup_by(df, grp), x_diff = x - flag(x)),
+  
+  iterations = 10,
+  check      = FALSE
+)
+```
+
+```{r lag-grp-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_lag_grp, '../../data/programming/bm_lag_grp.rds')
+```
+
+In the grouped situation, using a [collapse]{.pack} isn't best for memory, but the speed gain is ridiculous!!
+
+```{r lag-grp-show, echo=FALSE}
+bm_lag_grp = read_rds('../../data/programming/bm_lag_grp.rds')
+
+summarize_bm(bm_lag_grp, digits = 6)
+```
+
+## First/Last
+
+In this demo, we want to take the first (last) value of each group. Surprisingly, for the same functionality, it turns out that the number of groups matter when doing groupwise operations. For the following I'll even use a base R approach (though within [dplyr's]{.pack} mutate) to demonstrate some differences.
+
+```{r first-last-1, eval=FALSE}
+set.seed(1234)
+
+N = 100000
+
+df = tibble(
+  x  = rpois(N, 10),
+  id = sample(1:100, N, replace = TRUE)
+)
+
+dt = as.data.table(df)
+
+bm_first = bench::mark(
+  base_first  = summarize(group_by(df, id), x = x[1]),
+  base_last   = summarize(group_by(df, id), x = x[length(x)]),
+  dplyr_first = summarize(group_by(df, id), x = dplyr::first(x)),
+  dplyr_last  = summarize(group_by(df, id), x = dplyr::last(x)),
+  dt_first    = dt[, .(x = data.table::first(x)), by = id],
+  dt_last     = dt[, .(x = data.table::last(x)),  by = id],
+  coll_first  = ffirst(fgroup_by(df, id)),
+  coll_last   = flast(fgroup_by(df, id)),
+  
+  iterations  = 100,
+  check       = FALSE
+)
+```
+
+```{r first-last-1-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_first, '../../data/programming/bm_first_1.rds')
+```
+
+The first result is actually not too surprising, in that the fully dt approaches are fast and memory efficient, though [collapse]{.pack} is notably faster. Somewhat interesting is that the base last is a bit faster than [dplyr's]{.pack} `last` (technically `nth`) approach.
+
+```{r first-last-show, echo=FALSE}
+bm_first = read_rds('../../data/programming/bm_first_1.rds')
+
+summarize_bm(bm_first, digits = 6)
+```
+
+In the following, the only thing that changes is the number of groups.
+
+```{r first-last-2, eval=FALSE}
+set.seed(1234)
+
+N = 100000
+
+df = tibble(
+  x = rpois(N, 10),
+  id = sample(1:(N/10), N, replace = TRUE) # <--- change is here
+)
+
+dt = as.data.table(df)
+
+bm_first_more_groups = bench::mark(
+  base_first  = summarize(group_by(df, id), x = x[1]),
+  base_last   = summarize(group_by(df, id), x = x[length(x)]),
+  dplyr_first = summarize(group_by(df, id), x = dplyr::first(x)),
+  dplyr_last  = summarize(group_by(df, id), x = dplyr::last(x)),
+  dt_first    = dt[, .(x = data.table::first(x)), by = id],
+  dt_last     = dt[, .(x = data.table::last(x)),  by = id],
+  coll_first  = ffirst(group_by(df, id)),
+  coll_last   = flast(group_by(df, id)),
+  iterations  = 100,
+  check       = FALSE
+)
+```
+
+```{r first-last-2-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_first_more_groups, '../../data/programming/bm_first_more_groups.rds')
+```
+
+Now what the heck is going on here? The base R approach is way faster than even [data.table]{.pack}, while not using any more memory than what [dplyr]{.pack} is doing (because of the group-by-summarize). More to the point is that [collapse]{.pack} is notably faster than the other options, but still a bit heavy memory-wise relative to [data.table]{.pack}.
+
+```{r first-last-2-show, echo=FALSE}
+bm_first_more_groups = read_rds('../../data/programming/bm_first_more_groups.rds')
+
+summarize_bm(bm_first_more_groups, digits = 6)
+```
+
+## Coalesce/ifelse
+
+It's very often we want to change a single value based on some condition, often starting with `ifelse`. This is similar to our previous fill situation for missing values, but applies a constant as opposed to last/next value. `Coalesce` is similar to [tidyr's]{.pack} `fill`, and is often used in cases where we might otherwise use an `ifelse` style approach . In the following, we want to change NA values to zero, and there are many ways we might go about it.
+
+```{r ifelse1, eval=FALSE}
+set.seed(1234)
+x = rnorm(1000)
+x[x > 2] = NA
+
+
+bm_coalesce = bench::mark(
+  base      = {x[is.na(x)] <- 0; x},
+  ifelse    = ifelse(is.na(x), 0, x),
+  if_else   = if_else(is.na(x), 0, x),
+  vctrs     = vec_assign(x, is.na(x), 0),
+  tidyr     = replace_na(x, 0),
+  fifelse   = fifelse(is.na(x), 0, x),
+  coalesce  = coalesce(x, 0),
+  fcoalesce = fcoalesce(x, 0),
+  nafill    = nafill(x, fill = 0),
+  coll      = replace_NA(x)   # default is 0
+)
+```
+
+```{r ifelse1-save, echo=FALSE, eval=FALSE}
+saveRDS(bm_coalesce, '../../data/programming/bm_coalesce.rds')
+```
+
+The key result here to me is just how much memory the [dplyr]{.pack} `if_else` approach is using, as well as how fast and memory efficient the base R approach is even with a second step. While providing type safety, `if_else` is both slow and a memory hog, so probably anything else is better. [tidyr]{.pack} itself would be a good option here, and while it makes up for the memory issue, it's relatively slow compared to other approaches, including the function it's a wrapper for (`vec_assign`), which is also demonstrated. Interestingly, `fcoalesce` and `fifelse` would both be better options than [data.table's]{.pack} other approach that is explicitly for this task.
+
+```{r ifelse1-show, echo = FALSE}
+bm_coalesce = read_rds('../../data/programming/bm_coalesce.rds')
+
+summarize_bm(bm_coalesce, digits = 6)
+```
+
+## Conditional Slide
+
+I recently had a problem where I wanted to do a apply a certain function that required taking the difference between the current and last value as we did in the lag demo. The problem was that 'last' depended on a specific condition being met. The basic idea is that we want to take x - lag(x) but where the condition is `FALSE`, we need to basically ignore that value for consideration as the last value, and only use the previous value for which the condition is `TRUE`. In the following, for the first two values where the condition is met, this is straightforward (6 minus 10). But for the fourth row, 4 should subtract 6, rather than 5, because the condition is `FALSE`.
+
+```{r df-cs}
+set.seed(1234)
+
+df = tibble(
+  x = sample(1:10),
+  cond = c(TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE),
+  group = rep(c('a', 'b'), e = 5)
+)
+
+df 
+```
+
+While somewhat simple in concept, it doesn't really work with simple lags, as the answer would be wrong, or sliding functions, because the window is adaptive. I wrote the following function to deal with this. By default, it basically takes our vector under consideration, `x`, makes it `NA` where the condition doesn't hold, then fills in the NA values with the last value using the `vec_fill_missing` (or a supplied constant/single value). However there is flexibility beyond that type of fill. In addition, the function applied is generic, and could be applied to the newly created variable (`.x`), or use both the original (`x`) and the newly created variable.
+
+```{r fun-conditional_slide}
+conditional_slide <-
+  function(x,
+           condition,
+           fun,
+           direction  = c("down"),
+           fill_value = NA,
+           na_value   = NA,
+           ...) {
+    
+    if (!direction %in% c("constant", "down", "up", "downup", "updown"))
+      rlang::abort('direction must be one of "constant", "down", "up", "downup", "updown"')
+    
+    if (length(x) != length(condition))
+      rlang::abort('condition and x must be the same length')
+    
+    # can't use dplyr/dt ifelse since we won't know class type of fill_value
+    conditional_val <- ifelse(direction == 'constant', fill_value, NA)    
+    .x <- ifelse(condition, x, conditional_val)
+    
+    if (direction != 'constant')
+      .x <- vctrs::vec_fill_missing(.x, direction = direction)
+    
+    class(.x) <- class(x)
+    
+    result <- fun(x, .x, ...)
+    
+    if (!is.na(na_value))
+      result[is.na(result)] <- na_value
+    
+    result
+  }
+```
+
+The first example applies the function, `x - lag(x)`, to our dataset, and which in my case, I also wanted to apply within groups, which caused further problems for some of the available functions I thought would otherwise be applicable. I also show it for another type of problem, taking the cumulative sum, as well as just conditionally changing the values to zero.
+
+```{r cs-demo}
+df %>%
+ group_by(group) %>%
+ mutate(
+   # demo first difference
+   simple_diff = x - dplyr::lag(x),
+   cond_diff = conditional_slide(x, cond, fun = \(x, .x) x - lag(.x), na_value = 0),
+   
+   # demo cumulative sum
+   simple_cumsum = cumsum(x),
+   cond_cumsum   = conditional_slide(
+     x,
+     cond,
+     fun = \(x, .x) cumsum(.x),
+     direction = 'constant',
+     fill = 0
+   ),
+   
+   # demo fill last
+   simple_fill_last = vec_fill_missing(x),
+   cond_fill_last = conditional_slide(
+     x,
+     cond,
+     fun = \(x, .x) .x,
+     direction = 'down'
+   )
+ )
+```
+
+This is one of those things that comes up from time to time where trying to apply a standard tool likely won't cut it. You may find similar situations where you need to modify what's available and create some functionality tailored to your needs.
+
+## Take the first TRUE
+
+Sometimes we want the first instance of a condition. For example, we might want the position or value of the first number \> than some value. We've already investigated using [dplyr]{.pack} or [data.table's]{.pack} `first`, and I won't do so again here except to say they are both notably slower and worse on memory here. We have a few approaches we might take in base R. Using `which` would be common, but there is also `which.max`, that, when applied to logical vectors, gives the position of the first `TRUE` (`which.min` gives the position of the first `FALSE`). In addition, there is the `Position` function, which I didn't even know about until messing with this problem.
+
+```{r bm_first_true, eval=FALSE}
+set.seed(123)
+
+x = sort(rnorm(10000))
+
+marker = 2
+
+bm_first_true_1 = bench::mark(
+  which     = which(x > marker)[1],
+  which_max = which.max(x > marker),
+  pos       = Position(\(x) x > marker, x)
+)
+
+
+# make it slightly more challenging
+x = sort(rnorm(1e6))
+
+marker = 4 
+
+bm_first_true_2 = bench::mark(
+  which     = which(x > marker)[1],
+  which_max = which.max(x > marker),
+  pos       = Position(\(x) x > marker, x)
+)
+```
+
+```{r bm_first_true-save, echo=FALSE, eval=FALSE}
+save(bm_first_true_1, bm_first_true_2, file = '../../data/programming/first_true.RData')
+```
+
+Interestingly `Position` provides the best memory performance, but is prohibitively slower. `which.max` is probably your best bet.
+
+```{r show-bm_first_true, echo=FALSE}
+load('../../data/programming/first_true.RData')
+
+summarize_bm(bm_first_true_1, digits = 6)
+summarize_bm(bm_first_true_2, digits = 5)
+```
+
+But not so fast? The following makes the first case come very quickly, where `Position` blows the other options out of the water! I guess if you knew this was going to be the case you could take serious advantage.
+
+```{r bm-first-quick, eval=FALSE}
+set.seed(123)
+
+x = sort(rnorm(100000), decreasing = TRUE)
+
+x[1:30] = 4
+
+
+bm_first_true_3 = bench::mark(
+  which     = which(x < marker)[1],
+  which_max = which.max(x < marker),
+  pos       = Position(\(x) x < marker, x) 
+)
+```
+
+```{r bm_first_true-save-quick, echo=FALSE, eval=FALSE}
+save(bm_first_true_1, bm_first_true_2, bm_first_true_3, file = '../../data/programming/first_true.RData')
+```
+
+```{r show-bm_first_true-quick, echo=FALSE}
+load('../../data/programming/first_true.RData')
+summarize_bm(bm_first_true_3, digits = 5)
+```
+
+## Group by filtering/slicing
+
+The previous situation was the basis for this next demo where we utilize `which.max`. Here we want to filter in one scenario, such that if all values are zero, we drop them, and in the second, we want to only retain certain values based on a condition. In this latter case, the condition is that at least one non-zero has occurred, in which case we want to keep all of those values from that point on (even if they are zero).
+
+To make things more clear, for the example data that follows, we want to drop group 1 entirely, the initial part of group 2, and retain all of group 3.
+
+```{r filter-slice}
+library(tidyverse)
+
+set.seed(12345)
+
+df = tibble(
+  group = rep(1:3, e = 10),
+  value = c(
+    rep(0, 10),
+    c(rep(0, 3), sample(0:5, 7, replace = TRUE)), 
+    sample(0:10, 10, replace = TRUE)
+  )
+)
+
+
+df %>% 
+  group_by(group) %>% 
+  filter(!all(value == 0)) %>% 
+  slice(which.max(value > 0):n())
+```
+
+In the above scenario, we take two steps to illustrate our desired outcome conceptually. Ideally though, we'd like one step, because it is just a general filtering. You might think maybe to change `which.max` to `which` and just slice, but this would remove all zeros, when we want to retain zeros after the point where at least some values are greater than zero. Using `row_number` was a way I thought to get around things.
+
+```{r bm_filter_slice, eval = FALSE}
+df %>% 
+  group_by(group) %>% 
+  filter(!all(value == 0) & row_number() >= which.max(value > 0))
+
+
+bm_filter_slice = bench::mark(
+  orig = df %>% 
+    group_by(group) %>% 
+    filter(!all(value == 0)) %>% 
+    slice(which.max(value > 0):n()),
+  
+  new = df %>% 
+    group_by(group) %>% 
+    filter(!all(value == 0) & row_number() >= which.max(value > 0))
+)
+```
+
+```{r bm_filter_slice-save, eval = FALSE, echo=FALSE}
+save(bm_filter_slice, file = '../../data/programming/bm_filter_slice.RData')
+```
+
+```{r show-bm_filter_slice, echo=FALSE}
+load('../../data/programming/bm_filter_slice.RData')
+
+summarize_bm(bm_filter_slice, digits = 4)
+```
+
+Well we got it to one operation, but now it takes longer and has no memory advantage. Are we on the wrong track? Let's try with a realistically sized data set with a lot of groups.
+
+```{r bm_filter_slice2, eval = FALSE}
+set.seed(1234)
+
+N = 100000
+g = 1:(N/4)
+
+df = tibble(
+  group = rep(g, e = 4),
+  value = sample(0:5, size = N, replace = TRUE)
+)
+
+bm_filter_slice2 = bench::mark(
+  orig = df %>% 
+    group_by(group) %>% 
+    filter(!all(value == 0)) %>% 
+    slice(which.max(value > 0):n()),
+  
+  new = df %>% 
+    group_by(group) %>% 
+    filter(!all(value == 0) & row_number() >= which.max(value > 0))
+)
+```
+
+```{r bm_filter_slice2-save, eval = FALSE, echo=FALSE}
+save(bm_filter_slice2, file = '../../data/programming/bm_filter_slice2.RData')
+```
+
+Now we have the reverse scenario. The single filter is notably faster and more memory efficient.
+
+```{r show-bm_filter_slice2, echo=FALSE}
+load('../../data/programming/bm_filter_slice2.RData')
+
+summarize_bm(bm_filter_slice2, digits = 4)
+```
+
+## Tidy timings
+
+### Overview
+
+> This tidy timings section comes from a notably old exploration I rediscovered (I think it was originally Jan 2020), but it looks like tidyfast still has some functionality beyond dtplyr, and it doesn't hurt to revisit. I added a result for collapse. My original timings were on a nicely suped up pc, but the following are on a year and a half old macbook with an M1 processer, and were almost 2x faster.
+
+Here I take a look at some timings for data processing tasks. My reason for doing so is that [dtplyr]{.pack} has recently arisen from the dead, and [tidyfast]{.pack} has come on the scene, so I wanted a quick reference for myself and others to see how things stack up against [data.table]{.pack}.
+
+So we have the following:
+
+-   *Base R*: Just kidding. If you're using base R approaches for this `aggregate` you will always be slower. Functions like `aggregate`, `tapply` and similar could be used in these demos, but I leave that as an exercise to the reader. I've done them, and it isn't pretty.
+-   *dplyr*: standard data wrangling workhorse package
+-   *tidyr*: has some specific functionality not included in dplyr
+-   *data.table*: another commonly used data processing package that purports to be faster and more memory efficient (usually but not always)
+-   *tidyfast*: can only do a few things, but does them quickly.
+-   *collapse*: many replacements for base R functions.
+
+### Standard grouped operation
+
+The following demonstrates some timings from [this post on stackoverflow](http://stackoverflow.com/questions/3505701/r-grouping-functions-sapply-vs-lapply-vs-apply-vs-tapply-vs-by-vs-aggrega/34167477#34167477). I reproduced it on my own machine based on 50 million observations. The grouped operations that are applied are just a sum and length on a vector. As this takes several seconds to do even once, I only do it one time.
+
+```{r dttimings_big, eval=FALSE, echo=TRUE}
+set.seed(123)
+n = 5e7
+k = 5e5
+x = runif(n)
+grp = sample(k, n, TRUE)
+
+timing_group_by_big = list()
+
+
+# dplyr
+timing_group_by_big[["dplyr"]] = system.time({
+    df = tibble(x, grp)
+    r.dplyr = summarise(group_by(df, grp), sum(x), n())
+})
+
+# dtplyr
+timing_group_by_big[["dtplyr"]] = system.time({
+    df = lazy_dt(tibble(x, grp))
+    r.dtplyr = df %>% group_by(grp) %>% summarise(sum(x), n()) %>% collect()
+})
+
+# tidyfast
+timing_group_by_big[["tidyfast"]] = system.time({
+    dt = setnames(setDT(list(x, grp)), c("x","grp"))
+    r.tidyfast = dt_count(dt, grp)
+})
+
+# data.table
+timing_group_by_big[["data.table"]] = system.time({
+    dt = setnames(setDT(list(x, grp)), c("x","grp"))
+    r.data.table = dt[, .(sum(x), .N), grp]
+})
+
+# collapse
+timing_group_by_big[["collapse"]] = system.time({
+     df = tibble(x, grp)
+    r.data.table = fsummarise(fgroup_by(df, grp), x = fsum(x),  n = fnobs(x))
+})
+
+timing_group_by_big = timing_group_by_big %>% 
+  do.call(rbind, .) %>% 
+  data.frame() %>% 
+  rownames_to_column('package')
+```
+
+```{r dttimings_big-save, eval=FALSE, echo=FALSE}
+save(timing_group_by_big, file = '../../data/programming/timing_group_by_big.RData')
+```
+
+```{r dttimings, eval=TRUE, echo=FALSE}
+load('../../data/programming/timing_group_by_big.RData')
+
+timing_group_by_big %>% 
+  select(package, elapsed) %>% 
+  arrange(desc(elapsed)) %>% 
+  gt()
+```
+
+We can see that all options are notable improvements on [dplyr]{.pack}. [tidyfast]{.pack} is a little optimistic, as it can count but does not appear to do a summary operation like means or sums.
+
+### Count
+
+To make things more evenly matched, we'll just do a simple grouped count. In the following, I add a different option for [dplyr]{.pack} if all we want are group sizes. In addition, you have to 'collect' the data for a [dtplyr]{.pack} object, otherwise the resulting object is not actually a usable tibble, and we don't want to count the timing until it actually performs the operation. You can do this with the `collect` function or `as_tibble`.
+
+```{r flights, echo=-10, eval=FALSE}
+data(flights, package = 'nycflights13')
+head(flights)
+
+flights_dtp = lazy_dt(flights)
+
+flights_dt = data.table(flights)
+
+bm_count_flights = bench::mark(
+  dplyr_base = count(flights, arr_time),
+  dplyr_gs   = group_size(group_by(flights, arr_time)),
+  dtplyr     = collect(count(flights_dt, arr_time)),
+  tidyfast   = dt_count(flights_dt, arr_time),
+  data.table = flights_dt[, .(n = .N), by = arr_time],
+  iterations = 100,
+  check = FALSE
+)
+```
+
+```{r flights-save, echo=-10, eval=FALSE, echo=FALSE}
+save(bm_count_flights, file = '../../data/programming/timing_count_flights.RData')
+```
+
+Here are the results. It's important to note the memory as well as the time. The faster functions here are taking a bit more memory to do it. If dealing with very large data this could be more important if operations timings aren't too different.
+
+```{r flights-show, echo=FALSE}
+load('../../data/programming/timing_count_flights.RData')
+
+summarize_bm(bm_count_flights)
+```
+
+Just for giggles I did the same in Python with a [pandas]{.pack} `DataFrame`</span>, and depending on how you go about it you could be notably slower than all these methods, or less than half the standard [dplyr]{.pack} approach. Unfortunately I can't reproduce it here[^3], but I did run it on the same machine using a `df.groupby().size()` approach to create the same type of data frame. Things get worse as you move to something not as simple, like summarizing with a custom function, even if that custom function is still simple arithmetic.
+
+[^3]: This is because [reticulate still has issues with M1 out of the box](https://github.com/rstudio/reticulate/issues/1019), and even then getting it to work can be a pain.
+
+A lot of folks that use Python primarily still think R is slow, but that is mostly just a sign that they don't know how to effectively program with R for data science. I know folks who use Python more, but also use tidyverse, and I use R more but also use pandas quite a bit. It's not really a debate - tidyverse is easier, less verbose, and generally faster relative to pandas, especially for more complicated operations. If you start using tools like [data.table]{.pack}, then there is really no comparison for speed and efficiency. You can run the following for comparison.
+
+```{r for-py, echo=FALSE, eval=FALSE}
+library(reticulate)
+use_condaenv(condaenv = "base")
+py_config()
+
+arrow::write_parquet(flights, '../../data/flights')
+```
+
+```{python timing, echo = TRUE}
+import pandas as pd
+
+
+# flights = r.flights
+flights = pd.read_parquet('../../data/flights.parquet')
+
+flights.groupby("arr_time", as_index=False).size()
+
+def test(): 
+  flights.groupby("arr_time", as_index=False).arr_time.count()
+ 
+test()
+
+
+import timeit
+
+timeit.timeit() # see documentation
+
+test_result = timeit.timeit(stmt="test()", setup="from __main__ import test", number = 100)
+
+# default result is in seconds for the total number of 100 runs
+test_result/100*1000  # ms per run 
+```
+
+## Summary
+
+Programming is a challenge, and programming in a computationally efficient manner is even harder. Depending on your situation, you may need to switch tools or just write your own to come up with the best solution.
