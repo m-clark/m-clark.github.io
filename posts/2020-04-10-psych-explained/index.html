@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2020-04-10">
+<meta name="keywords" content="factor analysis, psych package, rmsea, TLI, alpha, reliability, unidimensionality, sem, R">
+<meta name="description" content="Making sense of the results">
+
+<title>Factor Analysis with the psych package – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-e2184218c7da002d19aaa9aaf3bba53d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text">BlueSky</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Factor Analysis with the psych package</h1>
+                  <div>
+        <div class="description">
+          <p>Making sense of the results</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">factor analysis</div>
+                <div class="quarto-category">reliability</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author"><a href="https://m-clark.github.io">Michael Clark</a> </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              <a href="https://strong.io">
+              Strong Analytics
+              </a>
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 10, 2020</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>factor analysis, psych package, rmsea, TLI, alpha, reliability, unidimensionality, sem, R</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#demonstration" id="toc-demonstration" class="nav-link" data-scroll-target="#demonstration">Demonstration</a>
+  <ul class="collapse">
+  <li><a href="#loadings" id="toc-loadings" class="nav-link" data-scroll-target="#loadings">Loadings</a></li>
+  <li><a href="#variance-accounted-for" id="toc-variance-accounted-for" class="nav-link" data-scroll-target="#variance-accounted-for">Variance accounted for</a></li>
+  <li><a href="#factor-correlations" id="toc-factor-correlations" class="nav-link" data-scroll-target="#factor-correlations">Factor correlations</a></li>
+  <li><a href="#model-test-results" id="toc-model-test-results" class="nav-link" data-scroll-target="#model-test-results">Model test results</a></li>
+  <li><a href="#number-of-observations" id="toc-number-of-observations" class="nav-link" data-scroll-target="#number-of-observations">Number of observations</a></li>
+  <li><a href="#fit-indices" id="toc-fit-indices" class="nav-link" data-scroll-target="#fit-indices">Fit indices</a></li>
+  <li><a href="#measures-of-factor-score-adequacy" id="toc-measures-of-factor-score-adequacy" class="nav-link" data-scroll-target="#measures-of-factor-score-adequacy">Measures of factor score adequacy</a></li>
+  <li><a href="#miscellaneous-results" id="toc-miscellaneous-results" class="nav-link" data-scroll-target="#miscellaneous-results">Miscellaneous results</a></li>
+  </ul></li>
+  <li><a href="#additional-notes-for-factor-analysis" id="toc-additional-notes-for-factor-analysis" class="nav-link" data-scroll-target="#additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</a></li>
+  <li><a href="#other-functions" id="toc-other-functions" class="nav-link" data-scroll-target="#other-functions">Other Functions</a>
+  <ul class="collapse">
+  <li><a href="#alpha" id="toc-alpha" class="nav-link" data-scroll-target="#alpha">Alpha</a></li>
+  <li><a href="#omega" id="toc-omega" class="nav-link" data-scroll-target="#omega">Omega</a></li>
+  <li><a href="#unidimensionality" id="toc-unidimensionality" class="nav-link" data-scroll-target="#unidimensionality">Unidimensionality</a></li>
+  <li><a href="#mediate" id="toc-mediate" class="nav-link" data-scroll-target="#mediate">Mediate</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block page-columns page-full" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p>NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you’ve found an issue, please post it at <a href="http://github.com/m-clark/m-clark.github.io/issues">GitHub</a>.</p>
+</blockquote>
+<aside>
+Last updated December 29, 2024.
+</aside>
+<p>Prerequisites: familiarity with <a href="https://m-clark.github.io/sem/">factor analysis</a></p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The <span class="pack" style="">psych</span> package is a great tool for assessing underlying latent structure. It can provide reliability statistics, do cluster analysis, principal components analysis, mediation models, and, of course factor analysis. However, it’s been around a very long time, and many things have added to, subtracted, renamed, debugged, etc. And while the package author and noted psychometrician <a href="https://www.psychology.northwestern.edu/people/faculty/core/profiles/william-revelle.html">William Revelle</a> even provides a <a href="http://www.personality-project.org/r/book/">freely available book</a> on the details, it can still be difficult for many to ‘jump right in’ with the package. This is because it provides so much more than other tools, which is great, but which also can be overwhelming. Even I don’t recall what some of the output regards for factor analysis, and I use the package often. While a lot of it doesn’t matter for most use, it’d be nice to have a clean reference, so here it is.</p>
+<p>What follows is an explanation of the factor analysis results from the <span class="pack" style="">psych</span> package, but much of it carries over into printed results for principal components via <span class="func" style="">principal</span>, reliability via <span class="func" style="">omega</span>, very simple structure via <span class="func" style="">vss</span> and others. Note that this is not an <a href="m-clark.github.io/sem">introduction to factor analysis, reliability, and related</a>. It’s assumed you are already familiar with the techniques to some extent, and are interested in using the package for those analyses.</p>
+</section>
+<section id="demonstration" class="level2">
+<h2 class="anchored" data-anchor-id="demonstration">Demonstration</h2>
+<p>We will use the classic <a href="https://en.wikipedia.org/wiki/Big_Five_personality_traits">big-five personality measures</a>, which comes with the package, but for our purposes, we’re just going to look at the agreeableness and neuroticism items. See <code>?bfi</code> for details. With data in place we run a standard factor analysis, in this case, assuming two factors.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(psych)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(bfi)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>bfi_trim <span class="ot">=</span> bfi <span class="sc">%&gt;%</span> <span class="fu">select</span>(<span class="fu">matches</span>(<span class="st">'^A[1-5]|^N'</span>))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">fa</span>(bfi_trim, <span class="dv">2</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>model</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Factor Analysis using method =  minres
+Call: fa(r = bfi_trim, nfactors = 2)
+Standardized loadings (pattern matrix) based upon correlation matrix
+     MR1   MR2   h2   u2 com
+A1  0.07 -0.36 0.14 0.86 1.1
+A2  0.05  0.69 0.47 0.53 1.0
+A3  0.03  0.76 0.56 0.44 1.0
+A4 -0.05  0.47 0.24 0.76 1.0
+A5 -0.12  0.60 0.39 0.61 1.1
+N1  0.78 -0.03 0.61 0.39 1.0
+N2  0.76 -0.02 0.58 0.42 1.0
+N3  0.77  0.05 0.58 0.42 1.0
+N4  0.58 -0.08 0.36 0.64 1.0
+N5  0.54  0.08 0.29 0.71 1.0
+
+                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00
+
+ With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00
+
+Mean item complexity =  1
+Test of the hypothesis that 2 factors are sufficient.
+
+df null model =  45  with the objective function =  2.82 with Chi Square =  7880.99
+df of  the model are 26  and the objective function was  0.23 
+
+The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+The harmonic n.obs is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total n.obs was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98
+Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+</div>
+</div>
+<section id="loadings" class="level3">
+<h3 class="anchored" data-anchor-id="loadings">Loadings</h3>
+<p>That’s a lot of stuff to work though. Let’s go through each part of the printed output.</p>
+<ul>
+<li>What’s <code>MR</code>, <code>ML</code>, <code>PC</code> etc.? These are factors, and the name merely reflects the fitting method, e.g.&nbsp;minimum residual, maximum likelihood, principal components. The default is minimum residual, so in this case <code>MR</code>.</li>
+<li>Why are they ‘out of order’? the number assigned is arbitrary, but this has to do with a rotated solution. See the help file for more details, otherwise they are numbered in terms of variance accounted for.</li>
+<li><code>h2</code>: the amount of variance in the item/variable explained by the (retained) factors. It is the sum of the squared loadings, a.k.a. <em>communality</em>.</li>
+<li><code>u2</code>: 1 - <code>h2</code>. residual variance, a.k.a. <em>uniqueness</em></li>
+<li><code>com</code>: Item complexity. Specifically it is “Hoffman’s index of complexity for each item. This is just <span class="math inline">\({(Σ λ_i^2)^2}/{Σ λ_i^4}\)</span> where <span class="math inline">\(λ_i\)</span> is the factor loading on the i<sup>th</sup> factor. From Hofmann (1978), MBR. See also Pettersson and Turkheimer (2010).” It equals one if an item loads only on one factor, 2 if evenly loads on two factors, etc. Basically it tells you how much an item reflects a single construct. It will be lower for relatively lower loadings.</li>
+</ul>
+</section>
+<section id="variance-accounted-for" class="level3">
+<h3 class="anchored" data-anchor-id="variance-accounted-for">Variance accounted for</h3>
+<pre><code>                       MR1  MR2
+SS loadings           2.44 1.78
+Proportion Var        0.24 0.18
+Cumulative Var        0.24 0.42
+Proportion Explained  0.58 0.42
+Cumulative Proportion 0.58 1.00</code></pre>
+<p>The variance accounted for portion of the output can be explained as follows:</p>
+<ul>
+<li><code>SS loadings</code>: These are the eigenvalues, the sum of the squared loadings. In this case where we are using a correlation matrix, summing across all factors would equal the number of variables used in the analysis.</li>
+<li><code>Proportion Var</code>: tells us how much of the overall variance the factor accounts for out of all the variables.</li>
+<li><code>Cumulative Var</code>: the cumulative sum of <code>Proportion Var</code>.</li>
+<li><code>Proportion Explained</code>: The relative amount of variance explained- Proportion Var<code>/sum(</code>Proportion Var<code>)</code>.</li>
+<li><code>Cumulative Proportion</code>: the cumulative sum of <code>Proportion Explained</code>.</li>
+</ul>
+<p>These are contained in <code>model$Vaccounted</code>.</p>
+</section>
+<section id="factor-correlations" class="level3">
+<h3 class="anchored" data-anchor-id="factor-correlations">Factor correlations</h3>
+<pre><code> With factor correlations of 
+      MR1   MR2
+MR1  1.00 -0.19
+MR2 -0.19  1.00</code></pre>
+<p>Whether you get this part of the analysis depends on whether or not these are estimated. You have to have multiple factors and a rotation that allows for the correlations.</p>
+<ul>
+<li><code>factor correlations</code>: the correlation matrix for the factors. <span class="math inline">\(\phi\)</span> (phi)</li>
+<li><code>Mean item complexity</code>: the mean of <code>com</code>.</li>
+</ul>
+<p>These are contained in <code>model$Phi</code>.</p>
+</section>
+<section id="model-test-results" class="level3">
+<h3 class="anchored" data-anchor-id="model-test-results">Model test results</h3>
+<pre><code>Test of the hypothesis that 2 factors are sufficient.
+
+The degrees of freedom for the null model are  45  and the objective function was  2.82 with Chi Square of  7880.99
+The degrees of freedom for the model are 26  and the objective function was  0.23 </code></pre>
+<ul>
+<li><code>null model</code>: The degrees of freedom for the null model that assumes no correlation structure.</li>
+<li><code>objective function</code>: The value of the function that is minimized by a specific procedure.</li>
+<li><code>model</code>: The one you’re actually interested in. Where p = Number of items, nf = number of factors then: degrees of freedom = <span class="math display">\[p * (p-1)/2 - p * nf + nf*(nf-1)/2\]</span> For the null model this is <span class="math inline">\(p * (p-1)/2\)</span>.</li>
+<li><code>Chi-square</code>: If <code>f</code> is the objective function value. Then <span class="math display">\[\chi^2 = (n.obs - 1 - (2 * p + 5)/6 - (2 * nf)/3)) * f\]</span><br>
+Strangely this is reported for the null but not the primary model result, which comes later.</li>
+</ul>
+</section>
+<section id="number-of-observations" class="level3">
+<h3 class="anchored" data-anchor-id="number-of-observations">Number of observations</h3>
+<pre><code>The harmonic number of observations is  2759 with the empirical chi square  396.78  with prob &lt;  5.7e-68 
+The total number of observations was  2800  with Likelihood Chi Square =  636.27  with prob &lt;  1.6e-117 </code></pre>
+<ul>
+<li><code>total</code>: the number of rows in the data you supplied for analysis</li>
+<li><code>harmonic</code>: while one would assume it is the harmonic mean of the number of observations across items, it’s not this exactly, but is instead the harmonic mean of all the pairwise counts of observations (see <code>?pairwiseCount</code>).</li>
+</ul>
+<p>The <span class="math inline">\(\chi^2\)</span> reported here regards the primary model. So for your model you can report <code>model$STATISTIC</code>, <code>model$dof</code>, <code>model$PVAL</code>, which is what you see in the printed output for the total number of observations. As this regards the residual correlation matrix, a smaller value is better, as in SEM. The empirical chi-square is based on the harmonic sample size, so might be better, but I’ve never seen it reported.</p>
+</section>
+<section id="fit-indices" class="level3">
+<h3 class="anchored" data-anchor-id="fit-indices">Fit indices</h3>
+<pre><code>The root mean square of the residuals (RMSR) is  0.04 
+The df corrected root mean square of the residuals is  0.05 
+
+...
+
+Tucker Lewis Index of factoring reliability =  0.865
+RMSEA index =  0.092  and the 90 % confidence intervals are  0.085 0.098
+BIC =  429.9
+Fit based upon off diagonal values = 0.98</code></pre>
+<p>The nice thing about the psych package is that it reports SEM-style fit indices for standard factor analysis. You can find some more information via <code>?factor.stats</code>.</p>
+<ul>
+<li><code>TLI</code>: Tucker Lewis fit index, typically reported in SEM. Generally want &gt; .9</li>
+<li><code>RMSEA</code>: Root mean square error of approximation. Also reported is the so-called ‘test of close fit’.</li>
+<li><code>RMSR</code>: The (standardized) root mean square of the residuals. Also provided is a ‘corrected’ version, but I doubt this is reported by many.</li>
+<li><code>Fit based upon off diagonal values</code>: This is not documented anywhere I can find. However, you can think of it as <code>1 - resid^2 / cor^2</code>, or a kind of <span class="math inline">\(R^2\)</span> applied to a correlation matrix instead of raw data. It is calculated via <span class="func" style="">factor.stats</span>.</li>
+<li><code>BIC</code>: Useful for model comparison purposes only.</li>
+</ul>
+</section>
+<section id="measures-of-factor-score-adequacy" class="level3">
+<h3 class="anchored" data-anchor-id="measures-of-factor-score-adequacy">Measures of factor score adequacy</h3>
+<pre><code>Measures of factor score adequacy             
+                                                   MR1  MR2
+Correlation of (regression) scores with factors   0.92 0.88
+Multiple R square of scores with factors          0.84 0.77
+Minimum correlation of possible factor scores     0.68 0.54</code></pre>
+<p>Unfortunately these are named in such a way as to be nearly indistinguishable, but there is some documentation for them in <code>?factor.stats</code>. In general, these tell us how representative the factor score estimates are of the underlying constructs, and can be called indeterminancy indices. Indeterminancy refers to the fact that an infinite number of factor scores can be derived that would be consistent with a given set of loadings. In Revelle’s text, <a href="http://www.personality-project.org/r/book/#chapter6">chapter 6.9</a> goes into detail, while Grice (2001) is a thorough review of the problem.</p>
+<ul>
+<li><code>Correlation of (regression) scores with factors</code>: square root of the <code>Multiple R square</code>. These can be seen as upper bounds of the determinancy of the factor score estimates that can be computed based on the model. It is essentially the (multiple) correlation of the factor and the observed data, as the name now more clearly suggests.</li>
+<li><code>Multiple R square...</code>: “The multiple R square between the factors and factor score estimates, if they were to be found. (From Grice, 2001).” Computationally, it is roughly <code>t(model$weights) %*% model$loadings</code>, where the weights are the factor score coefficients, and can be seen as the maximum proportion of determinancy (higher is better). One way you can think about this is as an <span class="math inline">\(R^2\)</span> for a regression model of the items predicting the estimated factor score.</li>
+<li><code>Minimum correlation...</code>: Not documented, and is only shown as part of the print method, as it is not calculated as part of the factor analysis. But it is <span class="math inline">\(2 \cdot R^2 - 1\)</span>, and so ranges from -1 to +1. If your <span class="math inline">\(R^2\)</span> is less than .5, it will be negative, which is not good.</li>
+</ul>
+</section>
+<section id="miscellaneous-results" class="level3">
+<h3 class="anchored" data-anchor-id="miscellaneous-results">Miscellaneous results</h3>
+<p>There is a lot of other stuff in these objects, like a sample size corrected BIC, Grice’s validity coefficients, the actual residuals for the correlation matrix and more.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(model, <span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>List of 54
+ $ residual     : num [1:10, 1:10] 0.8556 -0.0899 0.0122 0.0377 0.0573 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ dof          : num 26
+ $ chi          : num 397
+ $ nh           : num 2759
+ $ rms          : num 0.04
+ $ EPVAL        : num 5.71e-68
+ $ crms         : num 0.0526
+ $ EBIC         : num 191
+ $ ESABIC       : num 273
+ $ fit          : num 0.789
+ $ fit.off      : num 0.981
+ $ sd           : num 0.0382
+ $ factors      : num 2
+ $ complexity   : Named num [1:10] 1.09 1.01 1 1.02 1.08 ...
+  ..- attr(*, "names")= chr [1:10] "A1" "A2" "A3" "A4" ...
+ $ n.obs        : int 2800
+ $ objective    : num 0.228
+ $ criteria     : Named num [1:3] 0.228 NA NA
+  ..- attr(*, "names")= chr [1:3] "objective" "" ""
+ $ STATISTIC    : num 636
+ $ PVAL         : num 1.6e-117
+ $ Call         : language fa(r = bfi_trim, nfactors = 2)
+ $ null.model   : num 2.82
+ $ null.dof     : num 45
+ $ null.chisq   : num 7881
+ $ TLI          : num 0.865
+ $ CFI          : num 0.922
+ $ RMSEA        : Named num [1:4] 0.0916 0.0855 0.0978 0.9
+  ..- attr(*, "names")= chr [1:4] "RMSEA" "lower" "upper" "confidence"
+ $ BIC          : num 430
+ $ SABIC        : num 513
+ $ r.scores     : num [1:2, 1:2] 1 -0.227 -0.227 1
+ $ R2           : num [1:2] 0.842 0.768
+ $ valid        : num [1:2] 0.905 0.852
+ $ score.cor    : num [1:2, 1:2] 1 -0.185 -0.185 1
+ $ weights      : num [1:10, 1:2] 0.00559 0.00986 -0.00452 -0.01416 -0.03449 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ rotation     : chr "oblimin"
+ $ hyperplane   : Named num [1:2] 5 5
+  ..- attr(*, "names")= chr [1:2] "MR1" "MR2"
+ $ communality  : Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, "names")= chr [1:10] "A1" "A2" "A3" "A4" ...
+ $ communalities: Named num [1:10] 0.144 0.467 0.563 0.237 0.395 ...
+  ..- attr(*, "names")= chr [1:10] "A1" "A2" "A3" "A4" ...
+ $ uniquenesses : Named num [1:10] 0.856 0.533 0.437 0.763 0.605 ...
+  ..- attr(*, "names")= chr [1:10] "A1" "A2" "A3" "A4" ...
+ $ values       : num [1:10] 2.6714 1.5564 0.2727 0.1283 0.0455 ...
+ $ e.values     : num [1:10] 3.185 2.11 0.938 0.768 0.71 ...
+ $ loadings     : 'loadings' num [1:10, 1:2] 0.0744 0.0541 0.0311 -0.0519 -0.1191 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ model        : num [1:10, 1:10] 0.144 -0.25 -0.277 -0.184 -0.239 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ fm           : chr "minres"
+ $ rot.mat      : num [1:2, 1:2] 0.857 0.549 -0.38 0.944
+ $ Phi          : num [1:2, 1:2] 1 -0.186 -0.186 1
+  ..- attr(*, "dimnames")=List of 2
+ $ Structure    : 'loadings' num [1:10, 1:2] 0.1413 -0.0748 -0.1098 -0.1402 -0.23 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ method       : chr "regression"
+ $ scores       : num [1:2800, 1:2] -0.224 0.2186 0.532 -0.2429 -0.0564 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ R2.scores    : Named num [1:2] 0.842 0.768
+  ..- attr(*, "names")= chr [1:2] "MR1" "MR2"
+ $ r            : num [1:10, 1:10] 1 -0.34 -0.265 -0.146 -0.181 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ np.obs       : num [1:10, 1:10] 2784 2757 2759 2767 2769 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ fn           : chr "fa"
+ $ Vaccounted   : num [1:5, 1:2] 2.443 0.244 0.244 0.578 0.578 ...
+  ..- attr(*, "dimnames")=List of 2
+ $ ECV          : Named num [1:2] 0.578 1
+  ..- attr(*, "names")= chr [1:2] "MR1" "MR2"
+ - attr(*, "class")= chr [1:2] "psych" "fa"</code></pre>
+</div>
+</div>
+<p>In turn, these are:</p>
+<ul>
+<li><code>residual</code>: The residual correlation matrix</li>
+<li><code>dof</code>: The model degrees of freedom</li>
+<li><code>chi</code>: The empirical model <span class="math inline">\(X^2\)</span></li>
+<li><code>nh</code>: The harmonic sample size</li>
+<li><code>rms</code>: Root mean square residual</li>
+<li><code>EPVAL</code>: p-value for the empirical chi-square</li>
+<li><code>crms</code>: a ‘corrected’ rms</li>
+<li><code>EBIC</code>: BIC for the empirical model</li>
+<li><code>ESABIC</code>: sample-size corrected BIC for the empirical model</li>
+<li><code>fit</code>: Similar to <code>fit.off</code>. General fit index (how well is the observed correlation reproduced)</li>
+<li><code>fit.off</code>: Fit based on off diagonals. Reported in the output. See above.</li>
+<li><code>sd</code>: standard deviation of the off-diagonals of the residual correlation matrix.</li>
+<li><code>factors</code>: the number of factors</li>
+<li><code>complexity</code>: The complexity scores. See above.</li>
+<li><code>n.obs</code>: The number of observations (assuming complete data)</li>
+<li><code>objective</code>: The objective function for the model</li>
+<li><code>criteria</code>: Along with the objective function, additional fitting results</li>
+<li><code>STATISTIC</code>: The model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>PVAL</code>: The p-value for the model-based <span class="math inline">\(X^2\)</span></li>
+<li><code>Call</code>: The function call</li>
+<li><code>null.model</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.dof</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>null.chisq</code>: <span class="math inline">\(X^2\)</span> test results for the null model</li>
+<li><code>TLI</code>: Tucker-Lewis fit index</li>
+<li><code>RMSEA</code>: Root mean square error of approximation with upper and lower bounds</li>
+<li><code>BIC</code>: Bayesian Information Criterion for the model</li>
+<li><code>SABIC</code>: sample-size corrected BIC for the model</li>
+<li><code>r.scores</code>: The correlations of the factor score estimates using the specified model, if they were to be found. Comparing these correlations with that of the scores themselves will show, if an alternative estimate of factor scores is used (e.g., the tenBerge method), the problem of factor indeterminacy. For these correlations will not necessarily be the same.</li>
+<li><code>R2</code>: correlation of factors and estimated factor scores (squared)</li>
+<li><code>valid</code>: validity coefficients</li>
+<li><code>score.cor</code>: The correlation matrix of course coded (unit weighted) factor score estimates (i.e.&nbsp;sum scores), if they were to be found, based upon the loadings matrix rather than the weights matrix.</li>
+<li><code>weights</code>: weights used to construct factor scores</li>
+<li><code>rotation</code>: rotation used</li>
+<li><code>communality</code>: communality scores <code>h2</code></li>
+<li><code>communalities</code>: So nice they put them twice (actually not entirely equal)</li>
+<li><code>uniquenesses</code>: Uniquenesses <code>u2</code></li>
+<li><code>values</code> eigenvalues of the model implied correlation matrix</li>
+<li><code>e.values</code>: eigenvalues of the correlation matrix</li>
+<li><code>loadings</code>: the factor loadings</li>
+<li><code>model</code>: the model-implied correlation matrix</li>
+<li><code>fm</code>: the estimation approach</li>
+<li><code>rot.mat</code>: matrix used in the rotated solution</li>
+<li><code>Phi</code>: factor score correlation matrix</li>
+<li><code>Structure</code>: this is just the loadings (pattern) matrix times the factor intercorrelation matrix (Phi).</li>
+<li><code>method</code>: method used to construct the factor scores</li>
+<li><code>scores</code>: estimated factor scores</li>
+<li><code>R2.scores</code>: estimated correlation of factor scores with the factor (squared)</li>
+<li><code>r</code>: the (possibly smoothed) correlation matrix of the observation</li>
+<li><code>np.obs</code>: pairwise sample sizes (used to get the harmonic mean)</li>
+<li><code>fn</code>: the function used</li>
+<li><code>Vaccounted</code>: the SS loadings output.</li>
+</ul>
+</section>
+</section>
+<section id="additional-notes-for-factor-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="additional-notes-for-factor-analysis">Additional Notes for Factor Analysis</h2>
+<ul>
+<li><p>Most of the above would apply to other versions of <span class="func" style="">fa</span> and <span class="func" style="">principal</span> for principal components analysis.</p></li>
+<li><p>Though rarely done, if you only provide a correlation matrix as your data, you will not get a variety of metrics in the results, nor factor scores.</p></li>
+<li><p>Certain rotations will lead to differently named factors, and possibly lacking some output (e.g.&nbsp;varimax won’t have factor correlations).</p></li>
+</ul>
+</section>
+<section id="other-functions" class="level2">
+<h2 class="anchored" data-anchor-id="other-functions">Other Functions</h2>
+<p>While the previous will help explain factor analysis and related models, a similar issue arises elsewhere with other package functions that might be of interest. I’ll explain some of those here as interest and personal use dictates.</p>
+<section id="alpha" class="level3">
+<h3 class="anchored" data-anchor-id="alpha">Alpha</h3>
+<p>This is a quick reminder for the results of the reliability coefficient <span class="math inline">\(\alpha\)</span>. For this we’ll just use the agreeableness items to keep things succinct.</p>
+<section id="basic-results" class="level4">
+<h4 class="anchored" data-anchor-id="basic-results">Basic Results</h4>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>agreeableness <span class="ot">=</span> bfi_trim[,<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># check.keys will rescale negatively scored items</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>alpha_results <span class="ot">=</span> <span class="fu">alpha</span>(agreeableness, <span class="at">check.keys =</span> <span class="cn">TRUE</span>, <span class="at">n.iter=</span><span class="dv">10</span>) </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>alpha_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Reliability analysis   
+Call: alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+
+  raw_alpha std.alpha G6(smc) average_r  S/N   ase mean  sd median_r
+       0.7      0.46    0.53      0.14 0.85 0.009  4.7 0.9     0.32
+
+    95% confidence boundaries 
+             lower alpha upper
+Feldt         0.69   0.7  0.72
+Duhachek      0.69   0.7  0.72
+bootstrapped  0.69   0.7  0.72
+
+ Reliability if an item is dropped:
+    raw_alpha std.alpha G6(smc) average_r  S/N alpha se  var.r med.r
+A1-      0.72      0.72    0.67     0.397 2.63   0.0087 0.0065 0.375
+A2       0.62      0.30    0.39     0.096 0.43   0.0119 0.1095 0.081
+A3       0.60      0.21    0.31     0.061 0.26   0.0124 0.1014 0.081
+A4       0.69      0.30    0.44     0.099 0.44   0.0098 0.1604 0.104
+A5       0.64      0.24    0.36     0.071 0.31   0.0111 0.1309 0.094
+
+ Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58 0.024 -0.39   0.31  4.6 1.4
+A2  2773  0.73 0.665  0.58   0.56  4.8 1.2
+A3  2774  0.76 0.742  0.71   0.59  4.6 1.3
+A4  2781  0.65 0.661  0.50   0.39  4.7 1.5
+A5  2784  0.69 0.719  0.64   0.49  4.6 1.3
+
+Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+</div>
+</div>
+<ul>
+<li><code>raw_alpha</code>: Raw estimate of alpha (based on covariances)</li>
+<li><code>std.alpha</code>: Standardized estimate. This value is what is typically reported (though most applied researchers would probably not be able to tell you which they reported). Identical to raw if data is already standardized.</li>
+<li><code>G6 (smc)</code>: Guttman’s <span class="math inline">\(\lambda_6\)</span>, the amount of variance in each item that can be accounted for the linear regression of all of the other items</li>
+<li><code>average_r</code>: Average inter-item correlation among the items.</li>
+<li><code>S/N</code>: Signal to noise ratio, <span class="math inline">\(n \cdot r/(1-r)\)</span> where r is the <code>average_r</code></li>
+<li><code>ase</code>: standard error for raw <span class="math inline">\(\alpha\)</span> (used for the confidence interval, bootstrapped would be better)</li>
+<li><code>mean</code>: the mean of the total/mean score of the items</li>
+<li><code>sd</code>: the standard deviation of the total/mean score of the items</li>
+<li><code>median_r</code>: median inter-item correlation</li>
+</ul>
+<p>After the initial statistics, the same stats are reported but for a result where a specific item is dropped. For example, if your <span class="math inline">\(\alpha\)</span> goes up when an item is dropped, it probably isn’t a good item. In this case, the negatively scored item is probably worst, which isn’t an uncommon result.</p>
+</section>
+<section id="item-statistics" class="level4">
+<h4 class="anchored" data-anchor-id="item-statistics">Item statistics</h4>
+<p>Next we get the item statistics, they are as follows.</p>
+<pre><code> Item statistics 
+       n raw.r std.r r.cor r.drop mean  sd
+A1- 2784  0.58  0.57  0.38   0.31  4.6 1.4
+A2  2773  0.73  0.75  0.67   0.56  4.8 1.2
+A3  2774  0.76  0.77  0.71   0.59  4.6 1.3
+A4  2781  0.65  0.63  0.47   0.39  4.7 1.5
+A5  2784  0.69  0.70  0.60   0.49  4.6 1.3</code></pre>
+<ul>
+<li><code>n</code>: number of complete observations</li>
+<li><code>raw.r</code>: correlation of each item with the total score</li>
+<li><code>std.r</code>: correlation of each item with the total score if the items were all standardized</li>
+<li><code>r.cor</code>: item correlation corrected for item overlap and scale reliability</li>
+<li><code>r.drop</code> item correlation for this item against the scale without this item</li>
+<li><code>mean</code>: item mean</li>
+<li><code>sd</code>: item standard deviation</li>
+</ul>
+</section>
+<section id="response-frequency" class="level4">
+<h4 class="anchored" data-anchor-id="response-frequency">Response frequency</h4>
+<p>Finally we have information about the missingness of each item. The initial values show the proportion of each level observed, while the last column shows the percentage missing.</p>
+<pre><code>Non missing response frequency for each item
+      1    2    3    4    5    6 miss
+A1 0.33 0.29 0.14 0.12 0.08 0.03 0.01
+A2 0.02 0.05 0.05 0.20 0.37 0.31 0.01
+A3 0.03 0.06 0.07 0.20 0.36 0.27 0.01
+A4 0.05 0.08 0.07 0.16 0.24 0.41 0.01
+A5 0.02 0.07 0.09 0.22 0.35 0.25 0.01</code></pre>
+</section>
+<section id="other-output" class="level4">
+<h4 class="anchored" data-anchor-id="other-output">Other Output</h4>
+<p>In addition to these we have a bit more from the output.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(alpha_results[<span class="dv">5</span><span class="sc">:</span><span class="fu">length</span>(alpha_results)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>List of 11
+ $ keys   :List of 1
+  ..$ : chr [1:5] "-A1" "A2" "A3" "A4" ...
+ $ scores : Named num [1:2800] 4 4.2 3.8 4.6 4 4.6 4.6 2.6 3.6 5.4 ...
+  ..- attr(*, "names")= chr [1:2800] "61617" "61618" "61620" "61621" ...
+ $ nvar   : int 5
+ $ boot.ci: Named num [1:3] 0.686 0.704 0.716
+  ..- attr(*, "names")= chr [1:3] "2.5%" "50%" "97.5%"
+ $ boot   : num [1:10, 1:10] 0.706 0.71 0.718 0.704 0.702 ...
+  ..- attr(*, "dimnames")=List of 2
+  .. ..$ : NULL
+  .. ..$ : chr [1:10] "raw_alpha" "std.alpha" "G6(smc)" "average_r" ...
+ $ feldt  :List of 4
+  ..$ lower.ci:'data.frame':    1 obs. of  1 variable:
+  .. ..$ raw_alpha: num 0.685
+  ..$ alpha   :'data.frame':    1 obs. of  1 variable:
+  .. ..$ raw_alpha: num 0.703
+  ..$ upper.ci:'data.frame':    1 obs. of  1 variable:
+  .. ..$ raw_alpha: num 0.72
+  ..$ r.bar   :'data.frame':    1 obs. of  1 variable:
+  .. ..$ raw_alpha: num 0.321
+  ..- attr(*, "class")= chr [1:2] "psych" "alpha.ci"
+ $ Unidim :List of 1
+  ..$ Unidim: num 0.237
+ $ var.r  : num 0.112
+ $ Fit    :List of 1
+  ..$ Fit.off: num 0.879
+ $ call   : language alpha(x = agreeableness, check.keys = TRUE, n.iter = 10)
+ $ title  : NULL</code></pre>
+</div>
+</div>
+<p>In turn these are:</p>
+<ul>
+<li><code>keys</code>: how the items are score (-1 if reverse scored)</li>
+<li><code>scores</code>: row means/sums depending on the <code>cumulative</code> argument</li>
+<li><code>nvar</code>: the number of variables/items</li>
+<li><code>boot.ci</code>: the bootstrapped confidence interval for <span class="math inline">\(\alpha\)</span> (if requested)</li>
+<li><code>boot</code>: the bootstrapped values of <span class="math inline">\(\alpha\)</span> and other statistics (if requested)</li>
+<li><code>Unidim</code>: index of unidimensionalty. <span class="math inline">\(\alpha\)</span> is a lower bound of a reliability estimate if the data is not unidimensional. See <code>?unidim</code> for details.</li>
+<li><code>var.r</code>: This doesn’t appear to be documented anywhere, but it is depicted in the <code>Reliability if item is dropped</code> section. It is the variance of the values of the lower triangle of a correlation matrix.</li>
+<li><code>Fit</code>: see <code>Fit based upon off diagonal values</code> for the factor analysis section above.</li>
+<li><code>call</code>: the function call</li>
+<li><code>title</code>: title of the results (if requested)</li>
+</ul>
+</section>
+</section>
+<section id="omega" class="level3">
+<h3 class="anchored" data-anchor-id="omega">Omega</h3>
+<p>Omega is another reliability metric that finally has been catching on. The <span class="pack" style="">psych</span> function <span style="">omega</span> requires a factor analysis to be run behind the scenes, specifically a <em>bifactor</em> model, so most of the output is the same as with other factor analysis. In addition, the results also provide coefficient <span class="math inline">\(\alpha\)</span> and Guttman’s <span class="math inline">\(\lambda_6\)</span> that were explained in the <a href="#alpha">alpha</a> section.</p>
+<p>However there is a little more to it, so we’ll explain those aspects. The key help files are <code>?omega</code> and <code>?schmid</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>omega_result <span class="ot">=</span> <span class="fu">omega</span>(bfi[,<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/omega-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>omega_result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Omega 
+Call: omegah(m = m, nfactors = nfactors, fm = fm, key = key, flip = flip, 
+    digits = digits, title = title, sl = sl, labels = labels, 
+    plot = plot, n.obs = n.obs, rotate = rotate, Phi = Phi, option = option, 
+    covar = covar)
+Alpha:                 0.81 
+G.6:                   0.83 
+Omega Hierarchical:    0.54 
+Omega H asymptotic:    0.64 
+Omega Total            0.85 
+
+Schmid Leiman Factor loadings greater than  0.2 
+        g   F1*   F2*   F3*   h2   u2   p2
+A1-  0.24              0.30 0.16 0.84 0.36
+A2   0.52              0.44 0.47 0.53 0.58
+A3   0.59              0.45 0.56 0.44 0.63
+A4   0.39              0.28 0.25 0.75 0.62
+A5   0.56              0.31 0.44 0.56 0.70
+C1               0.53       0.31 0.69 0.11
+C2   0.23        0.60       0.42 0.58 0.12
+C3   0.21        0.51       0.32 0.68 0.14
+C4-  0.25        0.59       0.41 0.59 0.15
+C5-  0.28        0.51       0.34 0.66 0.23
+E1-  0.37  0.47             0.37 0.63 0.38
+E2-  0.48  0.54             0.53 0.47 0.43
+E3   0.47  0.36             0.37 0.63 0.61
+E4   0.54  0.46             0.51 0.49 0.57
+E5   0.41  0.32  0.25       0.33 0.67 0.51
+
+With Sums of squares  of:
+   g  F1*  F2*  F3* 
+2.47 1.03 1.60 0.69 
+
+general/max  1.54   max/min =   2.32
+mean percent general =  0.41    with sd =  0.21 and cv of  0.52 
+Explained Common Variance of the general factor =  0.43 
+
+The degrees of freedom are 63  and the fit is  0.34 
+The number of observations was  2800  with Chi Square =  961.82  with prob &lt;  6.4e-161
+The root mean square of the residuals is  0.04 
+The df corrected root mean square of the residuals is  0.05
+RMSEA index =  0.071  and the 10 % confidence intervals are  0.067 0.075
+BIC =  461.77
+
+Compare this with the adequacy of just a general factor and no group factors
+The degrees of freedom for just the general factor are 90  and the fit is  1.58 
+The number of observations was  2800  with Chi Square =  4407.94  with prob &lt;  0
+The root mean square of the residuals is  0.13 
+The df corrected root mean square of the residuals is  0.14 
+
+RMSEA index =  0.131  and the 10 % confidence intervals are  0.128 0.134
+BIC =  3693.57 
+
+Measures of factor score adequacy             
+                                                 g   F1*  F2*   F3*
+Correlation of scores with factors            0.78  0.70 0.82  0.60
+Multiple R square of scores with factors      0.61  0.49 0.68  0.36
+Minimum correlation of factor score estimates 0.22 -0.01 0.36 -0.28
+
+ Total, General and Subset omega for each subset
+                                                 g  F1*  F2*  F3*
+Omega total for total scores and subscales    0.85 0.77 0.73 0.73
+Omega general for total scores and subscales  0.54 0.40 0.11 0.46
+Omega group for total scores and subscales    0.25 0.36 0.62 0.27</code></pre>
+</div>
+</div>
+<p>The bifactor model requires a single general factor and minimally three specific factors, as the plot shows. However, you can run it on single factor just to get the omega total statistic, but any less than three factors will produce a warning and some metrics will either be unavailable or not make much sense.</p>
+<section id="reliability" class="level4">
+<h4 class="anchored" data-anchor-id="reliability">Reliability</h4>
+<pre><code>Alpha:                 0.81 
+G.6:                   0.83 
+Omega Hierarchical:    0.54 
+Omega H asymptotic:    0.64 
+Omega Total            0.85 </code></pre>
+<p>The first two pieces of info are as in <a href="#alpha">alpha</a>, the next regard <span class="math inline">\(\omega\)</span> specifically. <span class="math inline">\(\omega\)</span> is based on the squared factor loadings. <span class="math inline">\(\omega_{hierarchical}\)</span> regards just the loadings of the general factor. The asymptotic is the same for a ‘test of infinite items’, and so can be seen as an upper bound. <span class="math inline">\(\omega_{total}\)</span> is based on all the general and specific factor loadings. I personally like to think of the ratio of <span class="math inline">\(\frac{\omega_{hier}}{\omega_{total}}\)</span>, which if very high, say .9 or so, may suggest unidimensionality.</p>
+</section>
+<section id="loadings-1" class="level4">
+<h4 class="anchored" data-anchor-id="loadings-1">Loadings</h4>
+<pre><code>Schmid Leiman Factor loadings greater than  0.2 
+        g   F1*   F2*   F3*   h2   u2   p2
+A1-  0.24              0.30 0.16 0.84 0.36
+A2   0.52              0.44 0.47 0.53 0.58
+A3   0.59              0.45 0.56 0.44 0.63
+A4   0.39              0.28 0.25 0.75 0.62
+A5   0.56              0.31 0.44 0.56 0.70
+C1               0.53       0.31 0.69 0.11
+C2   0.23        0.60       0.42 0.58 0.12
+C3   0.21        0.51       0.32 0.68 0.14
+C4-  0.25        0.59       0.41 0.59 0.15
+C5-  0.28        0.51       0.34 0.66 0.23
+E1-  0.37  0.47             0.37 0.63 0.38
+E2-  0.48  0.54             0.53 0.47 0.43
+E3   0.47  0.36             0.37 0.63 0.61
+E4   0.54  0.46             0.51 0.49 0.57
+E5   0.41  0.32  0.25       0.33 0.67 0.51
+
+With eigenvalues of:
+   g  F1*  F2*  F3* 
+2.47 1.03 1.60 0.69 
+
+general/max  1.54   max/min =   2.32
+mean percent general =  0.41    with sd =  0.21 and cv of  0.52 
+Explained Common Variance of the general factor =  0.43 </code></pre>
+<p>The loadings are for the general and specific factors are provided, as well as the communalities and uniquenesses. In addition there is a column for <code>p2</code>, which is considered a diagnostic tool for the appropriateness of a hierarchical model. It is defined as “percent of the common variance for each variable that is general factor variance”, which is just <code>g</code><sup>2</sup>/<code>h2</code>. The line of <code>mean percent general...</code> isn’t documented and is a result of the unexported <span class="func" style="">print.psych.omega</span> function. It wasn’t obvious to me, but these are merely statistics regarding the <code>p2</code> column (<code>cv</code> is the coefficient of variation).</p>
+<p>Next you get eigenvalue/variance accounted as in standard factor analysis. Then <code>general/max</code> and <code>max/min</code> regard those ratios of the corresponding eigenvalues. Explained common variance is the percent of variance attributable to the general factor (g/sum(all eigenvalues))</p>
+</section>
+<section id="model-test-results-fit" class="level4">
+<h4 class="anchored" data-anchor-id="model-test-results-fit">Model test results &amp; fit</h4>
+<pre><code>The degrees of freedom are 63  and the fit is  0.34 
+The number of observations was  2800  with Chi Square =  961.82  with prob &lt;  6.4e-161
+The root mean square of the residuals is  0.04 
+The df corrected root mean square of the residuals is  0.05
+RMSEA index =  0.071  and the 10 % confidence intervals are  0.067 0.075
+BIC =  461.77
+
+Compare this with the adequacy of just a general factor and no group factors
+The degrees of freedom for just the general factor are 90  and the fit is  1.58 
+The number of observations was  2800  with Chi Square =  4407.94  with prob &lt;  0
+The root mean square of the residuals is  0.13 
+The df corrected root mean square of the residuals is  0.14 
+
+RMSEA index =  0.131  and the 10 % confidence intervals are  0.128 0.134
+BIC =  3693.57 </code></pre>
+<p>The only thing different here relative to the standard factor analysis results is that there are two models considered- a model with general and specific factors and a model with no specific factors.</p>
+</section>
+<section id="measures-of-factor-score-adequacy-1" class="level4">
+<h4 class="anchored" data-anchor-id="measures-of-factor-score-adequacy-1">Measures of factor score adequacy</h4>
+<pre><code>Measures of factor score adequacy             
+                                                 g   F1*  F2*   F3*
+Correlation of scores with factors            0.78  0.70 0.82  0.60
+Multiple R square of scores with factors      0.61  0.49 0.68  0.36
+Minimum correlation of factor score estimates 0.22 -0.01 0.36 -0.28</code></pre>
+<p>This first part of the output is the same as standard factor analysis (see <a href="#measures-of-factor-score-adequacy-1">above</a>).</p>
+</section>
+<section id="variance-accounted-for-by-group-and-specific-factors" class="level4">
+<h4 class="anchored" data-anchor-id="variance-accounted-for-by-group-and-specific-factors">Variance accounted for by group and specific factors</h4>
+<pre><code> Total, General and Subset omega for each subset
+                                                 g  F1*  F2*  F3*
+Omega total for total scores and subscales    0.85 0.77 0.73 0.73
+Omega general for total scores and subscales  0.54 0.40 0.11 0.46
+Omega group for total scores and subscales    0.25 0.36 0.62 0.27</code></pre>
+<p>This part is explained in the <code>?omega</code> helpfile as:</p>
+<blockquote class="blockquote">
+<p>The notion of omega may be applied to the individual factors as well as the overall test. A typical use of omega is to identify subscales of a total inventory. Some of that variability is due to the general factor of the inventory, some to the specific variance of each subscale. Thus, we can find a number of different omega estimates: what percentage of the variance of the items identified with each subfactor is actually due to the general factor. What variance is common but unique to the subfactor, and what is the total reliable variance of each subfactor. These results are reported in omega.group object and in the last few lines of the normal output.</p>
+</blockquote>
+<p>As noted, this is contained in <code>omega_result$omega.group</code>. For the unique factors, these sum very simply as total = general + group. The ones for unique factors pertain only to the loadings and part of the correlation matrix for those items specific to that factor. Take agreeableness for example, we are only concerned with the variance of those items. The ‘general’ part regards the loadings of <code>g</code> for the agreeableness items, the <code>group</code> part the loadings of the agreeableness items, and the ‘total’ is just their sum.</p>
+<p>The first column, <code>g</code>, just regurgitates <span class="math inline">\(\omega\)</span> and <span class="math inline">\(\omega_h\)</span> from the beginning for the first two values, and adds yet another statistic, based only on the sum of variance attributable to each unique factor. Unlike the <span class="math inline">\(\omega_{total}\)</span>, this calculation does not include off-loadings the unique factors have, only the items that are grouped with each factor. In pseudo-code:</p>
+<pre><code>for (i in specific) {
+ specific_var[i] = sum(specific[i]$loadings[specific_items[i]])^2)
+}
+
+value = sum(specific_var) / total_var</code></pre>
+<p>That is the variance uniquely defined by the specific factors. Had it included all the loadings for each specific factor calculation, then <code>group + general = total</code> for <code>g</code> as well.</p>
+</section>
+</section>
+<section id="unidimensionality" class="level3">
+<h3 class="anchored" data-anchor-id="unidimensionality">Unidimensionality</h3>
+<p>Revelle provides an ‘exploratory’ statistic of <em>unidimensionality</em>, or how well a set of variables may be explained by one construct. In practice, you may find multiple factors fit better, e.g.&nbsp;via BIC, but the resulting factors may be highly correlated, so you might still want to consider a single construct. Something like <span class="func" style="">unidim</span> will help make a decision on how viable using a sum score might be for regression or other models. It is explained in the help file as follows:</p>
+<blockquote class="blockquote">
+<p>The fit FF’ (model implied correlation matrix based on a one factor model) should be identical to the (observed) correlation matrix minus the uniquenesses. unidim is just the ratio of these two estimates. The higher it is, the more the evidence for unidimensionality.</p>
+</blockquote>
+<p>I’ll run it for both the case where there is only a single construct vs.&nbsp;two underlying constructs.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unidim</span>(bfi[,<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+A measure of unidimensionality 
+ Call: unidim(keys = bfi[, 1:5])
+
+Unidimensionality index = 
+       u      tau      con    alpha     av.r median.r      CFI      ECV 
+    0.89     0.90     0.99     0.71     0.33     0.34     0.97     0.85 
+
+unidim adjusted index reverses negatively scored items.
+alpha    Based upon reverse scoring some items.
+average and median  correlations are based upon reversed scored items</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unidim</span>(bfi_trim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+A measure of unidimensionality 
+ Call: unidim(keys = bfi_trim)
+
+Unidimensionality index = 
+       u      tau      con    alpha     av.r median.r      CFI      ECV 
+    0.45     0.62     0.73     0.75     0.23     0.17     0.60     0.58 
+
+unidim adjusted index reverses negatively scored items.
+alpha    Based upon reverse scoring some items.
+average and median  correlations are based upon reversed scored items</code></pre>
+</div>
+</div>
+<p>The values reported are as follows. In general, you’d pay attention to the <code>adjusted</code> results that are based on items that are reverse scored if needed. If there are no reverse scored items (which you generally should be doing), then these adjusted metrics will be identical to the raw metrics.</p>
+<ul>
+<li><code>Raw Unidim</code>: The raw value of the unidimensional criterion</li>
+<li><code>Adjusted</code>: The unidimensional criterion when items are keyed in positive direction.</li>
+<li><code>Fit1</code>: The off diagonal fit from <span class="func" style="">fa</span>. (<a href="#fit-indices">explained above</a>)</li>
+<li><code>alpha</code>: Standardized <span class="math inline">\(\alpha\)</span> of the keyed items (after appropriate reversals)</li>
+<li><code>av.r</code>: The average inter-item correlation of the keyed items.</li>
+<li><code>original model</code>: The ratio of the FF’ (model implied correlation matrix based on the loadings) model to the sum(R).</li>
+<li><code>adjusted model</code>: The ratio of the FF’ model to the sum(R) when items are flipped.</li>
+<li><code>raw.total</code>: sum(R - uniqueness)/sum(R)</li>
+<li><code>adjusted total</code>: raw.total ratio with flipped items</li>
+</ul>
+</section>
+<section id="mediate" class="level3">
+<h3 class="anchored" data-anchor-id="mediate">Mediate</h3>
+<p>The <span class="pack" style="">psych</span> makes even somewhat complicated mediation models about as easily conducted as they can be, assuming you are only dealing with fully observed (no latent) variables and linear models with continuous endogenous variables that are assumed to be normally distributed. Though the output should be straightforward if one understands basic regression as well as the basics of mediation, we demonstrate it here.</p>
+<section id="initial-model" class="level4">
+<h4 class="anchored" data-anchor-id="initial-model">Initial Model</h4>
+<p>Garcia, Schmitt, Branscome, and Ellemers (2010) report data for 129 subjects on the effects of perceived sexism on anger and liking of women’s reactions to in-group members who protest discrimination. We will predict liking (how much the individual liked the target) while using protest (<code>prot2</code> yes or no) and sexism (a scale score based on multiple items) as predictors, and a scaled score of the appropriateness of the target’s response as the mediator (<code>respappr</code>).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(GSBE)   <span class="co"># The Garcia et al data set; see ?GSBE for details</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">mediate</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  liking <span class="sc">~</span>  sexism <span class="sc">+</span> prot2 <span class="sc">+</span> (respappr),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data   =</span> Garcia,</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n.iter =</span> <span class="dv">500</span>,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">plot   =</span> <span class="cn">FALSE</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>)   </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="visual-results" class="level4">
+<h4 class="anchored" data-anchor-id="visual-results">Visual Results</h4>
+<p>To start, most of the output of <span class="pack" style="">psych</span> is straightforward if you understand what mediation is, as it follows the same depiction and even uses the same labels as most initial demonstrations of mediation I’ve come across. So if it’s confusing, you probably need to review what such models are attempting to accomplish. The visualization it automatically produces is even clearer for storytelling. I reserved plotting for display here so as to make it easier to compare to the printed output.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mediate.diagram</span>(model, <span class="at">digits =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/mediate-diagram-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We see the original effects of <code>sexism</code> and <code>prot2</code> as <code>c</code>, and what they are after including the mediator <code>c'</code>, where the difference between those values is equivalent to <code>a * b</code>, i.e.&nbsp;the indirect effect (<code>a</code> is the coefficient from the predictor to mediator, <code>b</code> is from the mediator to the outcome). The rest are standard path/regression coefficients as well.</p>
+</section>
+<section id="statistical-results" class="level4">
+<h4 class="anchored" data-anchor-id="statistical-results">Statistical Results</h4>
+<p>Now we will just print the result.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(model, <span class="at">digits =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Mediation/Moderation Analysis 
+Call: mediate(y = liking ~ sexism + prot2 + (respappr), data = Garcia, 
+    n.iter = 500, plot = FALSE)
+
+The DV (Y) was  liking . The IV (X) was  sexism prot2 . The mediating variable(s) =  respappr .
+
+Total effect(c) of  sexism  on  liking  =  0.111   S.E. =  0.116  t  =  0.956  df=  126   with p =  0.341
+Direct effect (c') of  sexism  on  liking  removing  respappr  =  0.096   S.E. =  0.104  t  =  0.923  df=  125   with p =  0.358
+Indirect effect (ab) of  sexism  on  liking  through  respappr   =  0.015 
+Mean bootstrapped indirect effect =  0.012  with standard error =  0.058  Lower CI =  -0.114    Upper CI =  0.121
+
+Total effect(c) of  prot2  on  liking  =  0.471   S.E. =  0.195  t  =  2.417  df=  126   with p =  0.0171
+Direct effect (c') of  prot2  on  liking  removing  respappr  =  -0.105   S.E. =  0.201  t  =  -0.522  df=  125   with p =  0.602
+Indirect effect (ab) of  prot2  on  liking  through  respappr   =  0.576 
+Mean bootstrapped indirect effect =  0.58  with standard error =  0.16  Lower CI =  0.29    Upper CI =  0.901
+R = 0.501 R2 = 0.251   F = 13.967 on 3 and 125 DF   p-value:  1.903e-09 
+
+ To see the longer output, specify short = FALSE in the print statement or ask for the summary</code></pre>
+</div>
+</div>
+<p>The output simply shows the same results as the graph. The <span class="emph" style="">total effect</span> is the effect of a covariate on the outcome, without the mediator. For example, the effect of sexism on liking without the mediation is 0.111. We can reproduce it as follows. The statistical result is identical to the <code>lm</code> output.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(liking <span class="sc">~</span>  sexism <span class="sc">+</span> prot2, <span class="at">data =</span> Garcia))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = liking ~ sexism + prot2, data = Garcia)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.3857 -0.6246  0.0599  0.7754  1.7954 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   4.7468     0.6110   7.768 2.41e-12 ***
+sexism        0.1111     0.1162   0.956   0.3410    
+prot2         0.4711     0.1949   2.417   0.0171 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 1.03 on 126 degrees of freedom
+Multiple R-squared:  0.0523,    Adjusted R-squared:  0.03726 
+F-statistic: 3.477 on 2 and 126 DF,  p-value: 0.03391</code></pre>
+</div>
+</div>
+<p>The <span class="emph" style="">direct effect</span> is the effect of sexism with the mediator in the model. We can reproduce the effect here. However this version of the model printout currently has a bug where, after the coefficient, it is reporting SE t etc. from the intercept. If you do a <code>summary(model)</code>, as we will shortly, you’ll get the correct statistical test until it is fixed.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">lm</span>(liking <span class="sc">~</span>  sexism <span class="sc">+</span> prot2 <span class="sc">+</span> respappr, <span class="at">data =</span> Garcia))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = liking ~ sexism + prot2 + respappr, data = Garcia)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.0210 -0.5337  0.0874  0.6591  2.6760 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  3.26766    0.60281   5.421 2.94e-07 ***
+sexism       0.09584    0.10379   0.923    0.358    
+prot2       -0.10482    0.20065  -0.522    0.602    
+respappr     0.40075    0.06958   5.760 6.18e-08 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.9193 on 125 degrees of freedom
+Multiple R-squared:  0.2511,    Adjusted R-squared:  0.2331 
+F-statistic: 13.97 on 3 and 125 DF,  p-value: 6.545e-08</code></pre>
+</div>
+</div>
+<p>The <span class="emph" style="">indirect effect</span> coefficient is the product of the <code>a</code> and <code>b</code> paths: 0.038 * 0.401. Along with this, the bootstrapped interval estimate is provided (you can ignore the <code>mean bootstrapped effect</code>, which is equal to the effect with enough iterations). There is no p-value, but it’s not needed anyway for any of these results.</p>
+<p>After that, the same results are provided for the <code>prot2</code> predictor. Finally, the <span class="math inline">\(R^2\)</span> and F test for the overall model are reported, which are identical to the <code>lm</code> summary results that include all effects. I would suggest reporting the adjusted <span class="math inline">\(R^2\)</span> from that instead.</p>
+<p>A much cleaner result that incorporates the <code>lm</code> results we did can be obtained by summarizing instead of printing the fitted model. All of this output is available as elements of the model object itself.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call: mediate(y = liking ~ sexism + prot2 + (respappr), data = Garcia, 
+    n.iter = 500, plot = FALSE)
+
+Direct effect estimates (traditional regression)    (c') X + M on Y 
+          liking   se     t  df     Prob
+Intercept   3.27 0.60  5.42 125 2.94e-07
+sexism      0.10 0.10  0.92 125 3.58e-01
+prot2      -0.10 0.20 -0.52 125 6.02e-01
+respappr    0.40 0.07  5.76 125 6.18e-08
+
+R = 0.5 R2 = 0.25   F = 13.97 on 3 and 125 DF   p-value:  6.54e-08 
+
+ Total effect estimates (c) (X on Y) 
+          liking   se    t  df     Prob
+Intercept   4.75 0.61 7.77 126 2.41e-12
+sexism      0.11 0.12 0.96 126 3.41e-01
+prot2       0.47 0.19 2.42 126 1.71e-02
+
+ 'a'  effect estimates (X on M) 
+          respappr   se    t  df     Prob
+Intercept     3.69 0.70 5.29 126 5.33e-07
+sexism        0.04 0.13 0.29 126 7.75e-01
+prot2         1.44 0.22 6.45 126 2.15e-09
+
+ 'b'  effect estimates (M on Y controlling for X) 
+         liking   se    t  df     Prob
+respappr    0.4 0.07 5.76 125 6.18e-08
+
+ 'ab'  effect estimates (through all  mediators)
+       liking boot   sd lower upper
+sexism   0.02 0.01 0.06 -0.11  0.12
+prot2    0.58 0.58 0.16 -0.11  0.12</code></pre>
+</div>
+</div>
+<p>If you are doing mediation with linear models only, you would be hard-pressed to find an easier tool to use than the <span class="pack" style="">psych</span> package. It can incorporate multiple mediators and so-called ‘moderated mediation’ as well. However, just because it is easy to do a mediation model, doesn’t mean you should.</p>
+</section>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>The <span class="pack" style="">psych</span> package is very powerful and provides a lot of results from just a single line of code. However, the documentation, while excellent in general, fails to note many pieces of output, or clearly explain it, at least, not without consulting other references (which are provided). Hopefully this saves others some time when they use it. I may add some other functions to explain in time, so check back at some point.</p>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
+  author = {Clark, Michael},
+  title = {Factor {Analysis} with the Psych Package},
+  date = {2020-04-10},
+  url = {https://m-clark.github.io/posts/2020-04-10-psych-explained/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael. 2020. <span>“Factor Analysis with the Psych
+Package.”</span> April 10, 2020. <a href="https://m-clark.github.io/posts/2020-04-10-psych-explained/">https://m-clark.github.io/posts/2020-04-10-psych-explained/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -1,0 +1,2864 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2020-03-01">
+<meta name="keywords" content="mixed models, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer">
+<meta name="description" content="Exploring random slopes for categorical covariates and similar models">
+
+<title>Categorical Effects as Random – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-e2184218c7da002d19aaa9aaf3bba53d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text">BlueSky</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Categorical Effects as Random</h1>
+                  <div>
+        <div class="description">
+          <p>Exploring random slopes for categorical covariates and similar models</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">mixed models</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p><a href="https://m-clark.github.io">Michael Clark</a> </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 1, 2020</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>mixed models, generalized linear mixed models, random effects, lme4, glmmTMB, lmer, glmer</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#machines" id="toc-machines" class="nav-link" data-scroll-target="#machines">Machines</a>
+  <ul class="collapse">
+  <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The Data</a></li>
+  <li><a href="#random-effects-models" id="toc-random-effects-models" class="nav-link" data-scroll-target="#random-effects-models">Random Effects Models</a></li>
+  <li><a href="#summarize-all-the-models" id="toc-summarize-all-the-models" class="nav-link" data-scroll-target="#summarize-all-the-models">Summarize All the Models</a></li>
+  </ul></li>
+  <li><a href="#simulation" id="toc-simulation" class="nav-link" data-scroll-target="#simulation">Simulation</a>
+  <ul class="collapse">
+  <li><a href="#data-creation" id="toc-data-creation" class="nav-link" data-scroll-target="#data-creation">Data Creation</a></li>
+  <li><a href="#run-the-models-summarize" id="toc-run-the-models-summarize" class="nav-link" data-scroll-target="#run-the-models-summarize">Run the Models &amp; Summarize</a></li>
+  <li><a href="#change-the-model-orientation" id="toc-change-the-model-orientation" class="nav-link" data-scroll-target="#change-the-model-orientation">Change the model orientation</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p>NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you’ve found an issue, please post it at <a href="http://github.com/m-clark/m-clark.github.io/issues">GitHub</a>.</p>
+</blockquote>
+<p>Prerequisites: familiarity with <a href="https://m-clark.github.io/mixed-models-with-R/">mixed models</a></p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>It’s often the case where, for mixed models, we want to look at random ‘slopes’ as well as random intercepts, such that coefficients for the fixed effects are expected to vary by group. This is very common in longitudinal settings, were we want to examine an overall trend, but allow the trend to vary by individual.</p>
+<p>In such settings, when time is numeric, things are straightforward. The variance components are decomposed into parts for the intercept, the coefficient for the time indicator, and the residual variance (for linear mixed models). But what happens if we have only three time points? Does it make sense to treat it as numeric and hope for the best?</p>
+<p>This came up in consulting because someone had a similar issue, and tried to keep the format for random slopes while treating the time indicator as categorical. This led to convergence issues, so we thought about what models might be possible. This post explores that scenario.</p>
+<p>Packages used:</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mixedup)  <span class="co"># http://m-clark.github.io/mixedup</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="machines" class="level2">
+<h2 class="anchored" data-anchor-id="machines">Machines</h2>
+<section id="the-data" class="level3">
+<h3 class="anchored" data-anchor-id="the-data">The Data</h3>
+<p>Let’s start with a very simple data set from the <span class="pack" style="">nlme</span> package, which comes with the standard R installation. The reason I chose this is because <a href="http://pages.stat.wisc.edu/~bates/UseR2008/WorkshopD.pdf">Doug Bates has a good treatment on this topic</a> using that example (starting at slide 85), which I just extend a bit.</p>
+<p>Here is the data description from the help file.</p>
+<blockquote class="blockquote">
+<p>Data on an experiment to compare three brands of machines used in an industrial process are presented in Milliken and Johnson (p.&nbsp;285, 1992). Six workers were chosen randomly among the employees of a factory to operate each machine three times. The response is an overall productivity score taking into account the number and quality of components produced.</p>
+</blockquote>
+<p>So for each worker and each machine, we’ll have three scores. Let’s look.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>machines <span class="ot">=</span> nlme<span class="sc">::</span>Machines</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for some reason worker is an ordered factor.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>machines <span class="ot">=</span> machines <span class="sc">%&gt;%</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Worker =</span> <span class="fu">factor</span>(Worker, <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, <span class="at">ordered =</span> <span class="cn">FALSE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Worker</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Machine</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">score</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">A</td>
+<td style="text-align: right;">52.0</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">A</td>
+<td style="text-align: right;">52.8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">A</td>
+<td style="text-align: right;">53.1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">B</td>
+<td style="text-align: right;">62.1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">20</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">B</td>
+<td style="text-align: right;">62.6</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">B</td>
+<td style="text-align: right;">64.0</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>This duplicates the plot in Bates’ notes and visually describes the entire data set. There likely is variability due to both workers and machines.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/vis-data-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="random-effects-models" class="level3">
+<h3 class="anchored" data-anchor-id="random-effects-models">Random Effects Models</h3>
+<p>The random effects of potential interest are for worker and machine, so how do we specify this? Let’s try a standard approach. The following is the type of model tried by our client.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_m_slope <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> Machine <span class="sc">|</span> Worker), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This was exactly the same issue our client had- problematic convergence. This could be more of an issue with <span class="pack" style="">lme4</span>, and we could certainly explore tweaks to make the problem go away (or use a different package like <span class="pack" style="">glmmTMB</span>), but let’s go ahead and keep it.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_m_slope, <span class="at">ci =</span> <span class="cn">FALSE</span>, <span class="at">cor_re =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Group    Effect Variance   SD Var_prop
+   Worker Intercept    16.64 4.08     0.25
+   Worker  MachineB    34.55 5.88     0.53
+   Worker  MachineC    13.62 3.69     0.21
+ Residual        NA     0.92 0.96     0.01</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Term Value   SE     t P_value Lower_2.5 Upper_97.5
+ Intercept 52.36 1.68 31.15    0.00     49.06      55.65
+  MachineB  7.97 2.42  3.29    0.00      3.22      12.71
+  MachineC 13.92 1.54  9.04    0.00     10.90      16.94</code></pre>
+</div>
+</div>
+<p>We get the variance components we expect, i.e.&nbsp;the variance attributable to the intercept (i.e.&nbsp;Machine A), as well as for the slopes for the difference in machine B vs.&nbsp;A, and C vs.&nbsp;A. We also see the correlations among the random effects. It’s this part that Bates acknowledges is hard to estimate, and incurs estimating potentially notably more parameters than typical random effects models. We have different options that will be available to us though, so let’s try some.</p>
+<p>Let’s start with the simplest, most plausible models. The first would be to have at least a worker effect. The next baseline model could be if we only had a machine by worker effect, i.e.&nbsp;a separate effect of each machine for each worker, essentially treating the interaction term as the sole clustering unit.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>model_base_w  <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker), machines)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>model_base_wm <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker<span class="sc">:</span>Machine), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Examining the random effects makes clear the difference between the two models. For our first baseline model, we only have 6 effects, one for each worker. For the second we have an effect of each machine for each worker.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_w)  <span class="co"># only 6 effects</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_wm) <span class="co"># 6 workers by 3 machines = 18 effects</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">group_var</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">1.210</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">-0.813</td>
+<td style="text-align: right;">3.234</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">-1.594</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">-3.618</td>
+<td style="text-align: right;">0.429</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">6.212</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">4.188</td>
+<td style="text-align: right;">8.235</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">-0.069</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">-2.093</td>
+<td style="text-align: right;">1.954</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">2.949</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">4.972</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">-8.707</td>
+<td style="text-align: right;">1.032</td>
+<td style="text-align: right;">-10.731</td>
+<td style="text-align: right;">-6.684</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">group_var</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:A</td>
+<td style="text-align: right;">0.275</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.808</td>
+<td style="text-align: right;">1.359</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:B</td>
+<td style="text-align: right;">2.556</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.473</td>
+<td style="text-align: right;">3.640</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:C</td>
+<td style="text-align: right;">0.920</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.164</td>
+<td style="text-align: right;">2.004</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:A</td>
+<td style="text-align: right;">0.209</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.874</td>
+<td style="text-align: right;">1.293</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:B</td>
+<td style="text-align: right;">-0.749</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-1.833</td>
+<td style="text-align: right;">0.334</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:C</td>
+<td style="text-align: right;">-4.402</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-5.486</td>
+<td style="text-align: right;">-3.318</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:A</td>
+<td style="text-align: right;">7.118</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">6.035</td>
+<td style="text-align: right;">8.202</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:B</td>
+<td style="text-align: right;">7.647</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">6.563</td>
+<td style="text-align: right;">8.731</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:C</td>
+<td style="text-align: right;">4.490</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">3.407</td>
+<td style="text-align: right;">5.574</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:A</td>
+<td style="text-align: right;">-1.113</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.196</td>
+<td style="text-align: right;">-0.029</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:B</td>
+<td style="text-align: right;">2.391</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.307</td>
+<td style="text-align: right;">3.475</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:C</td>
+<td style="text-align: right;">-1.493</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.577</td>
+<td style="text-align: right;">-0.409</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:A</td>
+<td style="text-align: right;">-0.981</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.064</td>
+<td style="text-align: right;">0.103</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:B</td>
+<td style="text-align: right;">4.705</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">3.621</td>
+<td style="text-align: right;">5.789</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:C</td>
+<td style="text-align: right;">5.416</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">4.332</td>
+<td style="text-align: right;">6.499</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:A</td>
+<td style="text-align: right;">-5.509</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-6.593</td>
+<td style="text-align: right;">-4.426</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:B</td>
+<td style="text-align: right;">-16.550</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-17.634</td>
+<td style="text-align: right;">-15.467</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:C</td>
+<td style="text-align: right;">-4.931</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-6.014</td>
+<td style="text-align: right;">-3.847</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>As a next step, we’ll essentially combine our two baseline models.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model_w_wm <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker<span class="sc">:</span>Machine), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we have 6 worker effects plus 18 machine within worker effects<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_w_wm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">group_var</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:A</td>
+<td style="text-align: right;">-0.750</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-4.699</td>
+<td style="text-align: right;">3.198</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:B</td>
+<td style="text-align: right;">1.500</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-2.449</td>
+<td style="text-align: right;">5.449</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:C</td>
+<td style="text-align: right;">-0.114</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-4.063</td>
+<td style="text-align: right;">3.834</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:A</td>
+<td style="text-align: right;">1.553</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-2.396</td>
+<td style="text-align: right;">5.501</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:B</td>
+<td style="text-align: right;">0.607</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-3.342</td>
+<td style="text-align: right;">4.555</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:C</td>
+<td style="text-align: right;">-2.997</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-6.945</td>
+<td style="text-align: right;">0.952</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:A</td>
+<td style="text-align: right;">1.778</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-2.171</td>
+<td style="text-align: right;">5.726</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:B</td>
+<td style="text-align: right;">2.299</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-1.649</td>
+<td style="text-align: right;">6.248</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:C</td>
+<td style="text-align: right;">-0.815</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-4.763</td>
+<td style="text-align: right;">3.134</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:A</td>
+<td style="text-align: right;">-1.039</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-4.988</td>
+<td style="text-align: right;">2.909</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:B</td>
+<td style="text-align: right;">2.417</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-1.531</td>
+<td style="text-align: right;">6.366</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:C</td>
+<td style="text-align: right;">-1.414</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-5.363</td>
+<td style="text-align: right;">2.534</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:A</td>
+<td style="text-align: right;">-3.457</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-7.405</td>
+<td style="text-align: right;">0.492</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:B</td>
+<td style="text-align: right;">2.152</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-1.796</td>
+<td style="text-align: right;">6.101</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:C</td>
+<td style="text-align: right;">2.853</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-1.095</td>
+<td style="text-align: right;">6.802</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:A</td>
+<td style="text-align: right;">1.916</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-2.032</td>
+<td style="text-align: right;">5.865</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:B</td>
+<td style="text-align: right;">-8.976</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-12.924</td>
+<td style="text-align: right;">-5.027</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:C</td>
+<td style="text-align: right;">2.487</td>
+<td style="text-align: right;">2.015</td>
+<td style="text-align: right;">-1.462</td>
+<td style="text-align: right;">6.435</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">1.045</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">-2.839</td>
+<td style="text-align: right;">4.928</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">-1.376</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">-5.259</td>
+<td style="text-align: right;">2.507</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">5.361</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">1.478</td>
+<td style="text-align: right;">9.244</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">-0.060</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">-3.943</td>
+<td style="text-align: right;">3.823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">2.545</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">-1.339</td>
+<td style="text-align: right;">6.428</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">-7.514</td>
+<td style="text-align: right;">1.981</td>
+<td style="text-align: right;">-11.397</td>
+<td style="text-align: right;">-3.631</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>If you look closely at these effects, and add them together, you will get a value similar to our second baseline model, which is probably not too surprising. For example in the above model <code>1:B + 1</code> = 1.5 <code>+</code> 1.045. Looking at the initial model, the estimated random effect for <code>1:B</code> was 2.556. Likewise if we look at the variance components, we can see that the sum of the non-residual effect variances for <code>model_w_wm</code> equals the variance of <code>model_base_wm</code> (36.8). So this latest model allows us to disentangle the worker and machine effects, where our baseline models did not.</p>
+<p>Next we’ll do the ‘vector-valued’ model Bates describes. This removes the intercept portion of the formula in the original random slopes model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note that at least have no convergence problem.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>model_m_vv <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> Machine <span class="sc">|</span> Worker), machines)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_m_vv, <span class="at">ci =</span> <span class="dv">0</span>, <span class="at">cor_re =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Variance Components:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    Group   Effect Variance   SD Var_prop
+   Worker MachineA    16.64 4.08     0.15
+   Worker MachineB    74.39 8.63     0.67
+   Worker MachineC    19.27 4.39     0.17
+ Residual       NA     0.92 0.96     0.01</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Fixed Effects:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      Term Value   SE     t P_value Lower_2.5 Upper_97.5
+ Intercept 52.36 1.68 31.15    0.00     49.06      55.65
+  MachineB  7.97 2.42  3.29    0.00      3.22      12.71
+  MachineC 13.92 1.54  9.04    0.00     10.90      16.94</code></pre>
+</div>
+</div>
+</section>
+<section id="summarize-all-the-models" class="level3">
+<h3 class="anchored" data-anchor-id="summarize-all-the-models">Summarize All the Models</h3>
+<p>Now let’s extract the fixed effect and variance component summaries for all the models.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>model_list <span class="ot">=</span> <span class="fu">mget</span>(<span class="fu">ls</span>(<span class="at">pattern =</span> <span class="st">'model_'</span>))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>fe <span class="ot">=</span> <span class="fu">map_df</span>(model_list, extract_fixed_effects, <span class="at">.id =</span> <span class="st">'model'</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_list, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>First, let’s look at the fixed effects. We see that there are no differences in the coefficients for the fixed effect of machine, which is our only covariate in the model. However, there are notable differences for the estimated standard errors. Practically we’d come to no differences in our conclusions, but the uncertainty associated with them would be different.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">t</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p_value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">model_base_w</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">52.356</td>
+<td style="text-align: right;">2.229</td>
+<td style="text-align: right;">23.485</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">47.986</td>
+<td style="text-align: right;">56.725</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_base_w</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">7.967</td>
+<td style="text-align: right;">1.054</td>
+<td style="text-align: right;">7.559</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">5.901</td>
+<td style="text-align: right;">10.032</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_base_w</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.917</td>
+<td style="text-align: right;">1.054</td>
+<td style="text-align: right;">13.205</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">11.851</td>
+<td style="text-align: right;">15.982</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_base_wm</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">52.356</td>
+<td style="text-align: right;">2.486</td>
+<td style="text-align: right;">21.062</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">47.483</td>
+<td style="text-align: right;">57.228</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_base_wm</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">7.967</td>
+<td style="text-align: right;">3.515</td>
+<td style="text-align: right;">2.266</td>
+<td style="text-align: right;">0.023</td>
+<td style="text-align: right;">1.076</td>
+<td style="text-align: right;">14.857</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_base_wm</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.917</td>
+<td style="text-align: right;">3.515</td>
+<td style="text-align: right;">3.959</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">7.026</td>
+<td style="text-align: right;">20.807</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">52.356</td>
+<td style="text-align: right;">1.681</td>
+<td style="text-align: right;">31.152</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">49.062</td>
+<td style="text-align: right;">55.650</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">7.967</td>
+<td style="text-align: right;">2.421</td>
+<td style="text-align: right;">3.291</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">3.221</td>
+<td style="text-align: right;">12.712</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.917</td>
+<td style="text-align: right;">1.540</td>
+<td style="text-align: right;">9.036</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">10.898</td>
+<td style="text-align: right;">16.935</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">52.356</td>
+<td style="text-align: right;">1.681</td>
+<td style="text-align: right;">31.151</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">49.061</td>
+<td style="text-align: right;">55.650</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">7.967</td>
+<td style="text-align: right;">2.421</td>
+<td style="text-align: right;">3.291</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">3.222</td>
+<td style="text-align: right;">12.712</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.917</td>
+<td style="text-align: right;">1.540</td>
+<td style="text-align: right;">9.036</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">10.898</td>
+<td style="text-align: right;">16.935</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">52.356</td>
+<td style="text-align: right;">2.486</td>
+<td style="text-align: right;">21.062</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">47.483</td>
+<td style="text-align: right;">57.228</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">7.967</td>
+<td style="text-align: right;">2.177</td>
+<td style="text-align: right;">3.660</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">3.700</td>
+<td style="text-align: right;">12.233</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.917</td>
+<td style="text-align: right;">2.177</td>
+<td style="text-align: right;">6.393</td>
+<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">9.650</td>
+<td style="text-align: right;">18.183</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Here are the variance components, there are definitely some differences here, but, as we’ll see, maybe not as much as we suspect.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">variance</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">var_prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">model_base_w</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">26.487</td>
+<td style="text-align: right;">5.147</td>
+<td style="text-align: right;">0.726</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_base_w</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">9.996</td>
+<td style="text-align: right;">3.162</td>
+<td style="text-align: right;">0.274</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_base_wm</td>
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">36.768</td>
+<td style="text-align: right;">6.064</td>
+<td style="text-align: right;">0.975</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_base_wm</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">0.962</td>
+<td style="text-align: right;">0.025</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">16.639</td>
+<td style="text-align: right;">4.079</td>
+<td style="text-align: right;">0.253</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">34.554</td>
+<td style="text-align: right;">5.878</td>
+<td style="text-align: right;">0.526</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">13.617</td>
+<td style="text-align: right;">3.690</td>
+<td style="text-align: right;">0.207</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_slope</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">0.962</td>
+<td style="text-align: right;">0.014</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: right;">16.640</td>
+<td style="text-align: right;">4.079</td>
+<td style="text-align: right;">0.150</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: right;">74.395</td>
+<td style="text-align: right;">8.625</td>
+<td style="text-align: right;">0.669</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: right;">19.270</td>
+<td style="text-align: right;">4.390</td>
+<td style="text-align: right;">0.173</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_m_vv</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">0.962</td>
+<td style="text-align: right;">0.008</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">13.909</td>
+<td style="text-align: right;">3.730</td>
+<td style="text-align: right;">0.369</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">22.858</td>
+<td style="text-align: right;">4.781</td>
+<td style="text-align: right;">0.606</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">model_w_wm</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.925</td>
+<td style="text-align: right;">0.962</td>
+<td style="text-align: right;">0.025</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>We can see that the <code>base_wm</code> model has (non-residual) variance 36.768. This equals the total of the two (non-residual) variance components of the <code>w_wm</code> model 13.909 <code>+</code> 22.858, which again speaks to the latter model decomposing a machine effect into worker + machine effects. This value also equals the variance of the vector-valued model divided by the number of groups (16.64 + 74.395 + 19.27) <code>/</code> 3.</p>
+<p>We can see that the estimated random effects from the vector-valued model (<code>m_vv</code>) are essentially the same as from the baseline, interaction-only model. However, the way it is estimated allows for incorporation of correlations among the machine random effects, so they are not identical (but pretty close).</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_m_vv)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_wm) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">group_var</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">0.312</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">-0.749</td>
+<td style="text-align: right;">1.373</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">2.553</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">1.474</td>
+<td style="text-align: right;">3.632</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">0.930</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">-0.137</td>
+<td style="text-align: right;">1.998</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">0.184</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">-0.877</td>
+<td style="text-align: right;">1.245</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">-0.803</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">-1.882</td>
+<td style="text-align: right;">0.276</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: right;">-4.282</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">-5.350</td>
+<td style="text-align: right;">-3.215</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">6.969</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">5.908</td>
+<td style="text-align: right;">8.030</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">7.779</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">6.700</td>
+<td style="text-align: right;">8.858</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: right;">4.474</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">3.406</td>
+<td style="text-align: right;">5.541</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">-1.024</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">-2.085</td>
+<td style="text-align: right;">0.037</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">2.328</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">1.249</td>
+<td style="text-align: right;">3.407</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: right;">-1.415</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">-2.482</td>
+<td style="text-align: right;">-0.347</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">-0.850</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">-1.911</td>
+<td style="text-align: right;">0.211</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">4.726</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">3.647</td>
+<td style="text-align: right;">5.805</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: right;">5.323</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">4.256</td>
+<td style="text-align: right;">6.391</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineA</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">-5.592</td>
+<td style="text-align: right;">0.541</td>
+<td style="text-align: right;">-6.653</td>
+<td style="text-align: right;">-4.531</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineB</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">-16.584</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">-17.663</td>
+<td style="text-align: right;">-15.505</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker</td>
+<td style="text-align: left;">MachineC</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: right;">-5.030</td>
+<td style="text-align: right;">0.545</td>
+<td style="text-align: right;">-6.098</td>
+<td style="text-align: right;">-3.963</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">group_var</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:A</td>
+<td style="text-align: right;">0.275</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.808</td>
+<td style="text-align: right;">1.359</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:B</td>
+<td style="text-align: right;">2.556</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.473</td>
+<td style="text-align: right;">3.640</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">1:C</td>
+<td style="text-align: right;">0.920</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.164</td>
+<td style="text-align: right;">2.004</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:A</td>
+<td style="text-align: right;">0.209</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-0.874</td>
+<td style="text-align: right;">1.293</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:B</td>
+<td style="text-align: right;">-0.749</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-1.833</td>
+<td style="text-align: right;">0.334</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">2:C</td>
+<td style="text-align: right;">-4.402</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-5.486</td>
+<td style="text-align: right;">-3.318</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:A</td>
+<td style="text-align: right;">7.118</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">6.035</td>
+<td style="text-align: right;">8.202</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:B</td>
+<td style="text-align: right;">7.647</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">6.563</td>
+<td style="text-align: right;">8.731</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">3:C</td>
+<td style="text-align: right;">4.490</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">3.407</td>
+<td style="text-align: right;">5.574</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:A</td>
+<td style="text-align: right;">-1.113</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.196</td>
+<td style="text-align: right;">-0.029</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:B</td>
+<td style="text-align: right;">2.391</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">1.307</td>
+<td style="text-align: right;">3.475</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">4:C</td>
+<td style="text-align: right;">-1.493</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.577</td>
+<td style="text-align: right;">-0.409</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:A</td>
+<td style="text-align: right;">-0.981</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-2.064</td>
+<td style="text-align: right;">0.103</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:B</td>
+<td style="text-align: right;">4.705</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">3.621</td>
+<td style="text-align: right;">5.789</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">5:C</td>
+<td style="text-align: right;">5.416</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">4.332</td>
+<td style="text-align: right;">6.499</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:A</td>
+<td style="text-align: right;">-5.509</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-6.593</td>
+<td style="text-align: right;">-4.426</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:B</td>
+<td style="text-align: right;">-16.550</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-17.634</td>
+<td style="text-align: right;">-15.467</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Worker:Machine</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: left;">6:C</td>
+<td style="text-align: right;">-4.931</td>
+<td style="text-align: right;">0.553</td>
+<td style="text-align: right;">-6.014</td>
+<td style="text-align: right;">-3.847</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Even the default way that the extracted random effects are structured implies this difference. In the vector-valued model we have a multivariate normal draw for 3 machines (i.e.&nbsp;3 variances and 3 covariances) for each of six workers. In the baseline model, we do not estimate any covariances and assume equal variance to draw for 18 groups (1 variance).</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ranef</span>(model_m_vv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$Worker
+    MachineA    MachineB   MachineC
+1  0.3119847   2.5532230  0.9303029
+2  0.1838934  -0.8033384 -4.2822788
+3  6.9692298   7.7793441  4.4735177
+4 -1.0238759   2.3284494 -1.4146165
+5 -0.8496428   4.7261139  5.3231867
+6 -5.5915891 -16.5837920 -5.0301120
+
+with conditional variances for "Worker" </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ranef</span>(model_base_wm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$`Worker:Machine`
+    (Intercept)
+1:A   0.2754686
+1:B   2.5563490
+1:C   0.9200653
+2:A   0.2093562
+2:B  -0.7492747
+2:C  -4.4019889
+3:A   7.1181097
+3:B   7.6470094
+3:C   4.4901388
+4:A  -1.1128933
+4:B   2.3910678
+4:C  -1.4930400
+5:A  -0.9806684
+5:B   4.7050044
+5:C   5.4157135
+6:A  -5.5093728
+6:B -16.5501559
+6:C  -4.9308887
+
+with conditional variances for "Worker:Machine" </code></pre>
+</div>
+</div>
+<p>Now let’s compare the models directly via AIC. As we would expect if we dummy coded a predictor vs.&nbsp;running a model without the intercept (e.g.&nbsp;<code>lm(score ~ machine)</code>, vs.&nbsp;<code>lm(score ~ -1 + machine)</code>), the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">model_base_w</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">model_base_wm</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">model_m_slope</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">model_m_vv</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">model_w_wm</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">296.878</td>
+<td style="text-align: right;">231.256</td>
+<td style="text-align: right;">228.311</td>
+<td style="text-align: right;">228.311</td>
+<td style="text-align: right;">227.688</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>While such a model is doing better than either of our baseline models, it turns out that our other approach is slightly better, as the additional complexity of estimating the covariances and separate variances wasn’t really worth it.</p>
+<p>At this point we’ve seen a couple of ways of doing a model in this situation. Some may be a little too simplistic for a given scenario, others may not capture the correlation structure the way we’d want. In any case, we have options to explore.</p>
+<!-- https://github.com/m-clark/Visuals/tree/master/random_effects -->
+</section>
+</section>
+<section id="simulation" class="level2">
+<h2 class="anchored" data-anchor-id="simulation">Simulation</h2>
+<p>The following is a simplified approach to creating data in this scenario, and allows us to play around with the settings to see what happens.</p>
+<section id="data-creation" class="level3">
+<h3 class="anchored" data-anchor-id="data-creation">Data Creation</h3>
+<p>First we need some data. The following creates a group identifier similar to <code>Worker</code> in our previous example, a <code>cat_var</code> like our <code>Machine</code>, and other covariates just to make it interesting.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for simplicity keeping to 3 cat levels</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>ng <span class="ot">=</span> <span class="dv">5000</span>     <span class="co"># n groups</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>cat_levs <span class="ot">=</span> <span class="dv">3</span>  <span class="co"># n levels per group</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>reps <span class="ot">=</span> <span class="dv">4</span>      <span class="co"># number of obs per level per cat</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>id <span class="ot">=</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>ng, <span class="at">each =</span> cat_levs <span class="sc">*</span> reps)           <span class="co"># id indicator (e.g. like Worker)</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>cat_var <span class="ot">=</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>cat_levs, <span class="at">times =</span> ng, <span class="at">e =</span> reps)  <span class="co"># categorical variable (e.g. Machine)</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">rnorm</span>(ng <span class="sc">*</span> cat_levs <span class="sc">*</span> reps)                  <span class="co"># continuous covariate</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>x_c <span class="ot">=</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(ng), <span class="at">e =</span> cat_levs <span class="sc">*</span> reps)        <span class="co"># continuous cluster level covariate</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>So we have the basic data in place, now we need to create the random effects. There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e.&nbsp;something of the form <code>(1 + cat_var | group)</code>. In this case we assume this model is ‘correct’, so we’re going to create a multivariate normal draw of random effects for each level of the <code>cat_var</code>, which is only 3 levels. The correlations depicted are the estimates we expect from our model for the random effects<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># as correlated  (1, .5, .5) var, (1, .25, .25) sd </span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>cov_mat <span class="ot">=</span> lazerhawk<span class="sc">::</span><span class="fu">create_corr</span>(<span class="fu">c</span>(.<span class="dv">1</span>, .<span class="dv">25</span>, .<span class="dv">25</span>), <span class="at">diagonal =</span> <span class="fu">c</span>(<span class="dv">1</span>, .<span class="dv">5</span>, .<span class="dv">5</span>))</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cov2cor</span>(cov_mat)  <span class="co"># these will be the estimated correlations for the random_slope model</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          [,1]      [,2]      [,3]
+[1,] 1.0000000 0.1414214 0.3535534
+[2,] 0.1414214 1.0000000 0.5000000
+[3,] 0.3535534 0.5000000 1.0000000</code></pre>
+</div>
+</div>
+<p>Now we create the random effects by drawing an effect for each categorical level for each group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># take a multivariate normal draw for each of the groups in `id`</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>re_id_cat_lev <span class="ot">=</span> mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(ng, <span class="at">mean =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>), <span class="at">sigma =</span> cov_mat) <span class="sc">%&gt;%</span> </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>()</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(re_id_cat_lev)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          X1          X2          X3
+1  0.5618465  0.62780841  1.15175459
+2  0.6588685  0.78045939  0.25942427
+3  0.2680315 -0.06403496  1.30173301
+4 -0.3711184  0.37579392 -0.03242486
+5 -1.1306064 -0.08450038 -0.38165685
+6 -0.7537223  0.65320469  0.33269260</code></pre>
+</div>
+</div>
+<p>Now that we have the random effects, we can create our target variable. We do this by adding our first effect to the intercept, and the others to their respective coefficients.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fixed effect = (2, .5, -.5)</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>  <span class="sc">+</span> .<span class="dv">5</span><span class="sc">*</span>x <span class="sc">-</span> .<span class="dv">5</span><span class="sc">*</span>x_c <span class="sc">+</span>   </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># random intercept</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">1</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps) <span class="sc">+</span>                           </span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># .25 is the fixef for group 2 vs. 1</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  (.<span class="dv">25</span> <span class="sc">+</span> <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">2</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps)) <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">+</span>  </span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># .40 is the fixef for group 3 vs. 1</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  (.<span class="dv">40</span> <span class="sc">+</span> <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">3</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps)) <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">+</span>  </span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rnorm</span>(ng <span class="sc">*</span> cat_levs <span class="sc">*</span> reps, <span class="at">sd =</span> .<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we create a data frame so we can see everything together.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">tibble</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    id,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    cat_var,</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    x,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    x_c,</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    y,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">re_id =</span> <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">1</span>], <span class="at">each =</span> cat_levs<span class="sc">*</span>reps),</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">re_id_cat_lev2 =</span> <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">2</span>], <span class="at">each =</span> cat_levs<span class="sc">*</span>reps),</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">re_id_cat_lev3 =</span> <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">3</span>], <span class="at">each =</span> cat_levs<span class="sc">*</span>reps)</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">cat_var =</span> <span class="fu">factor</span>(cat_var),</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">cat_as_num =</span> <span class="fu">as.integer</span>(cat_var),</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">id =</span> <span class="fu">factor</span>(id)</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> <span class="fu">print</span>(<span class="at">n =</span> <span class="dv">30</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 60,000 × 9
+   id    cat_var       x    x_c     y re_id re_id_cat_lev2 re_id_cat_lev3
+   &lt;fct&gt; &lt;fct&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;          &lt;dbl&gt;          &lt;dbl&gt;
+ 1 1     1       -1.21   -1.43  3.04  0.562         0.628           1.15 
+ 2 1     1        0.277  -1.43  3.35  0.562         0.628           1.15 
+ 3 1     1        1.08   -1.43  3.46  0.562         0.628           1.15 
+ 4 1     1       -2.35   -1.43  2.64  0.562         0.628           1.15 
+ 5 1     2        0.429  -1.43  4.59  0.562         0.628           1.15 
+ 6 1     2        0.506  -1.43  3.61  0.562         0.628           1.15 
+ 7 1     2       -0.575  -1.43  3.54  0.562         0.628           1.15 
+ 8 1     2       -0.547  -1.43  2.98  0.562         0.628           1.15 
+ 9 1     3       -0.564  -1.43  5.28  0.562         0.628           1.15 
+10 1     3       -0.890  -1.43  4.06  0.562         0.628           1.15 
+11 1     3       -0.477  -1.43  4.31  0.562         0.628           1.15 
+12 1     3       -0.998  -1.43  4.70  0.562         0.628           1.15 
+13 2     1       -0.776   0.126 2.25  0.659         0.780           0.259
+14 2     1        0.0645  0.126 2.48  0.659         0.780           0.259
+15 2     1        0.959   0.126 2.99  0.659         0.780           0.259
+16 2     1       -0.110   0.126 2.55  0.659         0.780           0.259
+17 2     2       -0.511   0.126 3.94  0.659         0.780           0.259
+18 2     2       -0.911   0.126 3.22  0.659         0.780           0.259
+19 2     2       -0.837   0.126 3.98  0.659         0.780           0.259
+20 2     2        2.42    0.126 4.59  0.659         0.780           0.259
+21 2     3        0.134   0.126 3.58  0.659         0.780           0.259
+22 2     3       -0.491   0.126 3.31  0.659         0.780           0.259
+23 2     3       -0.441   0.126 2.66  0.659         0.780           0.259
+24 2     3        0.460   0.126 3.42  0.659         0.780           0.259
+25 3     1       -0.694   0.437 0.985 0.268        -0.0640          1.30 
+26 3     1       -1.45    0.437 2.08  0.268        -0.0640          1.30 
+27 3     1        0.575   0.437 2.62  0.268        -0.0640          1.30 
+28 3     1       -1.02    0.437 1.24  0.268        -0.0640          1.30 
+29 3     2       -0.0151  0.437 2.24  0.268        -0.0640          1.30 
+30 3     2       -0.936   0.437 2.57  0.268        -0.0640          1.30 
+# ℹ 59,970 more rows
+# ℹ 1 more variable: cat_as_num &lt;int&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="run-the-models-summarize" class="level3">
+<h3 class="anchored" data-anchor-id="run-the-models-summarize">Run the Models &amp; Summarize</h3>
+<p>With everything in place, let’s run four models similar to our previous models from the Machine example:</p>
+<ol type="1">
+<li>The baseline model that does not distinguish the id from cat_var variance.</li>
+<li>The random slope approach (data generating model)</li>
+<li>The vector valued model (equivalent to #2)</li>
+<li>The scalar model that does not estimate the random effect correlations</li>
+</ol>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>m_interaction_only <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>m_random_slope <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)    </span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>m_vector_valued <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>m_separate_re <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>model_mixed <span class="ot">=</span> <span class="fu">list</span>(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_interaction_only =</span> m_interaction_only,</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_random_slope =</span> m_random_slope,</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_vector_valued =</span> m_vector_valued,</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_separate_re =</span> m_separate_re</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a><span class="co"># model summaries if desired</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a><span class="co"># map(model_mixed, summarize_model, ci = 0, cor_re = TRUE)</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>fe <span class="ot">=</span> <span class="fu">map_df</span>(model_mixed, extract_fixed_effects, <span class="at">.id =</span> <span class="st">'model'</span>) </span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_mixed, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Looking at the fixed effects, we get what we should but, as before, we do see differences in the standard errors.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">t</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">p_value</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">lower_2.5</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">upper_97.5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">2.006</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">111.051</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.971</td>
+<td style="text-align: right;">2.042</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">x</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">212.962</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.492</td>
+<td style="text-align: right;">0.501</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">x_c</td>
+<td style="text-align: right;">-0.489</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">-46.776</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.509</td>
+<td style="text-align: right;">-0.469</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: right;">10.026</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.206</td>
+<td style="text-align: right;">0.306</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.389</td>
+<td style="text-align: right;">0.026</td>
+<td style="text-align: right;">15.228</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.339</td>
+<td style="text-align: right;">0.439</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">2.006</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: right;">136.943</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.977</td>
+<td style="text-align: right;">2.035</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">x</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">217.676</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.493</td>
+<td style="text-align: right;">0.502</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">x_c</td>
+<td style="text-align: right;">-0.495</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: right;">-34.636</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.523</td>
+<td style="text-align: right;">-0.467</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">23.038</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.234</td>
+<td style="text-align: right;">0.278</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.389</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">34.969</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.367</td>
+<td style="text-align: right;">0.411</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">2.006</td>
+<td style="text-align: right;">0.015</td>
+<td style="text-align: right;">136.940</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.977</td>
+<td style="text-align: right;">2.035</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">x</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">217.677</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.493</td>
+<td style="text-align: right;">0.502</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">x_c</td>
+<td style="text-align: right;">-0.495</td>
+<td style="text-align: right;">0.014</td>
+<td style="text-align: right;">-34.635</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.523</td>
+<td style="text-align: right;">-0.467</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">23.038</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.234</td>
+<td style="text-align: right;">0.278</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.389</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">34.971</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.367</td>
+<td style="text-align: right;">0.411</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">2.006</td>
+<td style="text-align: right;">0.018</td>
+<td style="text-align: right;">111.045</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1.971</td>
+<td style="text-align: right;">2.042</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">x</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">216.586</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.493</td>
+<td style="text-align: right;">0.502</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">x_c</td>
+<td style="text-align: right;">-0.489</td>
+<td style="text-align: right;">0.017</td>
+<td style="text-align: right;">-28.883</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.522</td>
+<td style="text-align: right;">-0.456</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.256</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">23.077</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.234</td>
+<td style="text-align: right;">0.278</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.389</td>
+<td style="text-align: right;">0.011</td>
+<td style="text-align: right;">35.050</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.367</td>
+<td style="text-align: right;">0.411</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The variance components break down as before.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">variance</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">var_prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">id:cat_var</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">1.570</td>
+<td style="text-align: right;">1.253</td>
+<td style="text-align: right;">0.864</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_interaction_only</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.136</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">1.011</td>
+<td style="text-align: right;">1.006</td>
+<td style="text-align: right;">0.450</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.494</td>
+<td style="text-align: right;">0.703</td>
+<td style="text-align: right;">0.220</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.495</td>
+<td style="text-align: right;">0.704</td>
+<td style="text-align: right;">0.220</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.110</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var1</td>
+<td style="text-align: right;">1.011</td>
+<td style="text-align: right;">1.006</td>
+<td style="text-align: right;">0.204</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">1.709</td>
+<td style="text-align: right;">1.307</td>
+<td style="text-align: right;">0.345</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">1.990</td>
+<td style="text-align: right;">1.411</td>
+<td style="text-align: right;">0.401</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.050</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">id:cat_var</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">0.246</td>
+<td style="text-align: right;">0.496</td>
+<td style="text-align: right;">0.135</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">1.324</td>
+<td style="text-align: right;">1.151</td>
+<td style="text-align: right;">0.728</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.136</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>In this case, we know the model with correlated random effects is the more accurate model, and this is born out via AIC.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_interaction_only</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_random_slope</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_vector_valued</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_separate_re</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">135592.8</td>
+<td style="text-align: right;">122051.9</td>
+<td style="text-align: right;">122051.9</td>
+<td style="text-align: right;">123745.2</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="change-the-model-orientation" class="level3">
+<h3 class="anchored" data-anchor-id="change-the-model-orientation">Change the model orientation</h3>
+<p>Now I will make the <code>vector_valued</code> model reduce to the <code>separate_re</code> model. First, we create a covariance matrix that has equal variances/covariances (i.e.&nbsp;compound symmetry), and for demonstration, we will apply the random effects a little differently. So, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>cov_mat <span class="ot">=</span> lazerhawk<span class="sc">::</span><span class="fu">create_corr</span>(<span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>), <span class="at">diagonal =</span> <span class="fu">c</span>(.<span class="dv">5</span>, .<span class="dv">5</span>, .<span class="dv">5</span>))</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cov2cor</span>(cov_mat)  <span class="co"># these will now be the estimated correlations for the vector_valued model</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3]
+[1,]  1.0  0.2  0.2
+[2,]  0.2  1.0  0.2
+[3,]  0.2  0.2  1.0</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>re_id_cat_lev <span class="ot">=</span> mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(ng, <span class="at">mean =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>), <span class="at">sigma =</span> cov_mat) <span class="sc">%&gt;%</span> </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>()</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> <span class="dv">2</span>  <span class="sc">+</span> .<span class="dv">5</span><span class="sc">*</span>x <span class="sc">-</span> .<span class="dv">5</span><span class="sc">*</span>x_c <span class="sc">+</span>   <span class="co"># fixed effect = (2, .5, -.5)</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">1</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps) <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">+</span>     <span class="co"># added this</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">2</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps) <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rep</span>(re_id_cat_lev[, <span class="dv">3</span>], <span class="at">each =</span> cat_levs <span class="sc">*</span> reps) <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>  .<span class="dv">25</span> <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">2</span>) <span class="sc">+</span>  <span class="co"># .25 is the fixef for group 2 vs. 1</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  .<span class="dv">40</span> <span class="sc">*</span> (cat_var <span class="sc">==</span> <span class="dv">3</span>) <span class="sc">+</span>  <span class="co"># .40 is the fixef for group 3 vs. 1</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rnorm</span>(ng <span class="sc">*</span> cat_levs <span class="sc">*</span> reps, <span class="at">sd =</span> .<span class="dv">5</span>)</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">tibble</span>(</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>    id,</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">cat_var  =</span> <span class="fu">factor</span>(cat_var),</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>    x,</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>    x_c,</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>    y</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Rerun the models.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>m_random_slope  <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)  <span class="co"># still problems!</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>m_vector_valued <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)   </span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>m_separate_re   <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Examine the variance components.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>model_mixed <span class="ot">=</span> <span class="fu">list</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_random_slope  =</span> m_random_slope,</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_vector_valued =</span> m_vector_valued,</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_separate_re   =</span> m_separate_re</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a><span class="co"># model summaries if desired</span></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="co"># map(model_mixed, summarize_model, ci = 0, cor_re = TRUE)</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a><span class="co"># fixed effects if desired</span></span>
+<span id="cb38-11"><a href="#cb38-11" aria-hidden="true" tabindex="-1"></a><span class="co"># fe = map_df(model_mixed, extract_fixed_effects, .id = 'model')</span></span>
+<span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_mixed, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">model</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">group</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">effect</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">variance</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">var_prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">0.491</td>
+<td style="text-align: right;">0.700</td>
+<td style="text-align: right;">0.213</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.786</td>
+<td style="text-align: right;">0.886</td>
+<td style="text-align: right;">0.341</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.778</td>
+<td style="text-align: right;">0.882</td>
+<td style="text-align: right;">0.337</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_random_slope</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.251</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">0.109</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var1</td>
+<td style="text-align: right;">0.491</td>
+<td style="text-align: right;">0.700</td>
+<td style="text-align: right;">0.283</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var2</td>
+<td style="text-align: right;">0.497</td>
+<td style="text-align: right;">0.705</td>
+<td style="text-align: right;">0.287</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">cat_var3</td>
+<td style="text-align: right;">0.492</td>
+<td style="text-align: right;">0.702</td>
+<td style="text-align: right;">0.284</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_vector_valued</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.251</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">0.145</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">id:cat_var</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">0.395</td>
+<td style="text-align: right;">0.628</td>
+<td style="text-align: right;">0.530</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">Intercept</td>
+<td style="text-align: right;">0.099</td>
+<td style="text-align: right;">0.314</td>
+<td style="text-align: right;">0.133</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">m_separate_re</td>
+<td style="text-align: left;">Residual</td>
+<td style="text-align: left;">NA</td>
+<td style="text-align: right;">0.251</td>
+<td style="text-align: right;">0.501</td>
+<td style="text-align: right;">0.337</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>In this case, we know the true case regards zero correlations and equal variances, so estimating them is adding complexity we don’t need, thus our simpler model wins (-log likelihoods are essentially the same).</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">parameter</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_random_slope</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_vector_valued</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">m_separate_re</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LL</td>
+<td style="text-align: right;">-59818.9</td>
+<td style="text-align: right;">-59818.9</td>
+<td style="text-align: right;">-59819.72</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">AIC</td>
+<td style="text-align: right;">119661.8</td>
+<td style="text-align: right;">119661.8</td>
+<td style="text-align: right;">119655.45</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Here we’ve demonstrated a couple of different ways to specify a particular model with random slopes for a categorical covariate. Intuition may lead to a model that is not easy to estimate, often leading to convergence problems. Sometimes, this model may be overly complicated, and a simpler version will likely have less estimation difficulty. Try it out if you run into trouble!</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Though I use the word ‘within’, do not take it to mean we have nested data.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>I use a personal package to create the matrix where I can just specify the lower diagonal, as this comes up a lot for simulation. Feel free to just create the matrix directly given it’s just a 3x3.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
+  author = {Clark, Michael and Clark, Michael},
+  title = {Categorical {Effects} as {Random}},
+  date = {2020-03-01},
+  url = {https://m-clark.github.io/posts/2020-03-01-random-categorical/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael, and Michael Clark. 2020. <span>“Categorical Effects as
+Random.”</span> March 1, 2020. <a href="https://m-clark.github.io/posts/2020-03-01-random-categorical/">https://m-clark.github.io/posts/2020-03-01-random-categorical/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
