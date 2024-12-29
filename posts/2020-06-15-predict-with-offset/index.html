@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.30">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+<meta name="dcterms.date" content="2020-06-16">
+<meta name="keywords" content="stata, margins, prediction, average marginal effects, marginal effects at means, estimated marginal means, offset, emmeans, ggeffects, regression, glm, derivatives">
+<meta name="description" content="Reconciling R and Stata Approaches">
+
+<title>Predictions with an offset – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-e2184218c7da002d19aaa9aaf3bba53d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="../../site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="../../site_libs/lightable-0.0.1/lightable.css" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text">BlueSky</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Predictions with an offset</h1>
+                  <div>
+        <div class="description">
+          <p>Reconciling R and Stata Approaches</p>
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">regression</div>
+                <div class="quarto-category">GLM</div>
+              </div>
+                  </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author"><a href="https://m-clark.github.io">Michael Clark</a> </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              <a href="https://strong.io">
+              Strong Analytics
+              </a>
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">June 16, 2020</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+
+  <div>
+    <div class="keywords">
+      <div class="block-title">Keywords</div>
+      <p>stata, margins, prediction, average marginal effects, marginal effects at means, estimated marginal means, offset, emmeans, ggeffects, regression, glm, derivatives</p>
+    </div>
+  </div>
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#get-some-data" id="toc-get-some-data" class="nav-link" data-scroll-target="#get-some-data">Get some data</a></li>
+  <li><a href="#model" id="toc-model" class="nav-link" data-scroll-target="#model">Model</a></li>
+  <li><a href="#emmeans" id="toc-emmeans" class="nav-link" data-scroll-target="#emmeans">emmeans</a></li>
+  <li><a href="#stata-basic-margins" id="toc-stata-basic-margins" class="nav-link" data-scroll-target="#stata-basic-margins">Stata: basic margins</a>
+  <ul class="collapse">
+  <li><a href="#r-by-hand" id="toc-r-by-hand" class="nav-link" data-scroll-target="#r-by-hand">R by hand</a></li>
+  <li><a href="#emmeans-1" id="toc-emmeans-1" class="nav-link" data-scroll-target="#emmeans-1">emmeans</a></li>
+  <li><a href="#margins" id="toc-margins" class="nav-link" data-scroll-target="#margins">margins</a></li>
+  </ul></li>
+  <li><a href="#stata-over" id="toc-stata-over" class="nav-link" data-scroll-target="#stata-over">Stata: over</a>
+  <ul class="collapse">
+  <li><a href="#r-by-hand-1" id="toc-r-by-hand-1" class="nav-link" data-scroll-target="#r-by-hand-1">R by hand</a></li>
+  <li><a href="#emmeans-2" id="toc-emmeans-2" class="nav-link" data-scroll-target="#emmeans-2">emmeans</a></li>
+  <li><a href="#margins-1" id="toc-margins-1" class="nav-link" data-scroll-target="#margins-1">margins</a></li>
+  </ul></li>
+  <li><a href="#stata-dydx" id="toc-stata-dydx" class="nav-link" data-scroll-target="#stata-dydx">Stata: dydx</a>
+  <ul class="collapse">
+  <li><a href="#categorical-covariate" id="toc-categorical-covariate" class="nav-link" data-scroll-target="#categorical-covariate">Categorical Covariate</a></li>
+  <li><a href="#continuous-predictor" id="toc-continuous-predictor" class="nav-link" data-scroll-target="#continuous-predictor">Continuous predictor</a></li>
+  <li><a href="#r-by-hand-2" id="toc-r-by-hand-2" class="nav-link" data-scroll-target="#r-by-hand-2">R by hand</a></li>
+  <li><a href="#emmeans-3" id="toc-emmeans-3" class="nav-link" data-scroll-target="#emmeans-3">emmeans</a></li>
+  <li><a href="#margins-2" id="toc-margins-2" class="nav-link" data-scroll-target="#margins-2">margins</a></li>
+  </ul></li>
+  <li><a href="#other-complications" id="toc-other-complications" class="nav-link" data-scroll-target="#other-complications">Other complications</a></li>
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">R Packages</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#resources" id="toc-resources" class="nav-link" data-scroll-target="#resources">Resources</a>
+  <ul class="collapse">
+  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference</a></li>
+  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a></li>
+  </ul></li>
+  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix">Appendix</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<blockquote class="blockquote">
+<p>NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you’ve found an issue, please post it at <a href="http://github.com/m-clark/m-clark.github.io/issues">GitHub</a>. Also for this particular post, Stata is not something I’ve used in years nor have access to. So for those interested who do have access, I can only show you the code, since at the time, it wasn’t something I could save. But since I’m here, check out the fantastic <span class="pack">marginaleffects</span> package in R.</p>
+</blockquote>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Getting predictions in R is and always has been pretty easy for the vast majority of packages providing modeling functions, as they also provide a <span class="func" style="">predict</span> method for the model objects. For those in the Stata world, they typically use <code>margins</code> for this, but when they come to R, there is no obvious option for how to go about it in the same way<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Likewise, some in the R world catch a whiff of Stata’s margins and would want something similar, but may not be sure where to turn.</p>
+<p>A little digging will reveal there are <a href="#r-packages">several packages</a> that will provide the same sort of thing. In addition, there are numerous <a href="#resources">resources</a> for both R and Stata for getting marginal results (i.e.&nbsp;predictions). However, here we note the issues that arise when models include an <em>offset</em>. Offsets are commonly used to model rates when the target variable is a count, but are used in other contexts as well. The Stata <a href="https://www.stata.com/manuals/rmargins.pdf">documentation for the margins command</a> offers no specific details of how the offset/exposure is treated, and some R packages appear not to know what to do with it, or offer few options to deal with it. So even when the models are identical, marginal estimates might be different in R and Stata. Here we’ll try to sort some of this out.</p>
+</section>
+<section id="get-some-data" class="level2">
+<h2 class="anchored" data-anchor-id="get-some-data">Get some data</h2>
+<p>We will use the <span class="objclass" style="">Insurance</span> data from the <span class="pack" style="">MASS</span> package which most with R will have access to. From the helpfile:</p>
+<blockquote class="blockquote">
+<p>The data given in data frame Insurance consist of the numbers of policyholders of an insurance company who were exposed to risk, and the numbers of car insurance claims made by those policyholders.</p>
+</blockquote>
+<ul>
+<li><strong>District</strong>: district of residence of policyholder (1 to 4): 4 is major cities.</li>
+<li><strong>Group</strong>: group of car with levels &lt;1 litre, 1–1.5 litre, 1.5–2 litre, &gt;2 litre</li>
+<li><strong>Age</strong>: the age of the insured in 4 groups labelled &lt;25, 25–29, 30–35, &gt;35</li>
+<li><strong>Holders</strong>: number of policyholders</li>
+<li><strong>Claims</strong>: number of claims</li>
+</ul>
+<p>We do a bit of minor processing, and I save the data as a <a href="https://github.com/m-clark/m-clark.github.io/raw/master/data/insurance.dta">Stata file</a> in case anyone wants to play with it in that realm.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>insurance <span class="ot">=</span> MASS<span class="sc">::</span>Insurance <span class="sc">%&gt;%</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename_all</span>(tolower) <span class="sc">%&gt;%</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># create standard rather than ordered factors for typical output</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">age   =</span> <span class="fu">factor</span>(age, <span class="at">ordered =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">group =</span> <span class="fu">factor</span>(group, <span class="at">ordered =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># create a numeric age covariate for later</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_num =</span> <span class="fu">case_when</span>(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">==</span> <span class="st">'&lt;25'</span>   <span class="sc">~</span> <span class="fu">sample</span>(<span class="dv">18</span><span class="sc">:</span><span class="dv">25</span>, <span class="fu">n</span>(), <span class="at">replace =</span> T),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">==</span> <span class="st">'25-29'</span> <span class="sc">~</span> <span class="fu">sample</span>(<span class="dv">25</span><span class="sc">:</span><span class="dv">29</span>, <span class="fu">n</span>(), <span class="at">replace =</span> T),</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">==</span> <span class="st">'30-35'</span> <span class="sc">~</span> <span class="fu">sample</span>(<span class="dv">30</span><span class="sc">:</span><span class="dv">35</span>, <span class="fu">n</span>(), <span class="at">replace =</span> T),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">==</span> <span class="st">'&gt;35'</span>   <span class="sc">~</span> <span class="fu">sample</span>(<span class="dv">36</span><span class="sc">:</span><span class="dv">75</span>, <span class="fu">n</span>(), <span class="at">replace =</span> T),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># for stata consistency</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">ln_holders =</span> <span class="fu">log</span>(holders)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>haven<span class="sc">::</span><span class="fu">write_dta</span>(insurance, <span class="st">'data/insurance.dta'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error: Failed to open 'data/insurance.dta' for writing</code></pre>
+</div>
+</div>
+<p>Let’s take a quick peek to get our bearings.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output cell-output-stdout">
+<pre><code>$`Numeric Variables`
+# A tibble: 4 × 10
+  Variable       N  Mean     SD   Min    Q1 Median     Q3     Max `% Missing`
+  &lt;chr&gt;      &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;
+1 holders       64 365.  623.     3   46.8  136    328.   3582              0
+2 claims        64  49.2  71.2    0    9.5   22     55.5   400              0
+3 age_num       64  35.2  15.8   18   25     29.5   35.5    75              0
+4 ln_holders    64   4.9   1.48   1.1  3.84   4.91   5.79    8.18           0
+
+$`Categorical Variables`
+# A tibble: 12 × 4
+   Variable Group  Frequency   `%`
+   &lt;chr&gt;    &lt;fct&gt;      &lt;int&gt; &lt;dbl&gt;
+ 1 district 1             16    25
+ 2 district 2             16    25
+ 3 district 3             16    25
+ 4 district 4             16    25
+ 5 group    &lt;1l           16    25
+ 6 group    &gt;2l           16    25
+ 7 group    1-1.5l        16    25
+ 8 group    1.5-2l        16    25
+ 9 age      &lt;25           16    25
+10 age      &gt;35           16    25
+11 age      25-29         16    25
+12 age      30-35         16    25</code></pre>
+</div>
+</div>
+</section>
+<section id="model" class="level2">
+<h2 class="anchored" data-anchor-id="model">Model</h2>
+<p>Starting out, we run a model in as simple a form as possible. I use just a standard negative binomial with a single covariate <code>age</code>, so we can clearly see how the ouptut is being produced. Note that <code>age</code> has four categories as seen above.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>nb_glm_offset <span class="ot">=</span> MASS<span class="sc">::</span><span class="fu">glm.nb</span>(claims <span class="sc">~</span>  age <span class="sc">+</span> <span class="fu">offset</span>(ln_holders), <span class="at">data =</span> insurance)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb_glm_offset)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = claims ~ age + offset(ln_holders), data = insurance, 
+    init.theta = 28.40119393, link = log)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -1.59233    0.09071 -17.554  &lt; 2e-16 ***
+age25-29    -0.12697    0.11743  -1.081   0.2796    
+age30-35    -0.25340    0.11558  -2.193   0.0283 *  
+age&gt;35      -0.41940    0.10583  -3.963  7.4e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(28.4012) family taken to be 1)
+
+    Null deviance: 86.761  on 63  degrees of freedom
+Residual deviance: 67.602  on 60  degrees of freedom
+AIC: 444.38
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  28.40 
+          Std. Err.:  9.80 
+
+ 2 x log-likelihood:  -434.385 </code></pre>
+</div>
+</div>
+<p>Now we run it with Stata. We get the same result, so this means we can’t get different predictions if we do the same thing in both R or Stata<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">nbreg</span> claims i.age, <span class="kw">offset</span>(ln_holders) <span class="kw">nolog</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="emmeans" class="level2">
+<h2 class="anchored" data-anchor-id="emmeans">emmeans</h2>
+<p>First let’s use <span class="pack" style="">emmeans</span>, a very popular package for getting <em>estimated marginal means</em>, to get the predicted counts for each age group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">emmeans</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">offset =</span> <span class="fu">mean</span>(insurance<span class="sc">$</span>ln_holders)  <span class="co">#  default</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">response</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">df</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">asymp.LCL</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">asymp.UCL</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">27.437</td>
+<td style="text-align: right;">2.489</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">22.968</td>
+<td style="text-align: right;">32.776</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">24.166</td>
+<td style="text-align: right;">1.802</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">20.880</td>
+<td style="text-align: right;">27.969</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">21.295</td>
+<td style="text-align: right;">1.525</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">18.507</td>
+<td style="text-align: right;">24.505</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">18.038</td>
+<td style="text-align: right;">0.983</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">16.211</td>
+<td style="text-align: right;">20.072</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>How is this result obtained? It is just the prediction at each value of the covariate, with the offset held at its mean. We can duplicate this result by using the <span class="func" style="">predict</span> method and specifying a data frame with the values of interest.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>nd <span class="ot">=</span> <span class="fu">data.frame</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">age =</span> <span class="fu">levels</span>(insurance<span class="sc">$</span>age),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ln_holders =</span> <span class="fu">mean</span>(insurance<span class="sc">$</span>ln_holders)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">predict</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">newdata =</span> nd,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">'response'</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">27.437</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">24.166</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">21.295</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">18.038</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>As an explicit comparison, the intercept represents group ‘&lt;25’, and if we exponentiate and add the mean offset we get:</p>
+<p><span class="math inline">\(exp(Intercept + \overline{ln\_holders}) = e^{-1.59+4.90} = \qquad\)</span> 27.437</p>
+</section>
+<section id="stata-basic-margins" class="level2">
+<h2 class="anchored" data-anchor-id="stata-basic-margins">Stata: basic margins</h2>
+<p>Now let’s look at Stata. First we want just the basic margins output.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>margins age </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>These values, while consistent in pattern, are much different than the <span class="pack" style="">emmeans</span> output, so what is going on?</p>
+<section id="r-by-hand" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand">R by hand</h3>
+<p>In this model, we only have the <code>age</code> covariate and the offset, so there really isn’t much to focus on besides the latter. To replicate the Stata output in R, we will use <em>all</em> values of the offset for <em>every</em> level of <code>age</code>, and subsequently get an average prediction for each age group. First, we create a data frame for prediction using <span class="func" style="">expand.grid</span>, get the predictions for all those values, then get mean prediction per group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">=</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand.grid</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">age        =</span> <span class="fu">levels</span>(insurance<span class="sc">$</span>age), </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">ln_holders =</span> insurance<span class="sc">$</span>ln_holders</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prediction =</span> <span class="fu">predict</span>(nb_glm_offset, <span class="at">newdata =</span> ., <span class="at">type =</span> <span class="st">'response'</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_prediction =</span> <span class="fu">mean</span>(prediction)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">74.257</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">65.403</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">57.635</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">48.820</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="emmeans-1" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-1">emmeans</h3>
+<p>The <span class="pack" style="">emmeans</span> doesn’t appear to allow one to provide all values of the offset, as adding additional values just applies them to each group and then recycles. In this case, it would just use the first four values of <code>ln_holders</code> for each age group respectively, which is not what we want.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emmeans</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">offset =</span> insurance<span class="sc">$</span>ln_holders</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age   response    SE  df asymp.LCL asymp.UCL
+ &lt;25       40.1  3.64 Inf      33.6      47.9
+ 25-29     47.3  3.53 Inf      40.9      54.8
+ 30-35     38.8  2.78 Inf      33.8      44.7
+ &gt;35      224.7 12.25 Inf     201.9     250.0
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>insurance<span class="sc">$</span>ln_holders[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5.283204 5.575949 5.505332 7.426549</code></pre>
+</div>
+</div>
+<p>If we add the offset to the <code>spec</code> argument, it still just fixes it at the mean (and I tried variations on the spec). So at least using the standard approaches with this model does not appear to give you the same thing as Stata.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">emmeans</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age <span class="sc">+</span> <span class="fu">offset</span>(ln_holders),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age   ln_holders response    SE  df asymp.LCL asymp.UCL
+ &lt;25          4.9     27.4 2.489 Inf      23.0      32.8
+ 25-29        4.9     24.2 1.802 Inf      20.9      28.0
+ 30-35        4.9     21.3 1.525 Inf      18.5      24.5
+ &gt;35          4.9     18.0 0.983 Inf      16.2      20.1
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+</div>
+</div>
+<p>Unfortunately Stata has the opposite issue. Trying to set the offset to the mean results in an error, and using <code>atmeans</code> doesn’t change the previous result.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>margins age, atmeans</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>margins age, <span class="fu">at</span>(ln_holders = 10.27)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="margins" class="level3">
+<h3 class="anchored" data-anchor-id="margins">margins</h3>
+<p>The <span class="pack" style="">margins</span> package explicitly attempts to duplicate Stata’s margins command, but here we can see it has an issue with the offset.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(margins)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">margins</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">'age'</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span>  <span class="co"># default</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in offset(ln_holders): could not find function "offset"</code></pre>
+</div>
+</div>
+<p>The offset function is part of the stats package of the base R installation, so I tried rerunning the model using <code>stats::offset</code>, but this makes the offset just like any other covariate, i.e.&nbsp;it did not have a fixed coefficient of 1. Changing the model to a standard <code>glm</code> class with poisson and moving the offset to the <code>offset</code> argument did work, and produces the results for the differences in predictions for each group from the reference group (<code>dydx</code> in Stata), but we’ll visit this type of result later<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. However, the <code>offset</code> argument is not available to <span class="func" style="">glm.nb</span>, so we’re stuck for now.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>pois_glm_offset <span class="ot">=</span> <span class="fu">glm</span>(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  claims <span class="sc">~</span>  age,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data   =</span> insurance,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">'poisson'</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">offset =</span> ln_holders</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">margins</span>(</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  pois_glm_offset,</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">'age'</span>,</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">"response"</span>  <span class="co"># default</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age25-29 age30-35 age&gt;35
+   -10.32   -18.46 -28.79</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">expand.grid</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">age        =</span> <span class="fu">levels</span>(insurance<span class="sc">$</span>age), </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">ln_holders =</span> insurance<span class="sc">$</span>ln_holders</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">prediction =</span> <span class="fu">predict</span>(pois_glm_offset, <span class="at">newdata =</span> ., <span class="at">type =</span> <span class="st">'response'</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_prediction =</span> <span class="fu">mean</span>(prediction)) <span class="sc">%&gt;%</span> </span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff =</span> avg_prediction <span class="sc">-</span> avg_prediction[<span class="dv">1</span>]) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 3
+  age   avg_prediction  diff
+  &lt;fct&gt;          &lt;dbl&gt; &lt;dbl&gt;
+1 &lt;25             73.4   0  
+2 25-29           63.1 -10.3
+3 30-35           55.0 -18.5
+4 &gt;35             44.7 -28.8</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="stata-over" class="level2">
+<h2 class="anchored" data-anchor-id="stata-over">Stata: over</h2>
+<p>In Stata, with categorical values we can also use the <code>over</code> approach. What do we get in this case?</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>margins, <span class="bn">over</span>(age)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>These are very different from our previous results for Stata, so what’s happening here?</p>
+<section id="r-by-hand-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand-1">R by hand</h3>
+<p>This can be duplicated with the <span class="func" style="">predict</span> function as follows. While similar to the previous approach, here <em>only the observed values of the offset for each group are used</em>. We then make predictions for all values of the data and average them by group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>predictions_over <span class="ot">=</span> insurance <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_modify</span>(</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">data.frame</span>(</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">prediction =</span> <span class="fu">mean</span>(</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>          <span class="fu">predict</span>(nb_glm_offset, <span class="at">newdata =</span> ., <span class="at">type =</span> <span class="st">'response'</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>      ),</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">keep =</span> <span class="cn">TRUE</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  ) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">14.471</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">26.162</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">29.677</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">141.098</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The pattern is actually in the opposite direction, which is unexpected, but probably just reflects the fact that we just don’t have much data. However, it’s good to note that these respective approaches would not necessarily tell you the same thing.</p>
+</section>
+<section id="emmeans-2" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-2">emmeans</h3>
+<p>I currently don’t know of an equivalence for <span class="pack" style="">emmeans</span> in this offset case, and initial searches didn’t turn up much, though it is hard to distinguish specific ‘average predictions’ from many other similar scenarios. I attempted the following, which keeps the values of <code>ln_holders</code>, but it only keeps unique ones, and it’s not reproducing what I would expect, although it implies that it is averaging over the offset values.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>rg <span class="ot">=</span> <span class="fu">ref_grid</span>(nb_glm_offset, <span class="at">cov.keep =</span> <span class="fu">c</span>(<span class="st">'ln_holders'</span>))</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>em_over <span class="ot">=</span> <span class="fu">emmeans</span>(rg, <span class="sc">~</span>age, <span class="at">type =</span> <span class="st">'response'</span>)  </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(em_over)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    age  response        SE  df asymp.LCL  asymp.UCL
+1   &lt;25  7.814354 0.7088454 Inf   6.54154   9.334825
+2 25-29 17.042911 1.2709131 Inf  14.72545  19.725092
+3 30-35 20.304984 1.4542076 Inf  17.64579  23.364916
+4   &gt;35 96.993166 5.2865742 Inf  87.16592 107.928350</code></pre>
+</div>
+</div>
+</section>
+<section id="margins-1" class="level3">
+<h3 class="anchored" data-anchor-id="margins-1">margins</h3>
+<p>The over approach for the <span class="pack" style="">margins</span> package is not explicitly supported. The package author states:</p>
+<blockquote class="blockquote">
+<p>At present, margins() does not implement the over option. The reason for this is also simple: R already makes data subsetting operations quite simple using simple <code>[</code> extraction. If, for example, one wanted to calculate marginal effects on subsets of a data frame, those subsets can be passed directly to margins() via the data argument (as in a call to prediction()).</p>
+</blockquote>
+<p>It would look something like the following, but we still have the offset problem for this negative binomial class, so I don’t show a result.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>insurance <span class="sc">%&gt;%</span> </span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age) <span class="sc">%&gt;%</span> </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_map</span>(<span class="sc">~</span><span class="fu">margins</span>(nb_glm_offset, .), <span class="at">keep =</span> <span class="cn">TRUE</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="stata-dydx" class="level2">
+<h2 class="anchored" data-anchor-id="stata-dydx">Stata: dydx</h2>
+<section id="categorical-covariate" class="level3">
+<h3 class="anchored" data-anchor-id="categorical-covariate">Categorical Covariate</h3>
+<p>Sometimes people want differences as you move from one level (e.g.&nbsp;the reference level) to the next for some covariate, the ‘average marginal effect’. In Stata this is obtained with the <code>dydx</code> option.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>margins, <span class="kw">dydx</span>(age)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>In R, we can get this from our initial predictions that used all offset values by just taking the differences in the predicted values.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>predictions <span class="sc">%&gt;%</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dydx =</span> avg_prediction <span class="sc">-</span> avg_prediction[<span class="dv">1</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">dydx</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">74.257</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">65.403</td>
+<td style="text-align: right;">-8.854</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">57.635</td>
+<td style="text-align: right;">-16.622</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">48.820</td>
+<td style="text-align: right;">-25.437</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="continuous-predictor" class="level3">
+<h3 class="anchored" data-anchor-id="continuous-predictor">Continuous predictor</h3>
+<p>Now we’ll consider a continuous covariate. Here we’ll again just focus on a simple example where we rerun the model, but with age as numeric rather than binned<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. For comparison we’ll set the numeric age values at roughly the midpoint of the binned categories. We can do this using the <code>at</code> option.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>margins, <span class="fu">at</span>(age_num = (21, 27, 32, 50))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Again, we can duplicate this with the basic <span class="func" style="">predict</span> function. We just predict at that value of the covariate for all values of the offset, and get the average prediction as we did before.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>nb_glm_offset_cont <span class="ot">=</span> MASS<span class="sc">::</span><span class="fu">glm.nb</span>(claims <span class="sc">~</span>  age_num <span class="sc">+</span> <span class="fu">offset</span>(ln_holders), <span class="at">data =</span> insurance)</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">=</span> <span class="fu">expand.grid</span>(</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_num =</span> <span class="fu">c</span>(<span class="dv">21</span>, <span class="dv">27</span>, <span class="dv">32</span>, <span class="dv">50</span>),</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ln_holders =</span> insurance<span class="sc">$</span>ln_holders</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span> </span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pred =</span> </span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>           <span class="fu">predict</span>(</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>             nb_glm_offset_cont,</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">newdata =</span> .,</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">type =</span> <span class="st">'response'</span></span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>           )</span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age_num) <span class="sc">%&gt;%</span> </span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">average_prediction =</span> <span class="fu">mean</span>(pred))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">age_num</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">average_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">67.500</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">64.366</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">61.865</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">53.639</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>We can also get the <code>dydx</code> for the continuous covariate, which is the derivative of the target with respect to the covariate. In linear models, this is just the regression coefficient, but here we have to do things a little differently.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>margins, <span class="kw">dydx</span>(age_num)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As noted for the categorical case, this value is the <em>average marginal effect</em>. As the Stata reference describes:</p>
+<blockquote class="blockquote">
+<p>It is not necessarily true that dydx() = 0.5 means that “y increases by 0.5 if x increases by 1”. It is true that “y increases with x at a rate such that, if the rate were constant, y would increase by 0.5 if x increased by 1”</p>
+</blockquote>
+<p>This qualified interpretation may not be of much value in contexts where the rate is not constant, but we can still see what Stata is doing.</p>
+</section>
+<section id="r-by-hand-2" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand-2">R by hand</h3>
+<p>For <code>dydx</code>, when it comes to continuous covariates, there isn’t an obvious change in the covariate to use (i.e.&nbsp;the <code>dx</code>) to evaluate at each point, as is the case with categorical variables, which can use a reference group. So what we do is use a small arbitrary difference (<span class="math inline">\(\epsilon\)</span>) for the covariate at its observed values, get the predictions for the values above and below the observed value, and then average those differences in predicted values. For comparison to Stata, I set <span class="math inline">\(\epsilon\)</span> to the value used by the <code>margins</code> command. Note that we are only using the observed values for the offset.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>h <span class="ot">=</span> <span class="cf">function</span>(x, <span class="at">epsilon =</span> <span class="fl">1e-5</span>) <span class="fu">max</span>(<span class="fu">abs</span>(x), <span class="dv">1</span>) <span class="sc">*</span> <span class="fu">sqrt</span>(epsilon)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>age_dx_plus <span class="ot">=</span> insurance <span class="sc">%&gt;%</span> </span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age_num, ln_holders) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age_num =</span> age_num <span class="sc">+</span> <span class="fu">h</span>(age_num))</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>age_dx_minus <span class="ot">=</span> insurance <span class="sc">%&gt;%</span> </span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(age_num, ln_holders) <span class="sc">%&gt;%</span> </span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">age_num =</span> age_num <span class="sc">-</span> <span class="fu">h</span>(age_num))</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>predictions_dydx <span class="ot">=</span> </span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">dy =</span> </span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">predict</span>(nb_glm_offset_cont, age_dx_plus,  <span class="at">type =</span> <span class="st">'response'</span>) <span class="sc">-</span></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">predict</span>(nb_glm_offset_cont, age_dx_minus, <span class="at">type =</span> <span class="st">'response'</span>), </span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">dx   =</span> age_dx_plus<span class="sc">$</span>age_num <span class="sc">-</span> age_dx_minus<span class="sc">$</span>age_num,</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">dydx =</span> dy<span class="sc">/</span>dx</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a><span class="co"># summarise(predictions_dydx, ame = mean(dydx))</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">ame</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">-0.42552</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>So we just get predictions for a small difference in age for each value of age, and average that difference in predictions.</p>
+</section>
+<section id="emmeans-3" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-3">emmeans</h3>
+<p>The emmeans package is primarily geared toward factor variables, but does have support for numeric variables interacting with factors. However, this isn’t what we’re really looking for here.</p>
+</section>
+<section id="margins-2" class="level3">
+<h3 class="anchored" data-anchor-id="margins-2">margins</h3>
+<p>We can however use the <span class="pack" style="">margins</span> package for this, and it provides the same result as before. For whatever reason, it doesn’t have an issue with the offset if we use the lower level <span class="func" style="">dydx</span> function.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dydx</span>(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  insurance,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  nb_glm_offset_cont,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">variable =</span> <span class="st">'age_num'</span>,</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">eps =</span> <span class="fl">1e-5</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ame =</span> <span class="fu">mean</span>(dydx_age_num))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">ame</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">-0.42552</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>For more on the <code>dydx</code> case for continuous variables in general, see the resources.</p>
+</section>
+</section>
+<section id="other-complications" class="level2">
+<h2 class="anchored" data-anchor-id="other-complications">Other complications</h2>
+<p>Obviously models will have more than one covariate, and in the particular case that was brought to my attention, there were also random effects. I may explore more in the future, but the general result should hold in those circumstances. As a quick example<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>, we can get the same age results for both, by getting the age group predictions with all values of the dataset (not just the offset).</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>nb_glm_offset_full <span class="ot">=</span> MASS<span class="sc">::</span><span class="fu">glm.nb</span>(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  claims <span class="sc">~</span>  age <span class="sc">+</span> group <span class="sc">+</span> district <span class="sc">+</span> <span class="fu">offset</span>(ln_holders), </span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> insurance</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(nb_glm_offset_full)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = claims ~ age + group + district + offset(ln_holders), 
+    data = insurance, init.theta = 449932.7775, link = log)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -1.82174    0.07679 -23.723  &lt; 2e-16 ***
+age25-29    -0.19101    0.08286  -2.305 0.021155 *  
+age30-35    -0.34495    0.08138  -4.239 2.25e-05 ***
+age&gt;35      -0.53667    0.06996  -7.671 1.70e-14 ***
+group1-1.5l  0.16133    0.05054   3.192 0.001412 ** 
+group1.5-2l  0.39281    0.05500   7.142 9.23e-13 ***
+group&gt;2l     0.56341    0.07232   7.791 6.67e-15 ***
+district2    0.02587    0.04302   0.601 0.547637    
+district3    0.03853    0.05052   0.763 0.445686    
+district4    0.23421    0.06168   3.797 0.000146 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(449932.8) family taken to be 1)
+
+    Null deviance: 236.212  on 63  degrees of freedom
+Residual deviance:  51.416  on 54  degrees of freedom
+AIC: 390.74
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  449933 
+          Std. Err.:  4185437 
+Warning while fitting theta: iteration limit reached 
+
+ 2 x log-likelihood:  -368.745 </code></pre>
+</div>
+</div>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">nbreg</span> claims i.age i.<span class="fu">group</span> i.district, <span class="kw">offset</span>(ln_holders) <span class="kw">nolog</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>margins age</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>To do this with predict, we make predictions for all observed values as if they were at each level of age. Then we average them for each age group, just like we did before.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>predictions_full_model <span class="ot">=</span>  </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_df</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="cf">function</span>(i) <span class="fu">mutate</span>(insurance, <span class="at">age =</span> <span class="fu">levels</span>(age)[i])) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">age =</span> <span class="fu">factor</span>(age, <span class="fu">levels</span>(insurance<span class="sc">$</span>age)),   <span class="co"># convert back to factor</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">prediction =</span> <span class="fu">predict</span>(nb_glm_offset_full, <span class="at">newdata =</span> ., <span class="at">type =</span> <span class="st">'response'</span>)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  )  <span class="sc">%&gt;%</span> </span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(age) <span class="sc">%&gt;%</span> </span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_prediction =</span> <span class="fu">mean</span>(prediction)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">76.397</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">63.113</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">54.109</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">44.669</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="r-packages">R Packages</h2>
+<p>To summarize R’s capabilities with Stata-like margins with models using an offset, we have a few options we can note. First, we can get the values using the <span class="func" style="">predict</span> method. Then there are the packages to help with getting these types of predictions. <span class="pack" style="">margins</span> explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn’t appear to be documentation on how the offset is dealt with by default. Furthermore, care must be taken if it isn’t an explicitly supported model. As we have also seen, <span class="pack" style="">emmeans</span> provides many predictions of the sort discussed here, supports many more models, produces results in a nice format, and has plotting capabilities. However, it’s mostly suited toward factor variables.</p>
+<p>Beyond those, <span class="pack" style="">ggeffects</span> uses <span class="func" style="">predict</span> and <span class="pack" style="">emmeans</span> under the hood, so offers a nice way to do the same sorts of things, but with a more viable plot as a result. Other packages and functions are available for specific settings. For example, <span class="func" style="">conditional_effects</span> in the <span class="pack" style="">brms</span> package provides predictions and visualization for the bayesian setting.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Hopefully this will clarify the discrepancies between R and Stata with models using an offset. Honestly, I pretty much always use the <span class="func" style="">predict</span> function with my specified data values because I know what it’s doing and I can understand the results without hesitation regardless of model or package used. Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. On the other hand, getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting <em>average</em> effects often also can be hard to interpret (e.g.&nbsp;nonlinear relationships).</p>
+<p>One thing you don’t get with some of the averaged predictions using the <span class="func" style="">predict</span> function are interval estimates, but this could be obtained via bootstrapping. Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g.&nbsp;<code>se.fit = TRUE</code>), so if you getting predictions at key values of the variables it is trivial to get the interval estimate. In general, most R packages are just using predict under the hood, so being familiar with it will likely get you what you need on its own.</p>
+</section>
+<section id="resources" class="level2">
+<h2 class="anchored" data-anchor-id="resources">Resources</h2>
+<section id="reference" class="level3">
+<h3 class="anchored" data-anchor-id="reference">Reference</h3>
+<p><a href="https://www.stata.com/manuals/rmargins.pdf">Stata reference for margins</a></p>
+<p><a href="https://cran.r-project.org/web/packages/emmeans/index.html">emmeans</a></p>
+<p><a href="https://cloud.r-project.org/web/packages/margins/vignettes/Introduction.html">margins</a></p>
+<p><a href="https://strengejacke.github.io/ggeffects">ggeffects</a></p>
+</section>
+<section id="notes" class="level3">
+<h3 class="anchored" data-anchor-id="notes">Notes</h3>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins01.pdf">Marginal Effects- Rich Williams notes- 1</a></p>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins02.pdf">Marginal Effects- Rich Williams notes- 2</a></p>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins03.pdf">Marginal Effects- Rich Williams notes- 3</a></p>
+<p><a href="https://www.stata-journal.com/article.html?article=st0260">Marginal Effects Stata Article by Rich Williams</a></p>
+<p><a href="https://errickson.net/marginsnotes/">Josh Errickson’s comparisons of Stata, emmeans, and ggeffects</a></p>
+<p><a href="https://stats.idre.ucla.edu/stata/faq/">UCLA IDRE FAQ (Margins command section)</a></p>
+<p><a href="https://www.stata.com/support/faqs/statistics/marginal-effects-after-offset/">Stata FAQ (based on old mfx command)</a></p>
+</section>
+</section>
+<section id="appendix" class="level2">
+<h2 class="anchored" data-anchor-id="appendix">Appendix</h2>
+<p>Just for giggles, I did an average marginal effect for a GAM, though I find little utility in it for the relationship shown. Confirmed via <span class="pack" style="">gratia</span> and <span class="pack" style="">margins</span>.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">gamSim</span>(<span class="dv">1</span>, <span class="at">n =</span> <span class="dv">400</span>, <span class="at">dist =</span> <span class="st">"normal"</span>, <span class="at">scale =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">gam</span>(y <span class="sc">~</span> <span class="fu">s</span>(x2), <span class="at">data =</span> dat)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>visibly<span class="sc">::</span><span class="fu">plot_gam</span>(b)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="index_files/figure-html/margins-gam-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set change step</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>h <span class="ot">=</span> <span class="fl">1e-5</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>b_dx_plus <span class="ot">=</span> dat <span class="sc">%&gt;%</span> </span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(x2) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">x2 =</span> x2 <span class="sc">+</span> h)</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>b_dx_minus <span class="ot">=</span> dat <span class="sc">%&gt;%</span> </span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(x2) <span class="sc">%&gt;%</span> </span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">x2 =</span> x2 <span class="sc">-</span> h)</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>predictions_dydx <span class="ot">=</span> </span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x2 =</span> dat<span class="sc">$</span>x2,</span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">dy =</span> </span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">predict</span>(b, b_dx_plus,  <span class="at">type =</span> <span class="st">'response'</span>) <span class="sc">-</span></span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">predict</span>(b, b_dx_minus, <span class="at">type =</span> <span class="st">'response'</span>), </span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">dx   =</span> b_dx_plus<span class="sc">$</span>x2 <span class="sc">-</span> b_dx_minus<span class="sc">$</span>x2,</span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">dydx =</span> dy<span class="sc">/</span>dx</span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>  ) </span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>gratia_result  <span class="ot">=</span> gratia<span class="sc">::</span><span class="fu">derivatives</span>(b, <span class="at">newdata =</span> dat, <span class="at">eps =</span> h)</span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>margins_result <span class="ot">=</span> margins<span class="sc">::</span><span class="fu">dydx</span>(dat, b, <span class="at">variable =</span> <span class="st">'x2'</span>, <span class="at">eps =</span> h<span class="sc">^</span><span class="dv">2</span>)  <span class="co"># note that margins uses the h function specified previously</span></span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">as.numeric</span>(predictions_dydx<span class="sc">$</span>dydx), gratia_result<span class="sc">$</span>derivative)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "names for current but not for target"  "Mean relative difference: 5.59627e-05"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">as.numeric</span>(predictions_dydx<span class="sc">$</span>dydx), <span class="fu">as.numeric</span>(margins_result<span class="sc">$</span>dydx_x2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  predictions_dydx, </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ame =</span> <span class="fu">mean</span>(dydx), </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">ame_gratia =</span> <span class="fu">mean</span>(gratia_result<span class="sc">$</span>derivative),</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">ame_margins =</span> <span class="fu">mean</span>(margins_result<span class="sc">$</span>dydx_x2)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+    ame ame_gratia ame_margins
+  &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;
+1  1.76       1.76        1.76</code></pre>
+</div>
+</div>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Not the least of which is that most outside of econometrics don’t call predictions <em>margins</em>, since these days we aren’t adding results to the margin of a hand-written table.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>For those in the R world, the <code>i.age</code> tells Stata to treat the age factor as, well, a factor. Stata’s <code>alpha</code> is 1/<code>theta</code> from R’s output.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The <span class="pack" style="">margins</span> package does do predictions rather than the marginal effects, but it, like others, is just a wrapper for the <span class="func" style="">predict</span> method, and doesn’t appear to average them, so I don’t demonstrate that.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>There is rarely a justifiable reason to discretize age as near as I can tell, and doing so inevitably results in less satisfying and less reliable conclusions.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>There is a weird print issue where the Stata output isn’t showing the coefficient for one of the levels of <code>group</code>, but the model is correct and was verified directly using Stata.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
+  author = {Clark, Michael},
+  title = {Predictions with an Offset},
+  date = {2020-06-16},
+  url = {https://m-clark.github.io/posts/2020-06-15-predict-with-offset/},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael. 2020. <span>“Predictions with an Offset.”</span> June
+16, 2020. <a href="https://m-clark.github.io/posts/2020-06-15-predict-with-offset/">https://m-clark.github.io/posts/2020-06-15-predict-with-offset/</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

@@ -23452,5 +23452,1823 @@ Clark, Michael. 2020. <span>“Micro-Macro Models.”</span> August 31,
   <pubDate>Mon, 31 Aug 2020 04:00:00 GMT</pubDate>
   <media:content url="https://m-clark.github.io/img/micromacro/multilevel.png" medium="image" type="image/png" height="71" width="144"/>
 </item>
+<item>
+  <title>Exploratory Data Analysis</title>
+  <dc:creator>Michael Clark</dc:creator>
+  <link>https://m-clark.github.io/posts/2020-07-10-eda/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In R there are many tools available to help you dive in and explore your data. However, in consulting I still see a lot of people using base R’s <span class="func" style="">table</span> and <span class="func" style="">summary</span> functions, followed by a lot of work to get the result into a more presentable format. My own frustrations led to me creating a package (<a href="https://m-clark.github.io/tidyext/">tidyext</a>) for personal use in this area. While that suits me fine, there are tools that can go much further with little effort. Recently, Staniak &amp; Biecek <span class="citation" data-cites="staniak2019landscape">@staniak2019landscape</span> wrote an article in the R Journal exploring several of such packages, so I thought I’d try them out for myself, and take others along with me for that ride.</p>
+<p>As this will be a workshop/demo, I’ve created a separate repo and document to make it easier to find, so here is the link: <a href="https://m-clark.github.io/exploratory-data-analysis-tools/">https://m-clark.github.io/exploratory-data-analysis-tools/</a></p>
+<p>The packages demoed are:</p>
+<ul>
+<li><span class="pack" style="">arsenal</span></li>
+<li><span class="pack" style="">DataExplorer</span></li>
+<li><span class="pack" style="">dataMaid</span></li>
+<li><span class="pack" style="">gtsummary</span></li>
+<li><span class="pack" style="">janitor</span> (not explored in the previous article)</li>
+<li><span class="pack" style="">SmartEDA</span></li>
+<li><span class="pack" style="">summarytools</span></li>
+<li><span class="pack" style="">visdat</span></li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/img/tukey.png" class="img-fluid figure-img"></p>
+<figcaption>Tukey</figcaption>
+</figure>
+</div>
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
+  author = {Clark, Michael},
+  title = {Exploratory {Data} {Analysis}},
+  date = {2020-07-10},
+  url = {https://m-clark.github.io/posts/2020-07-10-eda/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas">
+Clark, Michael. 2020. <span>“Exploratory Data Analysis.”</span> July 10,
+2020. <a href="https://m-clark.github.io/posts/2020-07-10-eda/">https://m-clark.github.io/posts/2020-07-10-eda/</a>.
+</div></div></section></div> ]]></description>
+  <category>exploratory data analysis</category>
+  <guid>https://m-clark.github.io/posts/2020-07-10-eda/</guid>
+  <pubDate>Fri, 10 Jul 2020 04:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Predictions with an offset</title>
+  <dc:creator>Michael Clark</dc:creator>
+  <link>https://m-clark.github.io/posts/2020-06-15-predict-with-offset/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<blockquote class="blockquote">
+<p>NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you’ve found an issue, please post it at <a href="http://github.com/m-clark/m-clark.github.io/issues">GitHub</a>. Also for this particular post, Stata is not something I’ve used in years nor have access to. So for those interested who do have access, I can only show you the code, since at the time, it wasn’t something I could save. But since I’m here, check out the fantastic <span class="pack">marginaleffects</span> package in R.</p>
+</blockquote>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Getting predictions in R is and always has been pretty easy for the vast majority of packages providing modeling functions, as they also provide a <span class="func" style="">predict</span> method for the model objects. For those in the Stata world, they typically use <code>margins</code> for this, but when they come to R, there is no obvious option for how to go about it in the same way<sup>1</sup>. Likewise, some in the R world catch a whiff of Stata’s margins and would want something similar, but may not be sure where to turn.</p>
+<p>A little digging will reveal there are several packages that will provide the same sort of thing. In addition, there are numerous resources for both R and Stata for getting marginal results (i.e.&nbsp;predictions). However, here we note the issues that arise when models include an <em>offset</em>. Offsets are commonly used to model rates when the target variable is a count, but are used in other contexts as well. The Stata <a href="https://www.stata.com/manuals/rmargins.pdf">documentation for the margins command</a> offers no specific details of how the offset/exposure is treated, and some R packages appear not to know what to do with it, or offer few options to deal with it. So even when the models are identical, marginal estimates might be different in R and Stata. Here we’ll try to sort some of this out.</p>
+</section>
+<section id="get-some-data" class="level2">
+<h2 class="anchored" data-anchor-id="get-some-data">Get some data</h2>
+<p>We will use the <span class="objclass" style="">Insurance</span> data from the <span class="pack" style="">MASS</span> package which most with R will have access to. From the helpfile:</p>
+<blockquote class="blockquote">
+<p>The data given in data frame Insurance consist of the numbers of policyholders of an insurance company who were exposed to risk, and the numbers of car insurance claims made by those policyholders.</p>
+</blockquote>
+<ul>
+<li><strong>District</strong>: district of residence of policyholder (1 to 4): 4 is major cities.</li>
+<li><strong>Group</strong>: group of car with levels &lt;1 litre, 1–1.5 litre, 1.5–2 litre, &gt;2 litre</li>
+<li><strong>Age</strong>: the age of the insured in 4 groups labelled &lt;25, 25–29, 30–35, &gt;35</li>
+<li><strong>Holders</strong>: number of policyholders</li>
+<li><strong>Claims</strong>: number of claims</li>
+</ul>
+<p>We do a bit of minor processing, and I save the data as a <a href="https://github.com/m-clark/m-clark.github.io/raw/master/data/insurance.dta">Stata file</a> in case anyone wants to play with it in that realm.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(tidyverse)</span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">123</span>)</span>
+<span id="cb1-4"></span>
+<span id="cb1-5">insurance <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> MASS<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>Insurance <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb1-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rename_all</span>(tolower) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb1-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(</span>
+<span id="cb1-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># create standard rather than ordered factors for typical output</span></span>
+<span id="cb1-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age   =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ordered =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>),</span>
+<span id="cb1-10">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ordered =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>),</span>
+<span id="cb1-11">    </span>
+<span id="cb1-12">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># create a numeric age covariate for later</span></span>
+<span id="cb1-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age_num =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">case_when</span>(</span>
+<span id="cb1-14">      age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&lt;25'</span>   <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">18</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>(), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> T),</span>
+<span id="cb1-15">      age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'25-29'</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">25</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">29</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>(), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> T),</span>
+<span id="cb1-16">      age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'30-35'</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">30</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">35</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>(), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> T),</span>
+<span id="cb1-17">      age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'&gt;35'</span>   <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">36</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">75</span>, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">n</span>(), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">replace =</span> T),</span>
+<span id="cb1-18">    ),</span>
+<span id="cb1-19">    </span>
+<span id="cb1-20">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># for stata consistency</span></span>
+<span id="cb1-21">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ln_holders =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">log</span>(holders)</span>
+<span id="cb1-22">  )</span>
+<span id="cb1-23"></span>
+<span id="cb1-24"></span>
+<span id="cb1-25">haven<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">write_dta</span>(insurance, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'data/insurance.dta'</span>)</span></code></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error: Failed to open 'data/insurance.dta' for writing</code></pre>
+</div>
+</div>
+<p>Let’s take a quick peek to get our bearings.</p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output cell-output-stdout">
+<pre><code>$`Numeric Variables`
+# A tibble: 4 × 10
+  Variable       N  Mean     SD   Min    Q1 Median     Q3     Max `% Missing`
+  &lt;chr&gt;      &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;       &lt;dbl&gt;
+1 holders       64 365.  623.     3   46.8  136    328.   3582              0
+2 claims        64  49.2  71.2    0    9.5   22     55.5   400              0
+3 age_num       64  35.2  15.8   18   25     29.5   35.5    75              0
+4 ln_holders    64   4.9   1.48   1.1  3.84   4.91   5.79    8.18           0
+
+$`Categorical Variables`
+# A tibble: 12 × 4
+   Variable Group  Frequency   `%`
+   &lt;chr&gt;    &lt;fct&gt;      &lt;int&gt; &lt;dbl&gt;
+ 1 district 1             16    25
+ 2 district 2             16    25
+ 3 district 3             16    25
+ 4 district 4             16    25
+ 5 group    &lt;1l           16    25
+ 6 group    &gt;2l           16    25
+ 7 group    1-1.5l        16    25
+ 8 group    1.5-2l        16    25
+ 9 age      &lt;25           16    25
+10 age      &gt;35           16    25
+11 age      25-29         16    25
+12 age      30-35         16    25</code></pre>
+</div>
+</div>
+</section>
+<section id="model" class="level2">
+<h2 class="anchored" data-anchor-id="model">Model</h2>
+<p>Starting out, we run a model in as simple a form as possible. I use just a standard negative binomial with a single covariate <code>age</code>, so we can clearly see how the ouptut is being produced. Note that <code>age</code> has four categories as seen above.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">nb_glm_offset <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> MASS<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm.nb</span>(claims <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>  age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">offset</span>(ln_holders), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> insurance)</span>
+<span id="cb4-2"></span>
+<span id="cb4-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(nb_glm_offset)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = claims ~ age + offset(ln_holders), data = insurance, 
+    init.theta = 28.40119393, link = log)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -1.59233    0.09071 -17.554  &lt; 2e-16 ***
+age25-29    -0.12697    0.11743  -1.081   0.2796    
+age30-35    -0.25340    0.11558  -2.193   0.0283 *  
+age&gt;35      -0.41940    0.10583  -3.963  7.4e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(28.4012) family taken to be 1)
+
+    Null deviance: 86.761  on 63  degrees of freedom
+Residual deviance: 67.602  on 60  degrees of freedom
+AIC: 444.38
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  28.40 
+          Std. Err.:  9.80 
+
+ 2 x log-likelihood:  -434.385 </code></pre>
+</div>
+</div>
+<p>Now we run it with Stata. We get the same result, so this means we can’t get different predictions if we do the same thing in both R or Stata<sup>2</sup>.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb6-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">nbreg</span> claims i.age, <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">offset</span>(ln_holders) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">nolog</span></span></code></pre></div>
+</div>
+</section>
+<section id="emmeans" class="level2">
+<h2 class="anchored" data-anchor-id="emmeans">emmeans</h2>
+<p>First let’s use <span class="pack" style="">emmeans</span>, a very popular package for getting <em>estimated marginal means</em>, to get the predicted counts for each age group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(emmeans)</span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">emmeans</span>(</span>
+<span id="cb7-4">  nb_glm_offset,</span>
+<span id="cb7-5">  <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> age,</span>
+<span id="cb7-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>,</span>
+<span id="cb7-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">offset =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">#  default</span></span>
+<span id="cb7-8">)</span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">response</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">df</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">asymp.LCL</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">asymp.UCL</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">27.437</td>
+<td style="text-align: right;">2.489</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">22.968</td>
+<td style="text-align: right;">32.776</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">24.166</td>
+<td style="text-align: right;">1.802</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">20.880</td>
+<td style="text-align: right;">27.969</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">21.295</td>
+<td style="text-align: right;">1.525</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">18.507</td>
+<td style="text-align: right;">24.505</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">18.038</td>
+<td style="text-align: right;">0.983</td>
+<td style="text-align: right;">Inf</td>
+<td style="text-align: right;">16.211</td>
+<td style="text-align: right;">20.072</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>How is this result obtained? It is just the prediction at each value of the covariate, with the offset held at its mean. We can duplicate this result by using the <span class="func" style="">predict</span> method and specifying a data frame with the values of interest.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">nd <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb8-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age),</span>
+<span id="cb8-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ln_holders =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders)</span>
+<span id="cb8-4">)</span>
+<span id="cb8-5"></span>
+<span id="cb8-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(</span>
+<span id="cb8-7">  nb_glm_offset,</span>
+<span id="cb8-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> nd,</span>
+<span id="cb8-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span></span>
+<span id="cb8-10">)</span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">27.437</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">24.166</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">21.295</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">18.038</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>As an explicit comparison, the intercept represents group ‘&lt;25’, and if we exponentiate and add the mean offset we get:</p>
+<p><img src="https://latex.codecogs.com/png.latex?exp(Intercept%20+%20%5Coverline%7Bln%5C_holders%7D)%20=%20e%5E%7B-1.59+4.90%7D%20=%20%5Cqquad"> 27.437</p>
+</section>
+<section id="stata-basic-margins" class="level2">
+<h2 class="anchored" data-anchor-id="stata-basic-margins">Stata: basic margins</h2>
+<p>Now let’s look at Stata. First we want just the basic margins output.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb9-1">margins age </span></code></pre></div>
+</div>
+<p>These values, while consistent in pattern, are much different than the <span class="pack" style="">emmeans</span> output, so what is going on?</p>
+<section id="r-by-hand" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand">R by hand</h3>
+<p>In this model, we only have the <code>age</code> covariate and the offset, so there really isn’t much to focus on besides the latter. To replicate the Stata output in R, we will use <em>all</em> values of the offset for <em>every</em> level of <code>age</code>, and subsequently get an average prediction for each age group. First, we create a data frame for prediction using <span class="func" style="">expand.grid</span>, get the predictions for all those values, then get mean prediction per group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">predictions <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> </span>
+<span id="cb10-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">expand.grid</span>(</span>
+<span id="cb10-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age        =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age), </span>
+<span id="cb10-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ln_holders =</span> insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders</span>
+<span id="cb10-5">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb10-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(nb_glm_offset, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb10-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb10-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">avg_prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(prediction)) </span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">74.257</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">65.403</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">57.635</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">48.820</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="emmeans-1" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-1">emmeans</h3>
+<p>The <span class="pack" style="">emmeans</span> doesn’t appear to allow one to provide all values of the offset, as adding additional values just applies them to each group and then recycles. In this case, it would just use the first four values of <code>ln_holders</code> for each age group respectively, which is not what we want.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">emmeans</span>(</span>
+<span id="cb11-2">  nb_glm_offset,</span>
+<span id="cb11-3">  <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> age,</span>
+<span id="cb11-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>,</span>
+<span id="cb11-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">offset =</span> insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders</span>
+<span id="cb11-6">)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age   response    SE  df asymp.LCL asymp.UCL
+ &lt;25       40.1  3.64 Inf      33.6      47.9
+ 25-29     47.3  3.53 Inf      40.9      54.8
+ 30-35     38.8  2.78 Inf      33.8      44.7
+ &gt;35      224.7 12.25 Inf     201.9     250.0
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>]</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5.283204 5.575949 5.505332 7.426549</code></pre>
+</div>
+</div>
+<p>If we add the offset to the <code>spec</code> argument, it still just fixes it at the mean (and I tried variations on the spec). So at least using the standard approaches with this model does not appear to give you the same thing as Stata.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">emmeans</span>(</span>
+<span id="cb15-2">  nb_glm_offset,</span>
+<span id="cb15-3">  <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">offset</span>(ln_holders),</span>
+<span id="cb15-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span></span>
+<span id="cb15-5">)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age   ln_holders response    SE  df asymp.LCL asymp.UCL
+ &lt;25          4.9     27.4 2.489 Inf      23.0      32.8
+ 25-29        4.9     24.2 1.802 Inf      20.9      28.0
+ 30-35        4.9     21.3 1.525 Inf      18.5      24.5
+ &gt;35          4.9     18.0 0.983 Inf      16.2      20.1
+
+Confidence level used: 0.95 
+Intervals are back-transformed from the log scale </code></pre>
+</div>
+</div>
+<p>Unfortunately Stata has the opposite issue. Trying to set the offset to the mean results in an error, and using <code>atmeans</code> doesn’t change the previous result.</p>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb17-1">margins age, atmeans</span>
+<span id="cb17-2">margins age, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">at</span>(ln_holders = 10.27)</span></code></pre></div>
+</div>
+</section>
+<section id="margins" class="level3">
+<h3 class="anchored" data-anchor-id="margins">margins</h3>
+<p>The <span class="pack" style="">margins</span> package explicitly attempts to duplicate Stata’s margins command, but here we can see it has an issue with the offset.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(margins)</span>
+<span id="cb18-2"></span>
+<span id="cb18-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">margins</span>(</span>
+<span id="cb18-4">  nb_glm_offset,</span>
+<span id="cb18-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">variables =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'age'</span>,</span>
+<span id="cb18-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># default</span></span>
+<span id="cb18-7">)</span></code></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>Error in offset(ln_holders): could not find function "offset"</code></pre>
+</div>
+</div>
+<p>The offset function is part of the stats package of the base R installation, so I tried rerunning the model using <code>stats::offset</code>, but this makes the offset just like any other covariate, i.e.&nbsp;it did not have a fixed coefficient of 1. Changing the model to a standard <code>glm</code> class with poisson and moving the offset to the <code>offset</code> argument did work, and produces the results for the differences in predictions for each group from the reference group (<code>dydx</code> in Stata), but we’ll visit this type of result later<sup>3</sup>. However, the <code>offset</code> argument is not available to <span class="func" style="">glm.nb</span>, so we’re stuck for now.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1">pois_glm_offset <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm</span>(</span>
+<span id="cb20-2">  claims <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>  age,</span>
+<span id="cb20-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data   =</span> insurance,</span>
+<span id="cb20-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'poisson'</span>,</span>
+<span id="cb20-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">offset =</span> ln_holders</span>
+<span id="cb20-6">)</span>
+<span id="cb20-7"></span>
+<span id="cb20-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">margins</span>(</span>
+<span id="cb20-9">  pois_glm_offset,</span>
+<span id="cb20-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">variables =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'age'</span>,</span>
+<span id="cb20-11">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"response"</span>  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># default</span></span>
+<span id="cb20-12">)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> age25-29 age30-35 age&gt;35
+   -10.32   -18.46 -28.79</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb22" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">expand.grid</span>(</span>
+<span id="cb22-2">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age        =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age), </span>
+<span id="cb22-3">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ln_holders =</span> insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders</span>
+<span id="cb22-4">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb22-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(pois_glm_offset, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb22-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb22-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">avg_prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(prediction)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb22-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">diff =</span> avg_prediction <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> avg_prediction[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]) </span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 3
+  age   avg_prediction  diff
+  &lt;fct&gt;          &lt;dbl&gt; &lt;dbl&gt;
+1 &lt;25             73.4   0  
+2 25-29           63.1 -10.3
+3 30-35           55.0 -18.5
+4 &gt;35             44.7 -28.8</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="stata-over" class="level2">
+<h2 class="anchored" data-anchor-id="stata-over">Stata: over</h2>
+<p>In Stata, with categorical values we can also use the <code>over</code> approach. What do we get in this case?</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb24" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb24-1">margins, <span class="bn" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">over</span>(age)</span></code></pre></div>
+</div>
+<p>These are very different from our previous results for Stata, so what’s happening here?</p>
+<section id="r-by-hand-1" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand-1">R by hand</h3>
+<p>This can be duplicated with the <span class="func" style="">predict</span> function as follows. While similar to the previous approach, here <em>only the observed values of the offset for each group are used</em>. We then make predictions for all values of the data and average them by group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1">predictions_over <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> insurance <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb25-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb25-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_modify</span>(</span>
+<span id="cb25-4">    <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(</span>
+<span id="cb25-5">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(</span>
+<span id="cb25-6">          <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(nb_glm_offset, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>)</span>
+<span id="cb25-7">        )</span>
+<span id="cb25-8">      ),</span>
+<span id="cb25-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">keep =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span></span>
+<span id="cb25-10">  ) </span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">14.471</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">26.162</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">29.677</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">141.098</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>The pattern is actually in the opposite direction, which is unexpected, but probably just reflects the fact that we just don’t have much data. However, it’s good to note that these respective approaches would not necessarily tell you the same thing.</p>
+</section>
+<section id="emmeans-2" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-2">emmeans</h3>
+<p>I currently don’t know of an equivalence for <span class="pack" style="">emmeans</span> in this offset case, and initial searches didn’t turn up much, though it is hard to distinguish specific ‘average predictions’ from many other similar scenarios. I attempted the following, which keeps the values of <code>ln_holders</code>, but it only keeps unique ones, and it’s not reproducing what I would expect, although it implies that it is averaging over the offset values.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb26" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1">rg <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ref_grid</span>(nb_glm_offset, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cov.keep =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'ln_holders'</span>))</span>
+<span id="cb26-2"></span>
+<span id="cb26-3">em_over <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">emmeans</span>(rg, <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>age, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>)  </span>
+<span id="cb26-4"></span>
+<span id="cb26-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data.frame</span>(em_over)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    age  response        SE  df asymp.LCL  asymp.UCL
+1   &lt;25  7.814354 0.7088454 Inf   6.54154   9.334825
+2 25-29 17.042911 1.2709131 Inf  14.72545  19.725092
+3 30-35 20.304984 1.4542076 Inf  17.64579  23.364916
+4   &gt;35 96.993166 5.2865742 Inf  87.16592 107.928350</code></pre>
+</div>
+</div>
+</section>
+<section id="margins-1" class="level3">
+<h3 class="anchored" data-anchor-id="margins-1">margins</h3>
+<p>The over approach for the <span class="pack" style="">margins</span> package is not explicitly supported. The package author states:</p>
+<blockquote class="blockquote">
+<p>At present, margins() does not implement the over option. The reason for this is also simple: R already makes data subsetting operations quite simple using simple <code>[</code> extraction. If, for example, one wanted to calculate marginal effects on subsets of a data frame, those subsets can be passed directly to margins() via the data argument (as in a call to prediction()).</p>
+</blockquote>
+<p>It would look something like the following, but we still have the offset problem for this negative binomial class, so I don’t show a result.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb28" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1">insurance <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb28-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb28-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_map</span>(<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">margins</span>(nb_glm_offset, .), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">keep =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>) </span></code></pre></div>
+</div>
+</section>
+</section>
+<section id="stata-dydx" class="level2">
+<h2 class="anchored" data-anchor-id="stata-dydx">Stata: dydx</h2>
+<section id="categorical-covariate" class="level3">
+<h3 class="anchored" data-anchor-id="categorical-covariate">Categorical Covariate</h3>
+<p>Sometimes people want differences as you move from one level (e.g.&nbsp;the reference level) to the next for some covariate, the ‘average marginal effect’. In Stata this is obtained with the <code>dydx</code> option.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb29" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb29-1">margins, <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">dydx</span>(age)</span></code></pre></div>
+</div>
+<p>In R, we can get this from our initial predictions that used all offset values by just taking the differences in the predicted values.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb30" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1">predictions <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb30-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dydx =</span> avg_prediction <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> avg_prediction[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>])</span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">dydx</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">74.257</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">65.403</td>
+<td style="text-align: right;">-8.854</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">57.635</td>
+<td style="text-align: right;">-16.622</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">48.820</td>
+<td style="text-align: right;">-25.437</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="continuous-predictor" class="level3">
+<h3 class="anchored" data-anchor-id="continuous-predictor">Continuous predictor</h3>
+<p>Now we’ll consider a continuous covariate. Here we’ll again just focus on a simple example where we rerun the model, but with age as numeric rather than binned<sup>4</sup>. For comparison we’ll set the numeric age values at roughly the midpoint of the binned categories. We can do this using the <code>at</code> option.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb31" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb31-1">margins, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">at</span>(age_num = (21, 27, 32, 50))</span></code></pre></div>
+</div>
+<p>Again, we can duplicate this with the basic <span class="func" style="">predict</span> function. We just predict at that value of the covariate for all values of the offset, and get the average prediction as we did before.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb32" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1">nb_glm_offset_cont <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> MASS<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm.nb</span>(claims <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>  age_num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">offset</span>(ln_holders), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> insurance)</span>
+<span id="cb32-2"></span>
+<span id="cb32-3">predictions <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">expand.grid</span>(</span>
+<span id="cb32-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age_num =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">21</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">27</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>),</span>
+<span id="cb32-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ln_holders =</span> insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>ln_holders</span>
+<span id="cb32-6">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb32-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">pred =</span> </span>
+<span id="cb32-8">           <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(</span>
+<span id="cb32-9">             nb_glm_offset_cont,</span>
+<span id="cb32-10">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> .,</span>
+<span id="cb32-11">             <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span></span>
+<span id="cb32-12">           )</span>
+<span id="cb32-13">  ) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb32-14">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age_num) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb32-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">average_prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(pred))</span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">age_num</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">average_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">67.500</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">64.366</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">61.865</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">53.639</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>We can also get the <code>dydx</code> for the continuous covariate, which is the derivative of the target with respect to the covariate. In linear models, this is just the regression coefficient, but here we have to do things a little differently.</p>
+<div class="cell" data-layout-align="center" data-collectcode="true" data-cleanlog="true">
+<div class="sourceCode cell-code" id="cb33" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb33-1">margins, <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">dydx</span>(age_num)</span></code></pre></div>
+</div>
+<p>As noted for the categorical case, this value is the <em>average marginal effect</em>. As the Stata reference describes:</p>
+<blockquote class="blockquote">
+<p>It is not necessarily true that dydx() = 0.5 means that “y increases by 0.5 if x increases by 1”. It is true that “y increases with x at a rate such that, if the rate were constant, y would increase by 0.5 if x increased by 1”</p>
+</blockquote>
+<p>This qualified interpretation may not be of much value in contexts where the rate is not constant, but we can still see what Stata is doing.</p>
+</section>
+<section id="r-by-hand-2" class="level3">
+<h3 class="anchored" data-anchor-id="r-by-hand-2">R by hand</h3>
+<p>For <code>dydx</code>, when it comes to continuous covariates, there isn’t an obvious change in the covariate to use (i.e.&nbsp;the <code>dx</code>) to evaluate at each point, as is the case with categorical variables, which can use a reference group. So what we do is use a small arbitrary difference (<img src="https://latex.codecogs.com/png.latex?%5Cepsilon">) for the covariate at its observed values, get the predictions for the values above and below the observed value, and then average those differences in predicted values. For comparison to Stata, I set <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> to the value used by the <code>margins</code> command. Note that we are only using the observed values for the offset.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb34" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1">h <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(x, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">epsilon =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1e-5</span>) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abs</span>(x), <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(epsilon)</span>
+<span id="cb34-2"></span>
+<span id="cb34-3">age_dx_plus <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> insurance <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb34-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(age_num, ln_holders) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb34-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age_num =</span> age_num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">h</span>(age_num))</span>
+<span id="cb34-6"></span>
+<span id="cb34-7">age_dx_minus <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> insurance <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb34-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(age_num, ln_holders) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb34-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age_num =</span> age_num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">h</span>(age_num))</span>
+<span id="cb34-10"></span>
+<span id="cb34-11">predictions_dydx <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> </span>
+<span id="cb34-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(</span>
+<span id="cb34-13">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dy =</span> </span>
+<span id="cb34-14">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(nb_glm_offset_cont, age_dx_plus,  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span></span>
+<span id="cb34-15">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(nb_glm_offset_cont, age_dx_minus, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>), </span>
+<span id="cb34-16">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dx   =</span> age_dx_plus<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age_num <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> age_dx_minus<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age_num,</span>
+<span id="cb34-17">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dydx =</span> dy<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>dx</span>
+<span id="cb34-18">  )</span>
+<span id="cb34-19"></span>
+<span id="cb34-20"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># summarise(predictions_dydx, ame = mean(dydx))</span></span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">ame</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">-0.42552</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>So we just get predictions for a small difference in age for each value of age, and average that difference in predictions.</p>
+</section>
+<section id="emmeans-3" class="level3">
+<h3 class="anchored" data-anchor-id="emmeans-3">emmeans</h3>
+<p>The emmeans package is primarily geared toward factor variables, but does have support for numeric variables interacting with factors. However, this isn’t what we’re really looking for here.</p>
+</section>
+<section id="margins-2" class="level3">
+<h3 class="anchored" data-anchor-id="margins-2">margins</h3>
+<p>We can however use the <span class="pack" style="">margins</span> package for this, and it provides the same result as before. For whatever reason, it doesn’t have an issue with the offset if we use the lower level <span class="func" style="">dydx</span> function.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb35" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dydx</span>(</span>
+<span id="cb35-2">  insurance,</span>
+<span id="cb35-3">  nb_glm_offset_cont,</span>
+<span id="cb35-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">variable =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'age_num'</span>,</span>
+<span id="cb35-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">eps =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1e-5</span></span>
+<span id="cb35-6">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span></span>
+<span id="cb35-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ame =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(dydx_age_num))</span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">ame</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">-0.42552</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>For more on the <code>dydx</code> case for continuous variables in general, see the resources.</p>
+</section>
+</section>
+<section id="other-complications" class="level2">
+<h2 class="anchored" data-anchor-id="other-complications">Other complications</h2>
+<p>Obviously models will have more than one covariate, and in the particular case that was brought to my attention, there were also random effects. I may explore more in the future, but the general result should hold in those circumstances. As a quick example<sup>5</sup>, we can get the same age results for both, by getting the age group predictions with all values of the dataset (not just the offset).</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb36" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1">nb_glm_offset_full <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> MASS<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">glm.nb</span>(</span>
+<span id="cb36-2">  claims <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span>  age <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> group <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> district <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">offset</span>(ln_holders), </span>
+<span id="cb36-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> insurance</span>
+<span id="cb36-4">)</span>
+<span id="cb36-5"></span>
+<span id="cb36-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(nb_glm_offset_full)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+MASS::glm.nb(formula = claims ~ age + group + district + offset(ln_holders), 
+    data = insurance, init.theta = 449932.7775, link = log)
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -1.82174    0.07679 -23.723  &lt; 2e-16 ***
+age25-29    -0.19101    0.08286  -2.305 0.021155 *  
+age30-35    -0.34495    0.08138  -4.239 2.25e-05 ***
+age&gt;35      -0.53667    0.06996  -7.671 1.70e-14 ***
+group1-1.5l  0.16133    0.05054   3.192 0.001412 ** 
+group1.5-2l  0.39281    0.05500   7.142 9.23e-13 ***
+group&gt;2l     0.56341    0.07232   7.791 6.67e-15 ***
+district2    0.02587    0.04302   0.601 0.547637    
+district3    0.03853    0.05052   0.763 0.445686    
+district4    0.23421    0.06168   3.797 0.000146 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for Negative Binomial(449932.8) family taken to be 1)
+
+    Null deviance: 236.212  on 63  degrees of freedom
+Residual deviance:  51.416  on 54  degrees of freedom
+AIC: 390.74
+
+Number of Fisher Scoring iterations: 1
+
+              Theta:  449933 
+          Std. Err.:  4185437 
+Warning while fitting theta: iteration limit reached 
+
+ 2 x log-likelihood:  -368.745 </code></pre>
+</div>
+</div>
+<div class="cell" data-layout-align="center" data-consolelog="false">
+<div class="sourceCode cell-code" id="cb38" style="background: #f1f3f5;"><pre class="sourceCode stata code-with-copy"><code class="sourceCode stata"><span id="cb38-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">nbreg</span> claims i.age i.<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group</span> i.district, <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">offset</span>(ln_holders) <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">nolog</span></span>
+<span id="cb38-2">margins age</span></code></pre></div>
+</div>
+<p>To do this with predict, we make predictions for all observed values as if they were at each level of age. Then we average them for each age group, just like we did before.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb39" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1">predictions_full_model <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span>  </span>
+<span id="cb39-2">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map_df</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>, <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(i) <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(insurance, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(age)[i])) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb39-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(</span>
+<span id="cb39-4">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">age =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(age, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">levels</span>(insurance<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>age)),   <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># convert back to factor</span></span>
+<span id="cb39-5">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(nb_glm_offset_full, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> ., <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>)</span>
+<span id="cb39-6">  )  <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb39-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">group_by</span>(age) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb39-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">avg_prediction =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(prediction)) </span></code></pre></div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">age</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">avg_prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">&lt;25</td>
+<td style="text-align: right;">76.397</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">25-29</td>
+<td style="text-align: right;">63.113</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">30-35</td>
+<td style="text-align: right;">54.109</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">&gt;35</td>
+<td style="text-align: right;">44.669</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</section>
+<section id="r-packages" class="level2">
+<h2 class="anchored" data-anchor-id="r-packages">R Packages</h2>
+<p>To summarize R’s capabilities with Stata-like margins with models using an offset, we have a few options we can note. First, we can get the values using the <span class="func" style="">predict</span> method. Then there are the packages to help with getting these types of predictions. <span class="pack" style="">margins</span> explicitly attempts to replicate Stata-like margins for standard and some more complex models, but there doesn’t appear to be documentation on how the offset is dealt with by default. Furthermore, care must be taken if it isn’t an explicitly supported model. As we have also seen, <span class="pack" style="">emmeans</span> provides many predictions of the sort discussed here, supports many more models, produces results in a nice format, and has plotting capabilities. However, it’s mostly suited toward factor variables.</p>
+<p>Beyond those, <span class="pack" style="">ggeffects</span> uses <span class="func" style="">predict</span> and <span class="pack" style="">emmeans</span> under the hood, so offers a nice way to do the same sorts of things, but with a more viable plot as a result. Other packages and functions are available for specific settings. For example, <span class="func" style="">conditional_effects</span> in the <span class="pack" style="">brms</span> package provides predictions and visualization for the bayesian setting.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>Hopefully this will clarify the discrepancies between R and Stata with models using an offset. Honestly, I pretty much always use the <span class="func" style="">predict</span> function with my specified data values because I know what it’s doing and I can understand the results without hesitation regardless of model or package used. Furthermore, if one knows their data at all, it should be possible to specify covariate values that are meaningful pretty easily. On the other hand, getting predictions at averages can cause conceptual issues with categorical variables in many settings, and getting <em>average</em> effects often also can be hard to interpret (e.g.&nbsp;nonlinear relationships).</p>
+<p>One thing you don’t get with some of the averaged predictions using the <span class="func" style="">predict</span> function are interval estimates, but this could be obtained via bootstrapping. Otherwise, most predict methods provide the standard error for a prediction with an additional argument (e.g.&nbsp;<code>se.fit = TRUE</code>), so if you getting predictions at key values of the variables it is trivial to get the interval estimate. In general, most R packages are just using predict under the hood, so being familiar with it will likely get you what you need on its own.</p>
+</section>
+<section id="resources" class="level2">
+<h2 class="anchored" data-anchor-id="resources">Resources</h2>
+<section id="reference" class="level3">
+<h3 class="anchored" data-anchor-id="reference">Reference</h3>
+<p><a href="https://www.stata.com/manuals/rmargins.pdf">Stata reference for margins</a></p>
+<p><a href="https://cran.r-project.org/web/packages/emmeans/index.html">emmeans</a></p>
+<p><a href="https://cloud.r-project.org/web/packages/margins/vignettes/Introduction.html">margins</a></p>
+<p><a href="https://strengejacke.github.io/ggeffects">ggeffects</a></p>
+</section>
+<section id="notes" class="level3">
+<h3 class="anchored" data-anchor-id="notes">Notes</h3>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins01.pdf">Marginal Effects- Rich Williams notes- 1</a></p>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins02.pdf">Marginal Effects- Rich Williams notes- 2</a></p>
+<p><a href="https://www3.nd.edu/~rwilliam/stats3/Margins03.pdf">Marginal Effects- Rich Williams notes- 3</a></p>
+<p><a href="https://www.stata-journal.com/article.html?article=st0260">Marginal Effects Stata Article by Rich Williams</a></p>
+<p><a href="https://errickson.net/marginsnotes/">Josh Errickson’s comparisons of Stata, emmeans, and ggeffects</a></p>
+<p><a href="https://stats.idre.ucla.edu/stata/faq/">UCLA IDRE FAQ (Margins command section)</a></p>
+<p><a href="https://www.stata.com/support/faqs/statistics/marginal-effects-after-offset/">Stata FAQ (based on old mfx command)</a></p>
+</section>
+</section>
+<section id="appendix" class="level2">
+<h2 class="anchored" data-anchor-id="appendix">Appendix</h2>
+<p>Just for giggles, I did an average marginal effect for a GAM, though I find little utility in it for the relationship shown. Confirmed via <span class="pack" style="">gratia</span> and <span class="pack" style="">margins</span>.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb40" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(mgcv)</span>
+<span id="cb40-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb40-3">dat <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gamSim</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">400</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dist =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"normal"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scale =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Gu &amp; Wahba 4 term additive model</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1">b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(x2), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> dat)</span>
+<span id="cb42-2"></span>
+<span id="cb42-3">visibly<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">plot_gam</span>(b)</span></code></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://m-clark.github.io/posts/2020-06-15-predict-with-offset/index_files/figure-html/margins-gam-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb43" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># set change step</span></span>
+<span id="cb43-2">h <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1e-5</span></span>
+<span id="cb43-3"></span>
+<span id="cb43-4">b_dx_plus <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> dat <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb43-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(x2) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb43-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x2 =</span> x2 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> h)</span>
+<span id="cb43-7"></span>
+<span id="cb43-8">b_dx_minus <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> dat <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb43-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">select</span>(x2) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">%&gt;%</span> </span>
+<span id="cb43-10">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x2 =</span> x2 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> h)</span>
+<span id="cb43-11"></span>
+<span id="cb43-12">predictions_dydx <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> </span>
+<span id="cb43-13">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tibble</span>(</span>
+<span id="cb43-14">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">x2 =</span> dat<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2,</span>
+<span id="cb43-15">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dy =</span> </span>
+<span id="cb43-16">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(b, b_dx_plus,  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span></span>
+<span id="cb43-17">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">predict</span>(b, b_dx_minus, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'response'</span>), </span>
+<span id="cb43-18">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dx   =</span> b_dx_plus<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> b_dx_minus<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>x2,</span>
+<span id="cb43-19">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">dydx =</span> dy<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>dx</span>
+<span id="cb43-20">  ) </span>
+<span id="cb43-21"></span>
+<span id="cb43-22">gratia_result  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> gratia<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">derivatives</span>(b, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">newdata =</span> dat, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">eps =</span> h)</span>
+<span id="cb43-23">margins_result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> margins<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dydx</span>(dat, b, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">variable =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'x2'</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">eps =</span> h<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># note that margins uses the h function specified previously</span></span>
+<span id="cb43-24"></span>
+<span id="cb43-25"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">all.equal</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(predictions_dydx<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>dydx), gratia_result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>derivative)</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "names for current but not for target"  "Mean relative difference: 5.59627e-05"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">all.equal</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(predictions_dydx<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>dydx), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.numeric</span>(margins_result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>dydx_x2))</span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summarise</span>(</span>
+<span id="cb47-2">  predictions_dydx, </span>
+<span id="cb47-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ame =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(dydx), </span>
+<span id="cb47-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ame_gratia =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(gratia_result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>derivative),</span>
+<span id="cb47-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ame_margins =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mean</span>(margins_result<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>dydx_x2)</span>
+<span id="cb47-6">) </span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+    ame ame_gratia ame_margins
+  &lt;dbl&gt;      &lt;dbl&gt;       &lt;dbl&gt;
+1  1.76       1.76        1.76</code></pre>
+</div>
+</div>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Not the least of which is that most outside of econometrics don’t call predictions <em>margins</em>, since these days we aren’t adding results to the margin of a hand-written table.↩︎</p></li>
+<li id="fn2"><p>For those in the R world, the <code>i.age</code> tells Stata to treat the age factor as, well, a factor. Stata’s <code>alpha</code> is 1/<code>theta</code> from R’s output.↩︎</p></li>
+<li id="fn3"><p>The <span class="pack" style="">margins</span> package does do predictions rather than the marginal effects, but it, like others, is just a wrapper for the <span class="func" style="">predict</span> method, and doesn’t appear to average them, so I don’t demonstrate that.↩︎</p></li>
+<li id="fn4"><p>There is rarely a justifiable reason to discretize age as near as I can tell, and doing so inevitably results in less satisfying and less reliable conclusions.↩︎</p></li>
+<li id="fn5"><p>There is a weird print issue where the Stata output isn’t showing the coefficient for one of the levels of <code>group</code>, but the model is correct and was verified directly using Stata.↩︎</p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
+  author = {Clark, Michael},
+  title = {Predictions with an Offset},
+  date = {2020-06-16},
+  url = {https://m-clark.github.io/posts/2020-06-15-predict-with-offset/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas">
+Clark, Michael. 2020. <span>“Predictions with an Offset.”</span> June
+16, 2020. <a href="https://m-clark.github.io/posts/2020-06-15-predict-with-offset/">https://m-clark.github.io/posts/2020-06-15-predict-with-offset/</a>.
+</div></div></section></div> ]]></description>
+  <category>regression</category>
+  <category>GLM</category>
+  <guid>https://m-clark.github.io/posts/2020-06-15-predict-with-offset/</guid>
+  <pubDate>Tue, 16 Jun 2020 04:00:00 GMT</pubDate>
+  <media:content url="https://m-clark.github.io/img/margins/preview.svg" medium="image" type="image/svg+xml"/>
+</item>
 </channel>
 </rss>
