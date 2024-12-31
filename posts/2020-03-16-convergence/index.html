@@ -332,7 +332,7 @@ window.Quarto = {
 </blockquote>
 <p>Prerequisite: Knowledge of regression modeling. Helpful would be to know something about mixed models and optimization.</p>
 <p>Primary packages used:</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyext)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
@@ -349,7 +349,7 @@ window.Quarto = {
 <section id="data-setup" class="level2">
 <h2 class="anchored" data-anchor-id="data-setup">Data Setup</h2>
 <p>You can download the data from <a href="https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS">here</a> (RDS file), or go to the <a href="https://stackoverflow.com/questions/23478792/warning-messages-when-trying-to-run-glmer-in-r">stackoverflow discussion</a> and paste the code there. There isn’t any real explanation of the variables unfortunately, though you can get a sense of some of them (e.g.&nbsp;Day, replicate, temperature, etc.).</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df = readRDS(</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   gzcon(</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     url('https://github.com/m-clark/m-clark.github.io/raw/master/data/convergence.RDS')</span></span>
@@ -369,7 +369,7 @@ window.Quarto = {
 <section id="initial-model" class="level2">
 <h2 class="anchored" data-anchor-id="initial-model">Initial model</h2>
 <p>The following is the model that led to the stackoverflow post. It’s fairly complicated with multiple interactions and random effects, modeling the proportion of valid detections via a binomial model. The <code>Unit</code> effect is used to account for overdispersion, a common issue in count modeling.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_mixed_0 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    tm<span class="sc">:</span>Area <span class="sc">+</span> tm<span class="sc">:</span>c.distance <span class="sc">+</span> c.distance<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth<span class="sc">:</span>Area <span class="sc">+</span> </span>
@@ -394,7 +394,7 @@ Model failed to converge with max|grad| = 0.0991801 (tol = 0.002, component 1)</
 <section id="step-back" class="level2">
 <h2 class="anchored" data-anchor-id="step-back">Step back</h2>
 <p>The first step is to step back and look at the data. Are there issues that can be spotted? Are some essentially collinear with others? In the following, we can see that some variables are only a few levels, and some, like <code>Day</code>, <code>c.tm.depth</code> and <code>c.receiver.depth</code>, are both notably correlated with each other and with other predictor variables.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code>$`Numeric Variables`
 # A tibble: 9 × 10
@@ -430,14 +430,14 @@ $`Categorical Variables`
 14 Day       2/26/13             12     5</code></pre>
 </div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
-<div class="plotly html-widget html-fill-item" id="htmlwidget-e3885724d238ad39a581" style="width:100%;height:454px;"></div>
-<script type="application/json" data-for="htmlwidget-e3885724d238ad39a581">{"x":{"visdat":{"c5540bdbb54":["function () ","plotlyVisDat"]},"cur_data":"c5540bdbb54","attrs":{"c5540bdbb54":{"z":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"heatmap","colors":["#590007","#590007","#5B0107","#5C0108","#5D0207","#5D0207","#5E0308","#5F0308","#600407","#610507","#620606","#620606","#630707","#640807","#650906","#660906","#670A07","#670B07","#680C06","#690C06","#6A0D06","#6B0D06","#6C0E07","#6C0F07","#6D1006","#6E1006","#6F1107","#701207","#711306","#721306","#731405","#731405","#741506","#751606","#761705","#771705","#781806","#791906","#7A1A05","#7B1A06","#7C1B06","#7D1C06","#7E1D05","#7E1D06","#7F1E06","#801E06","#822006","#832106","#842105","#852206","#862206","#872406","#882506","#892606","#8A2605","#8B2706","#8C2806","#8D2905","#8E2A05","#8F2B06","#902C06","#912D05","#932E05","#942F06","#953006","#963107","#973206","#983307","#993407","#9A3508","#9B3608","#9C3709","#9E3809","#9F390A","#A03B0A","#A13C0B","#A23D0C","#A33E0D","#A43F0E","#A5410F","#A6420F","#A74310","#A84411","#A94612","#AA4713","#AB4914","#AC4915","#AE4A16","#AE4B17","#AF4D19","#AF4E1A","#B1501C","#B2511D","#B2521E","#B3531F","#B4531F","#B55521","#B55622","#B65824","#B65925","#B75A26","#B75B27","#B85C28","#B95D29","#BA5E2A","#BA5F2C","#BB602D","#BB612E","#BC622F","#BC6330","#BD6431","#BD6432","#BE6533","#BD6635","#BE6736","#BE6837","#BF6938","#BF6A39","#C06B3A","#C06C3B","#C16D3C","#C16D3E","#C26E3F","#C16F40","#C27041","#C27142","#C37243","#C37344","#C47446","#C47447","#C57548","#C57649","#C6774A","#C5784B","#C67A4D","#C67A4E","#C77B50","#C87C51","#C87C51","#C97E53","#C87F54","#C98056","#C98157","#CA8258","#CA8259","#CB835A","#CB845B","#CC855D","#CB865E","#CC875F","#CC8860","#CD8961","#CD8A63","#CE8B64","#CE8B65","#CF8C66","#CE8D67","#CF8E68","#CF8F6A","#D0906B","#D0916C","#D1926D","#D1936F","#D29470","#D29471","#D39572","#D29673","#D39775","#D39876","#D49977","#D49A78","#D59B7A","#D59C7B","#D69D7C","#D59E7D","#D69F7F","#D69F80","#D7A081","#D7A182","#D8A284","#D8A385","#D9A486","#DAA688","#DAA789","#DBA88B","#DAA98C","#DBAA8D","#DBAB8E","#DCAC90","#DCAD91","#DDAE93","#DDAF94","#DEB095","#DEB196","#DFB298","#DEB399","#DFB49A","#DFB59B","#E0B69D","#E0B79F","#E1B8A0","#E1B9A1","#E2BAA2","#E2BBA4","#E3BCA5","#E3BDA7","#E4BEA8","#E3BEA9","#E4BFAA","#E4C0AC","#E5C1AE","#E5C3AF","#E6C4B0","#E6C5B1","#E7C6B2","#E7C7B4","#E8C8B6","#E8C9B7","#E9CAB8","#E8CBB9","#E9CCBB","#E9CDBC","#EACEBE","#EACFBF","#EBD0C1","#EBD0C2","#EBD1C3","#EBD3C5","#ECD4C6","#EDD5C8","#ECD6C9","#EDD7CB","#EDD8CC","#EED9CD","#EEDACE","#EDDBD0","#EDDCD1","#EEDDD3","#EEDDD4","#EEDED5","#EEDFD6","#EDE0D8","#EDE0D9","#EEE1DA","#EEE2DB","#EDE3DC","#EDE3DD","#ECE4DE","#ECE4DF","#EBE5E0","#EBE5E1","#EAE6E2","#EAE5E3","#E9E6E4","#E8E6E4","#E7E7E5","#E7E7E6","#E6E6E7","#E5E6E7","#E3E7E7","#E2E7E7","#E1E6E8","#E0E6E8","#DFE5E9","#DEE6E9","#DCE5E8","#DBE5E8","#D9E4E9","#D8E4E9","#D6E3E8","#D5E3E8","#D3E2E9","#D2E1E9","#D0E0E8","#CEDFE7","#CDDFE7","#CBDEE7","#CADDE7","#C8DCE6","#C7DBE6","#C5DAE5","#C4DAE5","#C2D9E4","#C1D8E4","#BFD7E3","#BED6E3","#BCD5E2","#BBD5E2","#B9D4E1","#B7D3E1","#B5D2E0","#B3D1DF","#B2D0DE","#B0CFDE","#AFCEDD","#ADCDDD","#ACCCDC","#AACBDC","#A9CADB","#A7C9DA","#A5C8D9","#A3C7D9","#A1C6D8","#A0C5D8","#9EC4D7","#9DC4D6","#9BC3D5","#9AC2D5","#98C1D4","#97C0D4","#95BFD3","#94BED2","#92BDD1","#90BCD1","#8EBBD0","#8DBAD0","#8BB9CF","#8AB8CE","#88B6CD","#86B5CC","#85B4CC","#83B3CB","#81B2CA","#7FB1C9","#7EB0C9","#7CAFC8","#7BAEC8","#79ADC7","#78ACC6","#76ABC5","#75AAC5","#73A9C4","#72A8C4","#70A7C3","#6EA6C2","#6CA5C1","#6AA4C1","#69A3C0","#67A2C0","#66A1BF","#64A0BE","#639FBD","#619EBD","#5F9DBC","#5D9CBB","#5B9BBA","#5A9ABA","#5999B9","#5798B9","#5597B8","#5496B7","#5295B6","#5194B6","#4F93B5","#4E92B4","#4C91B3","#4B90B3","#498EB2","#488DB2","#468BB1","#458BB0","#438AAF","#4289AF","#4087AE","#3E86AC","#3D85AC","#3B84AB","#3A83AB","#3882AA","#3781A9","#3580A8","#347FA8","#327EA7","#317DA6","#2F7CA5","#2E7BA5","#2C7AA4","#2B79A4","#2A78A3","#2977A2","#2776A1","#2575A1","#2474A0","#2373A0","#22729F","#20719E","#1F709D","#1E6F9D","#1D6E9C","#1C6D9C","#1B6C9B","#196B9A","#186A99","#176999","#166898","#156798","#146697","#136697","#126596","#116496","#106395","#106294","#0F6193","#0E6093","#0C5E92","#0C5E92","#0B5D91","#0B5D91","#0A5C90","#085A8F","#08598F","#07588E","#07578D","#06568C","#06568C","#05558B","#06548B","#05538A","#05528A","#045189","#055189","#045088","#044F88","#034E87","#034D87","#044C86","#044C86","#034B85","#034A85","#024984","#024984","#034883","#034783","#024682","#024582","#024481","#024481","#034380","#034280","#02417F","#02417F","#03407E","#033F7E","#023E7D","#023E7D","#033D7C","#033C7C","#023B7B","#023A7B","#01397A","#01397A","#023879","#023779","#013678","#013577","#023477","#013376","#013376","#023275","#023175","#013074","#013074","#022F73","#022E73","#012D72","#012D72","#022C71","#022B71","#012A70","#012A70","#02296F","#02286F","#01276E","#01276E","#02266D","#02256D","#02246C","#02236C","#01226B","#01226B","#02216A","#02206A","#011F69","#021F69","#011E68","#011D68","#021C67","#021C67","#011B66","#011A66","#001965","#001865","#011764","#011764","#001663","#001563","#011462","#011462","#001361","#001260"],"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"zaxis":{"title":"cormat"}},"xaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","zeroline":false,"showgrid":false},"yaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","autorange":"reversed","zeroline":false,"showgrid":false},"hovermode":"closest","showlegend":false,"legend":{"yanchor":"top","y":0.5},"plot_bgcolor":"transparent","paper_bgcolor":"transparent"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"colorbar":{"title":"cormat","ticklen":2,"len":0.5,"lenmode":"fraction","y":1,"yanchor":"top"},"colorscale":[["0","rgba(89,0,7,1)"],["0.0416666666666667","rgba(107,13,6,1)"],["0.0833333333333333","rgba(126,29,5,1)"],["0.125","rgba(147,46,5,1)"],["0.166666666666667","rgba(169,70,18,1)"],["0.208333333333333","rgba(186,94,42,1)"],["0.25","rgba(194,113,66,1)"],["0.291666666666667","rgba(203,132,91,1)"],["0.333333333333333","rgba(210,150,116,1)"],["0.375","rgba(219,171,142,1)"],["0.416666666666667","rgba(228,191,170,1)"],["0.458333333333333","rgba(237,213,199,1)"],["0.5","rgba(235,229,225,1)"],["0.541666666666667","rgba(212,227,232,1)"],["0.583333333333333","rgba(179,209,223,1)"],["0.625","rgba(146,189,209,1)"],["0.666666666666667","rgba(113,167,195,1)"],["0.708333333333333","rgba(79,147,181,1)"],["0.75","rgba(47,124,165,1)"],["0.791666666666667","rgba(21,103,152,1)"],["0.833333333333333","rgba(6,84,139,1)"],["0.875","rgba(3,67,128,1)"],["0.916666666666667","rgba(1,51,118,1)"],["0.958333333333333","rgba(1,34,107,1)"],["1","rgba(0,18,96,1)"]],"showscale":true,"z":[[1,0.54777415091271509,-0.58609247969561429,0.61126915433439755,-0.43870998845021986,-0.102446472268654,-0.14111515615372028,-0.41060401405609698,0.011819115022927443,-0.13830171147422227,0.28255119817289182,-0.03864411503881824],[0.54777415091271509,1,-0.58928911182049393,0.37231509484674169,-0.054216345483409929,0,0.15955303305205976,-0.17109770673677699,-0.017076354009329345,0.19178936349237735,0.37152574510905245,-0.099999999999999575],[-0.58609247969561429,-0.58928911182049393,1,-0.49041907756418512,0.22475968159267556,0,0.61959489559097469,0.78268287098034406,0.056773262139912926,-0.029964602946145037,0.060972635566754446,0.0042817995518778509],[0.61126915433439755,0.37231509484674169,-0.49041907756418512,1,-0.53431400679357532,-0.14605079724248507,-0.10449322070746254,-0.28165180373702542,0.025583468476840641,-0.021434087308229332,0.17627961581812843,0.0064972001590238183],[-0.43870998845021986,-0.054216345483409929,0.22475968159267556,-0.53431400679357532,1,0,0.00080593624498845697,0.04626065264169963,-0.077151459047235277,-0.072242053086806882,-0.044974686489128779,-0.054216345483409957],[-0.102446472268654,0,0,-0.14605079724248507,0,1,0,0,0.087295640047966569,0,0,0],[-0.14111515615372028,0.15955303305205976,0.61959489559097469,-0.10449322070746254,0.00080593624498845697,0,1,0.84809561933505218,0.079368318725725251,0.15601530168517605,0.52095274380605827,-0.06937088393567814],[-0.41060401405609698,-0.17109770673677699,0.78268287098034406,-0.28165180373702542,0.04626065264169963,0,0.84809561933505218,1,0.12008348983148011,0.38886650293033925,0.01776963198240487,-0.04615398634273974],[0.011819115022927443,-0.017076354009329345,0.056773262139912926,0.025583468476840641,-0.077151459047235277,0.087295640047966569,0.079368318725725251,0.12008348983148011,1,0.027704334066840208,-0.043362871632752896,0.020491624811195458],[-0.13830171147422227,0.19178936349237735,-0.029964602946145037,-0.021434087308229332,-0.072242053086806882,0,0.15601530168517605,0.38886650293033925,0.027704334066840208,1,-0.48034581411100047,-0.15138961672582948],[0.28255119817289182,0.37152574510905245,0.060972635566754446,0.17627961581812843,-0.044974686489128779,0,0.52095274380605827,0.01776963198240487,-0.043362871632752896,-0.48034581411100047,1,0.065660234448001828],[-0.03864411503881824,-0.099999999999999575,0.0042817995518778509,0.0064972001590238183,-0.054216345483409957,0,-0.06937088393567814,-0.04615398634273974,0.020491624811195458,-0.15138961672582948,0.065660234448001828,1]],"type":"heatmap","xaxis":"x","yaxis":"y","frame":null,"zmin":-1,"zmax":1}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
+<div class="plotly html-widget html-fill-item" id="htmlwidget-98e609c200d0292b69ad" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-98e609c200d0292b69ad">{"x":{"visdat":{"a6eef785189":["function () ","plotlyVisDat"]},"cur_data":"a6eef785189","attrs":{"a6eef785189":{"z":{},"alpha_stroke":1,"sizes":[10,100],"spans":[1,20],"type":"heatmap","colors":["#590007","#590007","#5B0107","#5C0108","#5D0207","#5D0207","#5E0308","#5F0308","#600407","#610507","#620606","#620606","#630707","#640807","#650906","#660906","#670A07","#670B07","#680C06","#690C06","#6A0D06","#6B0D06","#6C0E07","#6C0F07","#6D1006","#6E1006","#6F1107","#701207","#711306","#721306","#731405","#731405","#741506","#751606","#761705","#771705","#781806","#791906","#7A1A05","#7B1A06","#7C1B06","#7D1C06","#7E1D05","#7E1D06","#7F1E06","#801E06","#822006","#832106","#842105","#852206","#862206","#872406","#882506","#892606","#8A2605","#8B2706","#8C2806","#8D2905","#8E2A05","#8F2B06","#902C06","#912D05","#932E05","#942F06","#953006","#963107","#973206","#983307","#993407","#9A3508","#9B3608","#9C3709","#9E3809","#9F390A","#A03B0A","#A13C0B","#A23D0C","#A33E0D","#A43F0E","#A5410F","#A6420F","#A74310","#A84411","#A94612","#AA4713","#AB4914","#AC4915","#AE4A16","#AE4B17","#AF4D19","#AF4E1A","#B1501C","#B2511D","#B2521E","#B3531F","#B4531F","#B55521","#B55622","#B65824","#B65925","#B75A26","#B75B27","#B85C28","#B95D29","#BA5E2A","#BA5F2C","#BB602D","#BB612E","#BC622F","#BC6330","#BD6431","#BD6432","#BE6533","#BD6635","#BE6736","#BE6837","#BF6938","#BF6A39","#C06B3A","#C06C3B","#C16D3C","#C16D3E","#C26E3F","#C16F40","#C27041","#C27142","#C37243","#C37344","#C47446","#C47447","#C57548","#C57649","#C6774A","#C5784B","#C67A4D","#C67A4E","#C77B50","#C87C51","#C87C51","#C97E53","#C87F54","#C98056","#C98157","#CA8258","#CA8259","#CB835A","#CB845B","#CC855D","#CB865E","#CC875F","#CC8860","#CD8961","#CD8A63","#CE8B64","#CE8B65","#CF8C66","#CE8D67","#CF8E68","#CF8F6A","#D0906B","#D0916C","#D1926D","#D1936F","#D29470","#D29471","#D39572","#D29673","#D39775","#D39876","#D49977","#D49A78","#D59B7A","#D59C7B","#D69D7C","#D59E7D","#D69F7F","#D69F80","#D7A081","#D7A182","#D8A284","#D8A385","#D9A486","#DAA688","#DAA789","#DBA88B","#DAA98C","#DBAA8D","#DBAB8E","#DCAC90","#DCAD91","#DDAE93","#DDAF94","#DEB095","#DEB196","#DFB298","#DEB399","#DFB49A","#DFB59B","#E0B69D","#E0B79F","#E1B8A0","#E1B9A1","#E2BAA2","#E2BBA4","#E3BCA5","#E3BDA7","#E4BEA8","#E3BEA9","#E4BFAA","#E4C0AC","#E5C1AE","#E5C3AF","#E6C4B0","#E6C5B1","#E7C6B2","#E7C7B4","#E8C8B6","#E8C9B7","#E9CAB8","#E8CBB9","#E9CCBB","#E9CDBC","#EACEBE","#EACFBF","#EBD0C1","#EBD0C2","#EBD1C3","#EBD3C5","#ECD4C6","#EDD5C8","#ECD6C9","#EDD7CB","#EDD8CC","#EED9CD","#EEDACE","#EDDBD0","#EDDCD1","#EEDDD3","#EEDDD4","#EEDED5","#EEDFD6","#EDE0D8","#EDE0D9","#EEE1DA","#EEE2DB","#EDE3DC","#EDE3DD","#ECE4DE","#ECE4DF","#EBE5E0","#EBE5E1","#EAE6E2","#EAE5E3","#E9E6E4","#E8E6E4","#E7E7E5","#E7E7E6","#E6E6E7","#E5E6E7","#E3E7E7","#E2E7E7","#E1E6E8","#E0E6E8","#DFE5E9","#DEE6E9","#DCE5E8","#DBE5E8","#D9E4E9","#D8E4E9","#D6E3E8","#D5E3E8","#D3E2E9","#D2E1E9","#D0E0E8","#CEDFE7","#CDDFE7","#CBDEE7","#CADDE7","#C8DCE6","#C7DBE6","#C5DAE5","#C4DAE5","#C2D9E4","#C1D8E4","#BFD7E3","#BED6E3","#BCD5E2","#BBD5E2","#B9D4E1","#B7D3E1","#B5D2E0","#B3D1DF","#B2D0DE","#B0CFDE","#AFCEDD","#ADCDDD","#ACCCDC","#AACBDC","#A9CADB","#A7C9DA","#A5C8D9","#A3C7D9","#A1C6D8","#A0C5D8","#9EC4D7","#9DC4D6","#9BC3D5","#9AC2D5","#98C1D4","#97C0D4","#95BFD3","#94BED2","#92BDD1","#90BCD1","#8EBBD0","#8DBAD0","#8BB9CF","#8AB8CE","#88B6CD","#86B5CC","#85B4CC","#83B3CB","#81B2CA","#7FB1C9","#7EB0C9","#7CAFC8","#7BAEC8","#79ADC7","#78ACC6","#76ABC5","#75AAC5","#73A9C4","#72A8C4","#70A7C3","#6EA6C2","#6CA5C1","#6AA4C1","#69A3C0","#67A2C0","#66A1BF","#64A0BE","#639FBD","#619EBD","#5F9DBC","#5D9CBB","#5B9BBA","#5A9ABA","#5999B9","#5798B9","#5597B8","#5496B7","#5295B6","#5194B6","#4F93B5","#4E92B4","#4C91B3","#4B90B3","#498EB2","#488DB2","#468BB1","#458BB0","#438AAF","#4289AF","#4087AE","#3E86AC","#3D85AC","#3B84AB","#3A83AB","#3882AA","#3781A9","#3580A8","#347FA8","#327EA7","#317DA6","#2F7CA5","#2E7BA5","#2C7AA4","#2B79A4","#2A78A3","#2977A2","#2776A1","#2575A1","#2474A0","#2373A0","#22729F","#20719E","#1F709D","#1E6F9D","#1D6E9C","#1C6D9C","#1B6C9B","#196B9A","#186A99","#176999","#166898","#156798","#146697","#136697","#126596","#116496","#106395","#106294","#0F6193","#0E6093","#0C5E92","#0C5E92","#0B5D91","#0B5D91","#0A5C90","#085A8F","#08598F","#07588E","#07578D","#06568C","#06568C","#05558B","#06548B","#05538A","#05528A","#045189","#055189","#045088","#044F88","#034E87","#034D87","#044C86","#044C86","#034B85","#034A85","#024984","#024984","#034883","#034783","#024682","#024582","#024481","#024481","#034380","#034280","#02417F","#02417F","#03407E","#033F7E","#023E7D","#023E7D","#033D7C","#033C7C","#023B7B","#023A7B","#01397A","#01397A","#023879","#023779","#013678","#013577","#023477","#013376","#013376","#023275","#023175","#013074","#013074","#022F73","#022E73","#012D72","#012D72","#022C71","#022B71","#012A70","#012A70","#02296F","#02286F","#01276E","#01276E","#02266D","#02256D","#02246C","#02236C","#01226B","#01226B","#02216A","#02206A","#011F69","#021F69","#011E68","#011D68","#021C67","#021C67","#011B66","#011A66","#001965","#001865","#011764","#011764","#001663","#001563","#011462","#011462","#001361","#001260"],"inherit":true}},"layout":{"margin":{"b":40,"l":60,"t":25,"r":10},"scene":{"zaxis":{"title":"cormat"}},"xaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","zeroline":false,"showgrid":false},"yaxis":{"domain":[0,1],"automargin":true,"tickmode":"array","tickvals":[0,1,2,3,4,5,6,7,8,9,10,11],"ticktext":["ValidDetections","Area","c.tm.depth","R.det","c.distance","tm","Day","c.receiver.depth","FalseDetections","c.wind","c.temp","replicate"],"gridcolor":"transparent","zerolinecolor":"transparent","title":"","autorange":"reversed","zeroline":false,"showgrid":false},"hovermode":"closest","showlegend":false,"legend":{"yanchor":"top","y":0.5},"plot_bgcolor":"transparent","paper_bgcolor":"transparent"},"source":"A","config":{"modeBarButtonsToAdd":["hoverclosest","hovercompare"],"showSendToCloud":false,"displayModeBar":false},"data":[{"colorbar":{"title":"cormat","ticklen":2,"len":0.5,"lenmode":"fraction","y":1,"yanchor":"top"},"colorscale":[["0","rgba(89,0,7,1)"],["0.0416666666666667","rgba(107,13,6,1)"],["0.0833333333333333","rgba(126,29,5,1)"],["0.125","rgba(147,46,5,1)"],["0.166666666666667","rgba(169,70,18,1)"],["0.208333333333333","rgba(186,94,42,1)"],["0.25","rgba(194,113,66,1)"],["0.291666666666667","rgba(203,132,91,1)"],["0.333333333333333","rgba(210,150,116,1)"],["0.375","rgba(219,171,142,1)"],["0.416666666666667","rgba(228,191,170,1)"],["0.458333333333333","rgba(237,213,199,1)"],["0.5","rgba(235,229,225,1)"],["0.541666666666667","rgba(212,227,232,1)"],["0.583333333333333","rgba(179,209,223,1)"],["0.625","rgba(146,189,209,1)"],["0.666666666666667","rgba(113,167,195,1)"],["0.708333333333333","rgba(79,147,181,1)"],["0.75","rgba(47,124,165,1)"],["0.791666666666667","rgba(21,103,152,1)"],["0.833333333333333","rgba(6,84,139,1)"],["0.875","rgba(3,67,128,1)"],["0.916666666666667","rgba(1,51,118,1)"],["0.958333333333333","rgba(1,34,107,1)"],["1","rgba(0,18,96,1)"]],"showscale":true,"z":[[1,0.54777415091271509,-0.58609247969561429,0.61126915433439755,-0.43870998845021986,-0.102446472268654,-0.14111515615372028,-0.41060401405609698,0.011819115022927443,-0.13830171147422227,0.28255119817289182,-0.03864411503881824],[0.54777415091271509,1,-0.58928911182049393,0.37231509484674169,-0.054216345483409929,0,0.15955303305205976,-0.17109770673677699,-0.017076354009329345,0.19178936349237735,0.37152574510905245,-0.099999999999999575],[-0.58609247969561429,-0.58928911182049393,1,-0.49041907756418512,0.22475968159267556,0,0.61959489559097469,0.78268287098034406,0.056773262139912926,-0.029964602946145037,0.060972635566754446,0.0042817995518778509],[0.61126915433439755,0.37231509484674169,-0.49041907756418512,1,-0.53431400679357532,-0.14605079724248507,-0.10449322070746254,-0.28165180373702542,0.025583468476840641,-0.021434087308229332,0.17627961581812843,0.0064972001590238183],[-0.43870998845021986,-0.054216345483409929,0.22475968159267556,-0.53431400679357532,1,0,0.00080593624498845697,0.04626065264169963,-0.077151459047235277,-0.072242053086806882,-0.044974686489128779,-0.054216345483409957],[-0.102446472268654,0,0,-0.14605079724248507,0,1,0,0,0.087295640047966569,0,0,0],[-0.14111515615372028,0.15955303305205976,0.61959489559097469,-0.10449322070746254,0.00080593624498845697,0,1,0.84809561933505218,0.079368318725725251,0.15601530168517605,0.52095274380605827,-0.06937088393567814],[-0.41060401405609698,-0.17109770673677699,0.78268287098034406,-0.28165180373702542,0.04626065264169963,0,0.84809561933505218,1,0.12008348983148011,0.38886650293033925,0.01776963198240487,-0.04615398634273974],[0.011819115022927443,-0.017076354009329345,0.056773262139912926,0.025583468476840641,-0.077151459047235277,0.087295640047966569,0.079368318725725251,0.12008348983148011,1,0.027704334066840208,-0.043362871632752896,0.020491624811195458],[-0.13830171147422227,0.19178936349237735,-0.029964602946145037,-0.021434087308229332,-0.072242053086806882,0,0.15601530168517605,0.38886650293033925,0.027704334066840208,1,-0.48034581411100047,-0.15138961672582948],[0.28255119817289182,0.37152574510905245,0.060972635566754446,0.17627961581812843,-0.044974686489128779,0,0.52095274380605827,0.01776963198240487,-0.043362871632752896,-0.48034581411100047,1,0.065660234448001828],[-0.03864411503881824,-0.099999999999999575,0.0042817995518778509,0.0064972001590238183,-0.054216345483409957,0,-0.06937088393567814,-0.04615398634273974,0.020491624811195458,-0.15138961672582948,0.065660234448001828,1]],"type":"heatmap","xaxis":"x","yaxis":"y","frame":null,"zmin":-1,"zmax":1}],"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.20000000000000001,"selected":{"opacity":1},"debounce":0},"shinyEvents":["plotly_hover","plotly_click","plotly_selected","plotly_relayout","plotly_brushed","plotly_brushing","plotly_clickannotation","plotly_doubleclick","plotly_deselect","plotly_afterplot","plotly_sunburstclick"],"base_url":"https://plot.ly"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>We can obtain a rough metric of total correlation of a variable with the others by looking at the <a href="https://en.wikipedia.org/wiki/Variance_inflation_factor">variance inflation factor</a> (VIF)<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. For this, we’ll treat any binary or ordered data as numeric, and we can use the <span class="pack" style="">car</span> package to get the VIF. This requires running an arbitrary regression model that includes the covariates of interest, but the value is derived only from the predictor variables. If we just try it with a dummy model, we get an error, since the linear model has perfect collinearity. We find out that <code>Day</code> is probably causing issues, and we’ll see why later.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the model used to acquire the vif doesn't matter- anything could be used for</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the target variable</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -476,7 +476,7 @@ c.distance        2.065335  1        1.437127</code></pre>
 <section id="start-simply" class="level2">
 <h2 class="anchored" data-anchor-id="start-simply">Start simply</h2>
 <p>So we know there are some data issues, so let’s start with a model that’s relatively simple but still plausible. If we just look at a GLM without any random effects, can we spot any issues?</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model_glm_1 <span class="ot">=</span> <span class="fu">glm</span>(</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    tm<span class="sc">:</span>Area <span class="sc">+</span> tm<span class="sc">:</span>c.distance <span class="sc">+</span> c.distance<span class="sc">:</span>Area <span class="sc">+</span> c.tm.depth<span class="sc">:</span>Area <span class="sc">+</span></span>
@@ -534,7 +534,7 @@ Number of Fisher Scoring iterations: 17</code></pre>
 </div>
 </div>
 <p>Sure enough, there are problems. What’s going on with <code>Day</code> and <code>Area</code>? One issue is that <code>Area</code> only couples with certain days, so having one already tells you a lot about what the other could tell you.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(df, <span class="fu">table</span>(Day, Area))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>          Area
@@ -547,7 +547,7 @@ Day        Drug Channel Finger
 </div>
 </div>
 <p>You could potentially create a combined type of variable to deal with this for example, but otherwise the problem will persist with both in the model. There are likely remaining collinearities besides, but let’s take Day out for example.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>model_glm_2 <span class="ot">=</span> <span class="fu">update</span>(model_glm_1, . <span class="sc">~</span> . <span class="sc">-</span>Day)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -593,7 +593,7 @@ Number of Fisher Scoring iterations: 10</code></pre>
 </div>
 </div>
 <p>Well, at least we got rid of the complete collinearity- no <code>NA</code> remains. However, those familiar with such models can still see that some of these coefficients and their associated standard errors are exceedingly large for this setting, so we shouldn’t really be surprised there would still be issues with the more complicated mixed models. With binary logistic models, large absolute coefficients and their standard errors are usually a sign of collinearity/separation, and we now know from our previous exploration that something similar is going on in this proportional binomial model. Here is a table of the more egregious offenders and a plot of all coefficients, their standard errors, and the VIF (size).</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -653,15 +653,15 @@ Number of Fisher Scoring iterations: 10</code></pre>
 
 </div>
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div>
 <figure class="figure">
-<p><img src="index_files/figure-html/glm-issues-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+<p><img src="index_files/figure-html/glm-issues-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>At this point I would not assume anything about the mixed model itself being a problem, and be leaning toward this being primarily a data issue. Or, at the very least, data issues will need to be sorted out. So let’s begin the restart of our mixed model effort by pulling out some of those variables we thought had some collinearity issues. You might have noticed from the GLM that <code>SUR.ID</code> was only 3 levels, so let’s move that to a fixed effect also. In keeping things simple, I’m not including any interactions.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>model_mixed_1 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance + c.distance:Area + #c.tm.depth:Area + </span></span>
@@ -708,7 +708,7 @@ Fixed Effects:</code></pre>
 <section id="rescale-variables" class="level2">
 <h2 class="anchored" data-anchor-id="rescale-variables">Rescale variables</h2>
 <p>Let’s go ahead with the easy part and rescale our variables, which might as well be done with any model. I will standardize the numeric variables.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>sc <span class="ot">=</span> <span class="cf">function</span>(x) <span class="fu">scale</span>(x)[, <span class="dv">1</span>]</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> df <span class="sc">%&gt;%</span> </span>
@@ -762,7 +762,7 @@ Fixed Effects:</code></pre>
 </div>
 </div>
 <p>So at least we have the rescaling taken care of, and while that got rid of one warning, we still have the convergence problem. What can we check for next? I looked to see if there was any further imbalance of categorical variables, didn’t spot much issue, but then discovered something else. A couple covariates - <code>c.wind</code> and <code>c.distance</code> - have only five unique values, and for the former, some of those values only occur a few times. In addition, <code>c.wind</code> was unique per day, so was essentially confounded with it. So we can feel fine with having previously removed Day.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>df <span class="sc">%&gt;%</span> </span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span><span class="fu">ends_with</span>(<span class="st">'sc'</span>)) <span class="sc">%&gt;%</span> </span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_int</span>(n_distinct)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -789,7 +789,7 @@ Fixed Effects:</code></pre>
 </div>
 <p><br></p>
 <p>If we treat these as categorical what happens? I’ll do it just for the GLM again.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>model_glm_3 <span class="ot">=</span> <span class="fu">glm</span>(</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span></span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area +</span></span>
@@ -839,7 +839,7 @@ Number of Fisher Scoring iterations: 17</code></pre>
 </div>
 </div>
 <p>Ah! So now we see that <code>Area</code> is also accounted for by other factors. In addition, wind is still problematic. Let’s take out <code>Area</code>, while still treating wind and distance as categorical for our diagnostic adventure.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>model_glm_4 <span class="ot">=</span>  <span class="fu">update</span>(model_glm_3, . <span class="sc">~</span> . <span class="sc">-</span> Area)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(model_glm_4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -880,7 +880,7 @@ Number of Fisher Scoring iterations: 17</code></pre>
 </div>
 </div>
 <p>The remaining collinearity is due to the relatively few observations for that value of wind, but at least most of the other covariates effects have settled down. Let’s try collapsing wind values and officially making it categorical.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> df <span class="sc">%&gt;%</span> </span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wind =</span> <span class="fu">fct_lump</span>(<span class="fu">factor</span>(c.wind), <span class="dv">3</span>, <span class="at">other_level =</span> <span class="st">'Higher'</span>))</span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -923,7 +923,7 @@ Number of Fisher Scoring iterations: 17</code></pre>
 </div>
 </div>
 <p>Checking VIF adjusted for the degrees of freedom associated with the covariate (which is greater for categorical variables), we still have some issues. Below I show VIF both with and without wind as an example.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -976,7 +976,7 @@ Number of Fisher Scoring iterations: 17</code></pre>
 </div>
 </div>
 <p>Let’s see what happens if we remove wind from the model.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>model_mixed_4 <span class="ot">=</span> <span class="fu">glmer</span>(</span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cbind</span>(ValidDetections, FalseDetections) <span class="sc">~</span> </span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># tm:Area + tm:c.distance_sc + c.distance_sc:Area + </span></span>
@@ -1022,7 +1022,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 <section id="check-singularity" class="level3">
 <h3 class="anchored" data-anchor-id="check-singularity">Check singularity</h3>
 <p>This is a mixed model-specific check<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>, and in general, checking singularity<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> goes along with removing zero random effects. These days, you’ll usually get a singularity warning when it is likely the case. In the past, Bolker suggested checking this problem as follows, but for this example concluded the result wasn’t close enough to zero to be a real concern. The <code>theta</code> below are just our random effect standard deviations, and I would say that the ones besides <code>Unit</code> probably weren’t meaningfully different from zero.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>thetas <span class="ot">=</span> <span class="fu">getME</span>(model_mixed_0, <span class="st">"theta"</span>)</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>thetas</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1038,7 +1038,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 </div>
 </div>
 <p>Nowadays <span class="pack" style="">lme4</span> provides the function <span class="func" style="">isSingular</span> which uses the steps above to check the minimum value against some specified tolerance.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">isSingular</span>(model_mixed_0, <span class="at">tol =</span> <span class="fl">1e-5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] FALSE</code></pre>
@@ -1053,7 +1053,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 <p>One general problem is that large scaled gradients are often associated with small absolute gradients: we might decide that we’re more interested in testing the (parallel) minimum of these two quantities.</p>
 </blockquote>
 <p>We can do this as follows for the initial mixed model.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>derivs_init  <span class="ot">=</span> model_mixed_0<span class="sc">@</span>optinfo<span class="sc">$</span>derivs</span>
 <span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>sc_grad_init <span class="ot">=</span> <span class="fu">with</span>(derivs_init, <span class="fu">solve</span>(Hessian, gradient))</span>
@@ -1068,14 +1068,14 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 </div>
 </div>
 <p>We see that the unscaled gradient results in a lower maximum value, but is still large relative to the tolerance. That value is what is reported in the warning message.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>model_mixed_0<span class="sc">@</span>optinfo<span class="sc">$</span>conv<span class="sc">$</span>lme4<span class="sc">$</span>messages[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "Model failed to converge with max|grad| = 0.0991801 (tol = 0.002, component 1)"</code></pre>
 </div>
 </div>
 <p>It may be instructive to compare the result to the model where we scaled the inputs. In this case the scaled gradient results in the lower max value.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>derivs_model_mixed_2 <span class="ot">=</span> model_mixed_2<span class="sc">@</span>optinfo<span class="sc">$</span>derivs</span>
 <span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>sc_grad_model_mixed_2 <span class="ot">=</span> <span class="fu">with</span>(derivs_model_mixed_2, <span class="fu">solve</span>(Hessian, gradient))</span>
@@ -1090,7 +1090,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 </div>
 </div>
 <p>Bolker also suggests checking if the result varies from using a different calculation, but it’s not clear what we’d do if this was the case. In any event, the results would be similar.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a>devfun_init  <span class="ot">=</span> <span class="fu">update</span>(model_mixed_0, <span class="at">devFunOnly =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>pars_init    <span class="ot">=</span> <span class="fu">unlist</span>(<span class="fu">getME</span>(model_mixed_0, <span class="fu">c</span>(<span class="st">"theta"</span>, <span class="st">"fixef"</span>)))</span>
 <span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a>grad_init    <span class="ot">=</span> numDeriv<span class="sc">::</span><span class="fu">grad</span>(devfun_init, pars_init)</span>
@@ -1110,7 +1110,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 <section id="restart-the-fit" class="level3">
 <h3 class="anchored" data-anchor-id="restart-the-fit">Restart the fit</h3>
 <p>As another step along our technical travails, we can just let the optimizer keep going until it does converge. Many R modeling packages allow for you to access the optimizer and change various settings. Most optimizers have a <code>maxit</code> type of argument to let you set the number of iterations, and we can use <span class="func" style="">update</span> to continue where we left off. Unfortunately there is no standard argument name for the total number of iterations, or even if you do happen to remember, guessing is required as to what we should set it at. So instead, we can just call <span class="func" style="">update</span> iteratively until there is no convergence warning. I check this by seeing if there is any output to <code>@optinfo$conv$lme4</code>, as it will only be there if it doesn’t converge<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>model_mixed_5 <span class="ot">=</span> model_mixed_4</span>
 <span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (<span class="fu">length</span>(model_mixed_5<span class="sc">@</span>optinfo<span class="sc">$</span>conv<span class="sc">$</span>lme4) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
@@ -1134,7 +1134,7 @@ Model failed to converge with max|grad| = 0.0547352 (tol = 0.002, component 1)</
 <div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># we win!</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>So at this point we have converged with no warnings. Hooray for us! However, the following shows us that we were pretty close anyway. The estimates from the last model with warnings and the converged model are nearly identical.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_mixed_4, <span class="at">ci =</span> <span class="dv">0</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>
@@ -1195,7 +1195,7 @@ Fixed Effects:</code></pre>
 <section id="change-the-optimizer" class="level3">
 <h3 class="anchored" data-anchor-id="change-the-optimizer">Change the optimizer</h3>
 <p>As a last effort among the more technical knobs to turn, we can start fiddling with the optimizer options. The <span class="pack" style="">lme4</span> package has a nice function <span class="func" style="">allFit</span> that will search across several different optimizers (some may require additional packages to be installed). However, in any particular modeling setting you could potentially do this, though often you may not be able to without quite a bit of effort relative to what <span class="pack" style="">lme4</span> allows. I’ll do this with our last non-converged model.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(optimx)  <span class="co"># required for some optimizers</span></span>
 <span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>glmm_all <span class="ot">=</span> <span class="fu">allFit</span>(model_mixed_4)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1210,7 +1210,7 @@ nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
 <div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>glmm_all_summary <span class="ot">=</span> <span class="fu">summary</span>(glmm_all)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The ‘[OK]’ just means there wasn’t an error, however we can see that several have convergence problems, but even a couple of those are almost to the tolerance level. In the end though, the estimates and log likelihoods are not meaningfully different across the optimizers.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1356,7 +1356,7 @@ nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
 <h2 class="anchored" data-anchor-id="final-step">Final Step</h2>
 <p>The final step would be to make some hard decisions about the model. Which predictors are most meaningful? Is this the best target variable available? Is this the right way to think about the distribution of the target? Is the research question clear enough? Is it strongly related to the available data, enough to be answerable?<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
 <p>However, these are more theoretical problems, not so much statistical ones, and there may be no right answer in the end. That is perfectly fine, and just what you’d report to others. The following model has no issues, but may leave more questions than answers.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a>model_mixed_final <span class="ot">=</span> <span class="fu">glmer</span>(</span>
 <span id="cb84-2"><a href="#cb84-2" aria-hidden="true" tabindex="-1"></a>  ValidDetections <span class="sc">~</span> </span>
 <span id="cb84-3"><a href="#cb84-3" aria-hidden="true" tabindex="-1"></a>    c.receiver.depth_sc <span class="sc">+</span> c.temp_sc <span class="sc">+</span> tm <span class="sc">+</span> </span>
