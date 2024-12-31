@@ -30,46 +30,58 @@ For this website in 2025, there are a couple posts I hope to do:
 
 I can also foresee more review based stuff, or just having my code be independent of the post. It's only every few years that I update my site significantly, but I definitely get tired of trying to maintain this stuff when many things conspire against doing so. You can use specific environments, but then they will still likely unusable in the future if the package functionality or even the versions are no longer supported. I also don't want a post two years from now to be beholden to a package's current functionality. Caching would solve a lot of it, but doesn't seem to respected when other aspects of the computing environment change.
 
+
 ## Migration Issues
 
-After a lot of effort, it looks like I finally got quarto to use an appropriate python environment (and I've given up on trying to get 'post-specific' environments to work at present). Then came the general publishing problems...
-
-In the end I may lose a lot of the previous code content, since quarto doesn't appear to respect the old web cached objects I had associated with prior posts (which included now defunct or notably modified packages). It also has to use a different directory output, which means I have update links along with rerunning old posts.
+After a lot of effort, it looks like I finally got my quarto website going. In the end I may have lost some of the previous code content, but my quick assessment is that it likely wasn't much.
 
 
 Issues I came across in case it's useful to others:
 
-- https://github.com/quarto-dev/quarto-cli/issues/10276
-- https://github.com/quarto-dev/quarto-cli/issues/5220
-- Deployment error (had to 'rerun all' from github itself)
+- Getting a specific python environment to work for quarto, possibly per post
+- [issue 10276](https://github.com/quarto-dev/quarto-cli/issues/10276)
+- [issue 5220](https://github.com/quarto-dev/quarto-cli/issues/5220)
+- Deployment error (had to 'rerun all' from github repo website itself)
 - Default radian pointing to wrong python environment which would then automatically load that environment and ignore any other env setting.
-- https://github.com/quarto-dev/quarto-cli/issues/9929 (I think this was because I was in the gh-pages branch and not the main branch)
+- [issue 9929](https://github.com/quarto-dev/quarto-cli/issues/9929) (I think this was because I was in the gh-pages branch and not the main branch)
 
 What my ultimate solution was:
 
 For Python:
 
-- The only env I could get things to recognize was a conda env in a default location for conda envs. My preference for uv created env, and secondarily, standard py env would not be recognized. 
-    - Would not recognize any env in project directories
-- In .Rprofile (not `.Renviron`, not `_environment`, which were not resepected) put `Sys.setenv(RETICULATE_PYTHON = "~/anaconda3/envs/m-clark-github-io/bin/python")` followed by `library(reticulate)`.
-- I feel like relatively very little is tested with Python for websites, and even less for mixing with R.
+- The only env I could get things to recognize was a conda env in a default location for conda envs. Not sure why my other approaches didn't work, but maybe it was due to other things (like the radian issue).
+    - As an example, the quarto rendering would not use a virtual env in the project directory. It's [implied](https://quarto.org/docs/projects/code-execution.html#freeze-virtual-environments) that you can use venvs in the directory of the quarto doc (i.e. folder specific), but I had issues, and at a minimum you'd have to do another step or two to render specifically from that directory venv. It also still begs the question of why you can't just name the env in the python execute argument of the doc to use whatever environment you need when rendering it in the first place. 
+- In `.Rprofile` (not `.Renviron`, not `_environment`) put `Sys.setenv(RETICULATE_PYTHON = "~/myenvlocation")` followed by `library(reticulate)`. The default VS Code venv was not ever used unless I did this. I would literally `source activate`, do a sanity check `which python`, and then it would render with a default env.  I'll revisit this in case this was still mixed in with the Radian issue.
+- I feel like maybe relatively little is tested with VS Code/Python for website/blogs, and even less for mixing it with R. So be prepared for some work in that regard.
 
-For R:
+For R/General:
 
-- Quarto does not adhere to the project directory for posts. So the post must be relative to the post file, rather than the project file, which hampers interactivity and/or requires using something like `here::here()` to get the project directory (which assumes RStudio, though should still work, and still won't apply to Python).
+- Quarto does not adhere to the VS code project directory for posts by default, so directories are relative to the post file location, rather than the project. I eventually found there is an `execute_dir` option that can be set to `project`, but this doesn't seem to work for yml in the file itself, which still need to refer to the file location for, e.g. the preview image or bibliography. Also, Python code was relative to the project directory by default, so it was inconsistent with R until I set the `execute_dir` option.
 
 For publishing:
 
-- The biggest issue was the inability to use the top-level directory as the output_dir as I had before.
-- I also now have to change every post file from its previous name to 'index.qmd' within the date-named directory in order for previous links to work. I could add an [alias](https://quarto.org/docs/websites/website-navigation.html#redirects) to every one of the files and let them redirect, but I prefer the cleaner address, and it's easier to rename the files collectively than to add aliases to every post.
+- A notable issue was the inability to use the top-level directory as the output_dir as I had before.
+    - As a result, I had to change every post file from its previous name to 'index.qmd' within the date-named directory in order for previous links to work. I could add an [alias](https://quarto.org/docs/websites/website-navigation.html#redirects) to every one of the files and let them redirect, but I prefer the cleaner address, and it's easier to rename the files collectively than to add aliases to every post.
 - I had to discover that you can't be in the gh-pages branch (which I'm still fuzzy as to the need of). It's mentioned in the doc, but not stressed or highlighted at all. 
 
 Once I was able to get quarto to render the pages in the first place, it published pretty easily via `quarto publish gh-pages`. I then had an issue where when publishing it gave some 404 error. I noticed it had updated the gh-pages branch after I pushed a recent change to main, so I pushed that branch as well, then tried to publish and it worked. Honestly they need more documentation as to exactly what the workflow is, especially for a blog (and with actual code, rather than a 2 year old demo website with a title suggesting there is but doesn't actually have code).
 
-So it seems the workflow is something like this:
+
+**Setup Summarized**
+
+(If you never had a website before, you can ignore this and just follow the Quarto docs)
+
+- Realize that you'll have to probably come across a random smattering of Quarto documentation over time to know how much and what you'll likely need to tweak to get things to work. Just reading the website specific docs will not be enough.
+- Set your execute (and output_dir) if desired to whatever you had or now want.
+- If you use Radian for your R console, you'll need to install in your chosen environment and point it to use that env for your terminal. You have to do this anyway, which is a real annoyance for using Radian in general.
+- Create a project specific python environment. 
+    - You may have to use conda to get reticulate stuff to work smoothly, but I'm not entirely certain of this. You may not need to do this if you don't plan on mixing R and Python in the same doc.
+    - If you do explicitly use reticulate, I suggest setting the python environment in your `.Rprofile` file.
+
+So, after setup, it seems the workflow is something like this if you have a blog and use VS Code, python and R:
 
 - Make change on main
 - Push to main
 - Publish
-- Cross fingers
+- Cross fingers, I still have had a bit of quirkiness from time to time, but usually just publishing/re-rendering again works things out.
 
