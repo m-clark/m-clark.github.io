@@ -20,20 +20,6 @@ execute:
 
 ```{r setup, include=FALSE}
 #| eval: true
-knitr::opts_chunk$set(
-  echo      = T, 
-  message   = F, 
-  warning   = F, 
-  comment   = NA,
-  R.options = list(width = 120),
-  cache.rebuild = F,
-  cache = T,
-  fig.align = 'center',
-  fig.asp = .7,
-  dev = 'svg',
-  dev.args = list(bg = 'transparent')
-)
-
 library(tidyverse)
 library(broom)
 library(kableExtra)
@@ -44,7 +30,12 @@ kable_df <- function(..., digits=3) {
     kable_styling(full_width = F)
 }
 
-rnd = tidyext::rnd
+rnd = function (x, digits = 3) {
+    if (!is.numeric(x)) 
+        stop("Variable must be numeric.")
+    format(round(x, digits), nsmall = digits)
+}
+
 theme_set(visibly::theme_clean())
 ```
 
@@ -60,7 +51,7 @@ theme_set(visibly::theme_clean())
 
 # Note that everything for this doc is now eval: false by default
 # net = torch_load(path = 'data/time-series/fit_torch.pt')
-x = list.files('../../data/time-series/', pattern = 'RData', full.names = TRUE)
+x = list.files('data/time-series/', pattern = 'RData', full.names = TRUE)
 purrr::map(x, load, envir = .GlobalEnv)
 ```
 
@@ -132,7 +123,7 @@ SPLIT_DT = '2017-06-01'
 I start with data having already been processed, but as mentioned the source is publicly available. I use [data.table]{.pack style=""} to read it in more quickly, but it's default date class can cause issues with other packages, so I deal with that. I also extract the year, month, weekday, etc.
 
 ```{r data-processed}
-df = data.table::fread('../../data/time-series/processed_df.csv')
+df = data.table::fread('data/time-series/processed_df.csv')
 
 df_start = df %>% 
   as_tibble() %>% 
@@ -1217,8 +1208,8 @@ lgb.save(fit_gbm, 'data/time-series/gbm.txt')
 Some may be surprised at how well this does, but regular users of boosting probably are not. We didn't have to do much and it's already the best performing model.
 
 ```{r gbm-vis, echo=FALSE, eval=TRUE}
-# fit_gbm = read_rds('../../data/time-series/gbm.rds')
-fit_gbm = lightgbm::lgb.load('../../data/time-series/gbm.txt')
+# fit_gbm = read_rds('data/time-series/gbm.rds')
+fit_gbm = lightgbm::lgb.load('data/time-series/gbm.txt')
 
 p_gbm = df_validate %>% 
   droplevels() %>% 

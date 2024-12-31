@@ -32,13 +32,13 @@ kable_df <- function(..., digits=3) {
 ```{r}
 #| eval: false
 # not sure what the issue is here, but it's not working even though previews fine
-# DiagrammeR::grViz('../../scripts/multilevel.gv')
+# DiagrammeR::grViz('scripts/multilevel.gv')
 ```
 
 
 > NB: This post was revisited when updating the website early 2025, and some changes were required. Attempts to keep things consistent were made, but if you feel you've found an issue, please post it at [GitHub](http://github.com/m-clark/m-clark.github.io/issues).
 
-![](../../img/micromacro/multilevel.png)
+![](img/micromacro/multilevel.png)
 
 ## Introduction
 
@@ -68,7 +68,7 @@ where $x_{ig}$ are the (possibly repeated) observations $i$ for a group/individu
 DiagrammeR::grViz('scripts/simple_sem.gv')
 ```
 
-![](../../img/micromacro/sem.png)
+![](img/micromacro/sem.png)
 
 
 ## Issues with Aggregate Approaches
@@ -450,7 +450,7 @@ save(
   # sim_summaries2,
   sim_cors,
   results_all, 
-  file = '../../data/micromacro/results.RData'
+  file = 'data/micromacro/results.RData'
 )
 ```
 
@@ -459,7 +459,7 @@ save(
 Here are the results. We can first take a peek at the estimated scores from the two-step approaches. The CV adjustment appears closely matched to the true score at first, but we see it's range is very wild, which is what FJK found also. Interestingly, the BLUPs from the mixed models have less variance than the true scores. The factor score is in keeping with the BLUPs, but appears also to have notable extremes, but far less than the CV adjustment. We'll talk about why these extremes may arise later.
 
 ```{r results-summary-load, echo=FALSE, eval=TRUE, cache=FALSE}
-load('../../data/micromacro/results.RData')
+load('data/micromacro/results.RData')
 
 sim_summaries %>% 
   mutate(
@@ -526,11 +526,11 @@ alphas = map(sim_data, function(x) x %>%
                select(contains('item')) %>% 
                psych::alpha())
 
-save(alphas, file = '../../data/micromacro/alpha.RData')
+save(alphas, file = 'data/micromacro/alpha.RData')
 ```
 
 ```{r reliability-load-process, echo=FALSE, eval=TRUE, cache=FALSE}
-load('../../data/micromacro/alpha.RData')
+load('data/micromacro/alpha.RData')
 alphas = map_dbl(alphas, function(x) x$total$std.alpha)
 alphas_summary = tidyext::num_summary(alphas, digits = 2)
 ```
@@ -561,13 +561,13 @@ reliable_lm = t(colMeans(reliable_lm))
 save(
   alphas_reliable_summary, 
   reliable_lm, 
-  file = '../../data/micromacro/alpha_reliable.RData'
+  file = 'data/micromacro/alpha_reliable.RData'
 )
 # 100*(colMeans(reliable_lm)/.3 - 1) 
 ```
 
 ```{r reliability-.9-load, eval=TRUE}
-load('../../data/micromacro/alpha_reliable.RData')
+load('data/micromacro/alpha_reliable.RData')
 ```
 
 In our current context, we can create a more reliable measure by decreasing the variance value for $\sigma^2_\nu$ which is the residual variance for the observed items at the lower level. Decreasing it from 9 to 1, puts the observed scores in a notably better place ($\alpha$ = `r alphas_reliable_summary$Mean`), and if we actually have a reliable measure (or even just increase the number of observations per group, as noted by CV), the results show hardly any bias for the group level effect and a near negligible one for the mean effect.

@@ -233,7 +233,7 @@ bm_fill <-
 ```
 
 ```{r fill-timings-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_fill, '../../data/programming/bm_fill.rds')
+saveRDS(bm_fill, 'data/programming/bm_fill.rds')
 ```
 
 This is a great example of where there is a notable speed/memory trade-off. Very surprising how much memory [data.table]{.pack} uses[^1], while not giving much speed advantage relative to the [tidyr]{.pack}. Perhaps there is something I'm missing (😏)? Also note that we can get an even 'tidier' advantage by using [vctrs]{.pack} directly, rather than wrapping it via [tidyr]{.pack}, and seeing how easy it is to use, it's probably the best option.
@@ -241,7 +241,7 @@ This is a great example of where there is a notable speed/memory trade-off. Very
 [^1]: [data.table]{.pack} modifies in place, so it technically it doesn't have anything to fill after the first run. As a comparison, I created new columns as the filled in values, and this made almost no speed/memory difference. I also tried `copy(dt_missing)[...]`, which had a minor speed hit. I also tried using `setkey` first but that made no difference. Note also that [data.table]{.pack} has `setnafill`, but this apparently has no grouping argument, so is not demonstrated.
 
 ```{r show-bm-fill, echo=FALSE}
-bm_fill = read_rds('../../data/programming/bm_fill.rds')
+bm_fill = read_rds('data/programming/bm_fill.rds')
 summarize_bm(bm_fill)
 ```
 
@@ -283,7 +283,7 @@ suppressMessages({
 ```
 
 ```{r anti-join-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_antijoin, '../../data/programming/bm_antijoin.rds')
+saveRDS(bm_antijoin, 'data/programming/bm_antijoin.rds')
 ```
 
 In this case, the fully [data.table]{.pack} approach is best in speed and memory, but [collapse]{.pack} is not close behind[^2]. In addition, if you are in the tidyverse, the `anti_join` function is a very good option. Hopefully the lesson about explicitly setting the `by` argument is made clear.
@@ -291,7 +291,7 @@ In this case, the fully [data.table]{.pack} approach is best in speed and memory
 [^2]: As of this writing, I'm new to the [collapse]{.pack} package, and so might be missing other uses that might be more efficient.
 
 ```{r anti-join-show, echo=FALSE}
-bm_antijoin = read_rds('../../data/programming/bm_antijoin.rds')
+bm_antijoin = read_rds('data/programming/bm_antijoin.rds')
 
 summarize_bm(bm_antijoin, digits = 6)
 ```
@@ -328,13 +328,13 @@ bm_lag = bench::mark(
 ```
 
 ```{r lag-lead-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_lag, '../../data/programming/bm_lag.rds')
+saveRDS(bm_lag, 'data/programming/bm_lag.rds')
 ```
 
 In this case, [collapse]{.pack} is best, with [data.table]{.pack} not far behind, but using the `shift` function within the tidy approach is a very solid gain. Oddly, `lag` and `lead` seem somewhat different in terms of speed and memory.
 
 ```{r lag-lead-show, echo=FALSE}
-bm_lag = read_rds('../../data/programming/bm_lag.rds')
+bm_lag = read_rds('data/programming/bm_lag.rds')
 
 summarize_bm(bm_lag, digits = 6)
 ```
@@ -354,13 +354,13 @@ bm_lag_grp = bench::mark(
 ```
 
 ```{r lag-grp-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_lag_grp, '../../data/programming/bm_lag_grp.rds')
+saveRDS(bm_lag_grp, 'data/programming/bm_lag_grp.rds')
 ```
 
 In the grouped situation, using a [collapse]{.pack} isn't best for memory, but the speed gain is ridiculous!!
 
 ```{r lag-grp-show, echo=FALSE}
-bm_lag_grp = read_rds('../../data/programming/bm_lag_grp.rds')
+bm_lag_grp = read_rds('data/programming/bm_lag_grp.rds')
 
 summarize_bm(bm_lag_grp, digits = 6)
 ```
@@ -397,13 +397,13 @@ bm_first = bench::mark(
 ```
 
 ```{r first-last-1-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_first, '../../data/programming/bm_first_1.rds')
+saveRDS(bm_first, 'data/programming/bm_first_1.rds')
 ```
 
 The first result is actually not too surprising, in that the fully dt approaches are fast and memory efficient, though [collapse]{.pack} is notably faster. Somewhat interesting is that the base last is a bit faster than [dplyr's]{.pack} `last` (technically `nth`) approach.
 
 ```{r first-last-show, echo=FALSE}
-bm_first = read_rds('../../data/programming/bm_first_1.rds')
+bm_first = read_rds('data/programming/bm_first_1.rds')
 
 summarize_bm(bm_first, digits = 6)
 ```
@@ -437,13 +437,13 @@ bm_first_more_groups = bench::mark(
 ```
 
 ```{r first-last-2-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_first_more_groups, '../../data/programming/bm_first_more_groups.rds')
+saveRDS(bm_first_more_groups, 'data/programming/bm_first_more_groups.rds')
 ```
 
 Now what the heck is going on here? The base R approach is way faster than even [data.table]{.pack}, while not using any more memory than what [dplyr]{.pack} is doing (because of the group-by-summarize). More to the point is that [collapse]{.pack} is notably faster than the other options, but still a bit heavy memory-wise relative to [data.table]{.pack}.
 
 ```{r first-last-2-show, echo=FALSE}
-bm_first_more_groups = read_rds('../../data/programming/bm_first_more_groups.rds')
+bm_first_more_groups = read_rds('data/programming/bm_first_more_groups.rds')
 
 summarize_bm(bm_first_more_groups, digits = 6)
 ```
@@ -473,13 +473,13 @@ bm_coalesce = bench::mark(
 ```
 
 ```{r ifelse1-save, echo=FALSE, eval=FALSE}
-saveRDS(bm_coalesce, '../../data/programming/bm_coalesce.rds')
+saveRDS(bm_coalesce, 'data/programming/bm_coalesce.rds')
 ```
 
 The key result here to me is just how much memory the [dplyr]{.pack} `if_else` approach is using, as well as how fast and memory efficient the base R approach is even with a second step. While providing type safety, `if_else` is both slow and a memory hog, so probably anything else is better. [tidyr]{.pack} itself would be a good option here, and while it makes up for the memory issue, it's relatively slow compared to other approaches, including the function it's a wrapper for (`vec_assign`), which is also demonstrated. Interestingly, `fcoalesce` and `fifelse` would both be better options than [data.table's]{.pack} other approach that is explicitly for this task.
 
 ```{r ifelse1-show, echo = FALSE}
-bm_coalesce = read_rds('../../data/programming/bm_coalesce.rds')
+bm_coalesce = read_rds('data/programming/bm_coalesce.rds')
 
 summarize_bm(bm_coalesce, digits = 6)
 ```
@@ -600,13 +600,13 @@ bm_first_true_2 = bench::mark(
 ```
 
 ```{r bm_first_true-save, echo=FALSE, eval=FALSE}
-save(bm_first_true_1, bm_first_true_2, file = '../../data/programming/first_true.RData')
+save(bm_first_true_1, bm_first_true_2, file = 'data/programming/first_true.RData')
 ```
 
 Interestingly `Position` provides the best memory performance, but is prohibitively slower. `which.max` is probably your best bet.
 
 ```{r show-bm_first_true, echo=FALSE}
-load('../../data/programming/first_true.RData')
+load('data/programming/first_true.RData')
 
 summarize_bm(bm_first_true_1, digits = 6)
 summarize_bm(bm_first_true_2, digits = 5)
@@ -630,11 +630,11 @@ bm_first_true_3 = bench::mark(
 ```
 
 ```{r bm_first_true-save-quick, echo=FALSE, eval=FALSE}
-save(bm_first_true_1, bm_first_true_2, bm_first_true_3, file = '../../data/programming/first_true.RData')
+save(bm_first_true_1, bm_first_true_2, bm_first_true_3, file = 'data/programming/first_true.RData')
 ```
 
 ```{r show-bm_first_true-quick, echo=FALSE}
-load('../../data/programming/first_true.RData')
+load('data/programming/first_true.RData')
 summarize_bm(bm_first_true_3, digits = 5)
 ```
 
@@ -686,11 +686,11 @@ bm_filter_slice = bench::mark(
 ```
 
 ```{r bm_filter_slice-save, eval = FALSE, echo=FALSE}
-save(bm_filter_slice, file = '../../data/programming/bm_filter_slice.RData')
+save(bm_filter_slice, file = 'data/programming/bm_filter_slice.RData')
 ```
 
 ```{r show-bm_filter_slice, echo=FALSE}
-load('../../data/programming/bm_filter_slice.RData')
+load('data/programming/bm_filter_slice.RData')
 
 summarize_bm(bm_filter_slice, digits = 4)
 ```
@@ -721,13 +721,13 @@ bm_filter_slice2 = bench::mark(
 ```
 
 ```{r bm_filter_slice2-save, eval = FALSE, echo=FALSE}
-save(bm_filter_slice2, file = '../../data/programming/bm_filter_slice2.RData')
+save(bm_filter_slice2, file = 'data/programming/bm_filter_slice2.RData')
 ```
 
 Now we have the reverse scenario. The single filter is notably faster and more memory efficient.
 
 ```{r show-bm_filter_slice2, echo=FALSE}
-load('../../data/programming/bm_filter_slice2.RData')
+load('data/programming/bm_filter_slice2.RData')
 
 summarize_bm(bm_filter_slice2, digits = 4)
 ```
@@ -800,11 +800,11 @@ timing_group_by_big = timing_group_by_big %>%
 ```
 
 ```{r dttimings_big-save, eval=FALSE, echo=FALSE}
-save(timing_group_by_big, file = '../../data/programming/timing_group_by_big.RData')
+save(timing_group_by_big, file = 'data/programming/timing_group_by_big.RData')
 ```
 
 ```{r dttimings, eval=TRUE, echo=FALSE}
-load('../../data/programming/timing_group_by_big.RData')
+load('data/programming/timing_group_by_big.RData')
 
 timing_group_by_big %>% 
   select(package, elapsed) %>% 
@@ -838,13 +838,13 @@ bm_count_flights = bench::mark(
 ```
 
 ```{r flights-save, echo=-10, eval=FALSE, echo=FALSE}
-save(bm_count_flights, file = '../../data/programming/timing_count_flights.RData')
+save(bm_count_flights, file = 'data/programming/timing_count_flights.RData')
 ```
 
 Here are the results. It's important to note the memory as well as the time. The faster functions here are taking a bit more memory to do it. If dealing with very large data this could be more important if operations timings aren't too different.
 
 ```{r flights-show, echo=FALSE}
-load('../../data/programming/timing_count_flights.RData')
+load('data/programming/timing_count_flights.RData')
 
 summarize_bm(bm_count_flights)
 ```
@@ -860,7 +860,7 @@ library(reticulate)
 use_condaenv(condaenv = "base")
 py_config()
 
-arrow::write_parquet(flights, '../../data/flights')
+arrow::write_parquet(flights, 'data/flights')
 ```
 
 ```{python timing, echo = TRUE}
@@ -868,7 +868,7 @@ import pandas as pd
 
 
 # flights = r.flights
-flights = pd.read_parquet('../../data/flights.parquet')
+flights = pd.read_parquet('data/flights.parquet')
 
 flights.groupby("arr_time", as_index=False).size()
 

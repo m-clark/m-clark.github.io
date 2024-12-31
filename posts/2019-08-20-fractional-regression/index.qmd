@@ -46,7 +46,7 @@ Some suggest adding a 'fudge factor' to the zeros or ones to put all values on t
 It might seem strange to start with an example using Stata[^ruser], but if you look this sort of thing up, you'll almost certainly come across the [Stata demonstration](https://www.stata.com/features/overview/fractional-outcome-models/) using the <span class="func" style = "">fracreg</span> command.  For comparison we'll use the data in the corresponding [documentation](https://www.stata.com/manuals/rfracreg.pdf).  The data regards the expected participation rate in 401(k) plans for a cross-section of firms[^401k]. They define participation rate (`prate`) as the fraction of eligible employees in a firm that participate in a 401(k) plan.  This is modeled by the matching rate of employee 401(k) contributions (`mrate`), the (natural) log of the total number of employees (`ltotemp`), the age of the plan (`age`), and whether the 401(k) plan is the only retirement plan offered by the employer (`sole`).  Here we do not use quadratic effects for `ltotemp` and `age` as in the Stata documentation, though we do use an additive modeling approach later that could be implemented for the same purpose instead[^gamvsquad].
 
 ```{r initial-import, echo=FALSE}
-d = haven::read_dta('../../data/401k.dta')
+d = haven::read_dta('data/401k.dta')
 ```
 
 
@@ -87,7 +87,7 @@ fracreg logit prate mrate c.ltotemp c.age i.sole
 # use http://www.stata-press.com/data/r14/401k
 # fracreg logit prate mrate c.ltotemp c.age i.sole
 
-cat(read_lines('../../scripts/stata_output.txt'), sep = '\n')
+cat(read_lines('scripts/stata_output.txt'), sep = '\n')
 ```
 
 Perhaps not surprisingly, all of the covariates are statistically notable.  With the logistic link, the coefficients can be exponentiated to provide odds ratios[^orstata].  Stata's is one of the few tools that is specifically advertised to model such outcomes, but as we're about to see, you don't need Stata's command, or even a special package in R, once you know what's going on.
@@ -101,7 +101,7 @@ $$\mathcal{L} \sim y(\ln{g(X\beta)}) + (1-y)(1-\ln{g(X\beta)})$$
 As such, we can just use <span class="func" style = "">glm</span> like we would for count or binary outcomes. It will warn you that the outcome isn't integer as it expects, but in this case we can just ignore the warning.
 
 ```{r glm, warning=TRUE}
-d = haven::read_dta('../../data/401k.dta')
+d = haven::read_dta('data/401k.dta')
 
 model_glm = glm(
   prate ~ mrate + ltotemp + age + sole,
