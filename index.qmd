@@ -26,11 +26,11 @@ feed: true
 library(tidyverse)
 library(glue)
 
-gp_mu <- function(x) {
-    map_dbl(x, function(x) x <- 0)
+gp_mu = function(x) {
+    map_dbl(x, function(x) x = 0)
 }
 
-gp_K <- function(
+gp_K = function(
     x,
     y = NULL,
     l = 1,
@@ -44,22 +44,23 @@ gp_K <- function(
     }
 }
 
-generate_gp <- function(
+generate_gp = function(
     n_train = 20,
     y_sd = .1,
-    seed = 123) {
+    seed = 123
+) {
     set.seed(seed)
 
-    X_train <- 15 * (runif(n_train) - .5)
-    n_train <- length(X_train)
+    X_train = 15 * (runif(n_train) - .5)
+    n_train = length(X_train)
 
     # kept sine function for comparison to noise free result
-    y_train <- sin(X_train) + rnorm(n = n_train, sd = y_sd)
+    y_train = sin(X_train) + rnorm(n = n_train, sd = y_sd)
 
-    X_test <- seq(-7.5, 7.5, length = 200)
-    n_test <- length(X_test)
+    X_test = seq(-7.5, 7.5, length = 200)
+    n_test = length(X_test)
 
-    data <- list(
+    data = list(
         X_train = X_train,
         y_train = y_train,
         X_test = X_test
@@ -67,7 +68,7 @@ generate_gp <- function(
 }
 
 
-plot_gp <- function(
+plot_gp = function(
     X_train,
     y_train,
     X_test,
@@ -77,10 +78,10 @@ plot_gp <- function(
     sigma_f = 1,
     sigma_n = .25,
     k_eps = 1e-8) {
-    n_train <- length(X_train)
-    n_test <- length(X_test)
+    n_train = length(X_train)
+    n_test = length(X_test)
 
-    Ky <- gp_K(
+    Ky = gp_K(
         x = X_train,
         y = y_train,
         l = l,
@@ -89,27 +90,27 @@ plot_gp <- function(
     )
 
     # initial matrix
-    K_ <- gp_K(
+    K_ = gp_K(
         c(X_train, X_test),
         l = l,
         sigma_f = sigma_f,
         sigma_n = sigma_n
     )
 
-    Kstar <- K_[1:n_train, (n_train + 1):ncol(K_)] # dim = N x N*
-    tKstar <- t(Kstar) # dim = N* x N
-    Kstarstar <- K_[(n_train + 1):nrow(K_), (n_train + 1):ncol(K_)] + # dim = N* x N*
+    Kstar = K_[1:n_train, (n_train + 1):ncol(K_)] # dim = N x N*
+    tKstar = t(Kstar) # dim = N* x N
+    Kstarstar = K_[(n_train + 1):nrow(K_), (n_train + 1):ncol(K_)] + # dim = N* x N*
         k_eps * diag(n_test) # the k_eps part is for positive definiteness
 
-    Kyinv <- solve(Ky)
+    Kyinv = solve(Ky)
 
-    post_mu <- gp_mu(X_test) + tKstar %*% Kyinv %*% (y_train - gp_mu(X_train))
-    post_K <- Kstarstar - tKstar %*% Kyinv %*% Kstar
-    s2 <- diag(post_K)
+    post_mu = gp_mu(X_test) + tKstar %*% Kyinv %*% (y_train - gp_mu(X_train))
+    post_K = Kstarstar - tKstar %*% Kyinv %*% Kstar
+    s2 = diag(post_K)
 
-    y_pp <- data.frame(t(MASS::mvrnorm(n_post_pred, mu = post_mu, Sigma = post_K)))
+    y_pp = data.frame(t(MASS::mvrnorm(n_post_pred, mu = post_mu, Sigma = post_K)))
 
-    pp_data <- data.frame(
+    pp_data = data.frame(
         x = X_test,
         y = y_pp,
         fmean = post_mu,
@@ -118,7 +119,7 @@ plot_gp <- function(
     ) %>%
         pivot_longer(starts_with("y"), names_to = "variable")
 
-    gdat <- data.frame(
+    gdat = data.frame(
         x = X_test,
         y = y_pp,
         fmean = post_mu,
@@ -140,22 +141,22 @@ plot_gp <- function(
             fill = 'gray50',
             alpha = .01
         ) +
-        geom_line(aes(group = variable), color = "#FF550080") +
+        geom_line(aes(group = variable), color = "#75374280") +  # #FF550080
         geom_line(aes(group = variable, y = fmean),
-            color = "#d9edf7",
+            color = "#BFCDE0",   # #d9edf7
             linewidth = 2
         ) +
         geom_point(
             aes(x = X_train, y = y_train),
             size = 4,
-            color = "#0085a1",
+            color = "#084887",  # #0085a1
             alpha = .5,
             data = data.frame(X_train, y_train)
         ) +
         geom_point(
             aes(x = X_train, y = y_train),
             size = 2,
-            color = "#0085a1",
+            color = "#084887",  # #0085a1
             alpha = .25,
             data = data.frame(X_train, y_train)
         ) +
