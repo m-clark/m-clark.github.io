@@ -76,7 +76,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-3a01e2046221230fdceeea94b1ec5d67.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-443a16db199bae091ac266a2b929a364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-b98f056cf3508670ef95a599f1e4d22b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <link href="../../site_libs/quarto-contrib/social-share-1.0.0/social-share.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/social-share-1.0.0/all.min.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/fontawesome6-1.2.0/all.min.css" rel="stylesheet">
@@ -268,7 +268,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>In such settings, when time is numeric, things are straightforward. The variance components are decomposed into parts for the intercept, the coefficient for the time indicator, and the residual variance (for linear mixed models). But what happens if we have only three time points? Does it make sense to treat it as numeric and hope for the best?</p>
 <p>This came up in consulting because someone had a similar issue, and tried to keep the format for random slopes while treating the time indicator as categorical. This led to convergence issues, so we thought about what models might be possible. This post explores that scenario.</p>
 <p>Packages used:</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mixedup)  <span class="co"># http://m-clark.github.io/mixedup</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -284,14 +284,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Data on an experiment to compare three brands of machines used in an industrial process are presented in Milliken and Johnson (p.&nbsp;285, 1992). Six workers were chosen randomly among the employees of a factory to operate each machine three times. The response is an overall productivity score taking into account the number and quality of components produced.</p>
 </blockquote>
 <p>So for each worker and each machine, we’ll have three scores. Let’s look.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>machines <span class="ot">=</span> nlme<span class="sc">::</span>Machines</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># for some reason worker is an ordered factor.</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>machines <span class="ot">=</span> machines <span class="sc">%&gt;%</span> </span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Worker =</span> <span class="fu">factor</span>(Worker, <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, <span class="at">ordered =</span> <span class="cn">FALSE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -346,11 +346,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>This duplicates the plot in Bates’ notes and visually describes the entire data set. There likely is variability due to both workers and machines.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
-<div class="quarto-figure quarto-figure-center">
+<div>
 <figure class="figure">
-<p><img src="index_files/figure-html/vis-data-1.svg" class="img-fluid quarto-figure quarto-figure-center figure-img" width="672"></p>
+<p><img src="index_files/figure-html/vis-data-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -359,11 +359,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="random-effects-models" class="level3">
 <h3 class="anchored" data-anchor-id="random-effects-models">Random Effects Models</h3>
 <p>The random effects of potential interest are for worker and machine, so how do we specify this? Let’s try a standard approach. The following is the type of model tried by our client.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>model_m_slope <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> Machine <span class="sc">|</span> Worker), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>This was exactly the same issue our client had- problematic convergence. This could be more of an issue with <span class="pack" style="">lme4</span>, and we could certainly explore tweaks to make the problem go away (or use a different package like <span class="pack" style="">glmmTMB</span>), but let’s go ahead and keep it.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_m_slope, <span class="at">ci =</span> <span class="cn">FALSE</span>, <span class="at">cor_re =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>
@@ -389,16 +389,16 @@ Fixed Effects:</code></pre>
 </div>
 <p>We get the variance components we expect, i.e.&nbsp;the variance attributable to the intercept (i.e.&nbsp;Machine A), as well as for the slopes for the difference in machine B vs.&nbsp;A, and C vs.&nbsp;A. We also see the correlations among the random effects. It’s this part that Bates acknowledges is hard to estimate, and incurs estimating potentially notably more parameters than typical random effects models. We have different options that will be available to us though, so let’s try some.</p>
 <p>Let’s start with the simplest, most plausible models. The first would be to have at least a worker effect. The next baseline model could be if we only had a machine by worker effect, i.e.&nbsp;a separate effect of each machine for each worker, essentially treating the interaction term as the sole clustering unit.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>model_base_w  <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker), machines)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>model_base_wm <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker<span class="sc">:</span>Machine), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Examining the random effects makes clear the difference between the two models. For our first baseline model, we only have 6 effects, one for each worker. For the second we have an effect of each machine for each worker.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_w)  <span class="co"># only 6 effects</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_wm) <span class="co"># 6 workers by 3 machines = 18 effects</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -655,14 +655,14 @@ Fixed Effects:</code></pre>
 </div>
 </div>
 <p>As a next step, we’ll essentially combine our two baseline models.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>model_w_wm <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> Worker<span class="sc">:</span>Machine), machines)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we have 6 worker effects plus 18 machine within worker effects<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_w_wm)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -901,7 +901,7 @@ Fixed Effects:</code></pre>
 </div>
 <p>If you look closely at these effects, and add them together, you will get a value similar to our second baseline model, which is probably not too surprising. For example in the above model <code>1:B + 1</code> = 1.5 <code>+</code> 1.045. Looking at the initial model, the estimated random effect for <code>1:B</code> was 2.556. Likewise if we look at the variance components, we can see that the sum of the non-residual effect variances for <code>model_w_wm</code> equals the variance of <code>model_base_wm</code> (36.8). So this latest model allows us to disentangle the worker and machine effects, where our baseline models did not.</p>
 <p>Next we’ll do the ‘vector-valued’ model Bates describes. This removes the intercept portion of the formula in the original random slopes model, but is otherwise the same. We can look at the results here, but I will hold off description for comparing it to other models. Note that at least have no convergence problem.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>model_m_vv <span class="ot">=</span> <span class="fu">lmer</span>(score <span class="sc">~</span> Machine <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> Machine <span class="sc">|</span> Worker), machines)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summarize_model</span>(model_m_vv, <span class="at">ci =</span> <span class="dv">0</span>, <span class="at">cor_re =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -931,7 +931,7 @@ Fixed Effects:</code></pre>
 <section id="summarize-all-the-models" class="level3">
 <h3 class="anchored" data-anchor-id="summarize-all-the-models">Summarize All the Models</h3>
 <p>Now let’s extract the fixed effect and variance component summaries for all the models.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>model_list <span class="ot">=</span> <span class="fu">mget</span>(<span class="fu">ls</span>(<span class="at">pattern =</span> <span class="st">'model_'</span>))</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>fe <span class="ot">=</span> <span class="fu">map_df</span>(model_list, extract_fixed_effects, <span class="at">.id =</span> <span class="st">'model'</span>)</span>
@@ -939,7 +939,7 @@ Fixed Effects:</code></pre>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_list, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>First, let’s look at the fixed effects. We see that there are no differences in the coefficients for the fixed effect of machine, which is our only covariate in the model. However, there are notable differences for the estimated standard errors. Practically we’d come to no differences in our conclusions, but the uncertainty associated with them would be different.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1112,7 +1112,7 @@ Fixed Effects:</code></pre>
 </div>
 </div>
 <p>Here are the variance components, there are definitely some differences here, but, as we’ll see, maybe not as much as we suspect.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1254,12 +1254,12 @@ Fixed Effects:</code></pre>
 </div>
 <p>We can see that the <code>base_wm</code> model has (non-residual) variance 36.768. This equals the total of the two (non-residual) variance components of the <code>w_wm</code> model 13.909 <code>+</code> 22.858, which again speaks to the latter model decomposing a machine effect into worker + machine effects. This value also equals the variance of the vector-valued model divided by the number of groups (16.64 + 74.395 + 19.27) <code>/</code> 3.</p>
 <p>We can see that the estimated random effects from the vector-valued model (<code>m_vv</code>) are essentially the same as from the baseline, interaction-only model. However, the way it is estimated allows for incorporation of correlations among the machine random effects, so they are not identical (but pretty close).</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_m_vv)</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_random_effects</span>(model_base_wm) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1624,7 +1624,7 @@ Fixed Effects:</code></pre>
 </div>
 </div>
 <p>Even the default way that the extracted random effects are structured implies this difference. In the vector-valued model we have a multivariate normal draw for 3 machines (i.e.&nbsp;3 variances and 3 covariances) for each of six workers. In the baseline model, we do not estimate any covariances and assume equal variance to draw for 18 groups (1 variance).</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ranef</span>(model_m_vv)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$Worker
@@ -1665,7 +1665,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>Now let’s compare the models directly via AIC. As we would expect if we dummy coded a predictor vs.&nbsp;running a model without the intercept (e.g.&nbsp;<code>lm(score ~ machine)</code>, vs.&nbsp;<code>lm(score ~ -1 + machine)</code>), the random slope model and vector-valued models are identical and produce the same AIC. Likewise the intercept variance of the former is equal to the first group variance of the vector-valued model.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -1702,7 +1702,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <section id="data-creation" class="level3">
 <h3 class="anchored" data-anchor-id="data-creation">Data Creation</h3>
 <p>First we need some data. The following creates a group identifier similar to <code>Worker</code> in our previous example, a <code>cat_var</code> like our <code>Machine</code>, and other covariates just to make it interesting.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># for simplicity keeping to 3 cat levels</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>ng <span class="ot">=</span> <span class="dv">5000</span>     <span class="co"># n groups</span></span>
@@ -1715,7 +1715,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>x_c <span class="ot">=</span> <span class="fu">rep</span>(<span class="fu">rnorm</span>(ng), <span class="at">e =</span> cat_levs <span class="sc">*</span> reps)        <span class="co"># continuous cluster level covariate</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>So we have the basic data in place, now we need to create the random effects. There are several ways we could do this, including more efficient ones, but this approach focuses on a conceptual approach and on the model that got us here, i.e.&nbsp;something of the form <code>(1 + cat_var | group)</code>. In this case we assume this model is ‘correct’, so we’re going to create a multivariate normal draw of random effects for each level of the <code>cat_var</code>, which is only 3 levels. The correlations depicted are the estimates we expect from our model for the random effects<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># as correlated  (1, .5, .5) var, (1, .25, .25) sd </span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>cov_mat <span class="ot">=</span> lazerhawk<span class="sc">::</span><span class="fu">create_corr</span>(<span class="fu">c</span>(.<span class="dv">1</span>, .<span class="dv">25</span>, .<span class="dv">25</span>), <span class="at">diagonal =</span> <span class="fu">c</span>(<span class="dv">1</span>, .<span class="dv">5</span>, .<span class="dv">5</span>))</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1728,7 +1728,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>Now we create the random effects by drawing an effect for each categorical level for each group.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># take a multivariate normal draw for each of the groups in `id`</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>re_id_cat_lev <span class="ot">=</span> mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(ng, <span class="at">mean =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>), <span class="at">sigma =</span> cov_mat) <span class="sc">%&gt;%</span> </span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>()</span>
@@ -1745,7 +1745,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>Now that we have the random effects, we can create our target variable. We do this by adding our first effect to the intercept, and the others to their respective coefficients.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>y <span class="ot">=</span> </span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fixed effect = (2, .5, -.5)</span></span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">2</span>  <span class="sc">+</span> .<span class="dv">5</span><span class="sc">*</span>x <span class="sc">-</span> .<span class="dv">5</span><span class="sc">*</span>x_c <span class="sc">+</span>   </span>
@@ -1758,7 +1758,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rnorm</span>(ng <span class="sc">*</span> cat_levs <span class="sc">*</span> reps, <span class="at">sd =</span> .<span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we create a data frame so we can see everything together.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">tibble</span>(</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    id,</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    cat_var,</span>
@@ -1824,13 +1824,13 @@ with conditional variances for "Worker:Machine" </code></pre>
 <li>The vector valued model (equivalent to #2)</li>
 <li>The scalar model that does not estimate the random effect correlations</li>
 </ol>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>m_interaction_only <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>m_random_slope <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)    </span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>m_vector_valued <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)</span>
 <span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>m_separate_re <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>model_mixed <span class="ot">=</span> <span class="fu">list</span>(</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_interaction_only =</span> m_interaction_only,</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_random_slope =</span> m_random_slope,</span>
@@ -1844,7 +1844,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_mixed, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Looking at the fixed effects, we get what we should but, as before, we do see differences in the standard errors.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2067,7 +2067,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>The variance components break down as before.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2192,7 +2192,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>In this case, we know the model with correlated random effects is the more accurate model, and this is born out via AIC.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2220,7 +2220,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <section id="change-the-model-orientation" class="level3">
 <h3 class="anchored" data-anchor-id="change-the-model-orientation">Change the model orientation</h3>
 <p>Now I will make the <code>vector_valued</code> model reduce to the <code>separate_re</code> model. First, we create a covariance matrix that has equal variances/covariances (i.e.&nbsp;compound symmetry), and for demonstration, we will apply the random effects a little differently. So, when we create the target variable, we make a slight alteration to apply it to the vector valued model instead.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234</span>)</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>cov_mat <span class="ot">=</span> lazerhawk<span class="sc">::</span><span class="fu">create_corr</span>(<span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span>), <span class="at">diagonal =</span> <span class="fu">c</span>(.<span class="dv">5</span>, .<span class="dv">5</span>, .<span class="dv">5</span>))</span>
@@ -2253,13 +2253,13 @@ with conditional variances for "Worker:Machine" </code></pre>
 <span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Rerun the models.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>m_random_slope  <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)  <span class="co"># still problems!</span></span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>m_vector_valued <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> cat_var <span class="sc">|</span> id), df)   </span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>m_separate_re   <span class="ot">=</span> <span class="fu">lmer</span>(y <span class="sc">~</span> x <span class="sc">+</span> x_c <span class="sc">+</span> cat_var <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id<span class="sc">:</span>cat_var), df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Examine the variance components.</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>model_mixed <span class="ot">=</span> <span class="fu">list</span>(</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_random_slope  =</span> m_random_slope,</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">m_vector_valued =</span> m_vector_valued,</span>
@@ -2274,7 +2274,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 <span id="cb38-12"><a href="#cb38-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-13"><a href="#cb38-13" aria-hidden="true" tabindex="-1"></a>vc <span class="ot">=</span> <span class="fu">map_df</span>(model_mixed, extract_vc, <span class="at">ci_level =</span> <span class="dv">0</span>, <span class="at">.id =</span> <span class="st">'model'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2383,7 +2383,7 @@ with conditional variances for "Worker:Machine" </code></pre>
 </div>
 </div>
 <p>In this case, we know the true case regards zero correlations and equal variances, so estimating them is adding complexity we don’t need, thus our simpler model wins (-log likelihoods are essentially the same).</p>
-<div class="cell" data-layout-align="center">
+<div class="cell">
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small" data-quarto-postprocess="true">
 <thead>
@@ -2861,7 +2861,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<div class="page-columns page-rows-contents page-layout-article"><div class="social-share"><a href="https://twitter.com/share?url=https://m-clark.github.io/&amp;text=Michael Clark" target="_blank" class="twitter"><i class="fab fa-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Michael Clark&amp;body=Check out this link:https://m-clark.github.io/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://m-clark.github.io/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a><a href="https://bsky.app/intent/compose?text=https://m-clark.github.io/ Michael Clark" target="_blank" class="bsky"><i class="fa-brands fa-bluesky"></i></a></div></div>
+<div class="share-buttons"><div class="social-share"><a href="https://twitter.com/share?url=https://m-clark.github.io/posts/2020-03-01-random-categorical/&amp;text=Categorical Effects as Random" target="_blank" class="twitter"><i class="fab fa-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://m-clark.github.io/posts/2020-03-01-random-categorical/&amp;title=Categorical Effects as Random" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Categorical Effects as Random&amp;body=Check out this link:https://m-clark.github.io/posts/2020-03-01-random-categorical/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://m-clark.github.io/posts/2020-03-01-random-categorical/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://m-clark.github.io/posts/2020-03-01-random-categorical/&amp;title=Categorical Effects as Random" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a><a href="https://bsky.app/intent/compose?text=https://m-clark.github.io/posts/2020-03-01-random-categorical/ Categorical Effects as Random" target="_blank" class="bsky"><i class="fa-brands fa-bluesky"></i></a></div></div>
 
 
 
