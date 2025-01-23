@@ -1,0 +1,869 @@
+---
+title: Imbalanced Outcomes
+subtitle: Challenges & Solutions for This Common Situation
+date: 2025-01-28
+tags: ['classification', 'imbalanced data', 'thresholds', 'roc', 'pr', 'cost-sensitive learning', 'resampling', 'ensemble methods', 'smote']
+author: 
+    - name: Michael Clark
+      email: statsdatasci@gmail.com
+      url: https://m-clark.github.io
+      affiliation: OneSix
+      affiliation-url: https://onesixsolutions.com
+    - name: Elizabeth Li
+      email: elizabeth.li@onesixsolutions.com
+      affiliation: OneSix
+      affiliation-url: https://onesixsolutions.com
+bibliography: ['../../bibs/class-imbalance.bib']
+draft: true
+categories:
+    - Machine Learning
+    - Regression
+    - boosting
+format: 
+    html:
+        html-table-processing: none
+execute: 
+  echo: false
+jupyter: m-clark.github.io
+share:
+    permalink: https://m-clark.github.io/posts/2025-01-28-class-imbalance/
+    description: 'Imbalanced Outcomes: Challenges & Solutions for This Common Situation'
+    divclass: 'share-buttons'
+    linkedin: true
+    bsky: true
+    twitter: true
+    email: true
+    reddit: true
+    facebook: true
+nocite: |
+    @shwartz-ziv_simplifying_2022, @foret_sharpness-aware_2021, @lin_focal_2018, @van_den_goorbergh_harm_2022, @brownlee_how_2018, @kuhn_optimizing_2014, @thomas_problem_2020, @nixon_measuring_2020, @google_classification_2025, @harrell_damage_2017
+---
+
+
+```{python}
+#| echo: False
+#| label: imports
+
+import pandas as pd
+import numpy as np
+
+from great_tables import GT, style, loc
+from plotnine import *
+from plotnine.options import get_option
+
+okabe_ito = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7']
+post_dir = 'posts/2025-01-28-class-imbalance/'
+```
+
+
+
+```{python}
+#| results: hide
+# theme_void
+class theme_clean(theme):
+    """
+    A classic-looking theme, with x & y axis lines and
+    no gridlines.
+
+    Parameters
+    ----------
+    base_size : int
+        Base font size. All text sizes are a scaled versions of
+        the base font size.
+    base_family : str
+        Base font family.
+    """
+
+    def __init__(self, base_size=11, base_family=None):
+        base_family = base_family or get_option("base_family")
+        m = get_option("base_margin")
+        font_size = base_size
+        font_family=base_family
+
+        theme.__init__(
+            self,
+            line=element_blank(),
+            rect=element_blank(),
+            text=element_text(
+                family=font_family,
+                face='plain',
+                color='#4D4D4DFF',
+                size=font_size,
+                # ha='center',
+                # va='center',
+                # angle=0.0,
+                # lineheight=0.9,
+                margin={'t': 0.0, 'r': 0.0, 'b': 0.0, 'l': 0.0}
+            ),
+            axis_text_x=element_text(size = font_size * 0.8, va='top', ha='center'), # doc says float acceptable but errors
+            axis_text_y=element_text(size = font_size * 0.8, ha='right'), # not clear what left and right mean for plotnine
+            axis_title_x=element_text(
+                ha='left',
+                va='top',
+                angle=0.0,
+                size=font_size,
+                face='bold'
+            ),
+            axis_title_y=element_text(
+                va=1.0, # oh now it can take a float
+                ha='left', # but not here, wtf?
+                angle=0.0,
+                size=font_size,
+                family=font_family,
+                face='bold'
+            ),
+            axis_ticks=element_blank(),
+            # axis_ticks=element_line(color='#4D4D4DFF'),
+            # axis_ticks_length=0,
+            aspect_ratio=get_option("aspect_ratio"),
+            dpi=get_option("dpi"),
+            figure_size=get_option("figure_size"),
+            legend_box_margin=0,
+            legend_box_spacing=m * 3,
+            legend_key_spacing_x=6,
+            legend_key_spacing_y=2,
+            legend_key_size=base_size * 1.5,
+            legend_frame=element_blank(),
+            # legend_ticks_length=0.2,
+            legend_margin=0,
+            # legend_position="right",
+            legend_spacing=10,
+            legend_text=element_text(
+                size=base_size * 0.9,
+                margin={
+                    "t": m / 1.5,
+                    "b": m / 1.5,
+                    "l": m / 1.5,
+                    "r": m / 1.5,
+                    "units": "fig",
+                },
+            ),
+            # legend_ticks=element_line(color="#CCCCCC", size=1),
+            # legend_title=element_text(
+            #     margin={
+            #         "t": m,
+            #         "b": m / 2,
+            #         "l": m * 2,
+            #         "r": m * 2,
+            #         "units": "fig",
+            #     },
+            # ),
+            legend_position='bottom',
+            # legend_key=element_rect(fill=None, color='#fff'),
+            # legend_box=element_blank(),
+            legend_background=element_rect(fill=None, color='#fff'), # only way to remove box is color = background
+            legend_title=element_blank(),
+            panel_spacing=m,
+            plot_margin=m *3, # required, and 0 isn't viable
+            plot_title=element_text(
+                color='#4D4D4DFF',
+                size=font_size * 1.25,
+                margin={'b': font_size * 0.3, 't': font_size * 0.3},
+                family=font_family,
+                face='bold'
+            ),
+            plot_subtitle=element_text(
+                color='#4D4D4DFF',
+                size=font_size,
+                ha=0,
+                family=font_family,
+                face='bold'
+            ),
+            plot_caption=element_text(
+                color='#4D4D4DFF',
+                size=font_size * 0.8,
+                ha=0,
+                family=font_family,
+                face='bold'
+            ),
+            plot_background=element_rect(fill='white', color=None),
+            # plot_caption=element_text(
+            #     size=base_size * 0.8,
+            #     ha="right",
+            #     va="bottom",
+            #     ma="left",
+            #     margin={"t": m, "units": "fig"},
+            # ),
+            # plot_subtitle=element_text(
+            #     size=base_size * 1,
+            #     va="top",
+            #     ma="left",
+            #     margin={"b": m, "units": "fig"},
+            # ),
+            # plot_title=element_text(
+            #     size=base_size * 1.2,
+            #     va="top",
+            #     ma="left",
+            #     margin={"b": m, "units": "fig"},
+            # ),
+            panel_background=element_rect(fill=None, color=None),
+            panel_grid_major=element_line(color='#F2F2F2FF'),
+            strip_align=0,
+            strip_text=element_text(
+                color="#1A1A1A",
+                size=base_size * 0.8,
+                linespacing=1.0,
+                margin={
+                    "t": 1 / 3,
+                    "b": 1 / 3,
+                    "l": 1 / 3,
+                    "r": 1 / 3,
+                    "units": "lines",
+                },
+            ),
+            strip_background=element_blank(),
+            complete=True,
+        )
+
+
+# theme_set(theme_clean()) # will result in error down the line
+```
+
+```{python}
+# the docs on this are non-existent and I'm done trying for now. maybe you have to specify every single arg or something bc last it was failing on stuff I'm not even messing with
+class theme_test(theme):
+    def __init__(self, base_size=12.0, base_family='Roboto', center_axis_labels=False):
+        base_family = base_family or get_option("base_family")
+        m = get_option("base_margin")
+        font_size = base_size
+        font_family=base_family
+
+        if center_axis_labels:
+            haxis_just_x = 0.5
+            vaxis_just_y = 0.5
+            v_rotation_x = 0.0
+            v_rotation_y = 0.0
+        else:
+            haxis_just_x = 0.0
+            vaxis_just_y = 1.0
+            v_rotation_x = 0.0
+            v_rotation_y = 0.0
+
+
+        # Use only inherited elements and make everything blank
+        theme.__init__(
+            self,
+            aspect_ratio=get_option("aspect_ratio"),
+            dpi=get_option("dpi"),
+            figure_size=get_option("figure_size"),
+            text=element_text(
+                family=font_family,
+                face='plain',
+                color='#4D4D4DFF',
+                size=font_size,
+                ha='center',
+                va='center',
+                angle=0.0,
+                lineheight=0.9,
+                margin={'t': 0.0, 'r': 0.0, 'b': 0.0, 'l': 0.0},
+                debug=False
+            ),
+            axis_title_x=element_text(
+                ha=haxis_just_x,
+                angle=v_rotation_x,
+                size=1.2 * font_size,
+                face='bold'
+            ),
+            axis_title_y=element_text(
+                va=vaxis_just_y,
+                ha=0.0,
+                angle=v_rotation_y,
+                size=1.2 * font_size,
+                family=font_family,
+                face='bold'
+            ),
+            axis_ticks=element_line(color='#4D4D4DFF'),
+            plot_title=element_text(
+                color='#4D4D4DFF',
+                size=font_size * 1.25,
+                margin={'b': font_size * 0.3},
+                family=font_family,
+                face='bold'
+            ),
+            plot_subtitle=element_text(
+                color='#4D4D4DFF',
+                size=font_size,
+                ha=0,
+                family=font_family,
+                face='bold'
+            ),
+            plot_caption=element_text(
+                color='#4D4D4DFF',
+                size=font_size * 0.8,
+                ha=0,
+                family=font_family,
+                face='bold'
+            ),
+            legend_position='bottom',
+            legend_key=element_rect(fill='transparent', color=None),
+            legend_background=element_rect(fill='transparent', color=None),
+            legend_title=element_blank(),
+            panel_background=element_rect(fill='transparent', color=None),
+            panel_grid_major=element_line(color='#F2F2F2FF'),
+            strip_background=element_blank(),
+            plot_background=element_rect(fill='transparent', color=None),
+            complete=True
+        )
+
+# theme_clean()
+# theme_set(theme_clean())
+```
+
+## Introduction
+
+Imagine you're working on a fraud detection system for a bank. Out of millions of transactions, only a tiny fraction are fraudulent. This is a classic example of *class imbalance*, where one class (fraudulent transactions) is much rarer than the other (legitimate transactions). Ignoring this imbalance can lead to the model predictions missing most of the fraudulent transactions. In this blog post, we'll explore various techniques to handle imbalanced data, ensuring your models are both accurate and reliable. Very often, simple approaches work very well, and here we will focus on one simple approach in particular.
+
+
+
+
+### Goals
+
+To guide our exploration, we have set the following goals:
+
+
+- Explain class imbalance generally
+- Understanding examples and consequences of class imbalance
+- Cover some common techniques
+    - Sampling-based
+    - Algorithmic
+- Demonstrate what happens when different classification thresholds are used
+- Explore the effects of classification thresholds on performance metrics
+
+
+
+## Understanding Imbalanced Data
+
+Consider a binary target outcome with groups A and B. In the typical data setting, we might simply run the model and create a binary classification for any predicted probabilities above a threshold of .5. As an example, if you had collected data, and half of the binary target data came from group A and the other from group B, then your approach would be appropriate to use a 0.5 classification threshold when making predictions about the target outcome.  With a good enough model, your predictions should match the underlying observed data. 
+
+Now consider the following scenario. If you were collecting data and less than 1% of the target data came from group A and all the rest of the data came from group B, then you would likely want your model to appropriately account for the lower prevalence rate of group A in the target. However, the status quo approach to classification will not achieve this, as it assumes a balanced outcome. So what are we to do?  First, let's get a better understanding of our situation.
+
+
+### Real-world examples where class imbalance is prevalent.
+
+It's not difficult to find examples of class imbalance in the real world. Here are a few examples:
+
+- Fraud detection: The vast majority of credit card transactions are legitimate, but a small percentage are fraudulent.
+- Disease detection: Most people do not have a rare disease, but a small percentage do. Even common diseases are rare for certain populations.
+- Click-through rate prediction: Most users do not click on ads, but a small percentage do.
+
+As one can see, it's fairly easy to come up with situations where one class is much more prevalent than the other. 
+
+
+### Is imbalance a problem?
+
+Well, not exactly, as we'll see. The problem mostly resides in the sample size, modeling tools we use, and the metrics we use to evaluate the model. For example, if you had 10 million observations and 1% of them were in the minority class, you would likely have enough to work with to discover the feature-target relationships. However, it is no guarantee. One of your authors has worked with millions of observations as a starting point, but the minority class proportion was notably less than 1%. This resulted in problems as the validation process ultimately ended up with only a few observations of the minority class, making good performance difficult to achieve.
+
+This is a large enough sample size to work with, and you could likely build a good model. However, if you only had 100 observations and 1% of them were in the minority class, you would only have 1 observation to work with. This is not enough data to build a good model.
+
+
+
+## Techniques for Dealing with Imbalanced Data
+
+There are a number of techniques one can use for handling imbalanced data to help meet performance goals. Here, we will discuss a few commonly used methods.
+
+### Sampling-based Techniques
+
+Sampling-based techniques involve modifying the original dataset to balance the class distribution. These techniques can be broadly categorized into oversampling, undersampling, and hybrid sampling.
+
+#### Oversampling
+
+Oversampling is a technique where we increase the number of observations in the minority class. Most commonly this can be done by duplicating observations in the minority class, or by generating synthetic observations. 
+
+
+
+*Random over-sampling* (ROS) is akin to a bootstrap approach where we sample with replacement from the minority class to increase the number of observations. This is the simplest approach and is often enough to improve model performance. Variations on the the bootstrap approach employed may be used. Depending on the model setting, other more complicated techniques are rarely going to improve performance of ROS.
+
+
+One popular technique for generating synthetic observations is *SMOTE* (Synthetic Minority Over-sampling Technique), along with variants such as *ADASYN* (Adaptive Synthetic Sampling) and Borderline-SMOTE. SMOTE generates synthetic observations by creating interpolations of nearest neighbors of the minority class observations. 
+
+#### Undersampling
+
+Undersampling is a technique where we decrease the number of observations in the majority class by randomly selecting observations in the majority class to remove. We could also do this randomly (Random under-sampling/RUS) as with oversampling. These techniques look at nearest neighbors of the majority class and remove some of them. Other variations include different approaches to some sort of 'matched samples' approach long employed in statistical settings, e.g., *NearMiss*.
+
+#### Hybrid Sampling
+
+Hybrid sampling is a technique where we combine oversampling and undersampling to create a balanced dataset. This is often done by oversampling the minority class and undersampling the majority class, and as before this could be done in a random fashion. As an example of an alternative approach, we could remove some observations from both classes that would be nearest neighbors (*TOMEK* links), which would hopefully improve the model's ability to classify the observations.
+
+
+### Algorithmic Techniques
+
+We use the term 'algorithmic' techniques to refer to those that involve adjusting some aspect of the model estimation. Unlike resampling, we do not manipulate the data directly.
+
+#### Weighting
+
+In some modeling contexts, we can adjust the importance of each example to handle the imbalance. The loss function is adjusted so that losses from the minority class contribute more than losses from the majority class. This is often done in the context of *cost-sensitive learning*, where the cost of misclassifying an observation in the minority class is higher than the cost of misclassifying an observation in the majority class. 
+
+:::{.column-margin}
+For some models, like logistic regression, weighting would essentially be equivalent to what is done with simple resampling techniques, negating the need to employ the latter. For example, doubling the weight of an observation would be equivalent to having two copies of the observation in the dataset. However, for other models, like tree-based methods, weighting and resampling are not equivalent. For example, in a random forest, resampling changes the composition of the bootstrap samples used to build the trees, while weighting changes the importance of each observation in the calculation of splits within each tree. This difference in how the data is used can lead to different model behaviors and outcomes.
+:::
+
+
+
+#### Thresholding
+
+Thresholding regards changing the cutoff to account for the imbalance in the data. For example, instead of using a default threshold of 0.5, we can use a lower threshold to increase the number of positive classifications. This may sound simple, but it's actually quite effective at achieving our goals in the context of imbalanced data. 
+
+
+#### Other
+
+You can still find other techniques that are used to handle imbalanced data for specific model settings. For example, in uplift modeling, the goal is to predict the difference in outcomes between two groups, and the data is often imbalanced. Some have tried *class variable transformation* that involves a specific feature that is usually a binary treatment, and changing the binary outcome to a numeric one and then using a regression model to predict the difference in outcomes.
+
+In addition, some techniques have been used in the context of deep learning models, focusing on different losses like  [focal loss](https://paperswithcode.com/method/focal-loss) and *label smoothing*. Others try different optimization approaches *sharpness-aware minimization* (SAM), data augmentation and others (@shwartz-ziv_simplifying_2022 provides a nice overview). It's still difficult to know that these models/techniques will work in practice for a typical tabular data setting, but may be worth trying if you have the time and resources, and especially if your data is homogenous in nature.
+
+
+
+## Prediction with Imbalanced Data
+
+As mentioned, changing the classification threshold is a common approach for handling imbalanced data. We can compare it to sampling based methods. Those seek to modify the prevalence rates in the model data, while changing the classification threshold assumes that the imbalanced prevalence rates in the data are the prevalence rates that the model should actually be built to predict. 
+
+
+Although the default classification threshold of 0.5 is commonly used, nothing requires this other than it is an intuitive choice (@van_den_goorbergh_harm_2022).  A classification threshold of 0.5 *is* appropriate if you have evenly split data. For example, let's say you were collecting survey data and half of the binary target data came from group A and the other from group B, and you ultimately wanted your model to predict the group membership. Then you would be correct to assume that the algorithm, when making predictions about the target outcome, should assume a 0.5 classification threshold. If we artificially create a balanced target, through resampling for example, then the threshold of 0.5 is appropriate, at least for training.
+
+But as no threshold is set in stone, identifying an optimal threshold for an imbalanced binary target can prove useful. For example, if your survey data had less than 1% of the binary target data came from group A and all the rest of the data came from group B, then you would want your approach to somehow account for this, as some models may not even produce predicted probabilities that exceed the 0.5 threshold.  Even with resampling techniques, your test or future data would still have the same imbalance, yet the model would be trained on balanced data, and this may cause problems down the line, as we will see.
+
+To better understand the what's going on, let's turn our attention to commonly used performance metrics for classification models, and how they are affected by the classification threshold.
+
+
+## Performance Metrics with Imbalanced Data
+
+Evaluating the performance of models trained on imbalanced data requires careful consideration of various metrics. These metrics help us understand how well the model is performing and where it might be falling short, and typically provide the means for preferring one modeling approach over others. Some are based on the confusion matrix, which pits predicted classes against observed target classes. Others are derived from the the predicted probabilities themselves, and so are not dependent on the classification threshold.
+
+
+### The Confusion Matrix
+
+Selecting the appropriate classification threshold for your data is not only important for producing useful predicted classes, but also for correctly assessing your model's performance based on what's most important to you. Some of the most common metrics are pulled from the confusion matrix, which pits predicted classes vs. observed outcome classes. Naturally, these are dependent on the classification threshold used, such that certain thresholds can lead to unexpected results, such as when the model has a nearly perfect accuracy score, but no predictive power as evidenced by very low recall scores. In other cases, results may not be statistically different from guessing the more dominant class. Below are two examples that demonstrate the impact that the classification threshold has on performance metrics.
+
+
+
+#### Example: Classification with a .5 threshold
+
+In the following example, the positive rate for the binary target is low -  the true underlying probability of the positive outcome is less than 0.1. We can visualize underlying probabilities in the following density plot, where the mean probability of the positive class is marked by the orange line. 
+
+![](../../img/class-imbalance/density.png)
+
+What might a confusion matrix for such data look like with a standard threshold? In this example, only five positive observations out of the total 100 observations, and since the threshold ineffectively classifies the observations, only one positive observation is correctly classified.
+
+
+
+```{python}
+#| echo: False
+#| label: tbl-confusion-matrix-1
+#| tbl-cap: 'Confusion Matrix 1: Standard Threshold'
+
+data = {
+    "": ["Predicted -", "Predicted +", "Metrics"],
+    "Observed -": [94, 1, "TNR: .99"],
+    "Observed +": [4, 1, "TPR: .20"],
+    "Metrics": ["NPV: .96", "PPV: .50", "ACC: .95"]
+}
+
+GT(pd.DataFrame(data)).opt_row_striping(row_striping=False)
+
+```
+
+Abbreviations
+
+- **ACC**: Accuracy
+- **TPR**: True Positive Rate/Sensitivity/Recall
+- **TNR**: True Negative Rate/Specificity
+- **PPV**: Positive Predictive Value/Precision
+- **NPV**: Negative Predictive Value
+
+In terms of the underlying probabilities, even if our predicted probabilities match up well, we may not be able to classify the observations correctly using the standard threshold.
+
+![Confusion Matrix 1](../../img/class-imbalance/density_pred_vs_true.png)
+
+Although classifying one observation out of five is not necessarily good, the overall accuracy score is 95% because almost all the negative observations were correctly classified. Without any additional context, someone might think this accuracy score was a good result, but it's actually no better than guessing, or just labeling all observations as the most common class. In this case though, we correctly predicted only 1 out of the 5 positives. Similar to the accuracy score, but unlike the true positive rate, all the other metrics in the confusion matrix show that we really only get the negatives right, which is typically not a  desirable outcome.
+
+#### Example: Classification with a lower threshold
+
+The next plot shows different possible threshold values for the predicted probabilities. With each threshold, we'd potentially create different classifications, resulting in different metrics based on our predicted classification. 
+
+![](../../img/class-imbalance/density_threshold.png)
+
+Now let's see what happens to the performance metrics if we try using a lower classification threshold. The confusion matrix below shows the results after using a lower classification threshold. The accuracy score has dropped from 95% to 84%, and the true negative rate has also decreased from 99% to 84%. The true positive rate, however, has notably increased - from 20% to 80% - there are now four out of five possible correct positive classifications, and both the positive and negative predictive values have also increased. This increase in scores ultimately suggests that the model is now doing a better job of capturing the positive class. 
+
+
+
+```{python}
+#| echo: false
+#| label: tbl-confusion-matrix-2
+#| tbl-cap: 'Confusion Matrix 2: Lower Threshold'
+
+data = {
+    "": ["Predicted -", "Predicted +", "Metrics"],
+    "Observed -": [80, 15, "TNR: .84"],
+    "Observed +": [1, 4, "TPR: .80"],
+    "Metrics": ["NPV: .99", "PPV: .79", "ACC: .84"]
+}
+
+GT(pd.DataFrame(data))
+
+```
+
+#### Additional Metrics to Consider
+
+In addition to the confusion matrix itself, other metrics are commonly used to assess a classification model's performance, including the *F1 score*, the *balanced accuracy* score, and the area under a receiver operating curve (*AUROC*) score, and others. We show the example results from the two confusion matrices below.
+
+
+```{python}
+#| echo: false
+#| label: tbl-add-metrics
+#| tbl-cap: Additional Metrics
+
+data = {
+    "Metric": ["AUROC", "F1", "Balanced Accuracy"],
+    "Confusion Matrix 1": [".83", ".29", ".59"],
+    "Confusion Matrix 2": [".83", ".26", ".72"]
+}
+
+GT(pd.DataFrame(data))
+```
+
+F1 and balanced accuracy are both derived from confusion matrix metrics, making them dependent on the chosen classification threshold. The F1 score calculation uses precision and recall, and balanced accuracy uses recall and the true negative rate. As such, these are liable to change if the classification threshold changes. 
+
+The AUROC score, however, is independent of the chosen classification threshold, which is why it is constant.  It is an especially beneficial score to consider because it relies on the predicted probabilities in its calculation, and considers the relationship between the true positive rate and true negative rate at many different thresholds, not just the single threshold you happened to select (@google_classification_2025). Therefore, the AUROC score will not change if the classification threshold changes, rather it will only change if the model itself changes. As such, this score is often a preferred metric even in the balanced classification setting.
+
+Although we have chosen to discuss only a few common performance metrics in this post, there are several different performance metrics available to you and we'll see more later. Each performance metric reports on a different facet of your model's performance. Therefore, you should decide which aspects of your model's performance are most important to your use case and you should use those metrics to assess your model.
+
+
+## Case Study: Wine Quality Data
+
+```{python}
+#| echo: false
+#| label: import-data-and-results
+
+df_wine = pd.read_csv(post_dir + '/wine_quality_imbalance_binary.csv')
+df_metrics = pd.read_csv(post_dir + '/metrics.csv').drop(columns='Dataset')  # only test is of interest
+df_metrics['Tuned'] = df_metrics['Model'].apply(lambda x: 'Tuned' if 'Tuned' in x else 'Not')
+df_metrics['Model'] = df_metrics['Model'].str.replace(' Tuned', '')
+
+
+df_pred_probs = pd.read_csv(post_dir + '/predicted_probabilities.csv')
+df_calibration = pd.read_csv(post_dir + '/calibration_curves.csv')
+
+base_rate = df_wine['quality_89'].mean()
+base_total = int(df_wine['quality_89'].sum())
+
+train_test_indices = pd.read_csv(post_dir + '/train_test_indices.csv')
+test_idx = train_test_indices.query('Dataset == "Test"')['Index'].values
+test_total = int(df_wine.loc[test_idx, 'quality_89'].sum())
+
+n_features = int(np.isin(df_metrics.columns,  'quality_89', invert=True).sum())
+n_train = int(train_test_indices.query('Dataset == "Train"').shape[0])
+n_test = int(train_test_indices.query('Dataset == "Test"').shape[0])
+```
+
+
+To illustrate the concepts discussed, we will demonstrate the application of various techniques on an imbalanced dataset to get a better handle on things. For the full notebook that produced this post, see [here](). We demonstrate an imbalanced dataset using the popular wine quality data. The raw data and more detail is available at the [UCI Repository](https://archive.ics.uci.edu/ml/datasets/wine+quality). This combines two datasets, one for red wine and one for white wine. There are `{python} int(df_wine.shape[0])` total observations and `{python} n_features` features that regard different aspects of the wine like acidity, pH, and alcohol content, including a binary for whether the color of the wine is red.
+
+
+The original target is numeric, but for our purposes we are attempting to classify wines with a rating of 8 or 9 as high quality. This represents about `{python} float(base_rate.round(2)) * 100`% of the data, for `{python} base_total` high quality wines. Data was randomly split into a 75% training set and a 25% test set. The test set has `{python} test_total` high quality wines.
+
+
+We use two models, a standard logistic regression model via [sklearn]{.pack} and a boosting model via [LightGBM]{.pack}. We will compare the performance of the following types of models:
+
+- Basic approach that does nothing for imbalance and uses a threshold of 0.5
+- Basic approach with an optimal threshold
+- Weighted (using `class_weight='balanced'` for the logistic and `is_unbalance=True` for the LGBM)[^wts]
+- With resampling[^nosmote]
+
+In addition, LGBM models were compared both with and without tuning. The latter case makes a more straightforward comparison since the parameters are identical in each case. But realistically, we would tune this type of model, so we include models tuned for number of estimators/tress, learning rate, and max depth[^tune].
+
+[^tune]: In our exploratory phase we saw that increasing depth appeared to help oversample/weighting (decreased mean prediction, lower breier, ACE, FPR), while less depth and fewer iterations appeared better for the thresholding approach (higher ROC, fewer total pos pred for thresholding approach).
+
+
+Metrics and other exploration focuses on the test set. We will also look at the calibration curves for the models, which can help us understand how well the predicted probabilities align with the true probabilities.
+
+[^wts]: For the weighted models, these default weights are inversely proportional to the class frequencies in both cases, meaning the minority class is weighted more heavily. This is a common default, but it can be adjusted as needed.
+
+[^nosmote]: We don't look at SMOTE and related to both keep things simple, and because they rarely outperform simple resampling, especially with models that are typically strong to begin with like boosting approaches. See @molnar_dont_2023 or @elor_smote_2022 for example.
+
+
+### Metrics
+
+Let's first look at the metrics for the models. Along with metrics we've discussed, we've added a few others including:
+
+- *Brier Score*: A measure of the mean squared difference between predicted probabilities and the true outcome. This is equivalent to the MSE for a binary target. Lower is better.
+- *Adaptive Calibration Error*: A measure of the calibration of the model. Lower is better. (See @nixon_measuring_2020)
+- *FPR*: False Positive Rate.
+- *FNR*: False Negative Rate.
+
+These metrics help us shift focus to penalties for misclassification, and the calibration of the model. For each of these we'd prefer lower values.
+
+
+### Logistic Model Results
+
+With these in mind, let's look at the logistic model results.
+
+```{python}
+#| echo: false
+#| label: tbl-metrics-logistic
+#| tbl-cap: 'Test Set Model Metrics for Logistic Regression'
+
+
+
+df_metrics_logistic = df_metrics[df_metrics['Model'].str.contains('Logistic')].drop(columns='Tuned').reset_index(drop=True)
+
+# Index rows for precision, recall, f1, and roc that have the max value
+max_indices = df_metrics_logistic[['Precision', 'Recall', 'F1 Score', 'ROC AUC']].idxmax()
+max_precision, max_recall, max_f1, max_roc = max_indices
+
+min_indices = df_metrics_logistic[['FPR', 'FNR', 'Brier Score', 'ACE']].idxmin()
+min_fpr, min_fnr, min_brier, min_calib = min_indices
+
+thresh_value = float(df_metrics_logistic.query('Threshold != .5')['Threshold'].round(3))
+
+(
+    GT(df_metrics_logistic)
+    .fmt_number(decimals=3, columns=df_metrics_logistic.select_dtypes(include=np.float64).columns.to_list())
+    # .tab_style(
+    #     style=[
+    #         style.text(color=okabe_ito[5], weight=800),
+    #     ],
+    #     locations=loc.column_labels() # can only specify all labels bc ....?
+    # )
+    .tab_style(
+        style=style.text(color=okabe_ito[4], weight=800),
+        locations=loc.body(
+            columns=['Precision'],
+            rows=[max_precision]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['Recall'],
+            rows=[max_recall]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['F1 Score'],
+            rows=[max_f1]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['ROC AUC'],
+            rows=[max_roc, 1, 3]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=[0, 'FPR'],
+            rows=[min_fpr]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['FNR'],
+            rows=[min_fnr]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['Brier Score'],
+            rows=[min_brier, 1]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['ACE'],
+            rows=[min_calib, 1]
+        )
+    )
+    .tab_source_note(        
+        '(T) means that classification is based on an optimal threshold. The optimal threshold is determined by maximizing the AUROC score. The notebook also provides an approach to maximize the AUPRC score.'
+    )
+)
+```
+
+
+
+The basic logistic with default threshold does very poorly, predicting only `{python} df_metrics_logistic.loc[0,'Total Pos Pred']` positive case. Changing the threshold to one that maximizes the AUROC score (~`{python} thresh_value`) improves most metrics, and it's better than the weighted and resampling approaches on most metrics. However, the threshold improvement is no free lunch - we now classify `{python} df_metrics_logistic.loc[0,'Total Pos Pred']` cases as positive, which is way too many! As a result, the FPR is the highest among all the models. It is more balanced between false positive and negative rates though. The sampling and weighted come to the same conclusions, which is expected, and which both would be better than doing nothing at all. 
+
+Note how the Brier score and ACE are notably lower for the basic model, indicating better calibration. Let's see what this looks like in the calibration curves and predicted probabilities.
+
+```{python}
+#| echo: false
+#| label: fig-calibration-logistic
+#| fig-cap: 'Calibration Curves for Logistic Regression'
+
+df_calib_logistic = df_calibration[df_calibration['Model'].str.contains('Logistic')]
+
+(
+    ggplot(df_calib_logistic, aes(x='Prob Pred', y='Prob True', color='Dataset'))
+    + geom_line()
+    + geom_point()
+    + geom_abline(linetype='dashed')
+    + facet_wrap('~Model', scales='free_x')
+    + lims(y=(0, 1))
+    + labs(title='Calibration Curves', x='Predicted Probability', y='Observed\nProportion')
+    + theme_clean(base_size=10)
+)
+```
+
+We can see in @fig-calibration-logistic that the default predicted probabilities are well-calibrated, which is reflected in the notably lower Brier and ACE scores. Weighting and resampling lead to over prediction on the test set. We can see this by also examining the predicted probabilities, as in @fig-predicted-probs-logistic. Their mean prediction is well beyond the observed rate.
+
+```{python}
+#| echo: false
+#| label: fig-predicted-probs-logistic
+#| fig-cap: 'Predicted Probabilities for Logistic Regression'
+
+df_pred_probs_logistic = df_pred_probs[df_pred_probs['Model'].str.contains('Logistic') & (df_pred_probs['Dataset'] == 'Test')]
+
+(
+    ggplot(df_pred_probs_logistic, aes(x='Predicted Probability', fill='Dataset'))
+    + geom_density(aes(fill = 'Model'), color = None, alpha=0.5)
+    + labs(x='Predicted Probability', y='Density', title = 'Test Set Predicted Probability Distributions')
+    + theme_clean()
+    # + theme(legend_text=element_text(size=6))
+)
+```
+
+### LGBM Model Results
+
+Now let's look at the LGBM model results.
+
+```{python}
+#| echo: false
+#| label: tbl-metrics-lgbm
+#| tbl-cap: 'Test Set Model Metrics for LightGBM'
+
+df_metrics_lgbm = df_metrics[df_metrics['Model'].str.contains('LGBM')].sort_values(['Model', 'Tuned']).reset_index(drop=True)
+df_metrics_lgbm = df_metrics_lgbm[['Model', 'Tuned'] + [col for col in df_metrics_lgbm.columns if col not in ['Model', 'Tuned']]]
+
+# Index rows for precision, recall, f1, and roc that have the max value
+max_indices = df_metrics_lgbm[['Precision', 'Recall', 'F1 Score', 'ROC AUC']].idxmax()
+max_precision, max_recall, max_f1, max_roc = max_indices
+
+min_indices = df_metrics_lgbm[['FPR', 'FNR', 'Brier Score', 'ACE']].idxmin()
+min_fpr, min_fnr, min_brier, min_calib = min_indices
+
+(
+    GT(df_metrics_lgbm)
+    .fmt_number(decimals=3, columns=df_metrics_lgbm.select_dtypes(include=np.float64).columns.to_list())
+    .tab_style(
+        style=style.text(color=okabe_ito[4], weight=800),
+        locations=loc.body(
+            columns=['Precision'],
+            rows=[max_precision]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['Recall'],
+            rows=[max_recall]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['F1 Score'],
+            rows=[max_f1]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['FPR'],
+            rows=[min_fpr]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['FNR'],
+            rows=[min_fnr]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['ROC AUC'],
+            rows=[max_roc, 2]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['Brier Score'],
+            rows=[min_brier, 2]
+        )
+    )
+    .tab_style(
+        style=[
+            style.text(color=okabe_ito[4], weight=800),
+        ],
+        locations=loc.body(
+            columns=['ACE'],
+            rows=[min_calib, 3]
+        )
+    )
+    .tab_source_note(        
+        '(T) means that classification is based on an optimal threshold. The optimal threshold is determined by maximizing the AUROC score. The notebook also provides an approach to maximize the AUPRC score.'
+    )
+)
+```
+
+
+
+There's more to digest here, but in general we see the following:
+
+- Unsurprisingly, these models did better than the logistic model approaches.
+- The basic model with or without thresholding/tuning did better than the weighted and resampling approaches.
+- The issues with weighting and resampling were far less pronounced in the LGBM models, but were still present. For example, the mean predictions higher than the basic models, and higher than the base rate (except for one case).
+- We also saw that for this data, the thresholding approach still led to far more predicted positives than would be expected. 
+
+In general, any of these models might be viable as this depends on your tolerance for certain types of errors. For example, if you are more concerned with false positives, i.e. you really don't want to classify a wine as good if it's not, you might not prefer the thresholding models. On the other hand, if you are more concerned with misjudging a good wine as bad, you might prefer the thresholding models.
+
+
+## Summary
+
+In this post, we explored various techniques for handling imbalanced data, including sampling-based and algorithmic methods. We demonstrated the impact of different classification thresholds on model performance and discussed the importance of selecting appropriate performance metrics. Our case study on wine quality data highlighted the practical application of these techniques and their effectiveness in improving model performance. In general, we saw that simple approaches often work well, and that the choice of classification threshold can have a significant impact on model performance.
+
+
+Key takeaways:
+
+- Imbalanced data is common in real-world settings and can lead to issues with model performance.
+- There are a number of techniques for handling imbalanced data, including sampling-based and algorithmic techniques.
+- Depending on the setting you can do nothing and possibly be just fine. But if you need to do something, simple approaches often work best.
+
+
+In the end, the best approach will depend on your specific use case and the trade-offs you are willing to make, which reflect your misclassification costs and the importance of different types of errors. We hope this post has provided you with a better understanding of how to handle imbalanced data and improve the performance of your models.
+
+
