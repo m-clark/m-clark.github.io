@@ -320,7 +320,7 @@ class theme_test(theme):
 
 ## Introduction
 
-Imagine you're working on a fraud detection system for a bank. But out of millions of transactions, only a tiny fraction are fraudulent. This is a classic example of *class imbalance*, where one class (fraudulent transactions) is much rarer than the other (legitimate transactions). Ignoring this imbalance can lead to the model predictions missing most of the fraudulent transactions. In this blog post, we'll explore various issues regarding imbalance, as well as techniques to potentially use. As we'll see, the problem is nuanced and, very often, simple approaches work very well.
+Imagine you're working on a fraud detection system for a bank. But out of millions of transactions, only a tiny fraction are fraudulent. This is a classic example of *class imbalance*, where one class (fraudulent transactions) is much rarer than the other (legitimate transactions). Ignoring this imbalance can lead to the model predictions missing most of the fraudulent transactions. In this blog post, we'll explore various issues regarding imbalance, as well as techniques to address it. As we'll see, the problem is nuanced and, very often, simple approaches work very well.
 
 
 
@@ -330,7 +330,7 @@ Imagine you're working on a fraud detection system for a bank. But out of millio
 To guide our exploration, we have set the following goals:
 
 - Explain class imbalance generally
-- Understanding examples and consequences of class imbalance
+- Review examples and consequences of class imbalance
 - Cover some common techniques
     - Sampling-based
     - Algorithmic
@@ -343,7 +343,7 @@ To guide our exploration, we have set the following goals:
 
 As an example, consider a binary target outcome with groups A and B. In the typical data setting, we might simply run the model and create a binary classification for any predicted probabilities above a threshold of .5. If you had collected data and half of the target observations came from group A and the other from group B, then your approach would be appropriate to use a 0.5 classification threshold when classifying the target as A or B.  With a good enough model, your predictions should match the underlying observed data. 
 
-Now consider the following scenario. If you were collecting data and less than 1% of the target data came from group A and all the rest of the data came from group B, then you would likely want your model to appropriately account for the lower prevalence rate of group A in the target. However, the status quo approach to classification will not achieve this, as it assumes a balanced outcome. So what are we to do?  First, let's get a better understanding of our situation.
+Now consider the following scenario. If you were collecting data and less than 1% of the target data came from group A and all the rest of the data came from group B, then you would likely want your model to appropriately account for the lower prevalence rate of group A in the target. However, the status quo approach of  using a 0.5 threshold will not achieve this because it assumes a balanced outcome. So what are we to do?  First, let's get a better understanding of our situation.
 
 
 ### Real-world Examples
@@ -359,11 +359,13 @@ As one can see, it's fairly easy to come up with situations where one class is m
 
 ### Is imbalance a problem?
 
-Well, not exactly, as we'll see. For one thing, we are referring to the binary case specifically, as it's easier to get an intuitive understanding of 'imbalance'. If we have more than two classes, we can still have imbalance, but it's not as easy to define unless we specifically knew the expected class distribution very well. As an example, when predicting the next work out of a vocabulary in the tens of thousands, even fairly common words may be rare in the context of the entire vocabulary.
+Well, not exactly, as we'll see. For one thing, we are referring to the binary case specifically, as it's easier to get an intuitive understanding of 'imbalance'. If we have more than two classes, we can still have imbalance, but it's not as easy to define unless we specifically know the expected class distribution very well. So for this post, we will focus on the binary case.
 
-For the binary case, the problem mostly resides in the sample size, modeling tools we use, and the metrics we use to evaluate the model. For example, if you had 10 million observations and 1% of them were in the minority class, you would likely have enough to work with to discover the feature-target relationships, and get good estimates of a variety of metrics. However, large data is no guarantee. One of your authors has worked with millions of observations as a starting point, but the minority class proportion was notably less than 1%. This resulted in problems, as the validation process ultimately ended up with only a few observations of the minority class, making good performance assessment difficult to achieve.
+Rather than the problem being imbalance itself, the problem often resides in the sample size (of the minority class), models we use, and the metrics we use to evaluate the model. For example, if you had 10 million observations and 1% of them were in the minority class, you would likely have enough to work with to discover the feature-target relationships. You would have 100,000 observations in the minority class to work with, and this should allow for good estimates of a variety of metrics even after test and validation splits. But with a smaller total samples or even rarer class prevalence, the problems of imbalance can be exacerbated due to the lack of data to work with.
 
-In other cases, our model may not produce good predictions for the minority class, even if we have enough data. And finally, some metrics are not as useful by themselves in the presence of imbalance, as we'll see later.
+In other cases, our model may not produce good predictions for the minority class, even if we have enough data. Maybe the model is not well suited to the problem, or the features aren't strong enough to make good classifications. In this case, even if your data was balanced you'd potentially still have poor performance.
+
+And finally, some metrics are not as useful by themselves in the presence of imbalance. We'll dive more deeply into this issue later, but for now, let's consider some common techniques for handling imbalanced data.
 
 
 ## Techniques for Dealing with Imbalanced Data
@@ -376,18 +378,15 @@ Sampling-based techniques involve modifying the original dataset to balance the 
 
 #### Oversampling
 
-Oversampling is a technique where we increase the number of observations in the minority class. Most commonly this can be done by duplicating observations in the minority class, or by generating synthetic observations. 
+Oversampling is a technique where we increase the number of observations in the minority class. Most commonly this can be done by duplicating observations in the minority class or by generating synthetic observations. 
 
+*Random over-sampling* (ROS) is akin to a bootstrap approach where we duplicate observations by sampling with replacement from the minority class to increase the total number of observations. This is the simplest oversampling approach and is often enough to improve model performance. Other more complicated sampling techniques could be used, but are rarely going to improve performance.
 
-
-*Random over-sampling* (ROS) is akin to a bootstrap approach where we sample with replacement from the minority class to increase the number of observations. This is the simplest approach and is often enough to improve model performance. Variations on the bootstrap approach employed may be used. Depending on the model setting, other more complicated techniques are rarely going to improve performance of ROS.
-
-
-One popular technique for generating synthetic observations is *SMOTE* (Synthetic Minority Over-sampling Technique), along with variants such as *ADASYN* (Adaptive Synthetic Sampling) and Borderline-SMOTE. SMOTE generates synthetic observations by creating interpolations of nearest neighbors of the minority class observations. 
+There are also several methods for generating synthetic observations. Popular techniques include *SMOTE* (Synthetic Minority Over-sampling Technique), along with SMOTE variants such as *ADASYN* (Adaptive Synthetic Sampling) and Borderline-SMOTE. SMOTE generates synthetic observations by creating interpolations of nearest neighbors of the minority class observations. It can be useful if using a weak learner for the model (e.g. a simple logistic regression), but generally does not lead to improvement for modeling techniques common in machine learning.
 
 #### Undersampling
 
-Undersampling is a technique where we decrease the number of observations in the majority class by randomly selecting observations in the majority class to remove. We could also do this randomly (Random under-sampling/RUS) as with oversampling. These techniques look at nearest neighbors of the majority class and remove some of them. Other variations include different approaches to some sort of 'matched samples' approach long employed in statistical settings, e.g., *NearMiss*.
+*Random under-sampling* (RUS) is a technique where we decrease the number of observations in the majority class by randomly selecting observations in the majority class to remove. These techniques look at nearest neighbors of the majority class and remove some of them. Other variations include different approaches to some sort of 'matched samples' techniques long employed in statistical settings, e.g., *NearMiss*.
 
 :::{.column-margin}
 A good package for implementing these techniques is the `imbalanced-learn` package in Python. The package is well-documented and easy to use, and is a good starting point for anyone looking to implement these techniques in their own work.
@@ -395,9 +394,7 @@ A good package for implementing these techniques is the `imbalanced-learn` packa
 
 #### Hybrid Sampling
 
-Hybrid sampling is a technique where we combine oversampling and undersampling to create a balanced dataset. This is often done by oversampling the minority class and undersampling the majority class, and as before this could be done in a random fashion. As an example of an alternative approach, we could remove some observations from both classes that would be nearest neighbors (*TOMEK* links), which would hopefully improve the model's ability to classify the observations.
-
-
+Hybrid sampling is a technique where we combine oversampling and undersampling to create a balanced dataset. This is often done by oversampling the minority class and undersampling the majority class, and as before this could be done in a random fashion. An alternative hybrid sampling approach could also involve removing some observations from both classes that would be nearest neighbors (*TOMEK* links), which would hopefully improve the model's ability to classify the observations among those that remain, as they are more clearly delineated among the features.
 
 
 ### Algorithmic Techniques
