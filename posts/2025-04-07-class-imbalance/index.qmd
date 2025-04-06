@@ -1,7 +1,8 @@
 ---
 title: Imbalanced Outcomes
-subtitle: Challenges & Solutions for This Common Situation
+description: Challenges and solutions for this common situation
 date: 2025-04-7
+image: ../../img/class-imbalance/roc_curve.png
 tags: ['classification', 'imbalanced data', 'thresholds', 'roc', 'pr', 'cost-sensitive learning', 'resampling', 'ensemble methods', 'smote']
 author: 
     - name: Michael Clark
@@ -9,15 +10,11 @@ author:
       url: https://m-clark.github.io
       affiliation: OneSix
       affiliation-url: https://onesixsolutions.com
-    # - name: Elizabeth Li
-    #   email: elizabeth.li@onesixsolutions.com
-    #   affiliation: OneSix
-    #   affiliation-url: https://onesixsolutions.com
 bibliography: ['../../bibs/class-imbalance.bib']
-draft: true
+draft: false
 categories:
-    - Machine Learning
-    - Regression
+    - machine learning
+    - regression
     - boosting
 format: 
     html:
@@ -322,12 +319,12 @@ class theme_test(theme):
 # theme_set(theme_clean())
 ```
 
-> This post began around two years ago and was initially intended for the Strong Analytics blog, but for various reasons never came to fruition. We still thought the spirit of the content was valuable, so we did what we could to get it out one way or another. Both the intended audience and focus have changed since the initial drafts, but hopefully the end result is cohesive enough to be useful to a wide audience. Much gratitude is owed to Elizabeth Li for her contributions to the initial drafts, and editorial help beyond.
+> This post began around two years ago and was initially intended for the Strong Analytics blog, but for various reasons never came to fruition. We still thought the spirit of the content was valuable, so we did what we could to get it out one way or another. Both the intended audience and focus have changed over time, but hopefully the end result is cohesive enough to be useful to a wide audience. Much gratitude is owed to Elizabeth Li for her contributions to the initial drafts, and editorial help beyond.
 
 
 ## Introduction
 
-Imagine you're working on a fraud detection system for a bank. But out of millions of transactions, only a tiny fraction are fraudulent. This is a classic example of *class imbalance*, where one class we are trying to predict (fraudulent transactions) is much rarer than the other (legitimate transactions). Depending on your modeling approach, ignoring the imbalance can lead to the  predictions missing most of the fraudulent transactions, as well as other issues we'd like to avoid. Here we'll explore various issues regarding class imbalance, as well as techniques to address it. As we'll see, the problem is nuanced and, very often, simple approaches to deal with it can work very well.
+Imagine you're working on a fraud detection system for a bank. Out of millions of financial transactions, only a tiny fraction are fraudulent. This is a classic example of *class imbalance*, where one class we are trying to predict (fraudulent transactions) is much rarer than the other (legitimate transactions). Depending on your modeling approach, ignoring the imbalance can lead to the  predictions missing most of the fraudulent transactions, as well as other issues we'd like to avoid. Here we'll explore various issues regarding class imbalance, as well as techniques to address it. As we'll see, the problem is nuanced and, very often, simple approaches to deal with it can work very well.
 
 
 ### Goals
@@ -345,23 +342,23 @@ By the end, you should have a good understanding of the challenges posed by imba
 
 ## Understanding Imbalanced Data
 
-The basic idea underpinning class imbalance is that one class is significantly less prevalent than the other, and this can happen for a variety of reasons, including the inherent nature of the data, or something about the way it was collected. For simplicity, we focus on the binary case, as it's easier to get an intuitive understanding of what 'imbalance' would mean in that setting. However, the concepts discussed here can extend to multiclass settings also. Check out the supplemental section (@sec-supp-multiclass) for a brief overview of the multiclass case.
+The basic idea underpinning class imbalance is that one class is significantly less prevalent than the other, and this can happen for a variety of reasons, including the inherent nature of the data, or something about the way it was collected. For simplicity, we focus on the binary case, as it's easier to get an intuitive understanding of what 'imbalance' would mean in that setting. However, the concepts discussed here can extend to multiclass settings also. Check out the [supplemental section](#sec-supp-multiclass) for a brief overview of the multiclass case.
 
 
-In a typical classification task, we would use a default threshold of 0.5 to classify predicted probabilities into binary outcomes, with anything above the threshold going to one class and the rest to the other class. This approach works well when the classes are balanced, but it can fail in imbalanced settings where the minority class is underrepresented. For example, if less than 1% of the target data belongs to the minority class, a model trained without accounting for this imbalance may struggle to identify minority class instances effectively, if at all, and fall short for the task at hand.
+In a typical classification task, we would use a default threshold of 0.5 to classify predicted probabilities into binary outcomes, with anything above the threshold going to one class and the rest to the other class. This approach works well when the classes are balanced or nearly so, but it can fail in imbalanced settings where the minority class is underrepresented. For example, if less than 1% of the target data belongs to the minority class, a model trained without accounting for this imbalance may struggle to identify minority class instances effectively, if at all, and fall short for the task at hand.
 
 
 ### Real-world Examples
 
 Class imbalance is common in many real-world scenarios, such as:
 
-- Fraud detection: As in our opening example, the vast majority of credit card transactions are legitimate, but a small percentage are fraudulent.
+- Fraud detection: As in our opening example, the vast majority of transactions are legitimate, but a small percentage are fraudulent.
 - Click-through rate: Most users on a website do not click on ads, but a small percentage do.
 - Disease detection: Consider classifying medical images for a rare disease. The vast majority of images may represent normal tissue, while only a small fraction show signs of the disease.
 - Spam detection: In email datasets, the majority of emails are legitimate (non-spam), while only a small fraction are spam emails.
 
 
-As one can see, it's quite common and natural to have data that is imbalanced at least to some extent. 
+As one can see, it's quite common and natural to have imbalanced data in many real-world applications. So how does it affect our modeling? 
 
 
 ### Is imbalance a problem?
@@ -379,35 +376,39 @@ Addressing these challenges requires a thoughtful modeling approach and use of p
 
 ## Techniques for Dealing with Imbalanced Data
 
-There are a number of techniques one can use for handling imbalanced data to help meet performance goals. Here, we will discuss a few commonly used methods, categorized into sampling-based techniques, algorithmic adjustments, and specialized approaches. We'll see some in action later with our case study.
+There are a number of techniques one can use for handling imbalanced data to help meet modeling goals. Here, we will discuss a few commonly used methods, categorized into sampling-based techniques, algorithmic adjustments, and specialized approaches. Then we'll see some in action later with our case study.
 
 ### Sampling-based Techniques
 
 Sampling-based techniques involve modifying the original dataset to balance the class distribution. These techniques can be broadly grouped into oversampling, undersampling, and hybrid sampling.
 
+
 #### Oversampling
 
-Oversampling is a technique where we increase the number of observations in the minority class. Most commonly this can be done by duplicating observations in the minority class or by generating synthetic observations. 
+*Oversampling* is a technique where we increase the number of observations in the minority class. Most commonly this is done by duplicating observations in the minority class or by generating synthetic observations. 
 
-*Random over-sampling* (ROS) is akin to a bootstrap approach where we duplicate observations by sampling with replacement from the minority class, and by doing so increase the total number of observations. This is the simplest oversampling approach, and is often enough to improve model performance. Other more complicated oversampling techniques could be used, but are rarely going to do much better. But while effective, oversampling can lead to overfitting, as the model may learn to memorize the duplicated observations rather than generalize from them.
+*Random over-sampling* (ROS) is akin to a bootstrap approach where we duplicate observations by sampling with replacement from the minority class, and this in turn increases the total number of observations. This is the simplest oversampling approach, and is often enough to potentially improve model performance on metrics that may be of interest. Other more complicated oversampling techniques could be used, but in practice are rarely going to do much better. However, while effective, oversampling can lead to overfitting, as the model may learn to memorize the duplicated observations rather than generalize from them.
 
-There are also several methods for generating synthetic observations. Popular techniques include *SMOTE* (Synthetic Minority Over-sampling Technique), along with SMOTE variants such as Borderline-SMOTE and *ADASYN* (Adaptive Synthetic Sampling). SMOTE generates synthetic observations by creating interpolations of nearest neighbors of the minority class observations. It can be useful if using a 'weak learner' for the model (e.g. a simple logistic regression), but generally does not lead to improvement for modeling techniques common in machine learning.
-
-#### Undersampling
-
-In contrast to oversampling, undersampling takes the opposite approach, reducing the number of observations in the majority class to make the target more balanced.
-
-*Random under-sampling* (RUS) is a technique where we decrease the number of observations in the majority class by randomly selecting observations in the majority class to remove. The goal is again to create a more balanced dataset. While it can be effective in that regard, it can also lead to loss of important information, especially if the sample size is not very large to begin with.
-
-Other techniques look at nearest neighbors of the majority class, i.e. observations that are very similar, and remove some of them assuming they are not adding useful information. Variations include approaches, e.g., *NearMiss*, that are similar to 'matched samples' techniques long employed in statistical settings.
+There are also several methods for generating synthetic observations. Popular techniques include *SMOTE* (Synthetic Minority Over-sampling Technique), along with SMOTE variants such as Borderline-SMOTE and *ADASYN* (Adaptive Synthetic Sampling). SMOTE generates synthetic observations by creating interpolations of nearest neighbors of the minority class observations. It can be useful if using a 'weak learner' for the model (e.g. a simple logistic regression), but generally does not lead to improvement for modeling techniques common in machine learning, such as tree-based methods.
 
 :::{.column-margin}
 A good package for implementing these techniques is the `imbalanced-learn` package in Python. The package is well-documented and easy to use, and is a good starting point for practitioners.
 :::
 
+#### Undersampling
+
+In contrast to oversampling, *undersampling* takes the opposite approach, reducing the number of observations in the majority class to make the target more balanced.
+
+*Random under-sampling* (RUS) is a technique where we decrease the number of observations in the majority class by randomly selecting observations in the majority class to remove. The goal is again to create a more balanced dataset. While it can be effective in that regard, it can also lead to loss of important information, especially if the sample size is not very large to begin with.
+
+Other techniques look at nearest neighbors of the majority class, i.e. observations that are very similar, and remove some of them assuming they are not adding useful information. Variations include approaches, e.g., *NearMiss*, that are similar to 'matched samples' techniques long employed in statistical settings.
+
+
+
+
 #### Hybrid Sampling
 
-Hybrid sampling is a technique where we combine oversampling and undersampling to create a balanced dataset. This is often done by oversampling the minority class and undersampling the majority class, and as before this could be done in a random fashion. An alternative hybrid sampling approach could also involve removing some observations from both classes that would be nearest neighbors (*TOMEK* links), which would hopefully improve the model's ability to classify the observations among those that remain, as they are more clearly delineated among the features.
+Hybrid sampling is a technique where we combine oversampling and undersampling to create a (more) balanced dataset. This is often done by oversampling the minority class and undersampling the majority class, and as before this could be done in a random fashion. An alternative hybrid sampling approach could also involve removing some observations from both classes that would be nearest neighbors (*TOMEK* links), which would hopefully improve the model's ability to classify the observations among those that remain, as they are more clearly delineated among the features.
 
 
 
@@ -427,9 +428,9 @@ For some models, like logistic regression, weighting would essentially be equiva
 
 #### Thresholding
 
-Thresholding regards changing the classification cutoff to account for the imbalance in the data. The default threshold of 0.5 is an intuitive choice (@van_den_goorbergh_harm_2022), but is often not effective for imbalanced data. Instead we can use a lower threshold to potentially increase the number of positive classifications, or raise it to ensure we are only classifying the most confident observations as positive. 
+Thresholding regards changing the classification cutoff to account for the imbalance in the data. The default threshold of 0.5 is an intuitive choice (@van_den_goorbergh_harm_2022), but is often not effective for imbalanced data. When modifying the threshold, we can use a lower threshold to potentially increase the number of positive classifications, or raise it to ensure we are only classifying the most confident observations as positive. 
 
-Identifying an optimal threshold can significantly improve certain metrics we may be interested in, especially when we want to avoid certain types of errors. While a simple approach, it can actually be quite effective at achieving our goals in the context of imbalanced data, and there are a number of different techniques that can be used to identify the optimal threshold for our modeling purposes. Some of these are outlined in the [supplemental section](#sec-supp-thresh).
+Identifying an optimal threshold can significantly improve certain metrics we may be interested in, especially when we want to avoid certain types of errors. And though this is a simple approach, it can actually be quite effective at achieving our goals in the context of imbalanced data, and there are a number of different techniques that can be used to identify the optimal threshold for our modeling purposes. Some of these are outlined in the [supplemental section](#sec-supp-thresh).
 
 
 
@@ -437,7 +438,9 @@ Identifying an optimal threshold can significantly improve certain metrics we ma
 
 You can find other techniques that are used to handle imbalanced data for specific model settings. For example, in uplift modeling, the goal is to predict the difference in outcomes between two groups, and the data is often imbalanced. Some will use a *class variable transformation* to predict differences in outcomes between treatment and control groups.
 
-In addition, some approaches have been used in the context of deep learning models. For example, some focus on using different loss functions like  *focal loss* (@lin_focal_2018) and *label smoothing*. Others try different optimization approaches like *sharpness-aware minimization* (SAM, see @foret_sharpness-aware_2021), data augmentation, and more (@shwartz-ziv_simplifying_2022 provides a nice overview). At this time, it's still difficult to know in advance whether deep learning models and associated methods for imbalance will work well for a typical tabular data setting, but they may be worth trying if you have the time and resources, and especially if your data is homogenous in nature[^homodata]. In general, you may need to try a few different approaches to see what works best for your data and your model. 
+In addition, some approaches have been used in the context of deep learning models. For example, some focus on using different loss functions like  *focal loss* (@lin_focal_2018) and *label smoothing*. Others try different optimization approaches like *sharpness-aware minimization* (SAM, see @foret_sharpness-aware_2021), data augmentation, and more[^dloverview]. At this time, it's still difficult to know in advance whether deep learning models and associated methods for imbalance will work well for a typical tabular data setting, but they may be worth trying if you have the time and resources, and especially if your data is homogenous in nature[^homodata]. In general, you may need to try a few different approaches to see what works best for your data and your model. 
+
+[^dloverview]: @shwartz-ziv_simplifying_2022 provides a nice overview.
 
 [^homodata]: Homogenous data has features that are generally from the same source and/or are the same type. For example, a dataset of images would be homogenous, as would a dataset of text. In those settings we likely would only be considering deep learning models, and so the techniques mentioned would be more applicable. In contrast, tabular data is often heterogeneous, with different types of features, and so the techniques mentioned [may not be as performant](https://m-clark.github.io/posts/2022-04-01-more-dl-for-tabular/).
 
@@ -445,31 +448,33 @@ In addition, some approaches have been used in the context of deep learning mode
 
 ## Performance Metrics with Imbalanced Data
 
-When evaluating classification models, performance metrics are essential for understanding how well a model is performing and for identifying areas for improvement. However, in the context of imbalanced data, these metrics can be misleading if not interpreted carefully. This is because many metrics are sensitive to the classification threshold, which determines how predicted probabilities are converted into class labels. So it's important to consider how thresholds impact both predictions and the metrics derived from them.
+When evaluating classification models, performance metrics are essential for understanding how well a model is performing and for identifying areas for improvement. However, in the context of imbalanced data, these metrics can be misleading if not used with care. This is because many metrics are sensitive to the classification threshold, so it's important to consider how thresholds impact both classifications and the metrics derived from them.
+
 
 ### The Role of Thresholds in Balancing Trade-offs
 
-Classification models typically output predicted probabilities of the target classes. These probabilities can be used to create classifications, and those classifications form the basis for calculating a variety of performance metrics. As noted previously, when creating a classification label, we use a *threshold*, or cutoff point, to determine which class to assign to the observation. Anything beyond the threshold is classified as the positive class, and anything below is classified as the negative class. 
+As noted previously, when creating a classification label, we use a threshold, or cutoff point, to determine which class to assign to the observation based on predicted probability for that observation. Anything beyond the threshold is classified as the positive class, and anything below is classified as the negative class. So, the choice of threshold directly affects the resulting classifications, and the performance metrics derived from them. 
 
-The choice of threshold directly affects the resulting classifications and, consequently, the performance metrics. For example, lowering the threshold can increase the number of positive predictions, which might help capture more true positives, but it can also lead to more false positives. Conversely, raising the threshold would likely result in fewer positive predictions, which can help reduce false positives but may also miss some true positives. 
+It's important to note that there is not an inherently right or wrong choice here. For example:
 
-It's important to note that we don't have an inherently right or wrong way to go here. For example:
+- A lower threshold, which would lead to more positive classifications, may be appropriate when missing positive cases (false negatives) is costly, such as in disease detection[^eitherway].
+- A higher threshold, leading to fewer positive classifications, may be better when false positives are more problematic, such as in fraud detection.
 
-- A lower threshold may be appropriate when missing positive cases (false negatives) is costly, such as in disease detection.
-- A higher threshold may be better when false positives are more problematic, such as in fraud detection.
+[^eitherway]: It could also go the other way for disease detection, where the cost of a false positive would result in costly or invasive procedures, and so a higher threshold would be preferred. But typically it would likely just result in more testing to confirm the diagnosis, which is not ideal but not as costly.
 
-The impact of thresholds highlights the trade-offs inherent in classification tasks, and selecting a threshold that aligns with the specific goals and constraints of your application is critical. Ultimately, the choice of threshold should reflect the priorities of your use case. Now let's take a closer look at how thresholds can affect performance metrics.
+The impact of thresholds highlights the trade-offs inherent in classification tasks, and selecting a threshold that aligns with the specific goals and constraints of your application is critical. Now let's take a closer look at how thresholds can affect performance metrics.  If you feel you already have the gist, you can skip ahead to the [case study](#sec-case-study) to see how this plays out in practice.
 
-### The Confusion Matrix
+
+### The Confusion Matrix {#sec-confusion-matrix}
 
 Many commonly used metrics such as accuracy, precision, recall, and F1 score, are derived from the *confusion matrix*. The confusion matrix is the initial summary of the relationship between the predicted and observed classes. However, any metric derived in this way will be sensitive to the classification threshold. 
 
-On the other hand, metrics derived from predicted probabilities, such as area under a receiver operating curve (AUROC) and Brier score, are independent of the threshold, and can provide an additional view of model performance. These metrics are particularly valuable in imbalanced settings, where the threshold-dependent metrics may fail to capture the nuances of model behavior. Let's now see how this plays out in practice.
+On the other hand, many other metrics derived from predicted probabilities. Examples include the area under a receiver operating curve (AUROC) and Brier score, and these metrics are independent of the classification threshold, and so can provide an additional view of model performance. These metrics are particularly valuable in imbalanced settings, where the threshold-dependent metrics may fail to capture the nuances of model behavior. Let's now see how this works.
 
 
-### Example: Classification with a .5 Threshold
+### Example: Classification with a .5 Threshold {#sec-example-thresh-05}
 
-In the following hypothetical example, the positive rate for the binary target is low - the true average underlying probability of the positive outcome is less than 0.1. Though in practice we'd not know the true probabilities, here we can visualize what they might look like in the following density plot, where the mean probability of the positive class is marked by the line. 
+In the following hypothetical example, the positive rate for the binary target is low - the true average underlying probability of the positive outcome is less than 0.1. Though in practice we'd not know the true probabilities, here we can visualize what their distribution might look like in the following density plot, where the mean probability of the positive class is marked by the line. 
 
 ![Density plot of underlying true probabilities, imbalanced setting](../../img/class-imbalance/density.png){#fig-dens-true-prob}
 
@@ -512,8 +517,19 @@ The next plot shows different possible threshold values we could use for the pre
 
 ![Predicted vs. true probabilities with different thresholds](../../img/class-imbalance/density_threshold.png){#fig-dens-thresholds}
 
-Now let's see what happens to the performance metrics if we try using a lower classification threshold than 0.5. In this setting, the accuracy score has dropped from 95% to 84%, and the true negative rate has also decreased from 99% to 84%. However, the true positive rate has notably increased - from 20% to 80% - there are now four out of five possible correct positive classifications, though it did come at the cost of a higher false positive rate. The positive predictive value (PPV) has also dropped from 50% to 21%, meaning that only about one in five of the positive classifications were correct. This is a common trade-off in imbalanced settings, where increasing recall often comes at the cost of precision, and vice versa. In general, this result suggests that the model is now doing a better job of capturing the positive class. But while we gain in some metrics, we've lost ground in others. Again, it's a trade-off.
+Now let's see what happens to the performance metrics if we try using a lower classification threshold than 0.5, say something closer to ~.1. Here is what the resulting table might look like.
 
+```{python}
+#| echo: false
+
+# df_probs= pd.read_csv(post_dir + 'old_simmed_probs.csv')
+# df_probs.assign(_class = (df_probs['prediction']>.11).astype(int)).describe()
+
+```
+
+In this setting, the accuracy score has dropped from 95% to 84%, but we really shouldn't too be concerned with this, as accuracy isn't usually our focus in the imbalanced setting. Again, we could have guessed and gotten 95% correct. One new result is that the true positive rate (recall) has notably increased - from 20% to 80% - there are now four out of five possible correct positive classifications. This is much better! But looking further, it did come at the cost of a higher false positive rate - ~16% for this result vs. 1% previously[^fprtnr]. The positive predictive value (PPV) has also dropped from 50% to 21%, meaning that only about one in five of the positive classifications were correct. This is a common trade-off in imbalanced settings, where increasing recall often comes at the cost of precision, and vice versa. In general, this result suggests that the model is now doing a better job of capturing the positive class. But while we gain in some metrics, we've lost ground in others. Again, it's a trade-off.
+
+[^fprtnr]: The false positive rate is the complement of the true negative rate, so it is 1 - TNR from the table.
 
 ```{python}
 #| echo: false
@@ -534,7 +550,7 @@ GT(pd.DataFrame(data))
 
 
 
-The following table provides some additional metrics to consider for the two confusion matrices. In particular we see the *F1 score*, the *balanced accuracy* score,  the area under a receiver operating curve (*AUROC*) score. These are common alternatives used in the imbalanced setting.
+The following table provides some additional metrics to consider for the two confusion matrices. In particular, we see the *F1 score*, the *balanced accuracy* score,  the area under a receiver operating curve (*AUROC*) score. These are common alternatives used in the imbalanced setting.
 
 
 ```{python}
@@ -566,15 +582,15 @@ data = {
 
 <!-- Note to self, though we have the simulated data that produced the plots, the actual data that produced the confusion matrices has been lost. All metrics are accurate for these matrices, but the AUROC is based on the simulated probabilities and test set observed y that are much larger in number than the confusion matrix. -->
 
-The F1 score is the harmonic mean of precision and recall (true positive rate), and balanced accuracy is the average of the true positive rate and true negative rate, or the average recall for both positive and negative classes. They both are popular choices for imbalanced data, as they are less sensitive to the class imbalance than accuracy, but they are still sensitive to the threshold used to create the classifications. In this case, both improve with a lower threshold, though the F1 score only changes slightly. 
+The F1 score is the harmonic mean of precision (positive predictive value) and recall (true positive rate), and balanced accuracy is the average of the true positive rate and true negative rate, or the average recall for both positive and negative classes. These are less sensitive to the class imbalance than accuracy, but they are still sensitive to the threshold used to create the classifications. In this case, both improve with a lower threshold, though the F1 score only changes slightly. 
 
 In contrast, the AUROC score is based on the predicted probabilities, and so is independent of the threshold, which is why it is constant in @tbl-add-metrics[^rocclass].  It is a useful metric in this context to consider because it considers the relationship between the true positive rate and true negative rate at many different thresholds, not just the single threshold you happened to select (@google_classification_2025). As such, this score is often a preferred metric, even in the balanced classification setting.
 
-We've now seen a few performance metrics, but there are many available, and we'll see even more later. Each provides a different facet with which to view your model's performance. Therefore, you should decide which aspects of your model's performance are most important to your use case, and choose your metrics accordingly.
+We've now seen a few performance metrics, but there are many available, and we'll see even more later. Each provides a different facet with which to view your model's performance. With this in mind, you should decide which aspects of your model's performance are most important to your use case, and choose your metrics accordingly.
 
 [^rocclass]: There is a way to approximate AUROC from the confusion matrix, but it is not exact, and would change with the threshold.  
 
-## Case Study: Wine Quality Data
+## Case Study: Wine Quality Data {#sec-case-study}
 
 ```{python}
 #| echo: false
@@ -582,6 +598,7 @@ We've now seen a few performance metrics, but there are many available, and we'l
 thresh_method = 'fbeta'
 df_wine = pd.read_csv(data_dir + 'wine_quality_imbalance.csv')
 df_metrics = pd.read_csv(data_dir + f'metrics_{thresh_method}.csv')
+df_metrics = df_metrics.assign(**{'Threshold Method': np.where(df_metrics['Threshold Method'].isna(), 'Default', 'F2')})
 
 df_pred_probs = pd.read_csv(data_dir + 'predicted_probabilities.csv')
 df_calibration = pd.read_csv(data_dir + 'calibration_curves.csv')
@@ -604,7 +621,7 @@ At this point, we have covered a lot of ground regarding imbalanced data. We hav
 
 ### Data Setup
 
-We will be using the popular wine quality data. The raw data and more detail is available at the [UCI Repository](https://archive.ics.uci.edu/ml/datasets/wine+quality). This combines two datasets, one for red wine and one for white wine. There are `{python} int(df_wine.shape[0])` total observations and `{python} n_features` features that regard different aspects of the wine, like acidity, pH, and alcohol content. We also include a binary feature for whether the color of the wine is red.
+We will be using the popular wine quality data. The raw data and more detail is available at the [UCI Repository](https://archive.ics.uci.edu/ml/datasets/wine+quality). Our data combines two datasets, one for red wine and one for white wine. There are `{python} int(df_wine.shape[0])` total observations and `{python} n_features` features that regard different aspects of the wine, like acidity, pH, and alcohol content. We also include a binary feature for whether the color of the wine is red.
 
 
 The original target is numeric, but for our purposes we are attempting to classify wines with a rating of 8 or 9 as 'high quality'. This represents `{python} base_total` high quality wines, about `{python} float(base_rate.round(2)) * 100`% of the data. Data was randomly split into a 75% training set and a 25% test set. The test set has `{python} test_total` high quality wines.
@@ -616,30 +633,33 @@ This is a good example of how imbalanced data can really make your data feel eve
 
 ### Models
 
-We use two base models, a standard logistic regression model via [sklearn]{.pack} and a boosting model via [LightGBM]{.pack}. We will compare the performance of the following models:
+We use two base models, a standard logistic regression model via [sklearn]{.pack} and a boosting model via [LightGBM]{.pack}. Both use all non-target columns as features. We will compare the performance of the following models:
 
 - Basic approach that does nothing for imbalance and uses a threshold of 0.5
-- Basic approach with an 'optimal' threshold
-- Weighted (using `class_weight='balanced'` for the logistic and `is_unbalance=True` for the LGBM)[^wts]
-- With resampling[^nosmote]
+- Basic approach that uses an 'optimal' threshold for classification
+- A weighted model (using `class_weight='balanced'` for the logistic and `is_unbalance=True` for the LGBM)[^wts]
+- A random oversampling approach (oversampling) [^nosmote]
 
 [^wts]: For the weighted models, these default weights are inversely proportional to the class frequencies, meaning the minority class is weighted more heavily while the majority class is weighted less heavily. This is a common default, but it can be adjusted as needed.
 
 [^nosmote]: We don't look at SMOTE and related techniques, both to keep things simple, and because they rarely outperform simple resampling, especially with models that are typically strong to begin with, like boosting approaches. See @molnar_dont_2023 or @elor_smote_2022 for example.
 
-The optimal threshold can be determined in a variety of ways, and one can look at the [supplemental section](#sec-supplemental) for more details on choosing the optimal threshold, and in particular how we did so for these results. The tables of results will identify the method used.
+The optimal threshold can be determined in a variety of ways, and one can look at the [supplemental section](#sec-supplemental) for more details on choosing the optimal threshold. Here we used a threshold that maximizes the F-beta score on test, with beta = 2. This means we are giving more weight to recall than precision, which is often the case in imbalanced settings[^valchoice]. 
+
+[^valchoice]: Ideally, if we didn't just choose a metric to optimize for our threshold ahead of time based on the domain setting, the choice could be made via a separate validation process. For our data, this would have been a very noisy result anyway, so for simplicity we just went with using the test set as the thresholding validation. 
+
 
 In addition, LGBM models were compared both with and without tuning. The latter case makes a more straightforward comparison since the parameters are identical in each case. But realistically, we would tune this type of model, so we include models tuned for number of estimators/trees, learning rate, and max depth[^tune].
 
 [^tune]: In our exploratory phase we saw that increasing depth appeared to help oversample/weighting approaches (decreased mean prediction, lower brier, ACE, FPR), while less depth and fewer iterations appeared better for the thresholding approach (higher ROC, fewer total positive predictions for thresholding approach).
 
 
-Metrics and other exploration that follows focuses on the test set. We will also look at the calibration curves for the models, which can help us understand how well the predicted probabilities align with the observed class proportions.
+Metrics and other exploration that follows focuses on the test set. We will also look at the calibration curves for some models, which can help us understand how well the predicted probabilities align with the observed class proportions.
 
 
 ### Metrics
 
-Let's first look at the metrics for the models. Along with several metrics we've already discussed, we've added a few others including:
+Now let's get to some results. Along with several metrics we've already discussed, we've added a few others including:
 
 
 - *Brier Score*: A measure of the mean squared difference between predicted probabilities and the true outcome. This is equivalent to the MSE for a binary target. Lower is better [see @harrell_damage_2017 for additional perspective].
@@ -647,7 +667,7 @@ Let's first look at the metrics for the models. Along with several metrics we've
 - *FPR*: False Positive Rate.
 - *FNR*: False Negative Rate.
 
-These metrics help us shift focus to the calibration of the model and penalties for misclassification. For each of these we'd prefer lower values. In addition, we looked at the *F2 Score*, a variant of the F-score that gives more weight to recall than precision. This is useful when false negatives are more costly than false positives, such as in fraud detection or disease diagnosis. As with F1, higher is better. We also used maximizing the F2 score to determine the optimal threshold for the models.
+These metrics help us shift focus to the calibration of the model and penalties for misclassification. For each of these we'd prefer lower values. In addition, we looked at the *F2 Score*, a variant of the F-score that gives more weight to recall than precision. This is useful when false negatives are more costly than false positives, such as in fraud detection or disease diagnosis. As with F1, higher is better. 
 
 ### Logistic Model Results
 
@@ -755,14 +775,16 @@ The basic logistic with default threshold of 0.5 does very poorly, predicting on
 The sampling and weighted approaches come to the same conclusions, which is expected for logistic regression. While both would be better than doing nothing at all, both predict far too many positive cases, ~9 times what's observed in the data! The mean predicted probability is also high (~`{python} f'{mean_pred[2]}'`), which is a sign that the model is overpredicting the minority class. However, this makes sense when considering the fact that the training data was resampled to a balanced state, or the model was estimated as if it were via weighting.
 
 
-Now let's look at the metrics that are based on the predicted probabilities. Again, consult the [supplemental section](#sec-supp-metrics) for brief definitions of these metrics.
+Now let's look at the metrics that are based on the predicted probabilities. Again, consult the [supplemental section](#sec-supp-metrics) for brief definitions of these metrics. Since thresholding doesn't matter here, we exclude it from the table, as it's identical to the basic model.
 
 ```{python}
 #| echo: false
 #| label: tbl-prob-metrics-logistic
 #| tbl-cap: 'Test Set Model Probability Metrics for Logistic Regression'
+
+# since thresh is dropped, min/max indices are different
 (
-    GT(df_metrics_logistic[prob_based])
+    GT(df_metrics_logistic[prob_based].query('Model != "Logistic Basic (T)"'))
     .fmt_number(decimals=3, columns=df_metrics_logistic[prob_based].select_dtypes(include=np.float64).columns.to_list())
     .tab_style(
         style=[
@@ -770,7 +792,7 @@ Now let's look at the metrics that are based on the predicted probabilities. Aga
         ],
         locations=loc.body(
             columns=['AUROC'],
-            rows=max_roc
+            rows=max_roc[0]
         )
     )
     .tab_style(
@@ -779,7 +801,7 @@ Now let's look at the metrics that are based on the predicted probabilities. Aga
         ],
         locations=loc.body(
             columns=['Avg Prec'],
-            rows=max_roc
+            rows=max_roc[0]
         )
     )
     .tab_style(
@@ -788,7 +810,7 @@ Now let's look at the metrics that are based on the predicted probabilities. Aga
         ],
         locations=loc.body(
             columns=['Brier Score'],
-            rows=min_brier
+            rows=min_brier[0]
         )
     )
     .tab_style(
@@ -797,7 +819,7 @@ Now let's look at the metrics that are based on the predicted probabilities. Aga
         ],
         locations=loc.body(
             columns=['ACE'],
-            rows=min_calib
+            rows=min_calib[0]
         )
     )
     .tab_source_note(        
@@ -834,6 +856,8 @@ df_calib_logistic['Dataset'] = pd.Categorical(df_calib_logistic['Dataset'], cate
     )
 )
 ```
+
+<br>
 
 We can see in @fig-calibration-logistic that the basic model predicted probabilities are well-calibrated, which is also reflected in the notably lower Brier and ACE scores. Weighting and resampling lead to over-prediction of the minority class. We can see this by also examining the predicted probabilities directly, as in @fig-predicted-probs-logistic. Their mean prediction is well beyond the observed rate[^overweighted].
 
@@ -960,19 +984,20 @@ There's more to digest here, but in general we see the following:
 - Unsurprisingly, these models did better than the logistic model approaches.
 - The basic model with or without thresholding/tuning did better on several metrics than the weighted and resampling approaches.
 - The issues with weighting and resampling were far less pronounced in the LGBM models, but were still present. For example, the mean predictions are higher than the basic models, and higher than the base rate, except for the over-sampled with tuning model.
-- We also saw that for this data, the thresholding approach still led to far more predicted positives than would be expected, and with it, a higher false positive rate.
+- We also saw that the thresholding approach still led to far more predicted positives than would be expected, and with it, a higher false positive rate.
 
 A couple other things to note. One model has perfect precision! However it comes at the cost of the highest false negative rate/lowest recall. In addition, our optimal threshold was chosen based on the value that maximized F2, but that model did not have the highest F2 score of all models. They did have the highest recall however, which is what F2 puts more weight on.
 
-Now let's look at the probability-based metrics.
+Now let's look at the probability-based metrics. Again the thresholding results are removed as they aren't applicable and duplicate the basic models.
 
 ```{python}
 #| echo: false
 #| label: tbl-prob-metrics-lgbm
 #| tbl-cap: 'Test Set Model Probability Metrics for LGBM Model'
 
+# decided to drop thresh so min/max metrics need to be altered
 (
-    GT(df_metrics_lgbm[prob_based])
+    GT(df_metrics_lgbm[prob_based].query('Model != "LGBM Basic (T)"'))
     .fmt_number(decimals=3, columns=df_metrics_lgbm[prob_based].select_dtypes(include=np.float64).columns.to_list())
     .tab_style(
         style=[
@@ -980,7 +1005,7 @@ Now let's look at the probability-based metrics.
         ],
         locations=loc.body(
             columns=['AUROC'],
-            rows=max_roc
+            rows=max_roc[0]
         )
     )
     .tab_style(
@@ -989,7 +1014,7 @@ Now let's look at the probability-based metrics.
         ],
         locations=loc.body(
             columns=['Avg Prec'],
-            rows=max_pr
+            rows=3
         )
     )
     .tab_style(
@@ -998,7 +1023,7 @@ Now let's look at the probability-based metrics.
         ],
         locations=loc.body(
             columns=['Brier Score'],
-            rows=min_brier
+            rows=min_brier[0]
         )
     )
     .tab_style(
@@ -1007,7 +1032,7 @@ Now let's look at the probability-based metrics.
         ],
         locations=loc.body(
             columns=['ACE'],
-            rows=min_calib
+            rows=min_calib[0]
         )
     )
     .tab_source_note(        
@@ -1016,7 +1041,8 @@ Now let's look at the probability-based metrics.
 )
 ```
 
-Much the same story - neither weighting nor over-sampling helped much here. Again, thresholding isn't applicable for these metrics, and the basic model generally does well. 
+Much the same story - neither weighting nor over-sampling helped much here. In general, all models performed pretty similarly on these metrics, though we might think the basic models did a bit better on AUROC.
+
 
 
 ## Discussion
@@ -1075,6 +1101,19 @@ The second table shows the following metrics:
 
 
 
+### Brief Discussion of the Multiclass Setting {#sec-supp-multiclass}
+
+
+While we've focused on binary classification, many real-world problems involve more than two classes. Multiclass settings can present additional challenges with imbalanced data, as the relationships between classes become more complex and the interpretation of performance metrics needs adjustment.
+
+In multiclass settings, we often use the same core metrics as in binary classification (precision, recall, F1, etc.), but we need to consider how to aggregate these metrics across classes. Two common approaches are:
+
+**Weighted Average**: This approach takes into account the number of instances in each class. Each class's metric is weighted by the proportion of instances in that class. It may be useful when you want to account for class imbalance to ensure that metrics from larger classes have a greater impact on the overall score.
+
+**Macro Average**: This approach calculates the metric independently for each class and then takes the average of these metrics. Each class is treated equally, regardless of its size. It is useful when you want to ensure that the model performance assessment is consistent across all classes, rather than being dominated by the performance on the more frequent classes.
+
+As in the binary case, the choice between these approaches depends on your specific goals. Use weighted averaging when you want metrics to reflect the natural class distribution, and macro averaging when you want to ensure consistent performance across all classes.
+
 
 ### Choosing a Classification Threshold {#sec-supp-thresh}
 
@@ -1130,23 +1169,13 @@ df_combined['Threshold Method'] = df_combined['Threshold Method'].str.upper()
 df_combined.loc[df_combined['Threshold Method'] == 'OBSPROP', 'Threshold Method'] = 'Obs. Prop.'
 
 num_cols = df_combined.select_dtypes(include=np.float64).columns.to_list()
+
+df_combined.rename(columns={'Threshold Method': 'Optimization Method'}, inplace=True)
+
 GT(df_combined.sort_values('Tuned')).fmt_number(columns=num_cols, decimals=2)
 ```
 
-In our case study, thresholding that was relatively more focused on precision (F1/AUPRC) led to a high threshold, few positive predictions, and a low false positive rate. Thresholding that was relatively more focused on recall (F2) led to a notably lower threshold than .5, more positive predictions, and a higher false positive rate. The geometric mean/ROC approach led to the most positive predictions, and thus a notably high false positive rate, but also a lower false negative rate. By coincidence, the ROC and F2 approaches led to the same classification for the tuned model. 
+In our case study, thresholding that was relatively more focused on precision (F.5/AUPRC) led to a high threshold, few positive predictions, and a low false positive rate. Thresholding that was relatively more focused on recall (F2) led to a notably lower threshold than .5, more positive predictions, and a higher false positive rate. The geometric mean/ROC approach led to the most positive predictions, and thus a notably high false positive rate, but also a lower false negative rate. By coincidence, the ROC and F2 approaches led to the same classification for the tuned model. 
 
-We ultimately chose the F2 threshold approach for the reported tables because we were interested in recall, and the ROC approach led to too many positives for the untuned model. However, there's no reason for this choice other than our personal preference, and the other approaches could be just as valid depending on your own goals for wine classification 🍷.
+We ultimately chose the F2 threshold approach for the reported tables because we were interested in recall, and the ROC approach led to too many positives for the untuned model. However, there's no reason for this choice other than our personal preference, and the other approaches could be just as valid depending on your own goals for wine classification. Cheers! 🍷
 
-
-### Brief Discussion of the Multiclass Setting {#sec-supp-multiclass}
-
-
-While we've focused on binary classification, many real-world problems involve more than two classes. Multiclass settings can present additional challenges with imbalanced data, as the relationships between classes become more complex and the interpretation of performance metrics needs adjustment.
-
-In multiclass settings, we often use the same core metrics as in binary classification (precision, recall, F1, etc.), but we need to consider how to aggregate these metrics across classes. Two common approaches are:
-
-**Weighted Average**: This approach takes into account the number of instances in each class. Each class's metric is weighted by the proportion of instances in that class. It may be useful when you want to account for class imbalance to ensure that metrics from larger classes have a greater impact on the overall score.
-
-**Macro Average**: This approach calculates the metric independently for each class and then takes the average of these metrics. Each class is treated equally, regardless of its size. It is useful when you want to ensure that the model performance assessment is consistent across all classes, rather than being dominated by the performance on the more frequent classes.
-
-As in the binary case, the choice between these approaches depends on your specific goals. Use weighted averaging when you want metrics to reflect the natural class distribution, and macro averaging when you want to ensure consistent performance across all classes.
