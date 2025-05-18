@@ -1,0 +1,1159 @@
+---
+title: 'Uncertainty Estimation with Conformal Prediction'
+format: 
+    html:
+        html-table-processing: none
+        # not convinced any image settings are applicable with jupyter engine
+        fig-width: 8
+        fig-height: 6
+        default-image-extension: svg
+execute: 
+    echo: false
+draft: true
+bibliography: refs.bib
+categories:
+    - machine learning
+    - regression
+nocite: |
+    @lei2018distribution, @SOBoot, @angelopoulos2022gentle, @brownlee2019, @va2022, @tidymodels2023, @molnar2023, @bai2021understanding
+---
+
+```{r}
+#| eval: true
+#| include: false
+#| label: 'setup'
+library(tidyverse)
+library(gt)
+
+library(reticulate)
+# reticulate::use_condaenv("conformal")
+
+okabe_ito = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7')
+
+source('theme.r')
+```
+
+> As with the [last post on class imbalance](https://m-clark.github.io/posts/2025-04-07-class-imbalance/), this is a resurrection of sorts. I began this post a little after that one had gotten an initial draft completed. Since then, conformal prediction has caught on quite a bit, but there wasn't much at the time in terms of tools. I was focused on MAPIE as that's a good package in Python, and as I was writing this, [probably]{.pack} finally offered something more viable in R.  I definitely recommend R folks to check it out.
+
+## Introduction
+
+Uncertainty estimation is a crucial component of machine learning systems. It is vital to know how precise our model predictions are, and whether we feel confident in taking action based on them. While typical usage of prediction and performance is often done with little consideration of uncertainty, we do so at our own (very predictable) peril. Here we will discuss uncertainty in the context of prediction, and how we can estimate it using several methods. We will focus especially on conformal prediction, a tried but relatively newer approach to uncertainty estimation that has several advantages.  The outline is as follows:
+
+1. **Why Uncertainty Estimation is Important?**: We'll discuss why uncertainty estimation is important and how it can be used to make better decisions.
+2. **Approaches to Uncertainty Estimation**: We'll discuss different approaches to uncertainty estimation, including statistical prediction intervals, bootstrapping, Bayesian approaches, and conformal prediction.
+3. **Example**: We'll demonstrate how to use conformal prediction to estimate uncertainty in a simple example to help demystify the process.
+4. **Pros and Cons**: We'll discuss the advantages and disadvantages of different approaches to uncertainty estimation.
+
+
+
+## Why is Uncertainty Estimation Important?
+
+Uncertainty estimation is an indispensable part of our modeling endeavor, and *one of the main reasons is that it allows us to make better decisions from our data*. The more we understand our predictions, the more we can feel confident in taking action based on them. Understanding uncertainty can also help us understand the model itself, and especially where its weaknesses are, or at what points we should be more cautious.
+
+For example, if we are building a model to predict the number of sales for a product, we would like to better assess our prediction of future sales in order to take current action. This could be increasing our marketing budget for the months ahead, or possibly assessing whether current marketing strategies have been successful. Our model may predict that we can expect an increase in sales of 150 units with the increased budget of 5%. If the range of of prediction estimate is that the expected sales increase six months from now is between 100 and 200 units, we might make a different decision than if we expect the unit sales is between -100 and 400 units. In the first case, we might be more willing to increase our budget spend, since it seems we are likely to experience an increase in sales by doing so. In the second case, we might not take any action, since the range encompasses anywhere between lost sales to an even larger boost. 
+
+
+The following illustrates the issue. The prediction on the left suggest less value and has notable uncertainty with that assessment. That might be easy to rule out. But the other two predictions take some thought. One is higher with less uncertainty, while the other prediction is slightly lower, but with more uncertainty that suggests the upside might be greater. Which would you prefer?
+
+```{r}
+#| eval: true
+#| label: 'uncertainty-plot'
+library(ggdist)
+set.seed(1234)
+
+okabe_ito = c('#E69F00', '#56B4E9', '#009E73', '#F0E442', '#0072B2', '#D55E00', '#CC79A7')
+
+df = tribble(
+    ~group, ~subgroup, ~value,
+    "A",          "h", rnorm(100, mean = 500, sd = 100*1),
+    "B",          "h", rnorm(100, mean = 700, sd = 100*.5),
+    "C",          "h", rnorm(100, mean = 600, sd = 100*.5),
+    "C",          "i", rnorm(100, mean = 800, sd = 100*2),
+    "C",          "j", rnorm(100, mean = 700, sd = 100*1)
+) %>%
+    unnest(value)
+df %>%
+    ggplot(aes(x = group, y = value, fill = group, color = group)) +
+    stat_gradientinterval(
+        position = "dodge",
+        width=.25,
+        # linewidth=10,
+        point_size=5
+    ) +
+    scico::scale_fill_scico_d(palette = "batlow", end=.6) +
+    scico::scale_color_scico_d(palette = "batlow", end=.6) +
+    scale_y_continuous(
+        labels = scales::dollar_format(),
+        breaks = seq(0, 1200, 100),
+        # limits = c(0, 1000)
+    ) +
+    # scale_color_manual(values = okabe_ito) +
+    # scale_fill_manual(values = okabe_ito) +
+    labs(
+        x = '',
+        y = 'Value',
+        title = "Which do you prefer?",
+        subtitle = "Comparison of Different Predictions with Uncertainty"
+    ) +
+    theme_clean() +
+    theme(
+        legend.position = "none",
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(),
+    )
+```
+
+
+Many times stakeholders will take action given the prediction alone, and then are disappointed when things don't turn out as expected, which they definitely will not in practice. In similar fashion, some take action based on rankings of the predictions, which of course themselves have uncertainty that stems from the raw prediction, and even more so. In some situations, we may be able to get away with doing so, but it would be difficult to know this ahead of time. The old adage of not wanting to put all your eggs in one (prediction) basket applies here.
+
+<!-- TODO: generic pointrange type of plot with question marks -->
+
+
+### Contributing Factors
+
+Several key factors contribute to prediction uncertainty, among them:
+
+- **Amount of Data**: While more data can lead us to feel more confident about predictions in a general sense by providing additional learning examples of varying kinds this is limited.  Additional bad or uninformative data will not improve a model or its predictions!
+
+- **Model Complexity**: More complex models may capture nuanced relationships leading to better predictions, but can also introduce instability in those predictions if additional steps aren't taken. Conversely, having too simple a model yields relatively poor predictions in general.
+
+- **Model complexity**: More complex models may capture nuanced relationships but can introduce instability without proper regularization techniques. Conversely, overly simple models often yield consistently poor predictions.
+
+- **Precision of Measurement**: The quality of the data collection process definitely impacts any predictions we might ultimately make. For example, if sales are entered with possible error, or a lag for some reporting units and not for others, this can lead to uncertainty in our predictions of future sales. In addition, the precision of measurement can vary across features. For example, if price is a feature, it may be that price fluctuates within a month but sales are recorded for a month, meaning we might have to take an average or other measure of price. 
+
+
+So any number of things might contribute to the uncertainty in our predictions and, in general, some aspects contributing to prediction uncertainty may be under our control, while others may not be.  Different methods produce different results, and  some intervals may be too narrow or too wide in some settings, giving false confidence or excessive caution. In what follows, we'll explore various uncertainty estimation approaches with a focus on **conformal prediction**, demonstrating its implementation and comparing its advantages to alternative methods. We'll start by discussing the importance of uncertainty estimation and the different approaches to it. Next, we will discuss conformal prediction and show a simple demonstration of how it can be used to estimate uncertainty. Finally, we will discuss the advantages and disadvantages of conformal prediction compared to other approaches to uncertainty estimation.
+
+
+
+:::{.callout-tip title='Confidence is not Certainty'}
+It's crucial to understand that *confidence* in terms of confidence intervals is not the same concept as *certainty*. The same level of confidence interval, say 95%, can produce different interval widths across models for the same prediction, and across predictions for the same model/data. Certainty reflects our understanding about the range provided by a confidence interval, and, for a given setting, we have less uncertainty with narrower intervals than wider ones.
+:::
+
+
+## Approaches to Uncertainty Estimation
+
+There are several approaches to uncertainty estimation, and many different things we can calculate uncertainty for. We'll focus specifically on uncertainty for predictions, and we'll briefly describe and demonstrate some of the different ways of getting an uncertainty estimate for those. 
+
+```{r}
+#| eval: true
+#| label: 'data-r'
+
+data_dir = "data/conformal/"
+df_ca = read_csv(paste0(data_dir, 'housing.csv'))
+df_results = read_csv(paste0(data_dir, 'housing_CI_results.csv'))
+df_results_bayes = read_csv(paste0(data_dir, 'housing_CI_bayes_results.csv'))
+df_results_boost = read_csv(paste0(data_dir, "housing_CI_boost_results.csv"))
+df_results = df_results  |> bind_cols(df_results_bayes |> select(bayes_lower, bayes_upper))
+
+X_train = read_csv(paste0(data_dir, "housing_X_train.csv"))
+y_train = read_csv(paste0(data_dir, "housing_y_train.csv"))[["median_house_value"]]
+X_test  = read_csv(paste0(data_dir, "housing_X_test.csv"))
+y_test  = read_csv(paste0(data_dir, "housing_y_test.csv"))[["median_house_value"]]
+```
+
+```{python}
+#| eval: true
+#| label: 'data-py'
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from mapie.metrics import regression_coverage_score
+
+np.set_printoptions(legacy="1.25") # to get rid of ridiculous np.float in prints
+
+data_dir = "data/conformal/"
+df_results_boost = pd.read_csv(data_dir + "housing_CI_boost_results.csv") 
+X_train = pd.read_csv(data_dir + "housing_X_train.csv")
+y_train = pd.read_csv(data_dir + "housing_y_train.csv")['median_house_value']
+X_test  = pd.read_csv(data_dir + "housing_X_test.csv")
+y_test  = pd.read_csv(data_dir + "housing_y_test.csv")['median_house_value']
+```
+
+```{python}
+#| eval: true
+#| label: 'coverage-py'
+# df_results_boost.head()
+
+# y_pred, yp_conf_ci = lr_ca.predict(X_test, alpha=[.05, 0.1])
+
+coverage_scores = [
+    dict(
+        boost_cov = np.round(regression_coverage_score(y_test, df_results_boost['conf_lower'], df_results_boost['conf_upper']), 4),
+        boot_cov  = np.round(regression_coverage_score(y_test, df_results_boost['boot_lower'], df_results_boost['boot_upper']), 4)
+    )
+    for i, _ in enumerate([.1])
+]
+
+coverage_result = pd.DataFrame(coverage_scores).round(3)
+coverage_result.to_csv(data_dir + "coverage_results.csv", index = False) # to get around numpy
+```
+
+```{r}
+#| eval: true
+#| label: 'coverage-r'
+cover = py$coverage_result # no way to convert to num
+cover_boot = as.numeric(as.character(cover$boot_cov[0]))
+cover_boost = as.numeric(as.character(cover$boost_cov[0]))
+
+```
+
+### Statistical Uncertainty
+
+
+$$y \sim \mathcal{N}(\mu, \sigma^2)$$
+
+Probably the most common approach to estimate uncertainty is to use a statistical model. Given a statistical distribution and the estimated parameters of the model, we can get a sense of uncertainty in the prediction.  For example, let's say we have a standard linear regression model. In that case, we are assuming the data generating process for the target/outcome is a normal distribution. The mean for that distribution comes from our model via the linear combination of features, and the variance is estimated separately[^predvar]. Given those and other assumptions regarding the model, we can then obtain an interval estimate for a prediction, typically using a standard formula. This approach extends well beyond both linear regression and the normal distribution, but the basic idea is the same. We assume a distribution for the target, estimate the parameters of that distribution via the data, and then use those estimates to ultimately obtain an interval estimate for our prediction.
+
+[^predvar]: Technically we can model the variance with the features as well, but we'll keep it simple here.
+
+<!---
+ The following shows how the prediction interval for an unseen observation is constructed:
+
+$$
+\hat{y} \pm t_{\alpha/2, n-2} \hat{\sigma} \sqrt{1 + \frac{1}{n} + \frac{(x - \bar{x})^2}{\sum_{i=1}^n (x_i - \bar{x})^2}}
+$$ 
+
+where $\hat{y}$ is the predicted value, $t_{\alpha/2, n-2}$ is the critical value of the t-distribution with $n-2$ degrees of freedom, $\hat{\sigma}$ is the standard error of the regression, $x$ is the value of the predictor, and $\bar{x}$ is the mean of the predictor. 
+--->
+
+:::{.callout-tip}
+We can contrast the *prediction interval* versus a [confidence interval for a prediction](https://stats.stackexchange.com/questions/16493/difference-between-confidence-intervals-and-prediction-intervals), i.e., for the prediction for an \*average response\*.  The latter will always be smaller, as it reflects the uncertainty in the mean of the distribution of predictions, rather than the uncertainty in the predicted value for a \*new\* observation, which is what the prediction interval regards.  
+:::
+
+
+### Bootstrapping
+
+
+```{r}
+#| echo: false
+#| label: 'boot-r'
+#| fig-cap: 'Bootstrap Resampling Visualization'
+#| out-width: 66%
+library(tidyverse)
+library(patchwork)
+
+set.seed(123)
+
+# Create original dataset (5 rows, 3 columns)
+df_data = tibble(
+    id = 1:5,
+    `Col 1` = c(3, 5, 2, 7, 4),
+    `Col 2` = c(8, 1, 6, 2, 9),
+    `Col 3` = c(5, 7, 3, 4, 6)
+)
+
+# Function to create bootstrap sample
+create_bootstrap = function(data, sample_id) {
+    indices = sample(1:nrow(data), nrow(data), replace = TRUE)
+    sampled = tibble(
+        original_id = indices,
+        bootstrap_id = 1:length(indices),
+        sample_id = sample_id
+    )
+    return(sampled)
+}
+
+# Generate 3 bootstrap samples
+bootstrap_samples = bind_rows(
+    create_bootstrap(df_data, 1),
+    create_bootstrap(df_data, 2),
+    create_bootstrap(df_data, 3)
+)
+
+# Generate long format for original data visualization
+df_original_long = df_data %>%
+    select(-id) %>%
+    pivot_longer(cols = everything(), names_to = 'column', values_to = 'value') %>%
+    mutate(id = rep(1:5, 3)) %>%
+    arrange(id, column)
+
+# Define color palette for original rows
+row_colors = c('#E69F00', '#56B4E9', '#009E73', '#CC79A7', '#0072B2')
+
+# Create the original data visualization
+p_original = ggplot(df_original_long, aes(x = column, y = id, fill = factor(id))) +
+    geom_tile(color = 'white', width = 0.9, height = 0.4) +
+    scale_fill_manual(values = row_colors) +
+    scale_y_reverse(breaks = 1:5, labels = paste('Row', 1:5)) +
+    labs(title = 'Original Data', x = '', y = '') +
+    theme_minimal() +
+    theme(
+        legend.position = 'none',
+        panel.grid = element_blank(),
+        axis.text.y = element_text(size = 10)
+    )
+
+# Create bootstrap sample visualizations
+# Create bootstrap sample visualizations
+p_bootstrap = bootstrap_samples %>%
+    left_join(df_data, by = c("original_id" = "id")) %>%
+    pivot_longer(cols = c(`Col 1`, `Col 2`, `Col 3`), names_to = "column", values_to = "value") %>%
+    mutate(sample_name = paste('Bootstrap Sample', sample_id)) %>%
+    ggplot(aes(x = column, y = bootstrap_id, fill = factor(original_id))) +
+    geom_tile(color = 'white', width = 0.9, height = 0.9) +
+    scale_fill_manual(values = row_colors) +
+    scale_y_reverse() +
+    facet_wrap(~sample_name, ncol = 3) +
+    labs(x = '', y = '') +
+    theme_minimal() +
+    theme(
+        legend.position = 'none',
+        panel.grid = element_blank(),
+        strip.text = element_text(size = 11, face = 'bold'),
+        axis.text = element_blank()
+    )
+
+# Combine plots
+# Combine plots with centered original data
+# Combine plots with proper layout
+(plot_spacer() + p_original + plot_spacer() + 
+    plot_layout(ncol = 3, widths = c(1, 1, 1))) /
+    p_bootstrap +
+    plot_layout(heights = c(1, 3)) +
+    plot_annotation(
+        title = 'Bootstrap Resampling Visualization',
+        subtitle = 'Colors show which original observation rows appear in each bootstrap sample',
+        theme = theme(
+            plot.title = element_text(hjust = 0.5, size = 14),
+            plot.subtitle = element_text(hjust = 0.5)
+        )
+    )
+```
+Bootstrapping is another technique for estimating uncertainty in machine learning models. It is based on the idea that we can estimate the uncertainty in our predictions by resampling the data and training a new model on each resampled dataset. Think of it this way -- we take our data, resample the observations with replacement, and train a new model on the resampled data. We then use the new model to make predictions on the original or new/test data. Now we do that many times, taking the average for our final prediction. We then use the quantiles of the prediction distribution  (e.g. corresponding to the 5th and 95th percentiles) across the bootstrap samples to get an interval estimate for our prediction. This is a very powerful technique, as it allows us to estimate the uncertainty in our predictions without making any assumptions about the underlying distribution of the data.
+
+
+### Bayesian Approaches
+
+![Prior, Likelihood, Posterior](../../img/priorLikePosterior.png){width=50%}
+
+Bootstrap and Bayesian approaches are kindred spirits in that they both generate a distribution for our predictions. The Bayesian approach does not require resampling, but rather an assumption about the distributions of our parameters, and so has essentially the same types of assumptions you'd have in the non-Bayesian setting for statistical models. We use the Bayesian approach to provide a distribution for the parameters we're attempting to estimate. For our predictions, we then take random draws from that parameter distribution, feed it into our model to get a prediction, and then repeat that process many times. Again, we may take the average for our final prediction, and the quantiles of interest for our interval estimate.
+
+
+### Conformal Prediction
+
+```{r}
+#| eval: false
+#| echo: false
+#| label: 'conformal-vis-1'
+library(tidyverse)
+library(patchwork)
+
+set.seed(123)
+
+# Create original dataset
+df_data = tibble(
+    id = 1:10,
+    x = 1:10,
+    y = 3*x + rnorm(10, 0, 2)
+)
+
+# Split data into training and calibration sets
+train_indices = sample(1:nrow(df_data), nrow(df_data)/2)
+cal_indices = setdiff(1:nrow(df_data), train_indices)
+
+df_train = df_data %>% slice(train_indices) %>% mutate(set = "Training")
+df_cal = df_data %>% slice(cal_indices) %>% mutate(set = "Calibration")
+
+# Fit model on training data
+model = lm(y ~ x, data = df_train)
+
+# Calculate residuals on calibration data
+df_cal = df_cal %>%
+    mutate(
+        pred = predict(model, newdata = df_cal),
+        residual = abs(y - pred)
+    )
+
+# Sort residuals and find quantile (90% coverage)
+alpha = 0.1
+quantile_val = quantile(df_cal$residual, 1-alpha)
+
+# Create new point for prediction
+df_new = tibble(
+    id = 11,
+    x = 8.5,
+    y = NA,
+    set = "New Point"
+)
+
+df_new = df_new %>%
+    mutate(
+        pred = predict(model, newdata = df_new),
+        lower = pred - quantile_val,
+        upper = pred + quantile_val
+    )
+
+# Create combined visualization
+p1 = ggplot() +
+    geom_point(data = bind_rows(df_train, df_cal), 
+               aes(x = x, y = y, color = set), size = 3) +
+    geom_abline(intercept = coef(model)[1], slope = coef(model)[2], 
+                color = "darkgray", linetype = "dashed") +
+    labs(title = "1. Split Data & Fit Model", x = "x", y = "y") +
+    theme_minimal() +
+    scale_color_manual(values = c("Training" = "#E69F00", "Calibration" = "#56B4E9"))
+
+p2 = ggplot(df_cal, aes(x = id)) +
+    geom_segment(aes(xend = id, y = pred, yend = y), color = "gray") +
+    geom_point(aes(y = pred), shape = 1, size = 3, color = "#56B4E9") +
+    geom_point(aes(y = y), size = 3, color = "#56B4E9") +
+    geom_hline(yintercept = quantile_val, linetype = "dashed", color = "red") +
+    labs(title = "2. Calculate Residuals on Calibration Set", 
+         x = "Calibration Data Points", y = "Value") +
+    theme_minimal()
+
+p3 = ggplot() +
+    geom_point(data = bind_rows(df_train, df_cal), 
+               aes(x = x, y = y, color = set), alpha = 0.3, size = 2) +
+    geom_abline(intercept = coef(model)[1], slope = coef(model)[2], 
+                color = "darkgray", linetype = "dashed") +
+    geom_point(data = df_new, aes(x = x, y = pred), size = 3, color = "red") +
+    geom_errorbar(data = df_new, 
+                  aes(x = x, ymin = lower, ymax = upper), 
+                  width = 0.2, color = "red", size = 1) +
+    labs(title = "3. Apply Quantile to New Predictions", x = "x", y = "y") +
+    theme_minimal() +
+    scale_color_manual(values = c("Training" = "#E69F00", "Calibration" = "#56B4E9"))
+
+# Combine plots
+(p1 / p2 & theme(legend.position = 'bottom', legend.title=element_blank()))  | p3 +
+    plot_layout(widths = c(1, 1)) +
+    plot_annotation(
+        title = "Conformal Prediction Visualization",
+        subtitle = "Using calibration set residuals to create prediction intervals",
+        theme = theme(
+            plot.title = element_text(hjust = 0.5, size = 14),
+            plot.subtitle = element_text(hjust = 0.5),
+            legend.position = "bottom",
+        )
+    ) 
+```
+
+```{r}
+#| eval: false
+#| echo: false
+#| label: 'conformal-vis-2'
+library(tidyverse)
+library(patchwork)
+
+set.seed(123)
+
+# Create simple dataset with clear pattern
+df_data = tibble(
+    x = 1:12,
+    y = 2*x + rnorm(12, 0, 3)
+)
+
+# Split into train and calibration
+train_indices = c(1, 3, 5, 7, 9, 11)
+cal_indices = c(2, 4, 6, 8, 10, 12)
+
+df_train = df_data %>% slice(train_indices) %>% mutate(set = "Training")
+df_cal = df_data %>% slice(cal_indices) %>% mutate(set = "Calibration")
+
+# Fit simple line
+model = lm(y ~ x, data = df_train)
+slope = coef(model)[2]
+intercept = coef(model)[1]
+
+# Calculate errors and quantile
+df_cal = df_cal %>%
+    mutate(
+        prediction = predict(model, newdata = df_cal),
+        error = abs(y - prediction)
+    )
+quantile_val = quantile(df_cal$error, 0.9)
+
+# New point
+new_x = 10.5
+new_pred = intercept + slope * new_x
+
+# Main conceptual plot
+p_concept = ggplot() +
+    # Background explanation
+    annotate("rect", xmin = -1, xmax = 14, ymin = -2, ymax = 32, 
+             fill = "gray95") +
+    annotate("text", x = 2, y = 30, 
+             label = "Conformal Prediction Simplified", 
+             hjust = 0, size = 5, fontface = "bold") +
+    annotate("text", x = 2, y = 28, 
+             label = "1. Train model on some data", 
+             hjust = 0, size = 4) +
+    annotate("text", x = 2, y = 26, 
+             label = "2. Measure errors on other data", 
+             hjust = 0, size = 4) +
+    annotate("text", x = 2, y = 24, 
+             label = "3. Use error pattern to create prediction bands", 
+             hjust = 0, size = 4) +
+    
+    # Original data points
+    geom_point(data = df_train, aes(x = x, y = y), 
+               color = "#E69F00", size = 3) +
+    geom_point(data = df_cal, aes(x = x, y = y), 
+               color = "#56B4E9", size = 3) +
+    
+    # Model line
+    geom_abline(intercept = intercept, slope = slope, 
+                color = "darkgray", size = 1) +
+    
+    # Error bars for calibration points
+    geom_segment(data = df_cal, 
+                 aes(x = x, xend = x, y = prediction, yend = y),
+                 color = "#56B4E9", linetype = "dashed") +
+    
+    # Prediction for new point
+    geom_point(aes(x = new_x, y = new_pred), color = "red", size = 4) +
+    
+    # Prediction interval
+    geom_errorbar(aes(x = new_x, ymin = new_pred - quantile_val, 
+                       ymax = new_pred + quantile_val),
+                  width = 0.3, color = "red", size = 1) +
+    
+    # Labels for point types
+    annotate("text", x = 4, y = 5, label = "Training data", 
+             color = "#E69F00", fontface = "bold") +
+    annotate("text", x = 8, y = 5, label = "Calibration data", 
+             color = "#56B4E9", fontface = "bold") +
+    annotate("text", x = new_x, y = new_pred - quantile_val - 1.5, 
+             label = "Prediction interval\nbased on calibration errors", 
+             color = "red", fontface = "bold") +
+    
+    labs(
+        title = "How Conformal Prediction Works",
+        subtitle = "Using observed errors to create reliable prediction intervals",
+        x = "Feature value",
+        y = "Target value"
+    ) +
+    theme_minimal() +
+    theme(
+        plot.title = element_text(hjust = 0.5, size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        panel.grid.minor = element_blank()
+    )
+
+p_concept
+```
+
+```{r}
+#| eval: true
+#| echo: false
+#| label: 'conformal-vis-3'
+#| out-width: 66%
+library(tidyverse)
+library(patchwork)
+
+# Create a clean, conceptual visualization
+ggplot() +
+    # Background
+    annotate("rect", xmin = 0, xmax = 10, ymin = 0, ymax = 10, fill = "gray95") +
+    
+    # Title and core concept
+    annotate("text", x = 5, y = 9.5, 
+             label = "The Conformal Prediction Concept", 
+             size = 6, fontface = "bold", hjust = 0.5) +
+    
+    # Three key steps as visual metaphors
+    
+    # Step 1: Train a model
+    annotate("rect", xmin = 0.5, xmax = 3.5, ymin = 6.5, ymax = 8.5, fill = "#E69F00", alpha = 0.2) +
+    annotate("text", x = 2, y = 7.8, label = "Step 1", fontface = "bold", size = 4) +
+    annotate("text", x = 2, y = 7.2, label = "Train any model\non your data", size = 3.5, hjust = 0.5) +
+    
+    # Step 2: Measure errors
+    annotate("rect", xmin = 4, xmax = 7, ymin = 6.5, ymax = 8.5, fill = "#56B4E9", alpha = 0.2) +
+    annotate("text", x = 5.5, y = 7.8, label = "Step 2", fontface = "bold", size = 4) +
+    annotate("text", x = 5.5, y = 7.2, 
+             label = "See how wrong your model is\nwith a separate set of data", 
+             size = 3.5, hjust = 0.5) +
+    
+    # Step 3: Apply to new predictions
+    annotate("rect", xmin = 7.5, xmax = 9.5, ymin = 6.5, ymax = 8.5, fill = "#009E73", alpha = 0.2) +
+    annotate("text", x = 8.5, y = 7.8, label = "Step 3", fontface = "bold", size = 4) +
+    annotate("text", x = 8.5, y = 7.2, 
+             label = "Use that error pattern to\ncreate prediction bands", 
+             size = 3.5, hjust = 0.5) +
+    
+    # Connect the steps with arrows
+    annotate("segment", x = 3.5, xend = 4, y = 7.5, yend = 7.5, 
+             arrow = arrow(length = unit(0.3, "cm")), size = 1) +
+    annotate("segment", x = 7, xend = 7.5, y = 7.5, yend = 7.5, 
+             arrow = arrow(length = unit(0.3, "cm")), size = 1) +
+    
+    # The key insight visualization
+    annotate("text", x = 5, y = 5.8, 
+             label = "The key insight of conformal prediction:", 
+             fontface = "bold", size = 4) +
+    annotate("text", x = 5, y = 5, 
+             label = "If we know how wrong our model typically is,\nwe can use that knowledge to build reliable prediction intervals", 
+             size = 3.5, hjust = 0.5) +
+    
+    # Visual metaphor for prediction intervals
+    annotate("rect", xmin = 1, xmax = 9, ymin = 1.5, ymax = 4, fill = "white", color = "gray") +
+    annotate("text", x = 5, y = 3.5, label = "For a new prediction:", size = 3.5, fontface = "bold") +
+    annotate("point", x = 5, y = 2.75, size = 12, color = '#E69F00') +
+    annotate("segment", x = 3, xend = 7, y = 2.75, yend = 2.75, color = '#E69F00', size = 3) +
+    annotate("text", x = 5, y = 1.8, 
+             label = "We use past errors to create a confidence band\naround our prediction that's right 90% of the time", 
+             size = 3.5, hjust = 0.5) +
+    
+    # What makes conformal prediction special
+    annotate("text", x = 5, y = 0.7, 
+             label = "Works with ANY model | Mathematically guaranteed coverage | Model-agnostic", 
+             fontface = "italic", size = 3, color = "darkblue") +
+    
+    # Clean up
+    theme_void() +
+    coord_fixed(ratio = 1) +
+    theme(plot.background = element_rect(fill = "white", color = NA))
+```
+
+Conformal prediction is yet another technique for estimating uncertainty in machine learning models, and one of its primary strengths is that it is model agnostic and theoretically can work for any model, from linear regression to deep learning. It is based on the idea that we can estimate the uncertainty in our predictions by looking at the distribution of the predictions from the model, or more specifically, the prediction error. Using the observed error on a calibration set that was not used to train the model, we can order those errors and find the quantile corresponding to the desired uncertainty coverage/error rate[^errorcov]. When predicting on new data, we assume it (and its error) comes from a similar distribution as what we've seen already in our training/calibration process, with no particular assumption about that distribution. We then use that quantile from our previous distribution to create upper and lower bounds for the new prediction.
+
+While the implementation for various settings can get quite complicated, the conceptual approach is mostly straightforward as we've just suggested. The following shows some simplified code demonstrating the **split-conformal** procedure in Python and R.
+
+[^errorcov]: The error rate ($\alpha$) is the proportion of the data that would fall outside the prediction interval, while the coverage rate/interval is 1 - $\alpha$.
+
+
+
+```{r}
+#| eval: false
+#| label: old-cp-error-func-r
+calc_cp_error = function(
+    fit,  # fitted model
+    test, # test data
+    y, # test data target
+    interval = .95 # interval width
+    ) {
+    test_resid = abs(y - predict(fit, newdata = test))
+    N = nrow(test)
+    k = ceiling((N + 1) * interval) # n/2 if actually splitting, but we're assuming it was already split
+    q = quantile(test_resid, probs = interval * (N / (N + 1)))
+
+    residuals_sorted = sort(test_resid)
+
+    cp_error = residuals_sorted[k]
+
+    list(cp_error = cp_error, q = q, k = k)
+}
+
+calc_cp_error(lm(y_train~., X_train), X_test, y_test, interval = .9)[['cp_error']]
+```
+
+```{python}
+#| eval: false
+#| label: old-cp-error-func-py
+def calc_cp_error(
+    fit,  # fitted model with predict method
+    test, # test data
+    y,    # test data target
+    interval = .95 # interval width
+):
+    test_resid = np.array(np.abs(y - fit.predict(test)))
+    N = test.shape[0]
+    k = np.ceil((N + 1) * interval) # N/2 if actually splitting, but we're assuming it was already split
+    q = np.quantile(test_resid, q = interval * (N / (N + 1))) 
+    residuals_sorted = np.sort(test_resid)
+    cp_error = residuals_sorted[int(k)]    
+    return dict(cp_error = cp_error, q = q, k = k)
+
+import statsmodels.api as sm 
+ols_fit = sm.OLS(y_train, sm.add_constant(X_train)).fit()
+cp_error = calc_cp_error(ols_fit, sm.add_constant(X_test), y_test, interval=.9)
+cp_error['cp_error']
+```
+
+
+
+<!-- Can't do tabset for doc/blog post upload, so we'll do this instead. -->
+
+:::{.panel-tabset}
+
+#### Python
+
+<!-- ![](../../img/conformal/py_conformal_code.png){width=66%} -->
+
+```{python}
+#| eval: true
+#| echo: true
+#| label: split-conformal-py
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+
+def split_conformal(X, y, new_data, alpha = 0.05):
+    # Splitting the data into training and calibration sets
+    train_data, cal_data, train_y, cal_y = train_test_split(X, y, test_size = 0.5)
+    N = train_data.shape[0]
+
+    # Train the base model
+    model = LinearRegression()
+    model.fit(train_data, train_y)
+    
+    # Calculate residuals on calibration set
+    cal_preds = model.predict(cal_data)
+    residuals = np.array(np.abs(cal_y - cal_preds))
+    
+    # Sort residuals and find the quantile corresponding to (1-alpha)
+    residuals.sort()
+    quantile = np.quantile(residuals, (1 - alpha) * (N / (N + 1)))
+    
+    # Make predictions on new data and calculate prediction intervals
+    preds = model.predict(new_data)
+    lower_bounds = preds - quantile
+    upper_bounds = preds + quantile
+    
+    # Return predictions and prediction intervals
+    return(
+        dict(
+            cp_error     = quantile, 
+            preds        = preds, 
+            lower_bounds = lower_bounds, 
+            upper_bounds = upper_bounds
+        )
+    )
+
+cp_error_py = split_conformal(X_train, y_train, X_test, alpha = .1)['cp_error']
+```
+
+```{python}
+#| eval: false
+#| label: show-py-cp-error
+pd.DataFrame({
+    'CP Error': np.round(cp_error_py, 3)
+    }
+    ,index = ['']
+)
+```
+
+
+#### R
+
+<!-- ![](../../img/conformal/r_conformal_code.png){width=66%} -->
+
+```{r}
+#| eval: true
+#| echo: true
+#| label: split-conformal-r
+split_conformal = function(X, y, new_data, alpha = .05) {
+    # Splitting the data into training and calibration sets
+    idx = sample(1:nrow(X), size = nrow(X) / 2)
+    
+    train_data = X |> slice(idx)
+    cal_data   = X |> slice(-idx)
+    train_y = y[idx]
+    cal_y   = y[-idx]
+
+    N = nrow(train_data)
+
+    # Train the base model
+    model = lm(train_y ~ ., data = train_data)
+
+    # Calculate residuals on calibration set
+    cal_preds = predict(model, newdata = cal_data)
+    residuals = abs(cal_y - cal_preds)
+
+    # Sort residuals and find the quantile corresponding to (1-alpha)
+    residuals = sort(residuals)
+    quantile  = quantile(residuals, (1 - alpha) * (N / (N + 1)))
+
+    # Make predictions on new data and calculate prediction intervals
+    preds = predict(model, newdata = new_data)
+    lower_bounds = preds - quantile
+    upper_bounds = preds + quantile
+
+    # Return predictions and prediction intervals
+    return(
+        list(
+            cp_error     = quantile, 
+            preds        = preds, 
+            lower_bounds = lower_bounds, 
+            upper_bounds = upper_bounds
+        )
+    )
+}
+
+cp_error_r = split_conformal(X_train, y_train, X_test, alpha = .1)[['cp_error']]
+```
+
+```{r}
+#| eval: true
+#| label: gather-cp-error
+
+py_by_hand = as.numeric(as.character(py$cp_error_py))#$cp_error
+r_by_hand  = cp_error_r
+
+# gt(tibble(`CP Error` = round(cp_error, 3)))
+
+```
+:::
+
+We can compare our simple approach to `mapie` in Python, which is a solid package to use for this[^rconformal]. The 'naive' conformal procedure in `mapie` implemented is very similar to our split-conformal procedure, and generally you'd want to use one of the better approaches. But this is a bit more comparable, and most of the difference between our R, Python and the `mapie` results are due to the underlying data split.
+
+[^rconformal]: At the time of this writing, there isn't much in the way of packages for conformal prediction in R. One [is available](https://github.com/ryantibs/conformal), but it is not very user friendly in the least.  Others seem like one offs or have other limitations (e.g. only being for classification, working only in the tidymodels framework, etc.).
+
+<!-- ![](../../img/conformal/py_mapie_conformal_code.png){width=66%} -->
+
+```{python}
+#| eval: true
+#| echo: true
+#| label: 'mapie-py'
+from mapie.regression import MapieRegressor
+
+initial_fit   = LinearRegression().fit(X_train, y_train)
+model         = MapieRegressor(initial_fit, method = 'naive')
+y_pred, y_pis = model.fit(X_train, y_train).predict(X_test, alpha = 0.1)
+
+# take the first difference between upper and lower bounds,
+# since it's constant for all predictions in this setting
+cp_error_mapie = (y_pis[0, 1, 0] - y_pis[0, 0, 0]) / 2  
+```
+
+```{python}
+#| eval: false
+#| label: show-mapie-cp-error
+pd.DataFrame({'CP Error': np.round(cp_error, 4)}, index=[''])
+```
+
+```{r}
+#| eval: true
+#| label: show-r-cp-error
+
+cp_by_mapie = as.numeric(as.character(py$cp_error_mapie))
+
+gt(
+    tibble(
+        Source = c('R', 'Python', 'Py-mapie'),
+        `CP Error` = c(r_by_hand, py_by_hand, cp_by_mapie) # add round back after issue found
+        )
+) |> 
+    fmt_number(
+        columns = vars(`CP Error`),
+        decimals = 3
+    )
+```
+
+:::{.callout-note title="Other Methods"}
+
+As noted, there are numerous methods for estimating uncertainty in our predictions. As an example, some use *quantile regression* in machine learning models. It is based on the idea that we can estimate the uncertainty in our predictions by modeling the specific quantiles rather than the conditional mean default value, for example, the .05 and .95 values. But those quantiles are predictions with uncertainty themselves, and without incorporating that uncertainty, tends to underestimate the uncertainty in the prediction (Bai et al., 2021). In general, one should be cautious about the method they choose in any particular setting.
+
+:::
+
+## Example
+
+To see our uncertainty estimation in practice, we'll use a sample of the classic [California Housing Prices dataset](https://www.kaggle.com/camnugent/california-housing-prices) for demonstration. The dataset contains information about housing prices in California, including the median house value in a district, the median income for that district, and the median house age etc. We'll use all the available features to predict median house value. You can find out some basic info for the data at the [end of this post](#data-details).
+
+In the following we show the 90% prediction interval estimates for a basic linear regression with all features predicting the target on the log scale. Points are arranged in increasing (mean) predicted value, which would be identical with increasing sample size for all methods. We can see that the prediction intervals are essentially in agreement for all methods. Highlighted are the points missed by the intervals, which was around 10% for each method (data issues notwithstanding[^tooslim]). This should leave us feeling good about using any of these methods for uncertainty estimation in simpler model settings.
+
+[^tooslim]: Interestingly all but the bootstrap appeared slightly narrow, but I think this has more to do with data issues, particularly the preponderance of house prices censored to ~500,000, about `r scales::label_percent()(mean(exp(y_train)>=500000))` of the data. No preprocessing was done except to put the home price on the log scale. 
+
+```{r}
+#| eval: false
+#| fig-cap: 'Prediction Intervals for Median House Value for the California Housing Dataset:<br>- conformal prediction (cp)<br>- bootstrapping (boot)<br>- bayesian (bayes)<br>- traditional statistical (ols)'
+#| label: 'lin-reg-plot'
+
+p_dat = df_results |> 
+    select(-median_house_value) |> 
+    arrange(y_pred) |>
+    mutate(
+        y_pred = exp(y_pred),
+        idx = row_number()
+    ) |> 
+    pivot_longer(-c(idx, y, y_pred), names_to = 'CI_type') |> 
+    mutate(value = exp(value)) |> 
+    separate(CI_type, into = c('type', 'bound'))  |> 
+    pivot_wider(names_from = bound, values_from = value)  |> 
+    mutate(        
+        type = ifelse(type == 'conf', 'cp', type),
+        type = factor(type, levels = c('ols', 'boot', 'bayes', 'cp'), labels = c('OLS', 'Bootstrap', 'Bayesian', 'Conformal')),
+        coverage = (exp(y) < lower | exp(y) > upper),
+        y = exp(y)
+    ) 
+
+# p_dat |> 
+#     summarize(coverage = mean(coverage), .by = type)
+
+p_dat |>
+    ggplot(aes(x = idx, y = y_pred)) +
+    geom_point(
+        aes(
+            y = y, 
+            # color = type, 
+            # size = I(ifelse(coverage, 1, .1)) , 
+            # alpha = I(ifelse(coverage, .5, .01))
+        ),
+        color = okabe_ito[5],
+        alpha = .1,
+        show.legend = FALSE,
+        data = p_dat |> filter(coverage)
+    ) +
+    # scale_color_manual(values = c('gray50', okabe_ito[5])) +
+    # ggnewscale::new_scale_color() +
+    geom_line(color = okabe_ito[1]) +
+    geom_ribbon(
+        aes(ymin = lower, ymax = upper),
+        alpha = .05,
+        data = p_dat |> filter(type == 'ols')
+    ) +
+    geom_line(
+        aes(
+            y = lower, 
+            color = type,
+            linetype = type,
+        ),
+        alpha = .25
+    ) +
+    geom_line(
+        aes(
+            y = upper, 
+            color = type,
+            linetype = type,
+        ),
+        alpha = .5
+    ) +
+    labs(
+        x = 'Prediction Index',
+        y = '',
+        # y = 'Median House Value',
+        # title = 'Prediction Intervals for Median House Value\nfor the California Housing Dataset (test set)',
+        subtitle = 'Comparison of different prediction intervals for linear regression'
+    ) +
+    scale_y_log10(breaks = c(5e4, 1e5, 5e5, 1e6), labels = scales::dollar) +
+    scale_fill_manual(values = okabe_ito[c(2:3, 6,7)], aesthetics = c('fill', 'color')) +
+    theme_minimal() +
+    theme(
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        legend.position = 'bottom',
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, 'cm'),
+    )
+     
+ggsave('img/conformal/lin-reg-plot.png', width = 8, height = 6, units = 'in', dpi = 300)
+```
+
+![](../../img/conformal/lin-reg-plot.png){width=75%}
+
+The following visualization shows the exact same data context, though now we use an xgboost model to predict the target. With this model, we do not have an underlying statistical distribution or easy Bayesian counterpart[^BART] with which to estimate uncertainty. Furthermore, the nature of the model means that the actual interval widths can vary a bit from point to point, so the lines shown are smoothed boundaries used to make the general pattern more clear, but should not be taken as the actual interval for a given point. The blue indicates the bootstrapped interval and blue (or blue + red) dots indicate points that lie outside of the bootstrap interval. We do the same with the conformal interval using red. 
+
+
+[^BART]: There are methods like Bayesian Additive Regression Trees, but that's a rabbit hole I didn't think necessary to investigate for our purposes. Likewise we could also have done a very complicated linear model that incorporates interactions etc.
+
+```{r}
+#| eval: false
+#| echo: false
+#| label: 'hist-ci-diff'
+hist(df_results_boost$conf_upper - df_results_boost$conf_lower, 'FD')
+```
+
+
+```{r}
+#| eval: false
+#| label: 'boost-plot'
+
+p_dat = df_results_boost |>
+    arrange(y_pred_boot) |>
+    select(-matches('ols'), -median_house_value) |>
+    mutate(
+        idx = row_number(),
+        y = exp(y),
+        y_pred_boost = exp(y_pred_boost),
+        y_pred_boot  = exp(y_pred_boot),
+    ) |>
+    pivot_longer(-c(idx, y, y_pred_boost, y_pred_boot), names_to = 'CI_type') |>
+    mutate(value = exp(value)) |>
+    separate(CI_type, into = c('type', 'bound')) |> #skimr::skim()
+    pivot_wider(names_from = bound, values_from = value) |> 
+    mutate(
+        type = ifelse(type == "conf", "cp", type),
+        coverage = (y > lower & y < upper),
+        type = factor(type, levels = c('ols', 'boot', 'bayes', 'cp'), labels = c('OLS', 'Bootstrap', 'Bayesian', 'Conformal'))
+    )
+
+p_dat = p_dat |>
+
+    mutate(
+        too_narrow = ifelse(!coverage, .5, .01), 
+        too_narrow_color = case_when(
+            !coverage & type == 'Bootstrap' ~ okabe_ito[5],
+            !coverage & type == 'Conformal'   ~ okabe_ito[6],
+            TRUE ~ 'gray75'
+        ),
+        too_narrow_size = case_when(
+            !coverage & type == 'Bootstrap' ~ .5,
+            !coverage & type == 'Conformal'   ~ 2,
+            TRUE ~ .25
+        ),
+        .by = type
+    ) 
+
+
+
+p_dat |>
+    ggplot(aes(x = idx, y = y_pred_boost)) +
+    # geom_line() +
+    geom_point(
+        aes(
+            y     = y, 
+            size  = I(too_narrow_size),
+            color = I(too_narrow_color), 
+            alpha = I(too_narrow)
+        ), 
+        show.legend = FALSE,
+        data = p_dat |> filter(!coverage)
+    ) +
+    geom_ribbon(
+        aes(ymin = lower, ymax = upper, fill = type, linetype = type),
+        alpha = .1
+    ) +
+    ggnewscale::new_scale_color() +    
+    geom_smooth(
+        aes(
+            y = lower,
+            color = type,
+            # linetype = type
+        ),
+        se = FALSE
+    ) +
+    geom_smooth(
+        aes(
+            y = upper,
+            color = type,
+            # linetype = type
+        ),
+        se = FALSE
+    ) +
+    labs(
+        x = 'Prediction Index',
+        # y = 'Median House Value',
+        y = '',
+        # title = 'Prediction Intervals for Median House Value',
+        subtitle = 'Comparison of different prediction intervals for XGBoost'
+    ) +
+    scale_y_log10(breaks = c(5e4, 1e5, 5e5, 1e6), labels = scales::dollar) +
+    scale_fill_manual(values = okabe_ito[5:6], aesthetics = c('fill', 'color')) +
+    theme_minimal() +
+    theme(
+        legend.position = 'bottom',
+        legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(1, 'cm'),
+    )
+
+ggsave('img/conformal/boost-plot.png', width = 8, height = 6, units = 'in', dpi = 300)
+```
+
+![](../../img/conformal/boost-plot.png){width=75%}
+
+The first thing we see is that the naive bootstrap is too optimistic in this situation (`r scales::label_percent()(cover_boot)` coverage). However, while the conformal interval is obviously more conservative, its actual coverage of the observed house values is only slightly beyond what was specified (90%), which is exactly the type of performance we want. As a side note, on an Apple M1 laptop, it took a few seconds to get the conformal prediction intervals, while the bootstrap took over 10 minutes for 500 bootstrap replications.
+
+
+
+## Pros and Cons
+
+Nothing comes for free in the modeling world. Here we list some advantages and disadvantages of the different approaches to uncertainty estimation. Note that this is not an exhaustive list nor does it go into specifics, and there may be additional considerations beyond those noted.
+
+### Traditional Statistical Prediction Intervals 
+
+**Advantages:**
+
+- **Ease**: For many models, prediction intervals can be computed easily and are automatically provided by various modeling packages.
+- **Interpretability**: The statistical theory behind the prediction intervals is generally straightforward.
+
+**Disadvantages:**
+
+- **Distribution Assumption**: They typically require (sometimes strong) assumptions about the underlying data distribution.
+- **Model-Specific Estimation**: They depend on a specific statistical model, and different approaches are needed for different models. 
+- **Model Complexity**: Even standard models, e.g. those using penalty terms, can make prediction uncertainty using distributional assumptions difficult[^nomer].
+
+[^nomer]: One of the more popular statistical packages in R is `lme4`, and the developers don't provide prediction intervals for mixed models because "it is difficult to define an efficient method that incorporates uncertainty in the variance parameters". They suggest to use bootstrapping instead.
+
+### Bootstrapping 
+
+**Advantages:**
+
+- **Simple**: Bootstrapping is a relatively simple approach to estimating uncertainty.
+- **Less Restrictive Assumptions**: Like conformal prediction, non-parametric bootstrapping doesn't require assumptions of the underlying data distribution.
+- **Model-Agnostic**: It operates directly on the data irrespective of your model.
+
+**Disadvantages:**
+
+- **Computationally Intensive**: It might require a large number of resamples, which can be computationally intensive for some model-data combinations.
+- **Data issues**: For very small datasets, extreme values/tails, estimates could be problematic, but this is likely true for most approaches.
+- **Naive approach is limited**: The naive resampling approach tends to underestimate uncertainty, so additional steps are required to get a more accurate estimate of uncertainty.
+
+
+### Bayesian Approaches 
+
+**Advantages:**
+
+- **Probabilistic Interpretation**: It provides a full distribution of plausible values for our parameters or predictions.
+- **Incorporates Prior Information**: We can use prior beliefs about parameters we estimate. For example, we can use last year's data to inform our prior beliefs about the parameters of this year's model.
+- **Confidence in Uncertainty Estimate**: We can be more confident in our uncertainty estimates than we can with some statistical approaches that often use workarounds to estimate uncertainty (e.g. mixed models), and there are many diagnostic tools available to spot problematic models.
+
+
+**Disadvantages:**
+
+- **Computationally Intensive**: MCMC sampling for model estimation can be slow, particularly for complex models.
+- **Choice of Prior**: The choice of prior can significantly influence the results, especially with small data.
+- **Statistical Assumptions**: As the Bayesian models are an alternative way to estimate statistical models, they depend on a specific statistical model and its likelihood.
+
+
+### Conformal Prediction 
+
+**Advantages:**
+
+- **Distribution-Free**: They can generate valid prediction intervals regardless of the underlying data distribution.
+- **Flexibility**: Conformal predictions can work with any model, providing a unified framework to generate prediction intervals.
+- **Focus on Prediction over Parameters**: Conformal prediction focuses on uncertainty of prediction rather than parameter estimates, which can be more useful in many situations.
+- **Validity**: Given a significance level, conformal prediction provides valid coverage even with misspecified models.
+- **Efficiency**: Conformal prediction is relatively computationally efficient compared to other methods, and nonconformity measures based on residuals are straightforward to compute during the training process.
+- **Generalizable**: Other approaches that might be used for uncertainty prediction, like quantile regression or Bayesian methods, can be 'conformalized' to produce appropriate coverage.
+
+
+**Disadvantages:**
+
+- **Stability**: The intervals can be unstable with a small change in input data.
+- **Precision**: Conformal prediction does not necessarily lead to precise intervals. The intervals can sometimes be overly conservative, particularly when the nonconformity measure isn't chosen properly.
+- **Calibration Data Requirement**: A portion of the data needs to be held out to estimate the nonconformity scores, which can reduce the data available for model training.
+- **Continued Adjustments**: The basic conformal prediction proposed is not widely used as it was computationally intensive. Methods like the split-conformal approach were proposed to address this, but they require additional adjustments to the prediction intervals to maintain validity, or other alterations to accommodate methods in which the data is not exchangeable. As tweaks are devised, they may be less theoretically sound and more ad hoc, or just more computationally intensive.
+- **Still has assumptions**: Not a unique feature of conformal prediction, but it is worth pointing out that it has assumptions like the other methods, e.g. exchangeability, which must be met.
+
+
+
+
+## Conclusion
+
+> There's a lot of uncertainty in uncertainty estimation. 
+
+As we've seen, there are many approaches to estimating uncertainty, and each has its own strengths and weaknesses. Among the considerations for selection are computational feasibility, coverage accuracy, and underlying model assumptions. In this article we discussed statistical prediction intervals, bootstrapping, Bayesian estimation, and conformal prediction, as well as their relative advantages and disadvantages. Conformal prediction is a relatively newer approach that has some advantages over other approaches, including its flexibility, distribution-free nature, and theoretical guarantee of coverage probability, even under difficult and complex modeling circumstances. We hope this article has been helpful in understanding the importance of uncertainty estimation and the different approaches to it, and that it has provided a useful demonstration of how to use conformal prediction to estimate uncertainty.
+
+
+
+## Data Details
+
+The following shows some basic information based on a sample of the data used in this post.
+
+```{r}
+#| eval: false
+#| label: 'data-info'
+#| tbl-cap: 'Summary of the California Housing Prices dataset'
+# df_ca |> skimr::skim()
+# this doesn't render right even in html, where it's missing icons, or possibly at all in other formats just do once and save as an image.
+df_ca |> 
+    slice_sample(n=1000) |> 
+    gtExtras::gt_plt_summary(title = '') # Do all ONLY FOR FINAL DRAFT
+```
+
+![](../../img/conformal/data_table.png){width=75%}
+
+
+## References
+
+
+
+
+
