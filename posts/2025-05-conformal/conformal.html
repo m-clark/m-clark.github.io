@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Michael Clark">
+
+<title>Uncertainty Estimation with Conformal Prediction – Michael Clark</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.ico" rel="icon">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-8b0926c3209acc850c54cf5a339c099e.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/quarto-contrib/social-share-1.0.0/social-share.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/social-share-1.0.0/all.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/fontawesome6-1.2.0/all.min.css" rel="stylesheet">
+<link href="../../site_libs/quarto-contrib/fontawesome6-1.2.0/latex-fontsize.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    </a>
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Michael Clark</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://www.linkedin.com/in/michael-clark-b475b5170/"> <i class="bi bi-linkedin" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/m-clark"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://bsky.app/profile/m-clark.bsky.social"> 
+<span class="menu-text"><i class="fa-brands fa-bluesky" aria-label="bluesky"></i></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://x.com/statsdatasci"> <i class="bi bi-twitter-x" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../book.html"> 
+<span class="menu-text">Models Demystified</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../documents.html"> 
+<span class="menu-text">Content</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../code.html"> 
+<span class="menu-text">Code</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Uncertainty Estimation with Conformal Prediction</h1>
+                      </div>
+  </div>
+    
+  <div class="quarto-title-meta-author">
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-heading">Affiliation</div>
+    
+      <div class="quarto-title-meta-contents">
+      <p class="author">Michael Clark </p>
+    </div>
+    <div class="quarto-title-meta-contents">
+          <p class="affiliation">
+              Strong Analytics
+            </p>
+        </div>
+    </div>
+
+  <div class="quarto-title-meta">
+
+        
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#why-is-uncertainty-estimation-important" id="toc-why-is-uncertainty-estimation-important" class="nav-link" data-scroll-target="#why-is-uncertainty-estimation-important">Why is Uncertainty Estimation Important?</a>
+  <ul class="collapse">
+  <li><a href="#contributing-factors" id="toc-contributing-factors" class="nav-link" data-scroll-target="#contributing-factors">Contributing Factors</a></li>
+  </ul></li>
+  <li><a href="#approaches-to-uncertainty-estimation" id="toc-approaches-to-uncertainty-estimation" class="nav-link" data-scroll-target="#approaches-to-uncertainty-estimation">Approaches to Uncertainty Estimation</a>
+  <ul class="collapse">
+  <li><a href="#statistical-uncertainty" id="toc-statistical-uncertainty" class="nav-link" data-scroll-target="#statistical-uncertainty">Statistical Uncertainty</a></li>
+  <li><a href="#bootstrapping" id="toc-bootstrapping" class="nav-link" data-scroll-target="#bootstrapping">Bootstrapping</a></li>
+  <li><a href="#bayesian-approaches" id="toc-bayesian-approaches" class="nav-link" data-scroll-target="#bayesian-approaches">Bayesian Approaches</a></li>
+  <li><a href="#conformal-prediction" id="toc-conformal-prediction" class="nav-link" data-scroll-target="#conformal-prediction">Conformal Prediction</a></li>
+  </ul></li>
+  <li><a href="#example" id="toc-example" class="nav-link" data-scroll-target="#example">Example</a></li>
+  <li><a href="#pros-and-cons" id="toc-pros-and-cons" class="nav-link" data-scroll-target="#pros-and-cons">Pros and Cons</a>
+  <ul class="collapse">
+  <li><a href="#traditional-statistical-prediction-intervals" id="toc-traditional-statistical-prediction-intervals" class="nav-link" data-scroll-target="#traditional-statistical-prediction-intervals">Traditional Statistical Prediction Intervals</a></li>
+  <li><a href="#bootstrapping-1" id="toc-bootstrapping-1" class="nav-link" data-scroll-target="#bootstrapping-1">Bootstrapping</a></li>
+  <li><a href="#bayesian-approaches-1" id="toc-bayesian-approaches-1" class="nav-link" data-scroll-target="#bayesian-approaches-1">Bayesian Approaches</a></li>
+  <li><a href="#conformal-prediction-1" id="toc-conformal-prediction-1" class="nav-link" data-scroll-target="#conformal-prediction-1">Conformal Prediction</a></li>
+  </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#data-details" id="toc-data-details" class="nav-link" data-scroll-target="#data-details">Data Details</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 data-anchor-id="introduction">Introduction</h2>
+<p>Uncertainty estimation is a crucial component of machine learning systems. It is vital to know how precise our model predictions are, and whether we feel confident in taking action based on them. While typical usage of prediction and performance is often done with little consideration of uncertainty, we do so at our own (very predictable) peril. Here we will discuss uncertainty in the context of prediction, and how we can estimate it using several methods. We will focus especially on conformal prediction, a tried but relatively newer approach to uncertainty estimation that has several advantages. The outline is as follows:</p>
+<ol type="1">
+<li><strong>Why Uncertainty Estimation is Important?</strong>: We’ll discuss why uncertainty estimation is important and how it can be used to make better decisions.</li>
+<li><strong>Approaches to Uncertainty Estimation</strong>: We’ll discuss different approaches to uncertainty estimation, including statistical prediction intervals, bootstrapping, Bayesian approaches, and conformal prediction.</li>
+<li><strong>Example</strong>: We’ll demonstrate how to use conformal prediction to estimate uncertainty in a simple example to help demystify the process.</li>
+<li><strong>Pros and Cons</strong>: We’ll discuss the advantages and disadvantages of different approaches to uncertainty estimation.</li>
+</ol>
+</section>
+<section id="why-is-uncertainty-estimation-important" class="level2">
+<h2 data-anchor-id="why-is-uncertainty-estimation-important">Why is Uncertainty Estimation Important?</h2>
+<p>Uncertainty estimation is an indispensable part of our modeling endeavor, and <em>one of the main reasons is that it allows us to make better decisions from our data</em>. If we feel more confident in our predictions, we can feel more confident in taking action based on them. Understanding uncertainty can also help us understand the model itself, and especially where its weaknesses are, or at what points we should be more cautious.</p>
+<p>For example, if we are building a model to predict the number of sales of some item, we would like to know how confident we are in our prediction of future sales in order to take current action, like increasing our marketing budget for the months ahead, or possibly assessing whether current marketing strategies have been successful. Our model may predict that we can expect an increase in sales of 150 units with the increased budget of 5%. If we are 90% confident that the expected sales increase six months from now are between 100 and 200 units, we might make a different decision than if we are 90% confident that the unit sales is between -100 and 400 units. In the first case, we might be more willing to increase our budget spend, since it seems we are likely to experience an increase in sales by doing so. In the second case, we might not take any action, since the range encompasses anywhere between lost sales to an even larger boost.</p>
+<p>Many times stakeholders will take action given the prediction alone, and then are disappointed when things don’t turn out as such, which they definitely will not in practice. In similar fashion, some take action based on rankings of the predictions, which of course themselves have uncertainty that stems from the raw prediction, and even more so. In some situations, we may be able to get away with doing so, but it would be difficult to know this ahead of time. The old adage of not wanting to put all your eggs in one (prediction) basket applies here.</p>
+<section id="contributing-factors" class="level3">
+<h3 data-anchor-id="contributing-factors">Contributing Factors</h3>
+<p>There are many factors that can contribute to uncertainty in our predictions. First, we can think about the <strong>amount of data</strong> we have to make a prediction - more data can lead us to feel more confident about predictions in a general sense, as there is more data for the model to learn from, and potentially more observations of varying kinds. But this is limited - more bad or merely uninformative data will not improve a model or its predictions! Another factor is the <strong>complexity of the model</strong> we are using to make predictions - more complex models can lead to more better predictions, but possibly more instability in those predictions if additional steps aren’t taken. Conversely, having too simple a model yields poor predictions in general. Yet another factor is the <strong>precision of measurement</strong>, which can be affected by the quality of the data collection process. For example, if sales are entered with possible error or a lag for some reporting units, this can lead to uncertainty in our predictions of future sales. In addition, the precision of measurement can vary across features. For example, if price is a feature, it may be that price fluctuates within a month but sales are recorded for a month, meaning we might have to take an average or other measure of price. In general, some aspects contributing to prediction uncertainty may be under our control, while others may not be.</p>
+<p>So there might be any number of things contributing to the uncertainty in our predictions. Even considering those factors, there are different ways we can assess uncertainty within the same data and model situation. While in some situations we can use standard approaches, in others some approaches may offer advantages. For example, one technique may produce intervals that are too narrow (wide), and thus inspiring more (less) confidence than should be. In what follows we will discuss how to estimate uncertainty in a variety of ways, with a focus on <strong>conformal prediction</strong>. We’ll start by discussing the importance of uncertainty estimation and the different approaches to it. Then, we will discuss conformal prediction and show a simple demonstration of how it can be used to estimate uncertainty. Finally, we will discuss the advantages and disadvantages of conformal prediction compared to other approaches to uncertainty estimation.</p>
+</section>
+</section>
+<section id="approaches-to-uncertainty-estimation" class="level2">
+<h2 data-anchor-id="approaches-to-uncertainty-estimation">Approaches to Uncertainty Estimation</h2>
+<p>There are several approaches to uncertainty estimation, and many different things we can calculate uncertainty for, but we’ll focus specifically on uncertainty for predictions, and we’ll briefly describe and demonstrate some of the different ways of getting an uncertainty estimate for those.</p>
+<section id="statistical-uncertainty" class="level3">
+<h3 data-anchor-id="statistical-uncertainty">Statistical Uncertainty</h3>
+<p>Probably the most common approach is to use a statistical model. Given a statistical distribution and the estimated parameters of the model, we can get a sense of uncertainty in the prediction. For example, let’s say we have a standard linear regression model. In that case, we are assuming the data generating process is a normal distribution with a mean that comes from our model via the linear combination of features, and estimated variance. Given those assumptions we can then obtain an interval estimate for a prediction, typically using a standard formula.</p>
+<!---
+ The following shows how the prediction interval for an unseen observation is constructed:
+
+$$
+\hat{y} \pm t_{\alpha/2, n-2} \hat{\sigma} \sqrt{1 + \frac{1}{n} + \frac{(x - \bar{x})^2}{\sum_{i=1}^n (x_i - \bar{x})^2}}
+$$ 
+
+where $\hat{y}$ is the predicted value, $t_{\alpha/2, n-2}$ is the critical value of the t-distribution with $n-2$ degrees of freedom, $\hat{\sigma}$ is the standard error of the regression, $x$ is the value of the predictor, and $\bar{x}$ is the mean of the predictor. 
+--->
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We can contrast the prediction interval versus a <a href="https://stats.stackexchange.com/questions/16493/difference-between-confidence-intervals-and-prediction-intervals">confidence interval for a prediction</a>, i.e., for the prediction for an <em>average response</em>, which will always be smaller, as it reflects the uncertainty in the mean of the distribution of predictions, rather than the uncertainty in the predicted value for a new observation.</p>
+</div>
+</div>
+</section>
+<section id="bootstrapping" class="level3">
+<h3 data-anchor-id="bootstrapping">Bootstrapping</h3>
+<p>Bootstrapping is another technique for estimating uncertainty in machine learning models. It is based on the idea that we can estimate the uncertainty in our predictions by resampling the data and training a new model on each resampled dataset. Think of it this way, we take our data, resample it with replacement, and train a new model on the resampled data. We then use the new model to make predictions on the original or new/test data. Now we do that many times, taking the average for our final prediction, and the quantiles of interest (e.g.&nbsp;corresponding to the 5th and 95th percentiles) for our interval estimate.</p>
+</section>
+<section id="bayesian-approaches" class="level3">
+<h3 data-anchor-id="bayesian-approaches">Bayesian Approaches</h3>
+<p>Bootstrap and Bayesian approaches are kindred spirits in that they both generate a distribution for our predictions. The Bayesian approach does not require resampling, but rather an assumption about the distributions of our parameters, and so has essentially the same types of assumptions you’d have in the non-Bayesian setting for statistical models. We use the Bayesian approach to provide a distribution for the parameters we’re attempting to estimate. For our predictions, we then take random draws from that parameter distribution, feed it into our model to get a prediction, and then repeat that process many times. Again, we may take the average for our final prediction, and the quantiles of interest for our interval estimate.</p>
+</section>
+<section id="conformal-prediction" class="level3">
+<h3 data-anchor-id="conformal-prediction">Conformal Prediction</h3>
+<p>Conformal prediction is yet another technique for estimating uncertainty in machine learning models, and one of its primary strengths is that it is model agnostic and theoretically can work for any model, from linear regression to deep learning. It is based on the idea that we can estimate the uncertainty in our predictions by looking at the distribution of the predictions from the model, or more specifically, the prediction error. Using the observed error on a calibration set that was not used to train the model, we can order those errors and find the quantile corresponding to the desired uncertainty coverage/error rate<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. When predicting on new data, we assume it (and its error) comes from a similar distribution as what we’ve seen already in our training/calibration process, with no particular assumption about that distribution. We then use that quantile from our previous distribution to create upper and lower bounds for the new prediction.</p>
+<p>While the implementation for various settings can get quite complicated, the conceptual approach is mostly straightforward as we’ve just suggested. The following shows some simplified code demonstrating the <strong>split-conformal</strong> procedure in Python and R.</p>
+<!-- Can't do tabset for doc/blog post upload, so we'll do this instead. -->
+<section id="python" class="level4">
+<h4 data-anchor-id="python">Python</h4>
+<p><img src="../../img/conformal/py_conformal_code.png" class="img-fluid" style="width:66.0%"></p>
+</section>
+<section id="r" class="level4">
+<h4 data-anchor-id="r">R</h4>
+<p><img src="../../img/conformal/r_conformal_code.png" class="img-fluid" style="width:66.0%"></p>
+<p>We can compare our simple approach to <code>mapie</code> in Python, which is a solid package to use for this<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. The ‘naive’ conformal procedure in <code>mapie</code> implemented is very similar to our split-conformal procedure, and generally you’d want to use one of the better approaches. But this is a bit more comparable, and most of the difference between our R, Python and the <code>mapie</code> results are due to the underlying data split.</p>
+<p><img src="../../img/conformal/py_mapie_conformal_code.png" class="img-fluid" style="width:66.0%"></p>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div id="qggzllfand" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#qggzllfand table {
+  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#qggzllfand thead, #qggzllfand tbody, #qggzllfand tfoot, #qggzllfand tr, #qggzllfand td, #qggzllfand th {
+  border-style: none;
+}
+
+#qggzllfand p {
+  margin: 0;
+  padding: 0;
+}
+
+#qggzllfand .gt_table {
+  display: table;
+  border-collapse: collapse;
+  line-height: normal;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#qggzllfand .gt_caption {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+#qggzllfand .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#qggzllfand .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 3px;
+  padding-bottom: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#qggzllfand .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#qggzllfand .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qggzllfand .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#qggzllfand .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#qggzllfand .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#qggzllfand .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#qggzllfand .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#qggzllfand .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#qggzllfand .gt_spanner_row {
+  border-bottom-style: hidden;
+}
+
+#qggzllfand .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  text-align: left;
+}
+
+#qggzllfand .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#qggzllfand .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#qggzllfand .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#qggzllfand .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#qggzllfand .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qggzllfand .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#qggzllfand .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#qggzllfand .gt_row_group_first th {
+  border-top-width: 2px;
+}
+
+#qggzllfand .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qggzllfand .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#qggzllfand .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#qggzllfand .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qggzllfand .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qggzllfand .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#qggzllfand .gt_last_grand_summary_row_top {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: double;
+  border-bottom-width: 6px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qggzllfand .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#qggzllfand .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#qggzllfand .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#qggzllfand .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qggzllfand .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#qggzllfand .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#qggzllfand .gt_left {
+  text-align: left;
+}
+
+#qggzllfand .gt_center {
+  text-align: center;
+}
+
+#qggzllfand .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#qggzllfand .gt_font_normal {
+  font-weight: normal;
+}
+
+#qggzllfand .gt_font_bold {
+  font-weight: bold;
+}
+
+#qggzllfand .gt_font_italic {
+  font-style: italic;
+}
+
+#qggzllfand .gt_super {
+  font-size: 65%;
+}
+
+#qggzllfand .gt_footnote_marks {
+  font-size: 75%;
+  vertical-align: 0.4em;
+  position: initial;
+}
+
+#qggzllfand .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#qggzllfand .gt_indent_1 {
+  text-indent: 5px;
+}
+
+#qggzllfand .gt_indent_2 {
+  text-indent: 10px;
+}
+
+#qggzllfand .gt_indent_3 {
+  text-indent: 15px;
+}
+
+#qggzllfand .gt_indent_4 {
+  text-indent: 20px;
+}
+
+#qggzllfand .gt_indent_5 {
+  text-indent: 25px;
+}
+</style>
+
+<table class="gt_table caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Source" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Source</th>
+<th id="CP Error" class="gt_col_heading gt_columns_bottom_border gt_center" data-quarto-table-cell-role="th" scope="col">CP Error</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left" headers="Source">R</td>
+<td class="gt_row gt_center" headers="CP Error">0.5341064</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left" headers="Source">Python</td>
+<td class="gt_row gt_center" headers="CP Error">0.5362887551247815</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left" headers="Source">Py-mapie</td>
+<td class="gt_row gt_center" headers="CP Error">0.5369861725473424</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled" title="Other Methods">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Other Methods
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>As noted, there are numerous methods for estimating uncertainty in our predictions. As an example, some use <em>quantile regression</em> in machine learning models. It is based on the idea that we can estimate the uncertainty in our predictions by modeling the specific quantiles rather than the conditional mean default value, for example, the .05 and .95 values. But those quantiles are predictions with uncertainty themselves, and without incorporating that uncertainty, tends to underestimate the uncertainty in the prediction (Bai et al., 2021). In general, one should be cautious about the method they choose in any particular setting.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="example" class="level2">
+<h2 data-anchor-id="example">Example</h2>
+<p>To see our uncertainty estimation in practice, we’ll use a sample of the classic <a href="https://www.kaggle.com/camnugent/california-housing-prices">California Housing Prices dataset</a> for demonstration. The dataset contains information about housing prices in California, including the median house value in a district, the median income for that district, and the median house age etc. We’ll use all the available features to predict median house value. You can find out some basic info for the data at the <a href="#data-details">end of this post</a>.</p>
+<p>In the following we show the 90% prediction interval estimates for a basic linear regression with all features predicting the target on the log scale. Points are arranged in increasing (mean) predicted value, which would be identical with increasing sample size for all methods. We can see that the prediction intervals are essentially in agreement for all methods. Highlighted are the points missed by the intervals, which was around 10% for each method (data issues notwithstanding<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>). This should leave us feeling good about using any of these methods for uncertainty estimation in simpler model settings.</p>
+<p><img src="../../img/conformal/lin-reg-plot.png" class="img-fluid" style="width:75.0%"></p>
+<p>The following visualization shows the exact same data context, though now we use an xgboost model to predict the target. With this model, we do not have an underlying statistical distribution or easy Bayesian counterpart<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> with which to estimate uncertainty. Furthermore, the nature of the model means that the actual interval widths can vary a bit from point to point, so the lines shown are smoothed boundaries used to make the general pattern more clear, but should not be taken as the actual interval for a given point. The blue indicates the bootstrapped interval and blue (or blue + red) dots indicate points that lie outside of the bootstrap interval. We do the same with the conformal interval using red.</p>
+<p><img src="../../img/conformal/boost-plot.png" class="img-fluid" style="width:75.0%"></p>
+<p>The first thing we see is that the naive bootstrap is too optimistic in this situation (70% coverage). However, while the conformal interval is obviously more conservative, its actual coverage of the observed house values is only slightly beyond what was specified (90%), which is exactly the type of performance we want. As a side note, on an Apple M1 laptop, it took a few seconds to get the conformal prediction intervals, while the bootstrap took over 10 minutes for 500 bootstrap replications.</p>
+</section>
+<section id="pros-and-cons" class="level2">
+<h2 data-anchor-id="pros-and-cons">Pros and Cons</h2>
+<p>Nothing comes for free in the modeling world. Here we list some advantages and disadvantages of the different approaches to uncertainty estimation. Note that this is not an exhaustive list nor does it go into specifics, and there may be additional considerations beyond those noted.</p>
+<section id="traditional-statistical-prediction-intervals" class="level3">
+<h3 data-anchor-id="traditional-statistical-prediction-intervals">Traditional Statistical Prediction Intervals</h3>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li><strong>Ease</strong>: For many models, prediction intervals can be computed easily and are automatically provided by various modeling packages.</li>
+<li><strong>Interpretability</strong>: The statistical theory behind the prediction intervals is generally straightforward.</li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul>
+<li><strong>Distribution Assumption</strong>: They typically require (sometimes strong) assumptions about the underlying data distribution.</li>
+<li><strong>Model-Specific Estimation</strong>: They depend on a specific statistical model, and different approaches are needed for different models.</li>
+<li><strong>Model Complexity</strong>: Even standard models, e.g.&nbsp;those using penalty terms, can make prediction uncertainty using distributional assumptions difficult<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>.</li>
+</ul>
+</section>
+<section id="bootstrapping-1" class="level3">
+<h3 data-anchor-id="bootstrapping-1">Bootstrapping</h3>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li><strong>Simple</strong>: Bootstrapping is a relatively simple approach to estimating uncertainty.</li>
+<li><strong>Less Restrictive Assumptions</strong>: Like conformal prediction, non-parametric bootstrapping doesn’t require assumptions of the underlying data distribution.</li>
+<li><strong>Model-Agnostic</strong>: It operates directly on the data irrespective of your model.</li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul>
+<li><strong>Computationally Intensive</strong>: It might require a large number of resamples, which can be computationally intensive for some model-data combinations.</li>
+<li><strong>Data issues</strong>: For very small datasets, extreme values/tails, estimates could be problematic, but this is likely true for most approaches.</li>
+<li><strong>Naive approach is limited</strong>: The naive resampling approach tends to underestimate uncertainty, so additional steps are required to get a more accurate estimate of uncertainty.</li>
+</ul>
+</section>
+<section id="bayesian-approaches-1" class="level3">
+<h3 data-anchor-id="bayesian-approaches-1">Bayesian Approaches</h3>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li><strong>Probabilistic Interpretation</strong>: It provides a full distribution of plausible values for our parameters or predictions.</li>
+<li><strong>Incorporates Prior Information</strong>: We can use prior beliefs about parameters we estimate. For example, we can use last year’s data to inform our prior beliefs about the parameters of this year’s model.</li>
+<li><strong>Confidence in Uncertainty Estimate</strong>: We can be more confident in our uncertainty estimates than we can with some statistical approaches that often use workarounds to estimate uncertainty (e.g.&nbsp;mixed models), and there are many diagnostic tools available to spot problematic models.</li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul>
+<li><strong>Computationally Intensive</strong>: MCMC sampling for model estimation can be slow, particularly for complex models.</li>
+<li><strong>Choice of Prior</strong>: The choice of prior can significantly influence the results, especially with small data.</li>
+<li><strong>Statistical Assumptions</strong>: As the Bayesian models are an alternative way to estimate statistical models, they depend on a specific statistical model and its likelihood.</li>
+</ul>
+</section>
+<section id="conformal-prediction-1" class="level3">
+<h3 data-anchor-id="conformal-prediction-1">Conformal Prediction</h3>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li><strong>Distribution-Free</strong>: They can generate valid prediction intervals regardless of the underlying data distribution.</li>
+<li><strong>Flexibility</strong>: Conformal predictions can work with any model, providing a unified framework to generate prediction intervals.</li>
+<li><strong>Focus on Prediction over Parameters</strong>: Conformal prediction focuses on uncertainty of prediction rather than parameter estimates, which can be more useful in many situations.</li>
+<li><strong>Validity</strong>: Given a significance level, conformal prediction provides valid coverage even with misspecified models.</li>
+<li><strong>Efficiency</strong>: Conformal prediction is relatively computationally efficient compared to other methods, and nonconformity measures based on residuals are straightforward to compute during the training process.</li>
+<li><strong>Generalizable</strong>: Other approaches that might be used for uncertainty prediction, like quantile regression or Bayesian methods, can be ‘conformalized’ to produce appropriate coverage.</li>
+</ul>
+<p><strong>Disadvantages:</strong></p>
+<ul>
+<li><strong>Stability</strong>: The intervals can be unstable with a small change in input data.</li>
+<li><strong>Precision</strong>: Conformal prediction does not necessarily lead to precise intervals. The intervals can sometimes be overly conservative, particularly when the nonconformity measure isn’t chosen properly.</li>
+<li><strong>Calibration Data Requirement</strong>: A portion of the data needs to be held out to estimate the nonconformity scores, which can reduce the data available for model training.</li>
+<li><strong>Continued Adjustments</strong>: The basic conformal prediction proposed is not widely used as it was computationally intensive. Methods like the split-conformal approach were proposed to address this, but they require additional adjustments to the prediction intervals to maintain validity, or other alterations to accommodate methods in which the data is not exchangeable. As tweaks are devised, they may be less theoretically sound and more ad hoc, or just more computationally intensive.</li>
+<li><strong>Still has assumptions</strong>: Not a unique feature of conformal prediction, but it is worth pointing out that it has assumptions like the other methods, e.g.&nbsp;exchangeability, which must be met.</li>
+</ul>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 data-anchor-id="conclusion">Conclusion</h2>
+<blockquote class="blockquote">
+<p>There’s a lot of uncertainty in uncertainty estimation.</p>
+</blockquote>
+<p>As we’ve seen, there are many approaches to estimating uncertainty, and each has its own strengths and weaknesses. Among the considerations for selection are computational feasibility, coverage accuracy, and underlying model assumptions. In this article we discussed statistical prediction intervals, bootstrapping, Bayesian estimation, and conformal prediction, as well as their relative advantages and disadvantages. Conformal prediction is a relatively newer approach that has some advantages over other approaches, including its flexibility, distribution-free nature, and theoretical guarantee of coverage probability, even under difficult and complex modeling circumstances. We hope this article has been helpful in understanding the importance of uncertainty estimation and the different approaches to it, and that it has provided a useful demonstration of how to use conformal prediction to estimate uncertainty.</p>
+</section>
+<section id="data-details" class="level2">
+<h2 data-anchor-id="data-details">Data Details</h2>
+<p>The following shows some basic information based on a sample of the data used in this post.</p>
+<p><img src="../../img/conformal/data_table.png" class="img-fluid" style="width:75.0%"></p>
+</section>
+<section id="references" class="level2">
+
+
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-angelopoulos2022gentle" class="csl-entry" role="listitem">
+Angelopoulos, Anastasios N., and Stephen Bates. 2022. <span>“A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification.”</span> <a href="https://arxiv.org/abs/2107.07511">https://arxiv.org/abs/2107.07511</a>.
+</div>
+<div id="ref-va2022" class="csl-entry" role="listitem">
+Arel-Bundock, Vincent. 2022. <span>“Distribution-Free Prediction Intervals with Conformal Inference Using r.”</span> <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
+</div>
+<div id="ref-bai2021understanding" class="csl-entry" role="listitem">
+Bai, Yu, Song Mei, Huan Wang, and Caiming Xiong. 2021. <span>“Understanding the Under-Coverage Bias in Uncertainty Estimation.”</span> <em>Advances in Neural Information Processing Systems</em> 34: 18307–19.
+</div>
+<div id="ref-brownlee2019" class="csl-entry" role="listitem">
+Brownlee, J. 2019. <span>“A Gentle Introduction to Uncertainty in Machine Learning.”</span> <a href="https://machinelearningmastery.com/uncertainty-in-machine-learning/">https://machinelearningmastery.com/uncertainty-in-machine-learning/</a>.
+</div>
+<div id="ref-tidymodels2023" class="csl-entry" role="listitem">
+Group, Tidymodels. 2023. <span>“Conformal Inference for Regression Models.”</span> <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
+</div>
+<div id="ref-lei2018distribution" class="csl-entry" role="listitem">
+Lei, Jing, Max G’Sell, Alessandro Rinaldo, Ryan J Tibshirani, and Larry Wasserman. 2018. <span>“Distribution-Free Predictive Inference for Regression.”</span> <em>Journal of the American Statistical Association</em> 113 (523): 1094–1111. <a href="https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf">https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf</a>.
+</div>
+<div id="ref-molnar2023" class="csl-entry" role="listitem">
+Molnar, Christopher. 2023. <span>“Understanding Different Uncertainty Mindsets.”</span> <a href="https://mindfulmodeler.substack.com/p/understanding-different-uncertainty">https://mindfulmodeler.substack.com/p/understanding-different-uncertainty</a>.
+</div>
+<div id="ref-SOBoot" class="csl-entry" role="listitem">
+StackExchange. 2023. <span>“Bootstrap Prediction Interval.”</span> <a href="https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval">https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>The error rate (<span class="math inline">\(\alpha\)</span>) is the proportion of the data that would fall outside the prediction interval, while the coverage rate/interval is 1 - <span class="math inline">\(\alpha\)</span>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>At the time of this writing, there isn’t much in the way of packages for conformal prediction in R. One <a href="https://github.com/ryantibs/conformal">is available</a>, but it is not very user friendly in the least. Others seem like one offs or have other limitations (e.g.&nbsp;only being for classification, working only in the tidymodels framework, etc.).<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>Interestingly all but the bootstrap appeared slightly narrow, but I think this has more to do with data issues, particularly the preponderance of house prices censored to ~500,000, about 5% of the data. No preprocessing was done except to put the home price on the log scale.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>There are methods like Bayesian Additive Regression Trees, but that’s a rabbit hole I didn’t think necessary to investigate for our purposes. Likewise we could also have done a very complicated linear model that incorporates interactions etc.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>One of the more popular statistical packages in R is <code>lme4</code>, and the developers don’t provide prediction intervals for mixed models because “it is difficult to define an efficient method that incorporates uncertainty in the variance parameters”. They suggest to use bootstrapping instead.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark,
+  author = {Clark, Michael and Clark, Michael},
+  title = {Uncertainty {Estimation} with {Conformal} {Prediction}},
+  url = {https://m-clark.github.io/posts/2025-05-conformal/conformal.html},
+  langid = {en}
+}
+</code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark" class="csl-entry quarto-appendix-citeas" role="listitem">
+Clark, Michael, and Michael Clark. n.d. <span>“Uncertainty Estimation
+with Conformal Prediction.”</span> <a href="https://m-clark.github.io/posts/2025-05-conformal/conformal.html">https://m-clark.github.io/posts/2025-05-conformal/conformal.html</a>.
+</div></div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/m-clark\.github\.io");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+<div class="share-buttons"><div class="social-share"><a href="https://twitter.com/share?url=https://m-clark.github.io/&amp;text=Michael Clark" target="_blank" class="twitter"><i class="fab fa-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Michael Clark&amp;body=Check out this link:https://m-clark.github.io/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://m-clark.github.io/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a><a href="https://bsky.app/intent/compose?text=https://m-clark.github.io/ Michael Clark" target="_blank" class="bsky"><i class="fa-brands fa-bluesky"></i></a></div></div>
+
+
+
+
+</body></html>
