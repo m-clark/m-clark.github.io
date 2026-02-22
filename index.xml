@@ -11,7 +11,1296 @@
 <description>&quot;Models Demystified&quot; is a blog about data science and machine learning.
 </description>
 <generator>quarto-1.7.33</generator>
-<lastBuildDate>Fri, 15 Aug 2025 04:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 01 Mar 2026 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>Deep Learning for Tabular Data: The Foundation Model Era</title>
+  <dc:creator>Michael Clark</dc:creator>
+  <link>https://m-clark.github.io/posts/2026-03-01-dl-for-tabular-foundational/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>It’s been nearly four years since I <a href="../2021-07-15-dl-for-tabular/">first summarized</a> the state of deep learning (DL) for tabular data, and about three years since my <a href="../2022-04-01-more-dl-for-tabular/">follow-up post</a>. Back then, the verdict was pretty clear: for most tabular data scenarios, especially those with heterogeneous features and even very large sample sizes, gradient boosting methods like XGBoost, LightGBM, and CatBoost, were still the pragmatic and performant choice. Complex DL architectures like TabNet and even transformer-based models struggled to consistently outperform these boosting approaches, which meant they weren’t really viable options for most practitioners or production.</p>
+<p>The question now is: has anything fundamentally changed?</p>
+<p>Let’s see if the landscape has shifted, or if we’re still in “<a href="https://www.xgblog.ai/p/xgboost-is-all-you-need">XGBoost is all you need</a>” territory.</p>
+</section>
+<section id="quick-take-if-youre-in-a-hurry" class="level2">
+<h2 class="anchored" data-anchor-id="quick-take-if-youre-in-a-hurry">Quick Take (if you’re in a hurry)</h2>
+<p>Key takeaways:</p>
+<ul>
+<li>Several new deep learning models show impressive performance compared to boosting, but context still matters</li>
+<li>It’s significantly easier to implement and experiment with modern tabular DL methods</li>
+<li><strong>TabArena</strong> has created a more rigorous benchmarking environment with standardized datasets and evaluation protocols</li>
+<li>Foundation models for tabular data are emerging and have had success, but it’s a bit early to say how transformative they’ll be in practice yet</li>
+<li>For most practitioners: you’d still do very well with boosting, especially for heterogeneous data and with limited time/resources. However, you should start to consider DL methods if predictive performance is critical and you have the resources to invest in experimentation.</li>
+</ul>
+<p>Now, let’s dig into the details.</p>
+</section>
+<section id="whats-changed-benchmarking-and-accessibility" class="level2">
+<h2 class="anchored" data-anchor-id="whats-changed-benchmarking-and-accessibility">What’s Changed: Benchmarking and Accessibility</h2>
+<section id="better-evaluation-standards" class="level3">
+<h3 class="anchored" data-anchor-id="better-evaluation-standards">Better Evaluation Standards</h3>
+<p>One major improvement is the emergence of more rigorous benchmarking. <strong>TabArena</strong> (<a href="https://huggingface.co/spaces/TabArena/leaderboard">leaderboard</a>) and <a href="https://github.com/LAMDA-Tabular/TALENT">TALENT</a> provide standardized datasets, consistent evaluation metrics, and transparency in preprocessing—addressing the apples-to-oranges comparison problems from earlier papers. TabArena, which will be the primary reference here, has set a new standard for evaluating tabular DL models with:</p>
+<ul>
+<li>A curated set of tabular datasets with standardized train/test splits</li>
+<li>Consistent evaluation metrics across different model types</li>
+<li>A public leaderboard tracking model performance</li>
+<li>Transparency in preprocessing and hyperparameter choices</li>
+<li>Focus on heterogeneous datasets that better reflect real-world tabular data scenarios</li>
+<li>Use of elo-style model ranking for easier model comparisons</li>
+</ul>
+<p>Current benchmarks address one of the major frustrations from my previous post summaries: papers often used different datasets, preprocessing pipelines, and hyperparameter tuning budgets, making fair comparisons nearly impossible. They also often focused primarily on very homogeneous data, which isn’t representative of typical real-world tabular data, and sometimes only classification targets. This is a far better assessment, and gives us more confidence when comparing methods.</p>
+</section>
+<section id="current-leaderboard-landscape" class="level3">
+<h3 class="anchored" data-anchor-id="current-leaderboard-landscape">Current Leaderboard Landscape</h3>
+<p>As of February 2026, the TabArena leaderboard shows some interesting patterns:</p>
+<div id="fig-TabArena" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-TabArena-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://cdn-uploads.huggingface.co/production/uploads/noauth/vha0vepvgH1JtyQWMB6yn.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-TabArena-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: TabArena Leaderboard
+</figcaption>
+</figure>
+</div>
+<p>The key insight from these benchmarks is that some newer DL models <em>are</em> not only competitive with boosting, a few typically win in head-to-head comparisons against boosting models. For example, the top 4 DL models win &gt; 50% of the time against LGBM, XGB, and CatBost.</p>
+<div id="fig-h2h" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-h2h-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://m-clark.github.io/img/dl-foundational/h2h.png" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-h2h-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Head to Head
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="practical-implementation-tools" class="level3">
+<h3 class="anchored" data-anchor-id="practical-implementation-tools">Practical Implementation Tools</h3>
+<p>The even bigger story is accessibility. Modern tools make it trivial to try these methods, so let’s try it out for ourselves!</p>
+<!-- **Initial observations:**
+
+- **Top performers**: Not boosting models!
+- **Boosting methods**: Still highly competitive
+- **Deep learning methods**: Show strength on larger datasets but with notable variability
+- **Ensemble methods**: Continue to dominate when allowed, but may not notably improve some models
+
+### What's Different from before?
+
+The key shift isn't necessarily that DL models are winning outright, but rather:
+
+1. **Better standardization**: We can now make more apples-to-apples comparisons with data we care about
+2. **Improved implementations**: Available tools provide optimized, well-tuned versions of complex architectures
+3. **Pre-training approaches**: Some models leverage transfer learning from other tabular datasets
+4. **Feature engineering automation**: Modern DL approaches are better at handling raw heterogeneous features
+5. **DL is better**: At least some DL models are now regularly outperforming comparable boosting models on certain datasets, especially larger ones.
+
+But the fundamental question remains: **Is the additional complexity worth it?** Let's find out! -->
+</section>
+</section>
+<section id="making-tabular-dl-practical" class="level2">
+<h2 class="anchored" data-anchor-id="making-tabular-dl-practical">Making Tabular DL Practical</h2>
+<section id="using-pytabkit" class="level3">
+<h3 class="anchored" data-anchor-id="using-pytabkit">Using pytabkit</h3>
+<p><a href="https://github.com/dholzmueller/pytabkit">pytabkit</a> provides implementations of state-of-the-art tabular DL models with:</p>
+<ul>
+<li>Optimized hyperparameter defaults based on extensive benchmarking</li>
+<li>Unified API similar to scikit-learn</li>
+<li>Automated preprocessing for heterogeneous data</li>
+<li>Support for both classification and regression</li>
+</ul>
+<p>This is significant because one of the historical barriers to using tabular DL was implementation difficulty. While boosting modules were already easy to add to typical ML pipelines and often worked well out of the box, DL models often required custom code, careful tuning, and extensive experimentation to get good results.</p>
+<p>Let’s see it in action with a simple example. We’ll generate a synthetic dataset with mixed numeric and categorical features, then train a RealMLP model and compare it to an XGBoost baseline.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code: Create Classification Data</summary>
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> pytabkit <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> RealMLP_TD_Classifier</span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> sklearn.model_selection <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> train_test_split</span>
+<span id="cb1-4"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> sklearn.datasets <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> make_classification</span>
+<span id="cb1-5"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> sklearn.metrics <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> accuracy_score, roc_auc_score, log_loss, f1_score</span>
+<span id="cb1-6"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> sklearn.model_selection <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> StratifiedKFold</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> pandas <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> pd</span>
+<span id="cb1-9"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> numpy <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">as</span> np</span>
+<span id="cb1-10"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> string</span>
+<span id="cb1-11"></span>
+<span id="cb1-12"></span>
+<span id="cb1-13"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Generate a classification dataset</span></span>
+<span id="cb1-14">X, y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> make_classification(</span>
+<span id="cb1-15">    n_samples<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5000</span>,</span>
+<span id="cb1-16">    n_features<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>,</span>
+<span id="cb1-17">    n_informative<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>,</span>
+<span id="cb1-18">    n_redundant<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>,</span>
+<span id="cb1-19">    n_classes<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,</span>
+<span id="cb1-20">    random_state<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>,</span>
+<span id="cb1-21">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># make it a more difficult problem</span></span>
+<span id="cb1-22">    flip_y<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>,</span>
+<span id="cb1-23">    class_sep<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1</span>,</span>
+<span id="cb1-24">    n_clusters_per_class<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,</span>
+<span id="cb1-25">)</span>
+<span id="cb1-26"></span>
+<span id="cb1-27"></span>
+<span id="cb1-28"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Convert to DataFrame for easier handling</span></span>
+<span id="cb1-29">feature_names <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Feature_</span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>i<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> i <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(X.shape[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>])]</span>
+<span id="cb1-30">X <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame(X, columns<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>feature_names)</span>
+<span id="cb1-31"></span>
+<span id="cb1-32"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Add three categorical columns with 3, 5, and 12 categories, using letters as group names</span></span>
+<span id="cb1-33">X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_3'</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.cut(X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Feature_0'</span>], bins<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>(string.ascii_uppercase[:<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>])).astype(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'category'</span>)</span>
+<span id="cb1-34">X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_5'</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.cut(X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Feature_1'</span>], bins<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>(string.ascii_uppercase[:<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>])).astype(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'category'</span>)</span>
+<span id="cb1-35">X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_12'</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.cut(X[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Feature_2'</span>], bins<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>, labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">list</span>(string.ascii_uppercase[:<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>])).astype(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'category'</span>)</span>
+<span id="cb1-36"></span>
+<span id="cb1-37"></span>
+<span id="cb1-38"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Use a single train/test split</span></span>
+<span id="cb1-39">X_train, X_test, y_train, y_test <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> train_test_split(X, y, test_size<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>, random_state<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>, stratify<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>y)</span>
+<span id="cb1-40"></span>
+<span id="cb1-41"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Example CV splitter for pytabkit (if needed)</span></span>
+<span id="cb1-42">cv_splitter <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> StratifiedKFold(n_splits<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>, shuffle<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">True</span>, random_state<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb1-43"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Get train/validation indices from the splitter</span></span>
+<span id="cb1-44"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># X_val, y_val = X_train.iloc[val_idx], y_train[val_idx]</span></span>
+<span id="cb1-45"></span>
+<span id="cb1-46">val_idxs_list <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [val_idxs <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> train_idxs, val_idxs <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> cv_splitter.split(X_train, y_train)]</span>
+<span id="cb1-47"></span>
+<span id="cb1-48"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># make sure that each validation set has the same length, so we can exploit vectorization</span></span>
+<span id="cb1-49">max_len <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">max</span>([<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">len</span>(val_idxs) <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> val_idxs <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> val_idxs_list])</span>
+<span id="cb1-50">val_idxs_list <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> [val_idxs[:max_len] <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> val_idxs <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> val_idxs_list]</span>
+<span id="cb1-51">val_idxs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> np.asarray(val_idxs_list)</span>
+<span id="cb1-52"></span>
+<span id="cb1-53"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(<span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">f"Train size: </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>X_train<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>shape[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">, Test size: </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>X_test<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>shape[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">, Baseline rate: </span><span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">{</span>np<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span>mean(y)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:.2f}</span><span class="ss" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"</span>)</span></code></pre></div>
+</details>
+</div>
+<p>With data in hand, we can train a RealMLP model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1">model_realmmlp <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> RealMLP_TD_Classifier(</span>
+<span id="cb2-2">    device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'mps'</span>,</span>
+<span id="cb2-3">    random_state<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,</span>
+<span id="cb2-4">    n_cv<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>,</span>
+<span id="cb2-5">    val_metric_name<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'cross_entropy'</span>,</span>
+<span id="cb2-6">    verbosity<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># will show per epoch loss</span></span>
+<span id="cb2-7">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># example modifications</span></span>
+<span id="cb2-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># n_refit=1,</span></span>
+<span id="cb2-9">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># n_repeats=1,</span></span>
+<span id="cb2-10">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># n_epochs=256,</span></span>
+<span id="cb2-11">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># batch_size=256,</span></span>
+<span id="cb2-12">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># hidden_sizes=[256] * 3,</span></span>
+<span id="cb2-13">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># lr=0.04,</span></span>
+<span id="cb2-14">)</span>
+<span id="cb2-15"></span>
+<span id="cb2-16">model_realmmlp.fit(</span>
+<span id="cb2-17">    X_train,</span>
+<span id="cb2-18">    y_train,</span>
+<span id="cb2-19">    val_idxs<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>val_idxs,</span>
+<span id="cb2-20">    cat_col_names<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_3'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_5'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_12'</span>]</span>
+<span id="cb2-21">)</span></code></pre></div>
+</div>
+<p>On an old Macbook M1 this ran just at around one minute with the default 256 epochs, and it doesn’t look like we needed that many (#fig-RealMLPTraining). We definitely don’t need to sweat that kind of time on a dataset of this size regardless. Now let’s evaluate the model on the test set. Note that inference is near instant for this model.</p>
+<div id="fig-RealMLPTraining" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-RealMLPTraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://m-clark.github.io/img/dl-foundational/realmmlp_training_plot.png" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-RealMLPTraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: RealMLP Training Log Loss
+</figcaption>
+</figure>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code: Evaluate RealMLP</summary>
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1">y_pred <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_realmmlp.predict(X_test)</span>
+<span id="cb3-2">y_proba <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_realmmlp.predict_proba(X_test)[:, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb3-3"></span>
+<span id="cb3-4">metrics_realmlp <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {</span>
+<span id="cb3-5">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Accuracy"</span>: accuracy_score(y_test, y_pred),</span>
+<span id="cb3-6">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ROC AUC"</span>: roc_auc_score(y_test, y_proba),</span>
+<span id="cb3-7">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log Loss"</span>: log_loss(y_test, y_proba),</span>
+<span id="cb3-8">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F1 Score"</span>: f1_score(y_test, y_pred)</span>
+<span id="cb3-9">}</span>
+<span id="cb3-10"></span>
+<span id="cb3-11">metrics_realmlp <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> pd.DataFrame(metrics_realmlp, index<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"RealMLP"</span>])</span>
+<span id="cb3-12"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">print</span>(metrics_realmlp)</span></code></pre></div>
+</details>
+</div>
+<div class="cell plain">
+<div class="cell-output-display">
+<div id="qkbcblrkvi" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>
+#qkbcblrkvi table {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+#qkbcblrkvi thead, tbody, tfoot, tr, td, th { border-style: none; }
+ tr { background-color: transparent; }
+#qkbcblrkvi p { margin: 0; padding: 0; }
+ #qkbcblrkvi .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #qkbcblrkvi .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #qkbcblrkvi .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #qkbcblrkvi .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #qkbcblrkvi .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #qkbcblrkvi .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #qkbcblrkvi .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #qkbcblrkvi .gt_col_heading { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #qkbcblrkvi .gt_column_spanner_outer { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #qkbcblrkvi .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #qkbcblrkvi .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #qkbcblrkvi .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #qkbcblrkvi .gt_spanner_row { border-bottom-style: hidden; }
+ #qkbcblrkvi .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #qkbcblrkvi .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #qkbcblrkvi .gt_from_md> :first-child { margin-top: 0; }
+ #qkbcblrkvi .gt_from_md> :last-child { margin-bottom: 0; }
+ #qkbcblrkvi .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #qkbcblrkvi .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #qkbcblrkvi .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #qkbcblrkvi .gt_row_group_first td { border-top-width: 2px; }
+ #qkbcblrkvi .gt_row_group_first th { border-top-width: 2px; }
+ #qkbcblrkvi .gt_striped { background-color: rgba(128,128,128,0.05); }
+ #qkbcblrkvi .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #qkbcblrkvi .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #qkbcblrkvi .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #qkbcblrkvi .gt_left { text-align: left; }
+ #qkbcblrkvi .gt_center { text-align: center; }
+ #qkbcblrkvi .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #qkbcblrkvi .gt_font_normal { font-weight: normal; }
+ #qkbcblrkvi .gt_font_bold { font-weight: bold; }
+ #qkbcblrkvi .gt_font_italic { font-style: italic; }
+ #qkbcblrkvi .gt_super { font-size: 65%; }
+ #qkbcblrkvi .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #qkbcblrkvi .gt_asterisk { font-size: 100%; vertical-align: 0; }
+ 
+</style>
+
+<table class="gt_table caption-top table" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Accuracy" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Accuracy</th>
+<th id="ROC AUC" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">ROC AUC</th>
+<th id="Log Loss" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Log Loss</th>
+<th id="F1 Score" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">F1 Score</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_right">0.772</td>
+<td class="gt_row gt_right">0.838</td>
+<td class="gt_row gt_right">0.505</td>
+<td class="gt_row gt_right">0.767</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</div>
+<p>Compare to XGBoost. With pytabkit we can use defaults based on models used across a variety of data sets (<code>TD</code> = tuned defaults), making it easy to get started very well. Model training with data of this size took just a couple seconds.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> pytabkit <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> XGB_TD_Classifier</span>
+<span id="cb4-2"></span>
+<span id="cb4-3">model_xgb <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> XGB_TD_Classifier(</span>
+<span id="cb4-4">    device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'mps'</span>,</span>
+<span id="cb4-5">    random_state<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>,</span>
+<span id="cb4-6">    n_cv<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span></span>
+<span id="cb4-7">)</span>
+<span id="cb4-8"></span>
+<span id="cb4-9">model_xgb.fit(</span>
+<span id="cb4-10">    X_train,</span>
+<span id="cb4-11">    y_train,</span>
+<span id="cb4-12">    val_idxs<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>val_idxs,</span>
+<span id="cb4-13">    cat_col_names<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_3'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_5'</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'Cat_12'</span>]</span>
+<span id="cb4-14">)</span></code></pre></div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code: Evaluate XGBoost</summary>
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1">y_pred <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_xgb.predict(X_test)</span>
+<span id="cb5-2">y_proba <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_xgb.predict_proba(X_test)[:, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb5-3"></span>
+<span id="cb5-4">metrics_xgb <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> {</span>
+<span id="cb5-5">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Accuracy"</span>: accuracy_score(y_test, y_pred),</span>
+<span id="cb5-6">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ROC AUC"</span>: roc_auc_score(y_test, y_proba),</span>
+<span id="cb5-7">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Log Loss"</span>: log_loss(y_test, y_proba),</span>
+<span id="cb5-8">    <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F1 Score"</span>: f1_score(y_test, y_pred)</span>
+<span id="cb5-9">}</span></code></pre></div>
+</details>
+</div>
+<div class="cell plain">
+<div class="cell-output-display">
+<div id="heldtnllga" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>
+#heldtnllga table {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+#heldtnllga thead, tbody, tfoot, tr, td, th { border-style: none; }
+ tr { background-color: transparent; }
+#heldtnllga p { margin: 0; padding: 0; }
+ #heldtnllga .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #heldtnllga .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #heldtnllga .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #heldtnllga .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #heldtnllga .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #heldtnllga .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #heldtnllga .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #heldtnllga .gt_col_heading { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #heldtnllga .gt_column_spanner_outer { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #heldtnllga .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #heldtnllga .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #heldtnllga .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #heldtnllga .gt_spanner_row { border-bottom-style: hidden; }
+ #heldtnllga .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #heldtnllga .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #heldtnllga .gt_from_md> :first-child { margin-top: 0; }
+ #heldtnllga .gt_from_md> :last-child { margin-bottom: 0; }
+ #heldtnllga .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #heldtnllga .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #heldtnllga .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #heldtnllga .gt_row_group_first td { border-top-width: 2px; }
+ #heldtnllga .gt_row_group_first th { border-top-width: 2px; }
+ #heldtnllga .gt_striped { background-color: rgba(128,128,128,0.05); }
+ #heldtnllga .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #heldtnllga .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #heldtnllga .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #heldtnllga .gt_left { text-align: left; }
+ #heldtnllga .gt_center { text-align: center; }
+ #heldtnllga .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #heldtnllga .gt_font_normal { font-weight: normal; }
+ #heldtnllga .gt_font_bold { font-weight: bold; }
+ #heldtnllga .gt_font_italic { font-style: italic; }
+ #heldtnllga .gt_super { font-size: 65%; }
+ #heldtnllga .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #heldtnllga .gt_asterisk { font-size: 100%; vertical-align: 0; }
+ 
+</style>
+
+<table class="gt_table caption-top table" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Model" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Model</th>
+<th id="Accuracy" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Accuracy</th>
+<th id="ROC AUC" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">ROC AUC</th>
+<th id="Log Loss" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Log Loss</th>
+<th id="F1 Score" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">F1 Score</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left">XGB</td>
+<td class="gt_row gt_right">0.752</td>
+<td class="gt_row gt_right">0.824</td>
+<td class="gt_row gt_right">0.567</td>
+<td class="gt_row gt_right">0.750</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left">RealMLP</td>
+<td class="gt_row gt_right">0.772</td>
+<td class="gt_row gt_right">0.838</td>
+<td class="gt_row gt_right">0.505</td>
+<td class="gt_row gt_right">0.767</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</div>
+<p>While boosting appears to do fine, in very little time we can get not only competitive but even better results with a modern DL approach. Of course, this is just one (simulated) dataset that shows how easy it is, but the TabArena results suggest this generalizes well beyond also. There we see that RealMLP is one of the top performers across a variety of datasets, and beats XGBoost in head-to-head comparisons more than 75% of the time (Figure&nbsp;2).</p>
+</section>
+<section id="even-easier-autogluon" class="level3">
+<h3 class="anchored" data-anchor-id="even-easier-autogluon">Even Easier: AutoGluon</h3>
+<p><a href="https://auto.gluon.ai/stable/index.html">AutoGluon</a> is a popular AutoML library that has recently added support for some of the newer tabular DL models, including many of those in pytabkit. This means you can get competitive performance with minimal code and tuning for multiple models, whether boosting, DL, or other approaches. Here we use 3 DL models and 3 boosting models<sup>1</sup>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">from</span> autogluon.tabular <span class="im" style="color: #00769E;
+background-color: null;
+font-style: inherit;">import</span> TabularDataset, TabularPredictor</span>
+<span id="cb6-2"></span>
+<span id="cb6-3">X_train_ag <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> TabularDataset(X_train.assign(target<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>y_train))</span>
+<span id="cb6-4">X_test_ag <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> TabularDataset(X_test)</span>
+<span id="cb6-5"></span>
+<span id="cb6-6">model_ag <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> (</span>
+<span id="cb6-7">    TabularPredictor(label<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'target'</span>, eval_metric<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'logloss'</span>)</span>
+<span id="cb6-8">    .fit(</span>
+<span id="cb6-9">        X_train_ag,</span>
+<span id="cb6-10">        num_bag_folds<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>,</span>
+<span id="cb6-11">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># num_bag_sets=1,</span></span>
+<span id="cb6-12">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># num_stack_levels=0,</span></span>
+<span id="cb6-13">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># you can set these and/or let AutoGluon search </span></span>
+<span id="cb6-14">        hyperparameters<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>{</span>
+<span id="cb6-15">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'REALTABPFN-V2.5'</span>: {<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'device'</span>: <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'mps'</span>},</span>
+<span id="cb6-16">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'REALMLP'</span>: {},</span>
+<span id="cb6-17">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'TABM'</span>: {},</span>
+<span id="cb6-18">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'GBM'</span>: {},</span>
+<span id="cb6-19">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'XGB'</span>: {},</span>
+<span id="cb6-20">            <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'CAT'</span>: {},</span>
+<span id="cb6-21">        }</span>
+<span id="cb6-22">    )</span>
+<span id="cb6-23">)</span></code></pre></div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the code: AutoGluon Predictions</summary>
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1">y_pred <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_ag.predict(X_test_ag)</span>
+<span id="cb7-2">y_proba <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_ag.predict_proba(X_test_ag).loc[:, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span></code></pre></div>
+</details>
+</div>
+<p>One very nice aspect of AutoGluon is its easily accesible ‘leaderboard’ so you can compare and contrast your models immediately. The best non-ensemble model was RealTabPFN-v2.5. It also makes very clear just how much more time it took to get the best performance (in seconds), which is a lot. Whether it’s worth it will depend on your context.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1">ag_leaderboard <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model_ag.leaderboard(X_test_ag.assign(target<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>y_test))</span></code></pre></div>
+</div>
+<div class="cell plain">
+<div class="cell-output-display">
+<div id="uzhqjavywb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>
+#uzhqjavywb table {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+#uzhqjavywb thead, tbody, tfoot, tr, td, th { border-style: none; }
+ tr { background-color: transparent; }
+#uzhqjavywb p { margin: 0; padding: 0; }
+ #uzhqjavywb .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #uzhqjavywb .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #uzhqjavywb .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #uzhqjavywb .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #uzhqjavywb .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #uzhqjavywb .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #uzhqjavywb .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #uzhqjavywb .gt_col_heading { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #uzhqjavywb .gt_column_spanner_outer { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #uzhqjavywb .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #uzhqjavywb .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #uzhqjavywb .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #uzhqjavywb .gt_spanner_row { border-bottom-style: hidden; }
+ #uzhqjavywb .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #uzhqjavywb .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #uzhqjavywb .gt_from_md> :first-child { margin-top: 0; }
+ #uzhqjavywb .gt_from_md> :last-child { margin-bottom: 0; }
+ #uzhqjavywb .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #uzhqjavywb .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #uzhqjavywb .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #uzhqjavywb .gt_row_group_first td { border-top-width: 2px; }
+ #uzhqjavywb .gt_row_group_first th { border-top-width: 2px; }
+ #uzhqjavywb .gt_striped { background-color: rgba(128,128,128,0.05); }
+ #uzhqjavywb .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #uzhqjavywb .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #uzhqjavywb .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #uzhqjavywb .gt_left { text-align: left; }
+ #uzhqjavywb .gt_center { text-align: center; }
+ #uzhqjavywb .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #uzhqjavywb .gt_font_normal { font-weight: normal; }
+ #uzhqjavywb .gt_font_bold { font-weight: bold; }
+ #uzhqjavywb .gt_font_italic { font-style: italic; }
+ #uzhqjavywb .gt_super { font-size: 65%; }
+ #uzhqjavywb .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #uzhqjavywb .gt_asterisk { font-size: 100%; vertical-align: 0; }
+ 
+</style>
+
+<table class="gt_table caption-top table" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="model" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">model</th>
+<th id="score_test" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">score_test</th>
+<th id="score_val" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">score_val</th>
+<th id="eval_metric" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">eval_metric</th>
+<th id="pred_time_test" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">pred_time_test</th>
+<th id="pred_time_val" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">pred_time_val</th>
+<th id="fit_time" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">fit_time</th>
+<th id="pred_time_test_marginal" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">pred_time_test_marginal</th>
+<th id="pred_time_val_marginal" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">pred_time_val_marginal</th>
+<th id="fit_time_marginal" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">fit_time_marginal</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left">WeightedEnsemble_L2</td>
+<td class="gt_row gt_right">−0.858</td>
+<td class="gt_row gt_right">−0.434</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">128.786</td>
+<td class="gt_row gt_right">450.092</td>
+<td class="gt_row gt_right">451.637</td>
+<td class="gt_row gt_right">0.002</td>
+<td class="gt_row gt_right">0.001</td>
+<td class="gt_row gt_right">0.057</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left">RealTabPFN-v2.5_BAG_L1</td>
+<td class="gt_row gt_right">−0.869</td>
+<td class="gt_row gt_right">−0.434</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">128.784</td>
+<td class="gt_row gt_right">450.091</td>
+<td class="gt_row gt_right">451.581</td>
+<td class="gt_row gt_right">128.784</td>
+<td class="gt_row gt_right">450.091</td>
+<td class="gt_row gt_right">451.581</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left">XGBoost_BAG_L1</td>
+<td class="gt_row gt_right">−0.980</td>
+<td class="gt_row gt_right">−0.505</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">0.095</td>
+<td class="gt_row gt_right">0.034</td>
+<td class="gt_row gt_right">0.953</td>
+<td class="gt_row gt_right">0.095</td>
+<td class="gt_row gt_right">0.034</td>
+<td class="gt_row gt_right">0.953</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left">LightGBM_BAG_L1</td>
+<td class="gt_row gt_right">−1.030</td>
+<td class="gt_row gt_right">−0.498</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">0.041</td>
+<td class="gt_row gt_right">0.070</td>
+<td class="gt_row gt_right">0.904</td>
+<td class="gt_row gt_right">0.041</td>
+<td class="gt_row gt_right">0.070</td>
+<td class="gt_row gt_right">0.904</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left">CatBoost_BAG_L1</td>
+<td class="gt_row gt_right">−1.095</td>
+<td class="gt_row gt_right">−0.487</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">0.055</td>
+<td class="gt_row gt_right">0.152</td>
+<td class="gt_row gt_right">10.700</td>
+<td class="gt_row gt_right">0.055</td>
+<td class="gt_row gt_right">0.152</td>
+<td class="gt_row gt_right">10.700</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left">TabM_BAG_L1</td>
+<td class="gt_row gt_right">−1.096</td>
+<td class="gt_row gt_right">−0.488</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">0.460</td>
+<td class="gt_row gt_right">0.401</td>
+<td class="gt_row gt_right">169.268</td>
+<td class="gt_row gt_right">0.460</td>
+<td class="gt_row gt_right">0.401</td>
+<td class="gt_row gt_right">169.268</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left">RealMLP_BAG_L1</td>
+<td class="gt_row gt_right">−1.280</td>
+<td class="gt_row gt_right">−0.483</td>
+<td class="gt_row gt_left">log_loss</td>
+<td class="gt_row gt_right">0.201</td>
+<td class="gt_row gt_right">0.448</td>
+<td class="gt_row gt_right">38.095</td>
+<td class="gt_row gt_right">0.201</td>
+<td class="gt_row gt_right">0.448</td>
+<td class="gt_row gt_right">38.095</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</div>
+<p><br></p>
+<p>Now let’s compare all our approaches. Standard XGB with tuned defaults did pretty well, but our RealMLP model did better, and AutoGluon did even better still in terms of loss.</p>
+<div class="cell plain">
+<div class="cell-output-display">
+<div id="ecwejjsjif" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>
+#ecwejjsjif table {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
+#ecwejjsjif thead, tbody, tfoot, tr, td, th { border-style: none; }
+ tr { background-color: transparent; }
+#ecwejjsjif p { margin: 0; padding: 0; }
+ #ecwejjsjif .gt_table { display: table; border-collapse: collapse; line-height: normal; margin-left: auto; margin-right: auto; color: #333333; font-size: 16px; font-weight: normal; font-style: normal; background-color: #FFFFFF; width: auto; border-top-style: solid; border-top-width: 2px; border-top-color: #A8A8A8; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #A8A8A8; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; }
+ #ecwejjsjif .gt_caption { padding-top: 4px; padding-bottom: 4px; }
+ #ecwejjsjif .gt_title { color: #333333; font-size: 125%; font-weight: initial; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; border-bottom-color: #FFFFFF; border-bottom-width: 0; }
+ #ecwejjsjif .gt_subtitle { color: #333333; font-size: 85%; font-weight: initial; padding-top: 3px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; border-top-color: #FFFFFF; border-top-width: 0; }
+ #ecwejjsjif .gt_heading { background-color: #FFFFFF; text-align: center; border-bottom-color: #FFFFFF; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #ecwejjsjif .gt_bottom_border { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #ecwejjsjif .gt_col_headings { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; }
+ #ecwejjsjif .gt_col_heading { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; padding-left: 5px; padding-right: 5px; overflow-x: hidden; }
+ #ecwejjsjif .gt_column_spanner_outer { color: #FFFFFF; background-color: #084887; font-size: 100%; font-weight: normal; text-transform: inherit; padding-top: 0; padding-bottom: 0; padding-left: 4px; padding-right: 4px; }
+ #ecwejjsjif .gt_column_spanner_outer:first-child { padding-left: 0; }
+ #ecwejjsjif .gt_column_spanner_outer:last-child { padding-right: 0; }
+ #ecwejjsjif .gt_column_spanner { border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: bottom; padding-top: 5px; padding-bottom: 5px; overflow-x: hidden; display: inline-block; width: 100%; }
+ #ecwejjsjif .gt_spanner_row { border-bottom-style: hidden; }
+ #ecwejjsjif .gt_group_heading { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; text-align: left; }
+ #ecwejjsjif .gt_empty_group_heading { padding: 0.5px; color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; vertical-align: middle; }
+ #ecwejjsjif .gt_from_md> :first-child { margin-top: 0; }
+ #ecwejjsjif .gt_from_md> :last-child { margin-bottom: 0; }
+ #ecwejjsjif .gt_row { padding-top: 8px; padding-bottom: 8px; padding-left: 5px; padding-right: 5px; margin: 10px; border-top-style: solid; border-top-width: 1px; border-top-color: #D3D3D3; border-left-style: none; border-left-width: 1px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 1px; border-right-color: #D3D3D3; vertical-align: middle; overflow-x: hidden; }
+ #ecwejjsjif .gt_stub { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; }
+ #ecwejjsjif .gt_stub_row_group { color: #333333; background-color: #FFFFFF; font-size: 100%; font-weight: initial; text-transform: inherit; border-right-style: solid; border-right-width: 2px; border-right-color: #D3D3D3; padding-left: 5px; padding-right: 5px; vertical-align: top; }
+ #ecwejjsjif .gt_row_group_first td { border-top-width: 2px; }
+ #ecwejjsjif .gt_row_group_first th { border-top-width: 2px; }
+ #ecwejjsjif .gt_striped { background-color: rgba(128,128,128,0.05); }
+ #ecwejjsjif .gt_table_body { border-top-style: solid; border-top-width: 2px; border-top-color: #D3D3D3; border-bottom-style: solid; border-bottom-width: 2px; border-bottom-color: #D3D3D3; }
+ #ecwejjsjif .gt_sourcenotes { color: #333333; background-color: #FFFFFF; border-bottom-style: none; border-bottom-width: 2px; border-bottom-color: #D3D3D3; border-left-style: none; border-left-width: 2px; border-left-color: #D3D3D3; border-right-style: none; border-right-width: 2px; border-right-color: #D3D3D3; }
+ #ecwejjsjif .gt_sourcenote { font-size: 90%; padding-top: 4px; padding-bottom: 4px; padding-left: 5px; padding-right: 5px; text-align: left; }
+ #ecwejjsjif .gt_left { text-align: left; }
+ #ecwejjsjif .gt_center { text-align: center; }
+ #ecwejjsjif .gt_right { text-align: right; font-variant-numeric: tabular-nums; }
+ #ecwejjsjif .gt_font_normal { font-weight: normal; }
+ #ecwejjsjif .gt_font_bold { font-weight: bold; }
+ #ecwejjsjif .gt_font_italic { font-style: italic; }
+ #ecwejjsjif .gt_super { font-size: 65%; }
+ #ecwejjsjif .gt_footnote_marks { font-size: 75%; vertical-align: 0.4em; position: initial; }
+ #ecwejjsjif .gt_asterisk { font-size: 100%; vertical-align: 0; }
+ 
+</style>
+
+<table class="gt_table caption-top table" data-quarto-postprocess="true" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+<thead>
+<tr class="gt_col_headings header">
+<th id="Model" class="gt_col_heading gt_columns_bottom_border gt_left" data-quarto-table-cell-role="th" scope="col">Model</th>
+<th id="Accuracy" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Accuracy</th>
+<th id="ROC AUC" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">ROC AUC</th>
+<th id="Log Loss" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">Log Loss</th>
+<th id="F1 Score" class="gt_col_heading gt_columns_bottom_border gt_right" data-quarto-table-cell-role="th" scope="col">F1 Score</th>
+</tr>
+</thead>
+<tbody class="gt_table_body">
+<tr class="odd">
+<td class="gt_row gt_left">XGB</td>
+<td class="gt_row gt_right">0.752</td>
+<td class="gt_row gt_right">0.824</td>
+<td class="gt_row gt_right">0.567</td>
+<td class="gt_row gt_right">0.750</td>
+</tr>
+<tr class="even">
+<td class="gt_row gt_left">RealMLP</td>
+<td class="gt_row gt_right">0.772</td>
+<td class="gt_row gt_right">0.838</td>
+<td class="gt_row gt_right">0.505</td>
+<td class="gt_row gt_right">0.767</td>
+</tr>
+<tr class="odd">
+<td class="gt_row gt_left">AutoGluon</td>
+<td class="gt_row gt_right">0.798</td>
+<td class="gt_row gt_right">0.865</td>
+<td class="gt_row gt_right">0.464</td>
+<td class="gt_row gt_right">0.793</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="what-affects-performance" class="level2">
+<h2 class="anchored" data-anchor-id="what-affects-performance">What Affects Performance?</h2>
+<p>The performance of any model on tabular data can be influenced by several factors:</p>
+<ul>
+<li><strong>Dataset characteristics</strong>: The number of samples, features, and the degree of heterogeneity can impact which model performs best. DL models may excel with larger datasets and more complex feature interactions, while boosting methods may perform better with smaller datasets or more homogeneous features.</li>
+<li><strong>Hyperparameter tuning</strong>: DL models often require more careful tuning of hyperparameters (e.g., learning rate, architecture, batch size) compared to boosting methods, which can be more robust to default settings. However, tools like pytabkit and AutoGluon are making this easier by providing optimized defaults and automated tuning.</li>
+<li><strong>Computational resources</strong>: DL models typically require more computational power and longer training times to get that better performance, especially for larger datasets and more complex architectures. Boosting methods are generally faster to train and can be more efficient for smaller datasets or when resources are limited.</li>
+<li><strong>Ensembling</strong>: Combining multiple models can often improve performance, but the benefits may vary depending on the dataset and the models being combined. Some DL models may benefit more from ensembling than boosting methods, but this can also increase training time and complexity.</li>
+</ul>
+<p>TabArena provides the following plot. On the y-axis, which is <strong>improvability</strong> or is how much better the ‘best’ model is relative to the one in question. If your model did just as well as the best improvability would be 0, as there would be no room for improvement. The x-axis is difficult to parse because it’s a combination of dataset characteristics like sample size and number of features. Plus the display choices make it hard to see the relationship between different models. TabPFN doesn’t gain much with increased training time, but that is partly because it does so well to begin with. Furthermore, we may see better improvement if that training time is due to increased features or increased samples, but it’s not clear from that plot. Note that each point represents a larger ensemble of different configurations of the model from 1 parameter set on the left to 201 on the right, so the training time is the median time during that training process<sup>2</sup>.</p>
+<div id="fig-improvability-tab-arena" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-improvability-tab-arena-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://cdn-uploads.huggingface.co/production/uploads/noauth/Jf-6NF7jg7p8RuW3A6ERo.png" class="img-fluid figure-img" style="width:80.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-improvability-tab-arena-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Improvability vs.&nbsp;Train Time
+</figcaption>
+</figure>
+</div>
+<p>The takeaway from the plot is that deep learning has officially caught up to gradient-boosted trees on tabular data, but claiming that top spot requires a massive “training tax”—specifically, ensembling dozens of configurations to squeak past standard baselines. While models like RealMLP offer the absolute highest accuracy if you have unlimited resources, trees like CatBoost remain the practical choice, delivering stable, near-peak performance at a fraction of the compute and inference cost. Unless you are chasing the final fraction of a percent in accuracy at any price, traditional tree-based models are still the most efficient tool for the job.</p>
+<p>If we actually break out the reported relationships in the TabArena paper, a couple things become more clear. I looked at the top 4 DL models and their performance relative to standard 3 boosting methods, and how sample size, number of features, and heterogeneity (based on percentage of categorical features) relate to improvability<sup>3</sup>. I found that:</p>
+<ul>
+<li>Increased sample and feature set is correlated with better performance for boosting, but this relationship seems to be mostly for categorical targets and/or the default parameters.</li>
+<li>The percentage of categorical features seems a mixed bag for boosting and DL models, but may help boosting methods for binary and numeric targets. For DL models this seems to be more helpful for numeric targets, but not binary or multiclass.</li>
+<li>For multiclass targets, increased feature set helps DL models.</li>
+<li>Default settings benefit more from increased data, likely because the tuned/ensembled models are already doing much better in the same settings, so there’s less room for improvement.</li>
+</ul>
+<div id="fig-improvability-sample-size" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-improvability-sample-size-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://m-clark.github.io/img/dl-foundational/improvability_correlation_annotation.svg" class="figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-improvability-sample-size-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Improvability vs.&nbsp;Data Characteristics
+</figcaption>
+</figure>
+</div>
+<p>While there may be some apparent trends, I think the overall takeaway here is that data nuances matter, and it is difficult to say ahead of time how a model will perform.</p>
+<section id="how-long-does-it-take" class="level3">
+<h3 class="anchored" data-anchor-id="how-long-does-it-take">How long does it take?</h3>
+<p>When considering whether to use DL methods for tabular data, training and inference time are important factors. While DL models can offer performance improvements, they require more computational resources and longer training times compared to boosting methods. This is especially true for larger datasets and more complex architectures.</p>
+<p>In our example, the RealMLP model took about one minute to train on a small dataset with an old M1 chip, while XGBoost took just a couple seconds. The AutoGluon approach had several models to work through and then combine, but even then was less than 10 minutes. This sort of difference is manageable for many applications, especially if you’re looking for that extra bit of performance and have the resources to invest in tuning. Autogluon makes it even easier to implement multiple models quickly, with ensemble results that will often be the best you’ll get.</p>
+<p>Of course, with larger data comes more pronounced gaps. Some models like Tab-PFN* will not even be applicable beyond a certain point, and others will just not be viable for the data context. For some, they may already do quite well in smaller data settings (like Tab-PFN), while others may generally do better with more data/ensembling.</p>
+<p>For DL models and tabular data, the ease at which we can implement these models means it’s worth trying them out on your own data, especially if you’re already using boosting methods and want to see if you can eke out some extra performance.</p>
+</section>
+</section>
+<section id="what-to-do-now" class="level2">
+<h2 class="anchored" data-anchor-id="what-to-do-now">What to Do Now</h2>
+<p>This is how I see things at this point.</p>
+<section id="start-here-decision-framework" class="level3">
+<h3 class="anchored" data-anchor-id="start-here-decision-framework">Start Here (Decision Framework)</h3>
+<ul>
+<li>Small data (&lt;10k) and infrequent model runs: anything you want that works including strong statistical models like generalized additive mixed models (GAMs).</li>
+<li>Small data and frequent runs: boosting/MLP-based models like RealMLP, TabM, TabICL.</li>
+<li>Medium data (up to 250k) and infrequent runs: try DL models if resources permit.</li>
+<li>Medium data and frequent runs: boosting/MLP-based models.</li>
+<li>Large data (&gt;250k): boosting is your primary go to. If you really want to do DL, consider TabICL-v2.</li>
+</ul>
+<p>Other considerations will include multiclass outcomes, number of features, non-standard loss functions, computational resources available at inference and more. But right now it seems you can get the best performance on small to moderate data with DL models, but the cost of that performance is more time and resources, and the benefits are less clear for larger data.</p>
+</section>
+</section>
+<section id="looking-ahead-foundation-models-for-tabular-data" class="level2">
+<h2 class="anchored" data-anchor-id="looking-ahead-foundation-models-for-tabular-data">Looking Ahead: Foundation Models for Tabular Data</h2>
+<section id="the-promise" class="level3">
+<h3 class="anchored" data-anchor-id="the-promise">The Promise</h3>
+<p>Recent work has explored pre-training models on large collections of tabular datasets and/or synthetic data, then fine-tuning for specific tasks. This is similar to the paradigm that revolutionized NLP and vision. But do they work?</p>
+<p>The idea is that just like in other domains, we can leverage large amounts of tabular data to learn generalizable representations that can be fine-tuned for specific tasks. This could potentially allow us to:</p>
+<ul>
+<li>Achieve better performance with less task-specific data</li>
+<li>Handle heterogeneous features more effectively</li>
+<li>Enable zero-shot or few-shot learning on new tabular tasks</li>
+</ul>
+<p>Key models include TabPFN and variants, Mitra (Amazon), TabICL, and others.</p>
+</section>
+<section id="the-reality" class="level3">
+<h3 class="anchored" data-anchor-id="the-reality">The Reality</h3>
+<p>Results are hit and miss. Some such as TabPFN obviously do well if we look at the leaderboard… if the data is not large. Others like TabICL are restricted to classification<sup>4</sup>. Note that TabArena data maxes out at 150k which is considered ‘medium’ size. Even then, training and inference time may be prohibitive in many cases. Right now you could use MLP approaches like TabM and RealMLP with faster yet comparable results. But more to the point, it is <em>very</em> common in the tabular domain to see much larger datasets, and boosting models are still working fine even with millions of rows, and can utilize GPUs as well.</p>
+</section>
+</section>
+<section id="what-id-still-like-to-see" class="level2">
+<h2 class="anchored" data-anchor-id="what-id-still-like-to-see">What I’d Still Like to See</h2>
+<p>Reflecting on my 2022 wishlist what progress has been made and what is still missing:</p>
+<p><strong>Progress made:</strong></p>
+<ul>
+<li>✅ Better implementation tools</li>
+<li>✅ Standardized benchmarking</li>
+<li>✅ More rigorous/realistic comparisons</li>
+</ul>
+<p><strong>Would like more:</strong></p>
+<ul>
+<li>❌ Clearer guidance on when complexity pays off</li>
+<li>❌ Fair comparisons with better statistical methods than linear/knn regression (e.g., GAMM)</li>
+</ul>
+<p>I think the biggest issue is a breakdown of specific data characteristics and how they relate to model performance. Efficiency is certainly worth focusing on, but practitioners need to know ‘is my data too large for this model?’ or ‘do I have enough features for this model to be worth it?’<sup>5</sup>. I can appreciate trying to tie them all together in one plot, but a clearer delineation of these relationships would be very helpful for practitioners trying to decide which model to use for their specific problem.</p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Four years ago I concluded that DL wasn’t ready for most tabular tasks. Today, the tabular DL landscape has matured considerably. We have better benchmarks, better tools, and a little bit better understanding of where these methods excel. Some DL models now regularly outperform boosting on realistic benchmarks and are ready for use, but still not always necessary. In general:</p>
+<p><strong>XGBoost and friends are still the pragmatic starting point</strong> for most tabular data tasks, especially with heterogeneous features and modest sample sizes. They’re fast, well-understood, and more easily tunable than ever.</p>
+<p><strong>DL methods for tabular data have become practically competitive</strong>. However, as they often require more resources to implement effectively, it will be important to consider the specific context of your problem, including dataset size, feature characteristics, and computational constraints. For smaller datasets or when chasing that last bit of performance, DL models like TabICL and RealMLP can be a great choice.</p>
+<p>The “all you need” framing from paper titles misses the point. The real question is: <strong>“What do you need for <em>your</em> specific problem?”</strong> In 2026, we have better tools to explore that question, but the answer will often still point to classical ML methods for tabular data work.</p>
+<p>That said, the rapid progress in this space suggests checking back in another year or so might reveal even more interesting developments. Foundation models are still early in development, and the community is actively exploring how to make them more efficient and effective. In the meantime, the best approach is to experiment with your own data, use benchmarks like TabArena for inspiration, and don’t be afraid to start simple and iterate from there.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><strong>Previous posts in this series:</strong></p>
+<ul>
+<li><a href="../2021-07-15-dl-for-tabular/">This is definitely not all you need (2021)</a></li>
+<li><a href="../2022-04-01-more-dl-for-tabular/">Deep Learning for Tabular Data (2022)</a></li>
+</ul>
+<p><strong>Resources:</strong></p>
+<ul>
+<li><a href="https://huggingface.co/spaces/TabArena/leaderboard">TabArena Leaderboard</a></li>
+<li><a href="https://arxiv.org/abs/2506.16791">TabArena Paper</a></li>
+<li><a href="https://github.com/dholzmueller/pytabkit">pytabkit GitHub</a></li>
+<li><a href="https://arxiv.org/abs/2407.00956">TALENT Paper</a></li>
+<li><a href="https://mindfulmodeler.substack.com/p/the-state-of-tabular-foundation-models">The State of Tabular Foundation Models</a></li>
+</ul>
+
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0">
+<div id="ref-erickson2025tabarenalivingbenchmarkmachine" class="csl-entry">
+Erickson, Nick, Lennart Purucker, Andrej Tschalzev, David Holzmüller, Prateek Mutalik Desai, David Salinas, and Frank Hutter. 2025. <span>“TabArena: A Living Benchmark for Machine Learning on Tabular Data.”</span> <a href="https://arxiv.org/abs/2506.16791">https://arxiv.org/abs/2506.16791</a>.
+</div>
+<div id="ref-gorishniy2025tabmadvancingtabulardeep" class="csl-entry">
+Gorishniy, Yury, Akim Kotelnikov, and Artem Babenko. 2025. <span>“TabM: Advancing Tabular Deep Learning with Parameter-Efficient Ensembling.”</span> <a href="https://arxiv.org/abs/2410.24210">https://arxiv.org/abs/2410.24210</a>.
+</div>
+<div id="ref-TabPFN-2.5" class="csl-entry">
+Grinsztajn, Léo, Klemens Flöge, Oscar Key, Felix Birkel, Brendan Roof, Phil Jund, Benjamin Jäger, et al. 2025. <span>“TabPFN-2.5: Advancing the State of the Art in Tabular Foundation Models.”</span>
+</div>
+<div id="ref-holzmüller2025betterdefaultstrongpretuned" class="csl-entry">
+Holzmüller, David, Léo Grinsztajn, and Ingo Steinwart. 2025. <span>“Better by Default: Strong Pre-Tuned MLPs and Boosted Trees on Tabular Data.”</span> <a href="https://arxiv.org/abs/2407.04491">https://arxiv.org/abs/2407.04491</a>.
+</div>
+<div id="ref-qu2026tabiclv2betterfasterscalable" class="csl-entry">
+Qu, Jingang, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. 2026. <span>“TabICLv2: A Better, Faster, Scalable, and Open Tabular Foundation Model.”</span> <a href="https://arxiv.org/abs/2602.11139">https://arxiv.org/abs/2602.11139</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Amazon provides its own tabular foundation model Mitra, but it wouldn’t run due to memory issues on my old machine.↩︎</p></li>
+<li id="fn2"><p>So many issues with this visualization. If you don’t understand it, don’t worry about it, it conflates many different things to the point of being minimally useful at best. This is even acknowledged in the paper.↩︎</p></li>
+<li id="fn3"><p>The TabArena paper reports rmse for numeric outcomes, logloss for multiclass, and AUC for binary. Their conception of improvability is 100* (err - best) / err, where err is the error of the model in question and best is the error of the best model for that dataset/setting/metric. For AUC, which is already on a 0-1 scale, I used the percentage point difference: 100*(best_auc - model_auc), which is more interpretable than a ratio of proportions. This has no bearing on the correlation in the end.↩︎</p></li>
+<li id="fn4"><p>I’m not sure what the reasoning for focusing only on classification was, but TabICL-v2, released a few days before I started this post, is now applicable to regression tasks. The authors claim it beats everything.↩︎</p></li>
+<li id="fn5"><p>I think some of the data is going far overboard with the number of features. I’ve consulted across dozens of disciplines and the most I’ve ever had for a tabular model was a little over 100, which was mostly due to the client not having the domain knowledge to do feature selection (IIRC, the actual useful number was &lt; 10).↩︎</p></li>
+</ol>
+</section><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2026,
+  author = {Clark, Michael},
+  title = {Deep {Learning} for {Tabular} {Data:} {The} {Foundation}
+    {Model} {Era}},
+  date = {2026-03-01},
+  url = {https://m-clark.github.io/posts/2026-03-01-dl-for-tabular-foundational/},
+  langid = {en}
+}
+</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2026" class="csl-entry quarto-appendix-citeas">
+Clark, Michael. 2026. <span>“Deep Learning for Tabular Data: The
+Foundation Model Era.”</span> March 1, 2026. <a href="https://m-clark.github.io/posts/2026-03-01-dl-for-tabular-foundational/">https://m-clark.github.io/posts/2026-03-01-dl-for-tabular-foundational/</a>.
+</div></div></section></div> ]]></description>
+  <category>deep learning</category>
+  <category>machine learning</category>
+  <guid>https://m-clark.github.io/posts/2026-03-01-dl-for-tabular-foundational/</guid>
+  <pubDate>Sun, 01 Mar 2026 05:00:00 GMT</pubDate>
+  <media:content url="https://m-clark.github.io/img/dl-for-tab/deep_nn.png" medium="image" type="image/png" height="104" width="144"/>
+</item>
 <item>
   <title>My Book is Out!</title>
   <dc:creator>Michael Clark</dc:creator>
@@ -29080,60 +30369,6 @@ Package.”</span> April 10, 2020. <a href="https://m-clark.github.io/posts/2020
   <guid>https://m-clark.github.io/posts/2020-04-10-psych-explained/</guid>
   <pubDate>Fri, 10 Apr 2020 04:00:00 GMT</pubDate>
   <media:content url="https://m-clark.github.io/img/factor_analysis.png" medium="image" type="image/png" height="95" width="144"/>
-</item>
-<item>
-  <title>Exploring the Pandemic</title>
-  <dc:creator>Michael Clark</dc:creator>
-  <link>https://m-clark.github.io/posts/2020-03-23-covid/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<p>I once did quite a deep dive into the available covid data when the pandemic was at its height. The data was always changing then and as you can maybe guess, it’s changed a lot since then. I don’t care enough to try and make that post all work again, but in the interest of posterity I show some plots that came out of that. My main takeaway was that epidemiological models were absolute rubbish for predicting anything realtime, and the data/reporting was so inconsistent as to be almost meaningless as far as making specific claims. That said, it was a fun modeling and visualization exercise.</p>
-<p>Note that I began the post early on and updated it sometime in the summer.</p>
-<section id="world" class="level4">
-<h4 class="anchored" data-anchor-id="world">World</h4>
-<p><img src="https://m-clark.github.io/posts/2020-03-23-covid/img/covid.gif" class="img-fluid"></p>
-<p><img src="https://m-clark.github.io/img/covid/world-top-20-per-capita-1.svg" class="img-fluid"></p>
-<p><img src="https://m-clark.github.io/img/covid/nytimes-daily-1.svg" class="img-fluid"></p>
-<p><img src="https://m-clark.github.io/img/covid/stan-plot-1.svg" class="img-fluid"></p>
-</section>
-<section id="us-state-level" class="level4">
-<h4 class="anchored" data-anchor-id="us-state-level">US State Level</h4>
-<p><img src="https://m-clark.github.io/img/covid/geo-facet-trends-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/img/covid/state_trends-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/img/covid/statebins-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/img/covid/statebins-2.svg" class="img-fluid"></p>
-</section>
-<section id="counties" class="level4">
-<h4 class="anchored" data-anchor-id="counties">Counties</h4>
-<p><img src="https://m-clark.github.io/img/covid/county-rates-1.svg" class="img-fluid"></p>
-</section>
-<section id="michigan" class="level4">
-<h4 class="anchored" data-anchor-id="michigan">Michigan</h4>
-<p><img src="https://m-clark.github.io/img/covid/washtenaw-trend-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/posts/2020-03-23-covid/img/mi-county-trend.gif" class="img-fluid"></p>
-</section>
-<section id="model-based" class="level4">
-<h4 class="anchored" data-anchor-id="model-based">Model based</h4>
-<p><img src="https://m-clark.github.io/img/covid/us-state-model-plot-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/img/covid/us-state-model-predict-plot-1.svg" class="img-fluid"> <img src="https://m-clark.github.io/img/covid/us-state-model-deriv-plot-1.svg" class="img-fluid"></p>
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-reuse"><h2 class="anchored quarto-appendix-heading">Reuse</h2><div class="quarto-appendix-contents"><div><a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></div></div></section><section class="quarto-appendix-contents" id="quarto-citation"><h2 class="anchored quarto-appendix-heading">Citation</h2><div><div class="quarto-appendix-secondary-label">BibTeX citation:</div><pre class="sourceCode code-with-copy quarto-appendix-bibtex"><code class="sourceCode bibtex">@online{clark2020,
-  author = {Clark, Michael},
-  title = {Exploring the {Pandemic}},
-  date = {2020-03-23},
-  url = {https://m-clark.github.io/posts/2020-03-23-covid/},
-  langid = {en}
-}
-</code></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2020" class="csl-entry quarto-appendix-citeas">
-Clark, Michael. 2020. <span>“Exploring the Pandemic.”</span> March 23,
-2020. <a href="https://m-clark.github.io/posts/2020-03-23-covid/">https://m-clark.github.io/posts/2020-03-23-covid/</a>.
-</div></div></section></div> ]]></description>
-  <category>visualization</category>
-  <guid>https://m-clark.github.io/posts/2020-03-23-covid/</guid>
-  <pubDate>Mon, 23 Mar 2020 04:00:00 GMT</pubDate>
-  <media:content url="https://m-clark.github.io/img/covid_preview.gif" medium="image" type="image/gif"/>
 </item>
 </channel>
 </rss>
