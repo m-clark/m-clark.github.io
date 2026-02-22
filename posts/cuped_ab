@@ -1,0 +1,42 @@
+---
+title: "Untitled"
+format: html
+---
+
+See https://stats.stackexchange.com/questions/598120/what-is-the-difference-between-cuped-and-regression-adjustment for original code.
+
+
+```{r}
+
+set.seed(0)
+
+N <- 100000
+trt <- rbinom(N, 1, 0.5)
+Sigma <- matrix(c(1, 0.8, 0.8, 1), nrow = 2)
+Y <- MASS::mvrnorm(N, c(0, 0), Sigma)
+Y[, 2] <- 0.5*trt + Y[, 2]
+
+
+# Linear model
+
+fit_no_adjust <- lm(Y[, 2] ~ trt)
+fit <- lm(Y[, 2] ~ Y[, 1] + trt)
+
+
+# CUPED
+theta <- cov(Y[, 1], Y[, 2]) / var(Y[, 1])
+y_cv <- Y[, 2] - (Y[, 1] - mean(Y[, 1]))*theta
+fit_cuped <- lm(y_cv ~ trt)
+
+coef(fit_cuped)['trt']
+#>       trt 
+#> 0.4976049
+coef(fit)['trt']
+
+bind_rows(
+    summary(fit_no_adjust)$coefficients['trt', c('Estimate', 'Std. Error')],
+    summary(fit_cuped)$coefficients['trt', c('Estimate', 'Std. Error')],
+    summary(fit)$coefficients['trt', c('Estimate', 'Std. Error')]
+)
+
+```
