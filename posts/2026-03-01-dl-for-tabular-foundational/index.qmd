@@ -1,7 +1,7 @@
 ---
-title: "Deep Learning for Tabular Data: The Foundation Model Era"
+title: "Is Boosting Still All You Need for Tabular Data?"
 description: |
-  An update on the state of deep learning for tabular data in 2026, featuring practical model implementation.
+  An update on the state of deep learning for tabular data, featuring practical model implementation.
 date: 2026-03-01
 image: ../../img/dl-foundational/iclv2arch.png
 bibliography: ../../bibs/dl-tab.bib
@@ -35,11 +35,12 @@ share:
 
 ## Introduction
 
-It's been nearly four years since I [first summarized](../2021-07-15-dl-for-tabular/) the state of deep learning (DL) for tabular data, and about three years since my [follow-up post](../2022-04-01-more-dl-for-tabular/). Back then, the verdict was pretty clear: for most tabular data scenarios, especially those with heterogeneous features and moderate to large sample sizes, gradient boosting methods like XGBoost, LightGBM, and CatBoost, were still the pragmatic and performant choice. Complex DL architectures like TabNet and even the relatively newer transformer-based models struggled to consistently outperform these boosting approaches, which meant they weren't really viable options for most practitioners or production.
+It's been nearly four years since I [first summarized](../2021-07-15-dl-for-tabular/) the state of deep learning (DL) for tabular data, and about three years since my [follow-up post](../2022-04-01-more-dl-for-tabular/). Back then, the verdict was clear: for most tabular scenarios, gradient boosting methods like XGBoost, LightGBM, and CatBoost were the pragmatic choice. Complex DL architectures, like TabNet and even the relatively newer transformer-based models, struggled to consistently outperform these boosting approaches, making them impractical for most use cases.
 
 The question now is: has anything fundamentally changed?
 
-Let's see if the landscape has shifted, or if we're still in "[XGBoost is all you need](https://www.xgblog.ai/p/xgboost-is-all-you-need)" territory.
+Let's see if the landscape has shifted, or if we're still in "[XGBoost is all you need](https://www.xgblog.ai/p/xgboost-is-all-you-need)" territory, or if tabular DL has finally found its place..
+
 
 
 ## Quick Take (if you're in a hurry)
@@ -50,7 +51,7 @@ Key takeaways:
 - It's significantly easier to implement and experiment with modern tabular DL methods.
 - **TabArena** has created a more rigorous benchmarking environment with standardized datasets and evaluation protocols.
 - Foundation models for tabular data are emerging and have had success, but it's a bit early to say how transformative they'll be in practice yet.
-- For most practitioners: you’d still do very well with boosting, especially for large data and with limited time/resources. However, you should start to consider DL methods if predictive performance is critical and you have the resources to invest in experimentation.
+- For most practitioners: boosting remains the pragmatic baseline. However, you should start to consider DL methods if predictive performance is critical and you have the resources to invest in experimentation.
 
 Now, let's dig into the details.
 
@@ -505,7 +506,7 @@ X_train_ag = TabularDataset(X_train.assign(target=y_train))
 X_test_ag = TabularDataset(X_test)
 
 model_ag = (
-    TabularPredictor(label='target', eval_metric='logloss')
+    TabularPredictor(label='target', eval_metric='log_loss')
     .fit(
         X_train_ag,
         num_bag_folds=5,
@@ -519,7 +520,9 @@ model_ag = (
             'GBM': {},
             'XGB': {},
             'CAT': {},
-        }
+        },
+        # presets='best_quality', # multiple stacking, typically better performance
+                                  # but much longer training time
     )
 )
 ```
@@ -631,8 +634,8 @@ pd.DataFrame(metrics_autogluon, index=["AutoGluon"]).to_csv('data/dl-foundationa
 #| eval: true
 #| classes: plain  # to get rid of ridiculous default quarto row-striping
 metrics_autogluon = pd.read_csv(
-  'data/dl-foundational/autogluon_metrics.csv',
-  index_col=0
+    'data/dl-foundational/autogluon_metrics.csv',
+    index_col=0
 )
 
 results = pd.concat([
@@ -646,9 +649,9 @@ results = pl.from_dataframe(results)
 (
     GT(results)
     .tab_options(
-      # heading_background_color="#084887",
-      # column_labels_border_top_color="#084887",
-      column_labels_background_color="#084887",
+        # heading_background_color="#084887",
+        # column_labels_border_top_color="#084887",
+        column_labels_background_color="#084887",
     )
     # .tab_style(
     #   style=style.fill(color="lightblue"),
@@ -670,6 +673,7 @@ results = pl.from_dataframe(results)
 #| echo: false
 #| eval: false
 
+# this took several hours but didn't really time it closely; ultimatley was same acc/f1 as realmlp but slightly better than realmlp on AUC/logloss
 from pytabkit import Ensemble_HPO_Classifier
 
 model = Ensemble_HPO_Classifier(
@@ -685,67 +689,88 @@ model.fit(
     X_train, y_train, cat_col_names=["Cat_3", "Cat_5", "Cat_12"]
 )
 
-pred_hpo = model.predict(X_test)
+# pred_hpo = model.predict(X_test)
+pred_hpo_proba = model.predict_proba(X_test)[:, 1]
 
 metrics_hpo = {
     "Accuracy": accuracy_score(y_test, pred_hpo),
-    "ROC AUC": roc_auc_score(y_test, pred_hpo),
-    "Log Loss": log_loss(y_test, pred_hpo),
+    "ROC AUC": roc_auc_score(y_test, pred_hpo_proba),
+    "Log Loss": log_loss(y_test, pred_hpo_proba),
     "F1 Score": f1_score(y_test, pred_hpo),
 }
+
+metrics_hpo
 ```
+
 
 Note that a fairer comparison would be to give the boosting and RealMLP models the same HPO/ensembling treatment, which is just as easy by using the `*_HPO_Classifier` versions of those models in pytabkit, and would likely improve their performance as well. However, I wanted to show the performance you can get with the viable defaults that would still be quick to train. 
 
 
-## What Affects Performance?
-
-The performance of any model on tabular data can be influenced by several factors:
-
-- **Dataset characteristics**: The number of samples, features, and the degree of heterogeneity can impact which model performs best. DL models may excel with larger datasets and more complex feature interactions, while boosting methods may perform better with smaller datasets or more homogeneous features.
-- **Hyperparameter tuning**: DL models often require more careful tuning of hyperparameters (e.g., RealMLP has dozens of hyperparameters to potentially explore) compared to boosting methods, which can be more robust to default settings. However, tools like pytabkit and AutoGluon are making this easier by providing optimized defaults and automated tuning.
-- **Computational resources**: DL models typically require more computational power and longer training times to get that better performance, especially for larger datasets and more complex architectures. Boosting methods are generally faster to train and can be more efficient for smaller datasets or when resources are limited. But newer DL models are becoming more efficient, and the gap is narrowing.
-- **Ensembling**: Combining multiple models can often improve performance, but the benefits may vary depending on the dataset and the models being combined. Some DL models may benefit more from ensembling than boosting methods, but this can also increase training time and complexity.
-
-TabArena provides the following plot. On the y-axis, which is **improvability** or is how much better the 'best' model is relative to the one in question. If your model did just as well as the best improvability would be 0, as there would be no room for improvement. The x-axis is difficult to parse because it's a combination of dataset characteristics like sample size and number of features, and each point increases the number of paramter configurations used for ensembling. Plus the display choices make it hard to see the relationship between different models. But we can deduce things like the fact that TabPFN doesn't gain much with increased training time, but that is partly because it does so well to begin with. We might see better improvement if that training time is due to increased features or increased samples, but it's not clear from that plot. Note that each point represents a larger ensemble of different configurations of the model from 1 parameter set on the left to 201 on the right, so the training time is the median time during that training process[^improveplot].
 
 
-![Improvability vs. Train Time](https://cdn-uploads.huggingface.co/production/uploads/noauth/Jf-6NF7jg7p8RuW3A6ERo.png){#fig-improvability-tab-arena width=80%} 
+## Performance Factors and Practical Guidance
 
-[^improveplot]: So many issues with this visualization. If you don't understand it, don't worry about it, it conflates many different things to try and assess 'efficiency' generally speaking, but this is at the cost of interpretability. This is even acknowledged in the paper. 
+Understanding when different models excel requires looking at how dataset characteristics relate to performance.
 
+### What the Data Shows
 
+The TabArena paper includes an improvability plot showing how models benefit from additional compute, though it conflates dataset characteristics in ways that make it difficult to isolate individual effects. The key insight: **compute investment returns vary dramatically by model type**. Some DL models may start well and plateau quickly (TabPFN-v2.5), others improve consistently with more training (REALMLP, TABM). Boosting methods show more modest gains, which may reflect their already strong performance with default settings, and they take much less time to train[^inferencetime].
 
-If we actually break out the reported relationships in the TabArena paper, a couple things become more clear. I looked at the top 4 DL models and their performance relative to standard 3 boosting methods, and  how sample size, number of features, and heterogeneity (based on percentage of categorical features) relate to improvability[^improve_calc]. I found that:
-
-- Increased sample and feature set is correlated with better performance for boosting, but this relationship seems to be mostly for categorical targets and/or the default parameters.
-- The percentage of categorical features seems a mixed bag for boosting and DL models, but may help boosting methods for binary and numeric targets. For DL models this seems to be more helpful for numeric targets, but not binary or multiclass.
-- For multiclass targets, increased feature set helps DL models.
-- Default settings benefit more from increased data, likely because the tuned/ensembled models are already doing much better in the same settings, so there's less room for improvement.
+![Improvability vs. Train Time](https://cdn-uploads.huggingface.co/production/uploads/noauth/Jf-6NF7jg7p8RuW3A6ERo.png){#fig-improvability-tab-arena width=80%}
 
 
-
-![Improvability vs. Data Characteristics (click to zoom)](../../img/dl-foundational/improvability_correlation_annotation.png){.lightbox #fig-improvability-sample-size}
-
+[^inferencetime]: TabArena also shows inference time vs. improvability, which is important for production use. But if inference time is at all a concern, such as in real-time applications, you likely won't use any model that can't deliver nearly that. If it's not a concern, then the differences among the best DL/boosting models probably won't matter much to you.
 
 
-[^improve_calc]: The TabArena paper reports rmse for numeric outcomes, logloss for multiclass, and AUC for binary. Their conception of improvability is 100* (err - best) / err, where err is the error of the model in question and best is the error of the best model for that dataset/setting/metric.
+Looking more closely at how sample size, features, and categorical density relate to performance:
+
+- Increased sample/feature count correlates with better boosting performance (primarily categorical targets, default parameters)
+- Categorical feature percentage shows mixed effects across target types
+- For multiclass targets, increased features particularly benefit DL models
+- Default settings benefit more from increased data
+
+![Improvability vs. Data Characteristics](../../img/dl-foundational/improvability_correlation_annotation.png){.lightbox #fig-improvability-sample-size}
 
 
-The takeaway from the plot is that deep learning has officially caught up to gradient-boosted trees on tabular data, but claiming that top spot often requires a massive "training tax" - specifically, ensembling dozens of configurations to squeak past standard baselines. While DL models now offer the absolute highest performance if you have unlimited resources, tree-based approaches like CatBoost remain the practical choice, delivering stable, near-peak performance at a fraction of the compute and inference cost. Unless you are chasing the final fraction of a percent in accuracy at any price, traditional tree-based models are still the most efficient tool for the job.
+**Target type considerations:**
 
-While there may be some apparent trends, I think the overall takeaway here is that data nuances matter, and it is difficult to say ahead of time how a model will perform.
+- Binary: DL typically edges out boosting
+- Multiclass: DL (especially TabPFN-v2.5) shows consistent advantages
+- Numeric: Boosting gains ground, may match/exceed DL
+
+![Performance by Target Type](../../img/dl-foundational/model_performance_by_target_type.png){#fig-performance-by-target-type width=80%}
 
 
-### How long does it take?
+The overall takeaway: **data nuances matter, and empirical testing beats general rules**.
 
-When considering whether to use DL methods for tabular data, training and inference time are important factors. While DL models can offer performance improvements, they require more computational resources and longer training times compared to boosting methods. This is especially true for larger datasets and more complex architectures.
 
-In our example, the RealMLP model took about one minute to train on a small dataset with an old M1 chip, while XGBoost took just a couple seconds. The AutoGluon approach had several models to work through and then combine, but even then was less than 10 minutes. This sort of difference is manageable for many applications, especially if you're looking for that extra bit of performance and have the resources to invest in tuning. Autogluon makes it even easier to implement multiple models quickly, with ensemble results that will often be the best you'll get.
+### Making the Decision
 
-Of course, with larger data comes more pronounced gaps. Some models like Tab-PFN* will not even be applicable beyond a certain point, and others will just not be viable for the data context. For some, they may already do quite well in smaller data settings (like Tab-PFN), while others may generally do better with more data/ensembling. 
+Given these performance patterns, here's how to approach model selection based on your practical constraints:
 
-For DL models and tabular data, the ease at which we can implement these models means it's worth trying them out on your own data, especially if you're already using boosting methods and want to see if you can eke out some extra performance.
+
+**Boosting as the baseline:** Tree-based methods (XGBoost, LightGBM, CatBoost) work well across all data sizes, are computationally efficient, and all packages support GPU for even faster training. As another baseline alternative, statistical models[^statsmodels] remain viable for millions of samples with interpretability needs.
+
+
+[^statsmodels]: By statistical models I mean models from the traditional statistical modeling tradition that emphasize understanding relationships and quantifying uncertainty, like generalized linear/additive/mixed models, etc. These are often implemented in packages like statsmodels in Python or throughout the R ecosystem. They typically provide interpretable parameters, standard errors, and hypothesis testing frameworks, though they may not always achieve the same predictive performance as more flexible machine learning models.
+
+**Consider DL when you have the resources and performance matters:**
+
+- **Small data (<10k rows)**: Some DL models excel if compute permits. Otherwise boosting/statistical models work fine.
+
+- **Small to medium data (~10k-100k rows)**: TabPFN-v2.5, RealMLP, TabICL-v2 frequently outperform boosting. Worth trying if:
+    - Performance gains matter more than training time
+    - GPU resources available
+    - Model retraining is infrequent
+
+- **Medium to large data (~100k-1M rows)**: TabICL-v2 can beat boosting but requires significant compute. Consider it only if:
+    - You need the absolute best performance
+    - Computational cost is acceptable
+    - You have infrastructure to support it
+
+- **Very large data (>1M rows)**: Boosting is your primary choice. Few DL models scale or require prohibitive resources. But keep an eye on this, particularly with the recent success of TabICL-v2 on larger datasets.
+
+Tools like pytabkit and AutoGluon make experimentation straightforward enough to test on your own data, especially if you're already using boosting and want to explore potential performance gains.
 
 
 ```{python}
@@ -885,21 +910,6 @@ p.show()
 
 
 
-## What to Do Now
-
-This is how I see things at this point.
-
-### Start Here (Decision Framework)
-
-- Small data (<10k) and infrequent model runs: anything you want that works including strong statistical models like generalized additive mixed models (GAMs).
-- Small data and frequent runs: boosting/MLP-based models like RealMLP, TabM, TabICL.
-- Medium data (up to 250k) and infrequent runs: try DL models if resources permit.
-- Medium data and frequent runs: boosting/MLP-based models.
-- Large data (>250k): boosting is your primary go to. If you really want to do DL, consider TabICL-v2.
-
-Other considerations will include multiclass outcomes, number of features, non-standard loss functions, computational resources available at inference and more. But right now it seems you can get the best performance on small to moderate data with DL models, but the cost of that performance is more time and resources, and the benefits are less clear for larger data.
-
-
 ## Looking Ahead: Foundation Models for Tabular Data
 
 ### The Promise
@@ -912,12 +922,12 @@ The idea is that just like in other domains, we can leverage large amounts of ta
 - Handle heterogeneous features more effectively
 - Enable zero-shot or few-shot learning on new tabular tasks
 
-Key models include TabPFN and variants, Mitra (Amazon), TabICL, and others. 
+Key models include TabPFN, Mitra (Amazon), TabICL, and others. 
 
 
 ### The Reality
 
-Results are hit and miss. Some such as TabPFN obviously do well if we look at the leaderboard... if the data is not large. Others like TabICL are restricted to classification[^onlyclass].  Note that TabArena data maxes out at 150k which is considered 'medium' size.  Even then, training and inference time may be prohibitive in many cases. Right now you could use MLP approaches like TabM and RealMLP with faster yet comparable results. But more to the point, it is *very* common in the tabular domain to see much larger datasets, and boosting models are still working fine even with millions of rows, and can utilize GPUs as well.
+Results are hit and miss. Some obviously do well if we look at the leaderboard... if the data is not large. Others like TabICL are restricted to classification[^onlyclass].  Note that TabArena data maxes out at 150k which is considered 'medium' size.  Even then, training and inference time may be prohibitive in many cases. Right now you could use MLP approaches like TabM and RealMLP with faster yet comparable results. But more to the point, it is *very* common in the tabular domain to see much larger datasets, and boosting models are still working fine even with millions of rows, and can utilize GPUs as well.
 
 
 [^onlyclass]: I'm not sure what the reasoning for focusing only on classification was, but TabICL-v2, released a few days before I started this post, is now applicable to regression tasks. The authors claim it beats everything.
@@ -937,8 +947,8 @@ Reflecting on my 2022 wishlist what progress has been made and what is still mis
 **Would like more:**
 
 - ❌ Clearer guidance on when complexity pays off
-- ❌ Fair comparisons with better statistical methods than linear/knn regression (e.g., GAMM)
 - ❌ Better/automatic handling of missing data[^missingdata]
+- ❌ Fair comparisons with better statistical methods than linear/knn regression (e.g., GAMM)
 
 [^missingdata]: AutoGluon has some support for missing data, but is mostly relying on boosting splits on missing values. For DL models, it appears to be basically mean imputation for numeric features, adding a missing label for categorical features, and just dropping samples with missing data on the target. This would necessitate using boosting methods as the main approach or part of the ensemble for data with a lot of missingness, which is common in tabular data.
 
@@ -948,15 +958,31 @@ I think the biggest issue is a breakdown of specific data characteristics and ho
 
 ## Conclusion
 
-Four years ago I concluded that DL wasn't ready for most tabular tasks. Today, the tabular DL landscape has matured considerably. We have better benchmarks, better tools, and a little bit better understanding of where these methods excel. Some DL models now regularly outperform boosting on realistic benchmarks and are ready for use, but still not always necessary. In general: 
+Four years ago I concluded that DL wasn't ready for most tabular tasks. Today, the tabular DL landscape has matured considerably. We have better benchmarks, better tools, and a little bit better understanding of where these methods excel. So today the answer is more nuanced: **DL models now regularly outperform boosting on realistic benchmarks, but the conditions under which they excel aren't always clearcut.**
 
-**XGBoost and friends are still the pragmatic starting point** for most tabular data tasks, especially with heterogeneous features and modest sample sizes. They're fast, well-understood, and more easily tunable than ever.
+The TabArena results show that modern DL models (TabPFN-v2.5, RealMLP, TabICL-v2) often win head-to-head comparisons against boosting. However, examining when and why reveals considerable complexity:
 
-**DL methods for tabular data have become practically competitive**. However, as they often require more resources to implement effectively, it will be important to consider the specific context of your problem, including dataset size, feature characteristics, and computational constraints. For smaller datasets or when chasing that last bit of performance, DL models like TabICL and RealMLP can be a great choice.
+- Performance advantages vary by dataset size, target type, and feature characteristics
+- The relationships between data properties and model performance are not clear cut
+- Computational costs (training time, memory) can be much higher for only modest performance gains
+- Most benchmark datasets remain <150k rows, while production data is often much larger
 
-The "all you need" framing from paper titles misses the point. The real question is: **"What do you need for *your* specific problem?"** In 2026, we have better tools to explore that question, but the answer will often still point to classical ML methods for tabular data work.
+One thing to also keep in mind, even a linear model still beats even DL models 5-10% of the time, so you just never know.
 
-That said, the rapid progress in this space suggests checking back in another year or so might reveal even more interesting developments. Foundation models are still early in development, and the community is actively exploring how to make them more efficient and effective. In the meantime, the best approach is to experiment with your own data, use benchmarks like TabArena for inspiration, and don't be afraid to start simple and iterate from there.
+In general: 
+
+**XGBoost and friends remain the pragmatic starting point** for most tabular work. They're fast, well-understood, GPU-enabled, and work well across diverse problem types and data sizes.
+
+
+**DL methods are now genuinely competitive**. However, as they often require more resources to implement effectively, it will be important to consider the specific context of your problem. For smaller datasets or when chasing that last bit of performance, DL models like TabICL and RealMLP can be a great choice.
+
+The "all you need" framing misses the point. The real question is: **"What trade-offs are acceptable for your specific problem?"** Performance vs. speed? Predictive accuracy vs. interpretability? Computational cost vs. marginal gains?
+
+In 2026, we have better tools to explore those questions. Tools like pytabkit and AutoGluon make it straightforward, and the benchmarks provide valuable guidance. But they can't tell you whether a 2% performance improvement is worth 10x longer training for your particular use case.
+
+Foundation models represent an interesting future direction but currently remain limited by data size constraints and computational costs. The rapid progress suggests checking back in another year might reveal more practical options. For now, start with boosting, experiment with DL if resources permit, and let your specific constraints guide the decision rather than expecting a universal answer.
+
+
 
 
 ## References
