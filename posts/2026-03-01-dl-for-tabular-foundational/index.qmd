@@ -35,7 +35,7 @@ share:
 
 ## Introduction
 
-It's been nearly four years since I [first summarized](../2021-07-15-dl-for-tabular/) the state of deep learning (DL) for tabular data, and about three years since my [follow-up post](../2022-04-01-more-dl-for-tabular/). Back then, the verdict was clear: for most tabular scenarios, gradient boosting methods like XGBoost, LightGBM, and CatBoost were the pragmatic choice. Complex DL architectures, like TabNet and even the relatively newer transformer-based models, struggled to consistently outperform these boosting approaches, making them impractical for most use cases.
+It's been nearly four years since I [first summarized](../2021-07-15-dl-for-tabular/) the state of deep learning (DL) for tabular data, and about three years since my [follow-up post](../2022-04-01-more-dl-for-tabular/). Back then, the verdict was clear: for most tabular scenarios, gradient boosting methods like XGBoost, LightGBM, and CatBoost were the pragmatic choice. Complex DL architectures, like TabNet and even the relatively newer transformer-based models, struggled to consistently outperform these boosting approaches, which meant they were impractical for most use cases.
 
 The question now is: has anything fundamentally changed?
 
@@ -50,7 +50,7 @@ Key takeaways:
 - Several new deep learning models show impressive performance compared to boosting, but context still matters.
 - It's significantly easier to implement and experiment with modern tabular DL methods.
 - We now have more rigorous benchmarking environments with standardized datasets and evaluation protocols.
-- Foundation models for tabular data are emerging and have had success, but it's a bit early to say how transformative they'll be in practice yet.
+- Foundation models for tabular data are emerging and have had success, but it's a bit early to say how transformative they'll be in practice.
 - For most practitioners: boosting remains the pragmatic baseline. However, you should start to consider DL methods if predictive performance is critical and you have the resources to invest in experimentation.
 
 :::{.aside}
@@ -73,7 +73,7 @@ One major improvement in tabular data modeling is the emergence of more rigorous
 - Focus on heterogeneous datasets that better reflect real-world tabular data scenarios
 - Use of Elo-style model ranking for easier model comparisons
 
-These new benchmarks address one of the major frustrations from my previous post summaries: papers often used different datasets, preprocessing pipelines, and hyperparameter tuning budgets, making fair comparisons nearly impossible. They also often focused primarily on very homogeneous data, which isn't representative of typical real-world tabular data, and sometimes only classification settings. This is a far better assessment, and gives us more confidence when comparing methods.
+These new benchmarks address one of the major frustrations from my previous post summaries: papers often used different datasets, preprocessing pipelines, and hyperparameter tuning budgets, which made fair comparisons difficult at best. They also often focused primarily on very homogeneous data, which isn't representative of typical real-world tabular data, and sometimes focused only classification settings. This is a far better assessment, and gives us more confidence when comparing methods.
 
 
 ### Current Leaderboard Landscape
@@ -81,12 +81,12 @@ These new benchmarks address one of the major frustrations from my previous post
 As of `r format(Sys.Date(), "%B %Y")`, the TabArena leaderboard shows some interesting patterns. Here are the ELO rankings for tested models using default, tuned and tuned + ensembled versions of each model type:
 
 
-![TabArena Leaderboard](https://cdn-uploads.huggingface.co/production/uploads/noauth/vha0vepvgH1JtyQWMB6yn.png){#fig-TabArena}
+![TabArena Leaderboard](../../img/dl-foundational/tuning-impact-elo-2026-03-01.png){#fig-TabArena}
 
 
 The key insight from this is that some newer DL models are not only competitive with boosting, a few typically win in head-to-head comparisons against boosting models. For example, among the tuned + ensemble models the top 4 DL models win > 50% of the time against LGBM, XGB, and CatBost.
 
-![Head to Head](../../img/dl-foundational/h2h.png){#fig-h2h width=80%}
+![Head-to-Head Model Comparisons](../../img/dl-foundational/h2h.png){#fig-h2h width=80%}
 
 
 One important side note: performance is typically not going to be statistically different for models that are similarly ranked, and papers will often provide something like a critical difference diagram to show this. So while the top 4 DL models are all ranked above the boosting models, that doesn't necessarily mean they're statistically better than boosting models. 
@@ -339,10 +339,10 @@ df_logloss.to_csv(
 )
 ```
 
-On an old Macbook M1 this ran just at around one minute with the default 256 epochs, and it doesn't look like we needed that many (@fig-RealMLPTraining). We definitely don't need to sweat that kind of time on a dataset of this size regardless. Now let's evaluate the model on the test set. Note that inference is near instant for this model.
+On an old Macbook M1, this ran just at around one minute with the default 256 epochs, and it doesn't look like we needed that many (@fig-RealMLPTraining). We definitely don't need to sweat that kind of time on a dataset of this size regardless. Now let's evaluate the model on the test set. Note that inference is near instant for this model.
 
 
-![RealMLP Training Log Loss](../../img/dl-foundational/realmmlp_training_plot.png){#fig-RealMLPTraining width=70%}
+![RealMLP Training Log Loss](../../img/dl-foundational/realmmlp_training_plot.png){#fig-RealMLPTraining width=66%}
 
 ```{python}
 #| label: RealMLP Training Plot
@@ -498,7 +498,7 @@ results = pl.from_dataframe(results)
 
 ```
 
-While boosting appears to do fine, in very little time we can get not only competitive but even better results with a modern DL approach. Of course, this is just one (simulated) dataset that shows how easy it is, but the TabArena results suggest this generalizes well beyond also. There we see that RealMLP is one of the top performers across a variety of datasets, and beats XGBoost in head-to-head comparisons more than 75% of the time (@fig-h2h).
+While boosting performs well, in very little time we can get not only competitive but even better results with a modern DL approach. Of course, this is just one (simulated) dataset that shows how easy it is, but the TabArena results suggest this generalizes well beyond also. There we see that RealMLP is one of the top performers across a variety of datasets, and beats XGBoost in head-to-head comparisons more than 75% of the time (@fig-h2h).
 
 
 
@@ -568,7 +568,7 @@ import pandas as pd
 
 ag_leaderboard_path = 'data/dl-foundational/autogluon_leaderboard.csv'
 if os.path.exists(ag_leaderboard_path):
-  ag_leaderboard = pd.read_csv(ag_leaderboard_path, index_col=0)
+    ag_leaderboard = pd.read_csv(ag_leaderboard_path, index_col=0)
 
 ag_leaderboard['model'] = ag_leaderboard['model'].str.replace('_BAG_L1', '', regex=False)
 
@@ -721,13 +721,13 @@ Note that a fairer comparison would be to give the boosting and RealMLP models t
 
 ## Performance Factors and Practical Guidance
 
-Understanding when different models excel requires looking at how dataset characteristics relate to performance.
+Understanding when different models excel requires examining how dataset characteristics relate to performance.
 
 ### What the Data Shows
 
 The TabArena paper includes an improvability plot showing how models benefit from additional compute, though it conflates dataset characteristics in ways that make it difficult to isolate individual effects. The key insight: **compute investment returns vary dramatically by model type**. Some DL models may start well and plateau quickly (TabPFN-v2.5), others improve consistently with more training (REALMLP, TABM). Boosting methods show more modest gains, which may reflect their already strong performance with default settings, and they take much less time to train[^inferencetime].
 
-![Improvability vs. Train Time](https://cdn-uploads.huggingface.co/production/uploads/noauth/Jf-6NF7jg7p8RuW3A6ERo.png){#fig-improvability-tab-arena width=80%}
+![Improvability vs. Train Time](../../img/dl-foundational/pareto_n_configs_imp_2026-03-01.png){#fig-improvability-tab-arena width=80%}
 
 
 [^inferencetime]: TabArena also shows inference time vs. improvability, which is important for production use. But if inference time is at all a concern, such as in real-time applications, you likely won't use any model that can't deliver nearly that. If it's not a concern, then the differences among the best DL/boosting models probably won't matter much to you.
@@ -766,7 +766,7 @@ The overall takeaway: **data nuances matter, and empirical testing beats general
 Given these performance patterns, here's how to approach model selection based on your practical constraints:
 
 
-**Boosting as the baseline:** Tree-based methods (XGBoost, LightGBM, CatBoost) work well across all data sizes, are computationally efficient, and all packages support GPU for even faster training. As another baseline alternative, statistical models[^statsmodels] remain viable for millions of samples with interpretability needs.
+**Boosting as the baseline:** Tree-based methods (XGBoost, LightGBM, CatBoost) work well across all data sizes, are computationally efficient, and all packages support GPU for even faster training. And when it comes to inference efficiency, they are still the ones to beat (@fig-elo-inf). As another baseline alternative, statistical models[^statsmodels] remain viable for millions of samples with interpretability needs.
 
 
 [^statsmodels]: By statistical models I mean models from the traditional statistical modeling tradition that emphasize understanding relationships and quantifying uncertainty, like generalized linear, additive, and mixed models, etc. These are often implemented in packages like statsmodels in Python or throughout the R ecosystem. They typically provide interpretable parameters, standard errors, and hypothesis testing frameworks, though they may not always achieve the same predictive performance as more flexible machine learning models.
@@ -960,15 +960,16 @@ Reflecting on my 2022 wishlist what progress has been made and what is still mis
 
 **Would like more:**
 
-- ❌ Clearer guidance on when complexity pays off
-- ❌ Better/automatic handling of missing data[^missingdata]
-- ❌ Very minor: comparisons with better statistical models than linear/knn regression (e.g., GAMM)
+- ❌ Clearer guidance on when complexity pays off: winning is not enough, especially if not statistically better than several other models, some of which would be faster to train.
+- ❌ Minor: Better/automatic handling of missing data: tool implementation if present at all is pretty basic[^missingdata]. Not as much an issue for tree-based models, but still one for DL models.
+- ❌ Very minor: comparisons with better statistical models than simple linear (e.g., GAMM that can model nonlinear relationships)
 
 [^missingdata]: AutoGluon has some support for missing data, but is mostly relying on boosting splits on missing values with ensembled models. For DL models, it appears to be basically mean imputation for numeric features, adding a missing label for categorical features, and just dropping samples with missing data on the target.
 
-I think the biggest issue is a breakdown of specific data characteristics and how they relate to model performance. Efficiency is certainly worth focusing on, but practitioners need to know 'is my data too large for this model?' or 'do I have enough features for this model to be worth it?'[^nfeatures]. I can appreciate trying to tie them all together in one plot, but a clearer delineation of these relationships would be very helpful for practitioners trying to decide which model to use for their context. I made an effort to illuminate some of this above, but I had to use secondary sources and aggregation that may not be the most accurate reflection.
+I think the biggest issue is a breakdown of specific data characteristics and how they relate to model performance, if they do consistently. Computational efficiency *in general* is certainly worth focusing on primarily, but practitioners need to know 'is my data too large for spending time for this model?' or 'is my target/feature combination going to result in less performance'[^nfeatures]. I can appreciate the difficulty in addressing this in a simple fashion, it may not even be possible. I made an effort to illuminate some of this above, but I had to use secondary sources and aggregation that may not be the most accurate reflection.  But if there are trends, a clearer delineation of these relationships would be very helpful for practitioners trying to decide which type of model to use for their context.
 
-[^nfeatures]: I think some of the datasets may be overkill with the number of features. I've consulted across dozens of industries and the most I've ever had for a tabular model was a little over 100, which was mostly due to the client not having the domain knowledge to do feature selection (IIRC, the actual useful number was < 10). Having hundreds is likely very domain specific.
+[^nfeatures]: I think some of the datasets may be overkill with the number of features, and may not be indicative of typical tabular settings. I've consulted across dozens of industries and academic disciplines, and the most I've ever had for a tabular model where the data was truly heterogeneous was a little over 100. The reason for this, and other times where the number of features was several dozen or so, was mostly due to the client not having the domain knowledge to do initial feature selection (IIRC, the actual useful number was < 10). The problem is that in the tabular domain, adding more features typically adds noise and redundancy rather than value. Needing hundreds for a particular problem with no obvious reduction is likely very domain specific, where features are all of the same type (e.g. biological data). In those cases, I would suspect DL modeling approaches, even those from non-tabular domains, would do well with such data.
+
 
 ## Conclusion
 
@@ -977,7 +978,7 @@ Four years ago I concluded that DL wasn't ready for most tabular tasks. Today, t
 The TabArena results show that modern DL models (TabPFN-v2.5, RealMLP, TabICL-v2) often win head-to-head comparisons against boosting. However, examining when and why reveals considerable complexity:
 
 - Performance advantages vary by dataset size, target type, and feature characteristics
-- The relationships between data properties and model performance are not clear cut
+- The relationships between data properties and model performance are not clear-cut
 - Computational costs (training time, memory) can be much higher for only modest performance gains
 - Most benchmark datasets remain <150k rows, while production data is often much larger
 
@@ -996,23 +997,53 @@ The "all you need" framing misses the point. The real question is: **"What trade
 
 In 2026, we have better tools to explore those questions. Tools like pytabkit and AutoGluon make it straightforward, and the benchmarks provide valuable guidance. But they can't tell you whether a 2% performance improvement is worth 10x longer training for your particular use case.
 
-Foundation models represent an exciting direction, but currently remain limited by data size constraints and computational costs. The rapid progress suggests checking back in another year might reveal more practical options. For now, start with boosting, experiment with DL if resources permit, and let your context guide your modeling decision.
+Foundation models represent an exciting direction, but almost all currently remain limited by data size constraints and computational costs. The rapid progress suggests checking back in another year might reveal more practical options. For now, start with boosting, experiment with DL if resources permit, and let your context guide your modeling decision.
 
-<br>
-<br>
 
-**Previous posts in this series:**
+## Extra Stuff
+
+#### Previous posts in this series
 
 - [This is definitely not all you need (2021)](../2021-07-15-dl-for-tabular/)
 - [Deep Learning for Tabular Data (2022)](../2022-04-01-more-dl-for-tabular/)
 
-**Resources:**
+
+
+#### Papers and other resources
 
 - [TabArena Leaderboard](https://huggingface.co/spaces/TabArena/leaderboard)
 - [TabArena Paper](https://arxiv.org/abs/2506.16791)
 - [pytabkit GitHub](https://github.com/dholzmueller/pytabkit)
 - [TALENT Paper](https://arxiv.org/abs/2407.00956)
 - [The State of Tabular Foundation Models](https://mindfulmodeler.substack.com/p/the-state-of-tabular-foundation-models)
+
+
+
+#### Comparison of some current DL Tabular models
+
+
+| Feature         | TabPFN v2.5         | TabICL-v2           | TabDPT                | TabM           | RealMLP        |
+|-----------------|---------------------|---------------------|-----------------------|----------------|---------------|
+| Model Type      | Foundation (TFM)    | Foundation (TFM)    | Foundation (TFM)      | Ensemble* (MLP)  | Enhanced (MLP)   |
+| Paradigm        | In-Context Learning | In-Context Learning | In-Context Learning   | Supervised     | Supervised    |
+| Pre-training    | Synthetic Data    | Synthetic Data+    | Real Data (SSL)       | N/A            | N/A           |
+| Max Samples     | ~50,000             | 1,024,000+          | ~2,048 (context length)               | Unlimited (batch)      | Unlimited (batch)  |
+| Key Advantage   | No tuning required  | Speed & Scale       | Missing data robustness  | Ensemble power | Strong baseline|
+
+- TFM: Tabular Foundation Model
+- MLP: Multi-Layer Perceptron
+- Ensemble*: TabM is an efficient imitation of an ensemble of MLPs, but is not itself an ensemble model in the traditional sense.
+- Synthetic Data+: Pre-trained on synthetic data, but also augmented with real data during training
+- SSL: Self-Supervised Learning
+
+
+#### Elo vs. Inference Time
+
+The following shows that when it comes to inference time, boosting holds a clear advantage, but MLP models are also good. This advantage is lessened for ensemble approaches, where DL models also gain more in terms of improvability.
+
+![Elo vs. Inference Time for Selected Models (TabArena Early 2026)](../../img/dl-foundational/elo_vs_inference_time.png){.lightbox #fig-elo-inf}
+
+![Improvability vs Inference Time (TabArena Early 2026)](../../img/dl-foundational/inference_vs_improvability.png){.lightbox #fig-improve-inf}
 
 
 ## References
