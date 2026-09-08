@@ -1,0 +1,78 @@
+## Update
+
+Among many things that have happened recently, I’ve become a father to a beautiful baby girl, and [written a book](https://m-clark.github.io/book-of-models) to come out this year (2025). Fun stuff!
+
+Elsewhere, my employer [Strong Analytics](https://www.strong.io/) merged with [OneSix](https://www.onesixsolutions.com/) last summer, which has gone well so far. It’s been great to expand our capabilities and personnel, and I’m excited to see what we can do in the future.
+
+Not so fun - I’ve migrated my distill-based website to quarto, something I actually started about a year and a half ago but never completed. I love using Quarto, and highly recommend it, including if you never created a website before, but this particular aspect was not straightforward. So, while my website looks a little better, and hopefully will be easier to maintain moving forward, some minor content may have gotten lost in the shuffle, or may not match up exactly with the previous version. Feel free to post [an issue](https://github.com/m-clark/m-clark.github.io/issues) if you notice anything amiss.
+
+## Goals
+
+For this website in 2025, there are a couple posts I hope to do:
+
+- A post on class imbalance Elizabeth and I intended for out work blog, and was mostly complete, but which never was published.
+- A post I had on conformal prediction that was likewise intended for the work blog, and which was also mostly complete.
+- A copy of the post I did on media mix modeling, which was [posted at strong.io](https://www.strong.io/blog/marketing-optimization-media-mix-modeling) before the merger.
+- Something new that is of interest
+
+I might also orient toward general thoughts on various topics as opposed to code-based demos.
+
+## Migration Issues
+
+After a lot of effort, it looks like I finally got my quarto website going. In the end I may have lost some of the previous code content, but my quick assessment is that it likely wasn’t much.
+
+Issues I came across in case it’s useful to others:
+
+- Getting a specific python environment to work for quarto, possibly per post
+- [issue 10276](https://github.com/quarto-dev/quarto-cli/issues/10276)
+- [issue 5220](https://github.com/quarto-dev/quarto-cli/issues/5220)
+- Deployment error (had to ‘rerun all’ from github repo website itself)
+- Default radian pointing to wrong python environment, which would then automatically load that environment and ignore any other env setting.
+- [issue 9929](https://github.com/quarto-dev/quarto-cli/issues/9929) (I think this was because I was in the gh-pages branch when publishing and not the main branch)
+
+What my ultimate solution was:
+
+For Python:
+
+- The only env I could get things to recognize was a conda env in a default location for conda envs. Not sure why my other approaches didn’t work (my preference is to use an venv via `uv`), and there have been reticulate issues about using specific environments for years. But maybe it was due to other things (like the radian issue).
+  - As an example, the quarto rendering would not use a virtual env in the project directory. It’s [implied](https://quarto.org/docs/projects/code-execution.html#freeze-virtual-environments) that you can use venvs in the directory of the quarto doc (i.e. folder specific), but I had issues, and at a minimum you’d have to do another step or two to render specifically from that directory venv. It also still begs the question of why you can’t just name the env in the python execute argument of the doc to use whatever environment you need when rendering it in the first place.
+- In `.Rprofile` (not `.Renviron`, not `_environment`) put `Sys.setenv(RETICULATE_PYTHON = '~/myenvlocation')` followed by `library(reticulate)`. The default VS Code venv was not ever used unless I did this. I would literally `source activate`, do a sanity check `which python`, and then it would render with a default system env. I’ll revisit this in case this was still mixed in with the Radian issue.
+- I feel like maybe relatively little is tested with VS Code/Python for website/blogs, and even less for mixing it with R. So be prepared for some work in that regard. My conclusion at this point is it’s just the same reticulate (not quarto specific) stuff that’s been ongoing for a long time.
+
+For R/General:
+
+- Quarto does not adhere to the VS code project directory for posts by default, so directories are relative to the post file location, rather than the project. I eventually found there is an `execute_dir` option that can be set to `project`, but this doesn’t seem to work for yml in the file itself, which still need to refer to the file location for, e.g. the preview image or a bibliography. Also, Python code was relative to the project directory by default, so it was inconsistent with R until I set the `execute_dir` option.
+
+For publishing:
+
+- A notable issue was the inability to use the top-level directory as the output_dir as I had before.
+  - As a result, I had to change every post file from its previous name to ‘index.qmd’ within the date-named directory in order for previous links to work. I could add an [alias](https://quarto.org/docs/websites/website-navigation.html#redirects) to every one of the files and let them redirect, but I prefer the cleaner address, and it’s easier to rename the files collectively than to add aliases to every post.
+- I had to discover that you can’t be in the gh-pages branch. It’s mentioned in the doc, but not stressed or highlighted at all.
+
+Once I was able to get quarto to render the pages in the first place, it published pretty easily via `quarto publish gh-pages`. I very rarely can still can get a 404 or something else, but that has thus far has been remedied by just re-publishing.
+
+Honestly they could use more documentation as to exactly what the workflow is for a website blog with actual (python) code, and a useful demo website demonstrating it for GH pages. That sounds specific, but I would imagine not uncommon for python (and a notable amount of R) users. A reproducible example that demonstrates most of the salient features would be nice (jjallaire.github.io is not enough). Thankfully a lot of my distill and previous book setup carried over, and at least part of my issues were probably due to unreasonable expectations.
+
+**Setup Summarized**
+
+(If you never had a website before, you can ignore this and just follow the Quarto docs)
+
+- Realize that you’ll have to probably come across a diverse smattering of Quarto documentation over time to know how much and what you’ll likely need to tweak to get things to work. Just reading the website-specific docs will not be enough, and general issues with projects, computations, documents will all potentially affect your website.
+- I started with a separate repo to ensure that things were working as I expected, even with my old posts within. I assumed I could essentially copy these to my actual website repo, but there was still a lot to do and I ultimately had to rerender everything. I’d suggest that if you do this, maybe only include an old post or two.
+- Set your execute (and output_dir) if desired to whatever you had or now want.
+  - If you link to other files in subdirectories, you likely need to change the link format. For example, I previously linked to `../folder/x.html` to link to `m-clark.github.io/folder/x.html`, but I had to change these to `/folder/x.html`.
+- If you use Radian for your R console in VS Code, you’ll need to install in your chosen environment and point your workspace rterminal option to use that env for your terminal. You have to do this anyway, which is a real annoyance for using Radian in general.
+- Create a project specific python environment.
+  - You may have to use conda to get reticulate stuff to work smoothly, but I’m not entirely certain of this. You may not need to do this if you don’t plan on mixing R and Python in the same doc.
+  - If you do explicitly use reticulate, I suggest setting the python environment in your `.Rprofile` file.
+
+So, after setup, it seems the workflow is something like this if you have a blog and use VS Code, python and R:
+
+- Make change on main
+- Push to main
+- Publish
+- Cross fingers, I still have had a bit of quirkiness from time to time, but usually just publishing/re-rendering again works things out.
+
+## Reuse
+
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)

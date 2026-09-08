@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.33">
+<meta name="generator" content="quarto-1.10.16">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -12,6 +12,9 @@
 
 <title>Uncertainty Estimation with Conformal Prediction – Michael Clark</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -62,7 +65,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 div.csl-bib-body { }
 div.csl-entry {
   clear: both;
-  margin-bottom: 0em;
 }
 .hanging-indent div.csl-entry {
   margin-left:2em;
@@ -95,10 +97,14 @@ div.csl-indent {
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-b19d091a9fe451567b679f96cd894575.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark-a3813bbdbddd0c402a722b591c4e99e3.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-b19d091a9fe451567b679f96cd894575.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-dbe755c4fb6c985408a16d40289b7e29.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a21739a5ed8e309d0965898255a58c44.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-dark-1e215f9bc9ee91e230bb5941e1d356f1.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-a21739a5ed8e309d0965898255a58c44.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <link href="../../site_libs/quarto-contrib/social-share-1.0.0/social-share.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/social-share-1.0.0/all.min.css" rel="stylesheet">
 <link href="../../site_libs/quarto-contrib/fontawesome6-1.2.0/all.min.css" rel="stylesheet">
@@ -141,7 +147,7 @@ gtag('config', 'G-TZMD99E2L4', { 'anonymize_ip': true});
 </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -154,7 +160,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -180,7 +186,8 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../img/mc_logo.png" alt="" class="navbar-logo">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo light-content">
+    <img src="../../img/mc_logo.png" alt="" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">Michael Clark</span>
@@ -224,7 +231,7 @@ window.Quarto = {
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../book.html"> 
-<span class="menu-text">Models Demystified</span></a>
+<span class="menu-text">The Book</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="../../documents.html"> 
@@ -378,7 +385,7 @@ window.Quarto = {
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Confidence is not Certainty
+<span class="screen-reader-only">Tip</span>Confidence is not Certainty
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -459,14 +466,14 @@ Tip
 <p>While the implementation for various settings can get quite complicated, the conceptual approach is mostly straightforward as we’ve just suggested. The following shows some simplified code demonstrating the <strong>split-conformal</strong> procedure in Python and R. Note that you should use packages like <span class="pack">mapie</span> or fuller implementations for your own work.</p>
 <!-- Can't do tabset for doc/blog post upload, so we'll do this instead. -->
 <div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">R</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" href="">Python</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false" href="">R</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <!-- ![](../../img/conformal/py_conformal_code.png){width=66%} -->
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LinearRegression</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> split_conformal(X, y, new_data, alpha <span class="op">=</span> <span class="fl">0.05</span>, seed <span class="op">=</span> <span class="dv">123</span>):</span>
@@ -504,7 +511,7 @@ Tip
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>        )</span>
 <span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>cp_error_py <span class="op">=</span> split_conformal(X_train, y_train, X_test, alpha <span class="op">=</span> <span class="fl">.1</span>)[<span class="st">'cp_error'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>cp_error_py <span class="op">=</span> split_conformal(X_train, y_train, X_test, alpha <span class="op">=</span> <span class="fl">.1</span>)[<span class="st">'cp_error'</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 </div>
@@ -513,7 +520,7 @@ Tip
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>split_conformal <span class="ot">=</span> <span class="cf">function</span>(X, y, new_data, <span class="at">alpha =</span> .<span class="dv">05</span>, <span class="at">seed =</span> <span class="dv">123</span>) {</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>split_conformal <span class="ot">=</span> <span class="cf">function</span>(X, y, new_data, <span class="at">alpha =</span> .<span class="dv">05</span>, <span class="at">seed =</span> <span class="dv">123</span>) {</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set random seed for reproducibility</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set.seed</span>(seed)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -554,7 +561,7 @@ Tip
 <span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    )</span>
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>cp_error_r <span class="ot">=</span> <span class="fu">split_conformal</span>(X_train, y_train, X_test, <span class="at">alpha =</span> .<span class="dv">1</span>)[[<span class="st">'cp_error'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>cp_error_r <span class="ot">=</span> <span class="fu">split_conformal</span>(X_train, y_train, X_test, <span class="at">alpha =</span> .<span class="dv">1</span>)[[<span class="st">'cp_error'</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 </div>
@@ -565,7 +572,7 @@ Tip
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mapie.regression <span class="im">import</span> MapieRegressor</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mapie.regression <span class="im">import</span> MapieRegressor</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>initial_fit <span class="op">=</span> LinearRegression().fit(X_train, y_train)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> MapieRegressor(initial_fit, method <span class="op">=</span> <span class="st">'naive'</span>)</span>
@@ -573,7 +580,7 @@ Tip
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># take the first difference between upper and lower bounds,</span></span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># since it's constant for all predictions in this setting</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>cp_error_mapie <span class="op">=</span> (y_pis[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>] <span class="op">-</span> y_pis[<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>]) <span class="op">/</span> <span class="dv">2</span>  </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>cp_error_mapie <span class="op">=</span> (y_pis[<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">0</span>] <span class="op">-</span> y_pis[<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>]) <span class="op">/</span> <span class="dv">2</span>  </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <div class="cell">
@@ -1045,7 +1052,7 @@ Tip
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Other Methods
+<span class="screen-reader-only">Note</span>Other Methods
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -1146,7 +1153,7 @@ Other Methods
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Model Complexity Changes the Game
+<span class="screen-reader-only">Note</span>Model Complexity Changes the Game
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -1192,30 +1199,30 @@ Model Complexity Changes the Game
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
 <div id="ref-angelopoulos2022gentle" class="csl-entry" role="listitem">
-Angelopoulos, Anastasios N., and Stephen Bates. 2022. <span>“A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification.”</span> <a href="https://arxiv.org/abs/2107.07511">https://arxiv.org/abs/2107.07511</a>.
+Angelopoulos, Anastasios N., and Stephen Bates. 2022. <em>A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification</em>. <a href="https://arxiv.org/abs/2107.07511">https://arxiv.org/abs/2107.07511</a>.
 </div>
 <div id="ref-va2022" class="csl-entry" role="listitem">
-Arel-Bundock, Vincent. 2022. <span>“Distribution-Free Prediction Intervals with Conformal Inference Using r.”</span> <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
+Arel-Bundock, Vincent. 2022. <em>Distribution-Free Prediction Intervals with Conformal Inference Using r</em>. <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
 </div>
 <div id="ref-bai2021understanding" class="csl-entry" role="listitem">
 Bai, Yu, Song Mei, Huan Wang, and Caiming Xiong. 2021. <span>“Understanding the Under-Coverage Bias in Uncertainty Estimation.”</span> <em>Advances in Neural Information Processing Systems</em> 34: 18307–19.
 </div>
 <div id="ref-brownlee2019" class="csl-entry" role="listitem">
-Brownlee, J. 2019. <span>“A Gentle Introduction to Uncertainty in Machine Learning.”</span> <a href="https://machinelearningmastery.com/uncertainty-in-machine-learning/">https://machinelearningmastery.com/uncertainty-in-machine-learning/</a>.
+Brownlee, J. 2019. <em>A Gentle Introduction to Uncertainty in Machine Learning</em>. <a href="https://machinelearningmastery.com/uncertainty-in-machine-learning/">https://machinelearningmastery.com/uncertainty-in-machine-learning/</a>.
 </div>
 <div id="ref-tidymodels2023" class="csl-entry" role="listitem">
-Group, Tidymodels. 2023. <span>“Conformal Inference for Regression Models.”</span> <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
+Group, Tidymodels. 2023. <em>Conformal Inference for Regression Models</em>. <a href="https://arelbundock.com/posts/conformal/">https://arelbundock.com/posts/conformal/</a>.
 </div>
 <div id="ref-lei2018distribution" class="csl-entry" role="listitem">
-Lei, Jing, Max G’Sell, Alessandro Rinaldo, Ryan J Tibshirani, and Larry Wasserman. 2018. <span>“Distribution-Free Predictive Inference for Regression.”</span> <em>Journal of the American Statistical Association</em> 113 (523): 1094–1111. <a href="https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf">https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf</a>.
+Lei, Jing, Max G’Sell, Alessandro Rinaldo, Ryan J Tibshirani, and Larry Wasserman. 2018. <span>“Distribution-Free Predictive Inference for Regression.”</span> <em>Journal of the American Statistical Association</em> 113 (523): 1094–111. <a href="https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf">https://www.stat.cmu.edu/~ryantibs/papers/conformal.pdf</a>.
 </div>
 <div id="ref-molnar2023" class="csl-entry" role="listitem">
-Molnar, Christopher. 2023. <span>“Understanding Different Uncertainty Mindsets.”</span> <a href="https://mindfulmodeler.substack.com/p/understanding-different-uncertainty">https://mindfulmodeler.substack.com/p/understanding-different-uncertainty</a>.
+Molnar, Christopher. 2023. <em>Understanding Different Uncertainty Mindsets</em>. <a href="https://mindfulmodeler.substack.com/p/understanding-different-uncertainty">https://mindfulmodeler.substack.com/p/understanding-different-uncertainty</a>.
 </div>
 <div id="ref-SOBoot" class="csl-entry" role="listitem">
-StackExchange. 2023. <span>“Bootstrap Prediction Interval.”</span> <a href="https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval">https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval</a>.
+StackExchange. 2023. <em>Bootstrap Prediction Interval</em>. <a href="https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval">https://stats.stackexchange.com/questions/226565/bootstrap-prediction-interval</a>.
 </div>
 </div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
@@ -1236,7 +1243,7 @@ StackExchange. 2023. <span>“Bootstrap Prediction Interval.”</span> <a href="
 }
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre><div class="quarto-appendix-secondary-label">For attribution, please cite this work as:</div><div id="ref-clark2025" class="csl-entry quarto-appendix-citeas" role="listitem">
 Clark, Michael. 2025. <span>“Uncertainty Estimation with Conformal
-Prediction.”</span> June 1, 2025. <a href="https://m-clark.github.io/posts/2025-06-01-conformal/">https://m-clark.github.io/posts/2025-06-01-conformal/</a>.
+Prediction.”</span> June 1. <a href="https://m-clark.github.io/posts/2025-06-01-conformal/">https://m-clark.github.io/posts/2025-06-01-conformal/</a>.
 </div></div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
@@ -1289,13 +1296,14 @@ Prediction.”</span> June 1, 2025. <a href="https://m-clark.github.io/posts/202
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -1329,16 +1337,16 @@ Prediction.”</span> June 1, 2025. <a href="https://m-clark.github.io/posts/202
     }
     function toggleCodeHandler(show) {
       return function(e) {
-        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
-        for (let i=0; i<detailsSrc.length; i++) {
-          const details = detailsSrc[i].parentElement;
+        const cellDetails = window.document.querySelectorAll(".cell details.code-fold");
+        for (let i=0; i<cellDetails.length; i++) {
+          const details = cellDetails[i];
           if (show) {
             details.open = true;
           } else {
             details.removeAttribute("open");
           }
         }
-        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const cellCodeDivs = window.document.querySelectorAll(".cell div.sourceCode.cell-code");
         const fromCls = show ? "hidden" : "unhidden";
         const toCls = show ? "unhidden" : "hidden";
         for (let i=0; i<cellCodeDivs.length; i++) {
@@ -1688,7 +1696,7 @@ Prediction.”</span> June 1, 2025. <a href="https://m-clark.github.io/posts/202
     }
   });
   </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
-<div class="sourceCode" id="cb4" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> 'Uncertainty Estimation with Conformal Prediction'</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> More options for uncertainty estimation</span></span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="an">date:</span><span class="co"> 2025-06-01</span></span>
@@ -2898,7 +2906,7 @@ Prediction.”</span> June 1, 2025. <a href="https://m-clark.github.io/posts/202
 <span id="cb4-1254"><a href="#cb4-1254" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-1255"><a href="#cb4-1255" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-1256"><a href="#cb4-1256" aria-hidden="true" tabindex="-1"></a></span>
-</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 <div class="share-buttons"><div class="social-share"><a href="https://twitter.com/share?url=https://m-clark.github.io/&amp;text=Michael Clark" target="_blank" class="twitter"><i class="fab fa-twitter fa-fw fa-lg"></i></a><a href="https://www.linkedin.com/shareArticle?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="linkedin"><i class="fa-brands fa-linkedin-in fa-fw fa-lg"></i></a>  <a href="mailto:?subject=Michael Clark&amp;body=Check out this link:https://m-clark.github.io/" target="_blank" class="email"><i class="fa-solid fa-envelope fa-fw fa-lg"></i></a><a href="https://www.facebook.com/sharer.php?u=https://m-clark.github.io/" target="_blank" class="facebook"><i class="fab fa-facebook-f fa-fw fa-lg"></i></a><a href="https://reddit.com/submit?url=https://m-clark.github.io/&amp;title=Michael Clark" target="_blank" class="reddit">   <i class="fa-brands fa-reddit-alien fa-fw fa-lg"></i></a><a href="https://bsky.app/intent/compose?text=https://m-clark.github.io/ Michael Clark" target="_blank" class="bsky"><i class="fa-brands fa-bluesky"></i></a></div></div>

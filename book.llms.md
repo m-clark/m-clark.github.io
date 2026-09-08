@@ -1,0 +1,55 @@
+# The Book
+
+![](img/gp_bc_for_website_bottom_text.svg)
+
+  
+
+Models are everywhere, from the weather forecast to the stock market. They can help us make sense of the world and make better decisions, but they can also be confusing and intimidating, and the modeling world can be tough to navigate. Along with my co-author Seth Berry, our goal with the book is to equip you with a better understanding of how models work and how to use them, including both basic and more advanced techniques. We attempt to demystify models in data science from linear regression to deep learning with a practical guide to help you understand the models that power the world around you.
+
+The book is published by CRC Press as part of the [Data Science Series](https://www.routledge.com/Chapman--HallCRC-Data-Science-Series/book-series/CHDSS). You can [purchase the print version there](https://www.routledge.com/Models-Demystified-A-Practical-Guide-from-Linear-Regression-to-Deep-Learning/Clark-Berry/p/book/9781032582580).
+
+The [web version is freely available here](https://m-clark.github.io/book-of-models/), and continues to be updated.
+
+Models Demystified Table of Contents:
+
+1.  Introduction
+2.  Thinking About Models
+3.  The Foundation
+4.  Understanding the Model
+5.  Understanding the Features
+6.  Model Estimation and Optimization
+7.  Estimating Uncertainty
+8.  Generalized Linear Models
+9.  Extending the Linear Model
+10. Core Concepts in Machine Learning
+11. Common Models in Machine Learning
+12. Extending Machine Learning
+13. Causal Modeling
+14. Dealing with Data
+15. Danger Zone
+16. Parting Thoughts
+
+All examples are in Python and R, and with [separate notebooks you can use yourself for more exploration](https://github.com/m-clark/book-of-models/tree/main/chapter-notebooks).
+
+We welcome feedback, so please feel free to create an [issue](https://github.com/m-clark/book-of-models/issues). For contributions, please see the [contributing](https://github.com/m-clark/book-of-models/blob/main/CONTRIBUTING.md) page for more information. Thanks for reading, and hope you enjoy it!
+
+## Reuse
+
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+
+## Citation
+
+BibTeX citation:
+
+``` quarto-appendix-bibtex
+@online{untitled,
+  author = {},
+  title = {The {Book}},
+  url = {https://m-clark.github.io/book.html},
+  langid = {en}
+}
+```
+
+For attribution, please cite this work as:
+
+“The Book.” n.d. <https://m-clark.github.io/book.html>.
