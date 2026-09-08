@@ -1,6 +1,20 @@
 # source("renv/activate.R")
-Sys.setenv(RETICULATE_PYTHON = "~/anaconda3/envs/m-clark-github-io/bin/python")
-library(reticulate)
+
+# Point reticulate at a project python if one exists on THIS machine.
+# First match wins, and it is skipped silently when none are present, so a
+# missing env no longer poisons every R session in the project.
+local({
+    candidates <- c(
+        ".venv/bin/python",                                # uv / venv
+        "~/anaconda3/envs/m-clark-github-io/bin/python",   # legacy conda
+        "~/miniconda3/envs/m-clark-github-io/bin/python"
+    )
+    hit <- Filter(function(p) file.exists(path.expand(p)), candidates)
+    if (length(hit)) Sys.setenv(RETICULATE_PYTHON = path.expand(hit[[1]]))
+})
+
+# Kept attached: the dl-for-tabular post uses inline `py$...` without loading it.
+if (requireNamespace("reticulate", quietly = TRUE)) library(reticulate)
 
 
 
