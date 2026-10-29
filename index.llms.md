@@ -2,6 +2,14 @@
 
   
 
+### [Same Person, Five Records](posts/2026-10-23-identity-resolution/index.llms.md)
+
+A companion to my OneSix post on identity resolution: the statistics behind record linkage, how to evaluate it, and tools to do it yourself.
+
+Oct 23, 2026
+
+Michael Clark
+
 [![](./img/dl-foundational/iclv2arch.png)](posts/2026-03-01-dl-for-tabular-foundational/index.llms.md)
 
 ### [Is Boosting Still All You Need for Tabular Data?](posts/2026-03-01-dl-for-tabular-foundational/index.llms.md)
@@ -41,8 +49,6 @@ Challenges and solutions for this common situation
 Apr 7, 2025
 
 Michael Clark
-
-[![](./img/mc_logo.png)](posts/2025-01-01-news/index.llms.md)
 
 ### [Some News for the New Year](posts/2025-01-01-news/index.llms.md)
 

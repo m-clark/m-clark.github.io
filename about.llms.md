@@ -1,6 +1,6 @@
 ## What I do ![](img/title-page-gp.svg)
 
-I am a Senior Machine Learning Scientist at [OneSix](https://www.onesixsolutions.com/), where I have led over a dozen client engagements across healthcare, pharma, insurance, logistics, and marketing, for Fortune 100 companies and boutique firms alike. Most of my work falls into a few areas:
+I am a Senior Machine Learning Scientist at [OneSix](https://www.onesixsolutions.com/), where I have led client engagements across healthcare, pharma, insurance, logistics, and marketing, for Fortune 100 companies and boutique firms alike. Most of my work falls into a few areas:
 
 - **Forecasting**: from quantile-loss models built to capture extreme events, to an internal accelerator that unifies classical, neural, and pretrained foundation-model approaches, with drift and calibration monitoring built in, ready to apply to any client’s data.
 - **Causal inference**: estimating what actually moved the needle, whether that’s a treatment’s effect on patient outcomes or a marketing campaign’s effect on sales.
